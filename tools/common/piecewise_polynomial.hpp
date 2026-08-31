@@ -2,6 +2,7 @@
 #define _tools_common_piecewise_polynomial_hpp_
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <complex>
 #include <cstddef>
@@ -1557,6 +1558,115 @@ inline std::complex<double> far_interval_transform(const std::vector<Scalar> &co
 }
 
 template <typename Scalar>
+inline std::optional<std::complex<double>> try_fast_real_far_interval_transform(
+  const std::vector<Scalar> &coefficients, const std::complex<double> subtraction,
+  const long double inverse_root) {
+  // Returning no value restarts the interval with the hardened logarithmic path.
+  if constexpr (!std::is_same_v<Scalar, double> || !native_extended_precision) {
+    return std::nullopt;
+  } else {
+    if (subtraction.imag() != 0.0 || !std::isfinite(inverse_root) || inverse_root == 0.0L
+        || !(std::abs(inverse_root) < 0.5L))
+      return std::nullopt;
+    constexpr auto maximum_coefficients = std::size_t{4};
+    if (coefficients.size() > maximum_coefficients) return std::nullopt;
+    static const auto reciprocals = [] {
+      std::array<long double, double_exponent_span + 2 * maximum_coefficients> values{};
+      for (std::size_t denominator = 1; denominator < values.size(); ++denominator)
+        values[denominator] = 1.0L / static_cast<long double>(denominator);
+      return values;
+    }();
+
+    const auto extended_subtraction = static_cast<long double>(subtraction.real());
+    std::array<long double, maximum_coefficients> adjusted_coefficients{};
+    auto moment_zero_bound = 0.0L;
+    for (std::size_t power = 0; power < coefficients.size(); ++power) {
+      adjusted_coefficients[power] = static_cast<long double>(coefficients[power])
+                                     - (power == 0 ? extended_subtraction : 0.0L);
+      moment_zero_bound += std::abs(adjusted_coefficients[power]) * reciprocals[power + 1];
+    }
+    if (moment_zero_bound == 0.0L) return std::complex<double>{};
+    if (!std::isfinite(moment_zero_bound)) return std::nullopt;
+
+    constexpr auto conditioning_threshold = 8.0L * std::numeric_limits<long double>::epsilon()
+                                            / std::numeric_limits<double>::epsilon();
+    auto well_conditioned = [](const long double value, const long double absolute_bound) {
+      if (!std::isfinite(value) || !std::isfinite(absolute_bound)) return false;
+      if (absolute_bound == 0.0L) return true;
+      const auto ratio = std::abs(value) / absolute_bound;
+      return std::isfinite(ratio) && ratio > conditioning_threshold;
+    };
+    auto add_compensated = [](const long double value, long double &sum, long double &correction) {
+      const auto updated = sum + value;
+      if (std::abs(sum) >= std::abs(value))
+        correction += (sum - updated) + value;
+      else
+        correction += (value - updated) + sum;
+      sum = updated;
+    };
+
+    auto sum = 0.0L;
+    auto correction = 0.0L;
+    auto absolute_sum = 0.0L;
+    auto inverse_power = inverse_root;
+    const auto inverse_magnitude = std::abs(inverse_root);
+    auto inverse_magnitude_power = inverse_magnitude;
+    if (coefficients.size() > std::numeric_limits<std::size_t>::max() - double_exponent_span)
+      return std::nullopt;
+    const auto maximum_expansions = coefficients.size() + double_exponent_span;
+
+    for (std::size_t expansion = 0; expansion < maximum_expansions; ++expansion) {
+      auto moment_sum = 0.0L;
+      auto moment_correction = 0.0L;
+      auto moment_absolute_bound = 0.0L;
+      for (std::size_t power = 0; power < coefficients.size(); ++power) {
+        const auto contribution = adjusted_coefficients[power] * reciprocals[power + expansion + 1];
+        add_compensated(contribution, moment_sum, moment_correction);
+        moment_absolute_bound += std::abs(contribution);
+      }
+      const auto moment = moment_sum + moment_correction;
+      if (!well_conditioned(moment, moment_absolute_bound)) return std::nullopt;
+
+      const auto term = moment * inverse_power;
+      if (!std::isfinite(term) || (term == 0.0L && moment != 0.0L && inverse_power != 0.0L)) return std::nullopt;
+      add_compensated(term, sum, correction);
+      absolute_sum += std::abs(term);
+      if (!std::isfinite(absolute_sum)) return std::nullopt;
+      const auto value = sum + correction;
+      if (!well_conditioned(value, absolute_sum)) return std::nullopt;
+
+      const auto next_inverse_magnitude_power = inverse_magnitude_power * inverse_magnitude;
+      if (!std::isfinite(next_inverse_magnitude_power)
+          || (next_inverse_magnitude_power == 0.0L && inverse_magnitude_power != 0.0L))
+        return std::nullopt;
+      const auto remaining_numerator = moment_zero_bound * next_inverse_magnitude_power;
+      if (!std::isfinite(remaining_numerator)
+          || (remaining_numerator == 0.0L && moment_zero_bound != 0.0L
+              && next_inverse_magnitude_power != 0.0L))
+        return std::nullopt;
+      const auto remaining_bound = remaining_numerator / (1.0L - inverse_magnitude);
+      const auto target = std::numeric_limits<double>::epsilon() * std::abs(value);
+      if (std::isfinite(remaining_bound) && target != 0.0L && remaining_bound <= target) {
+        const auto magnitude = std::abs(value);
+        if (magnitude > static_cast<long double>(std::numeric_limits<double>::max())
+            || magnitude < static_cast<long double>(std::numeric_limits<double>::denorm_min()))
+          return std::nullopt;
+        const auto result = static_cast<double>(value);
+        if (!std::isfinite(result)) return std::nullopt;
+        return std::complex<double>{result, 0.0};
+      }
+
+      const auto next_inverse_power = inverse_power * inverse_root;
+      if (!std::isfinite(next_inverse_power) || (next_inverse_power == 0.0L && inverse_power != 0.0L))
+        return std::nullopt;
+      inverse_power = next_inverse_power;
+      inverse_magnitude_power = next_inverse_magnitude_power;
+    }
+    return std::nullopt;
+  }
+}
+
+template <typename Scalar>
 inline std::complex<double> complex_interval_transform(
   const std::vector<Scalar> &coefficients, const std::complex<double> subtraction,
   const std::complex<long double> root, const std::complex<long double> inverse_root,
@@ -1603,9 +1713,11 @@ inline std::complex<double> real_interval_transform(
     const auto result = -quotient_integral(coefficients, root);
     return {static_cast<double>(result.real()), static_cast<double>(result.imag())};
   }
-  if (std::abs(inverse_root) < 0.5)
+  if (std::abs(inverse_root) < 0.5) {
+    if (const auto fast = try_fast_real_far_interval_transform(coefficients, subtraction, inverse_root)) return *fast;
     return far_interval_transform(coefficients, subtraction, std::complex<long double>{inverse_root, 0.0L},
                                   inverse_root_extended, left, right, {argument, 0.0});
+  }
   const auto logarithm = std::log(std::abs(left_delta)) - std::log(std::abs(right_delta));
   const auto extended_subtraction = std::complex<long double>{subtraction.real(), subtraction.imag()};
   const auto value_at_root = evaluate_polynomial(coefficients, root) - extended_subtraction;

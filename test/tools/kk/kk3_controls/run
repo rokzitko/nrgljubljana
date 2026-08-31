@@ -2,10 +2,22 @@
 set -eu
 
 kk="$1/kk"
+unset OMP_NUM_THREADS
+number='[0-9]+([.][0-9]*)?([eE][+-]?[0-9]+)?'
 
 "$kk" input.dat default.dat >default.stdout
 "$kk" --interpolation akima input.dat akima.dat >akima.stdout
 cmp default.dat akima.dat
+test "$(grep -Ec '^Time elapsed:' default.stdout)" -eq 1
+grep -Eq "^Time elapsed: ${number} s$" default.stdout
+if grep -q '^Performance:' default.stdout; then
+  echo "kk unexpectedly emitted verbose performance details without -v" >&2
+  exit 1
+fi
+if grep -Fq 'KK done!' default.stdout; then
+  echo "kk retained the obsolete completion line" >&2
+  exit 1
+fi
 
 "$kk" -i linear input.dat linear.dat >linear.stdout
 "$kk" --interpolation=cspline input.dat cspline.dat >cspline.stdout
@@ -19,14 +31,91 @@ if cmp linear.dat steffen.dat >/dev/null 2>&1; then
   exit 1
 fi
 
-if "$kk" --interpolation nearest input.dat invalid.dat >invalid.stdout 2>invalid.stderr; then
-  echo "kk unexpectedly accepted an invalid interpolation method" >&2
-  exit 1
-fi
-grep -Fq "Interpolation method must be one of" invalid.stderr
+"$kk" --jobs 1 input.dat serial.dat >serial.stdout
+"$kk" -v input.dat fallback-jobs.dat >fallback-jobs.stdout 2>fallback-jobs.stderr
+cmp serial.dat fallback-jobs.dat
+grep -Fxq '  jobs=auto -> 1 (default)' fallback-jobs.stderr
+OMP_NUM_THREADS=3 "$kk" -v input.dat environment-jobs.dat >environment-jobs.stdout 2>environment-jobs.stderr
+cmp serial.dat environment-jobs.dat
+grep -Fxq '  jobs=auto -> 3 (OMP_NUM_THREADS)' environment-jobs.stderr
+grep -Fxq '  jobs.source=OMP_NUM_THREADS' environment-jobs.stderr
+grep -Fxq '  algorithm=qag' environment-jobs.stderr
+test "$(grep -Ec '^Time elapsed:' environment-jobs.stdout)" -eq 1
+test "$(grep -Ec '^Performance:' environment-jobs.stdout)" -eq 1
+grep -Eq "^Time elapsed: ${number} s$" environment-jobs.stdout
+grep -Eq "^Performance: wall=${number}s (cpu=${number}s effective_parallelism=${number}x|cpu=n/a effective_parallelism=n/a) throughput=${number} points/s workers=3 algorithm=qag$" environment-jobs.stdout
 
-if "$kk" --epsabs 1e-9 input.dat obsolete.dat >obsolete.stdout 2>obsolete.stderr; then
-  echo "kk unexpectedly accepted an obsolete QAG option" >&2
+OMP_NUM_THREADS='3,2' "$kk" -v input.dat nested-environment.dat >nested-environment.stdout 2>nested-environment.stderr
+cmp serial.dat nested-environment.dat
+grep -Fxq '  jobs=auto -> 3 (OMP_NUM_THREADS)' nested-environment.stderr
+
+OMP_NUM_THREADS=4 "$kk" --jobs 2 -v input.dat explicit-jobs.dat >explicit-jobs.stdout 2>explicit-jobs.stderr
+cmp serial.dat explicit-jobs.dat
+grep -Fxq '  jobs=2' explicit-jobs.stderr
+grep -Fxq '  jobs.source=--jobs' explicit-jobs.stderr
+
+"$kk" --algorithm qag --jobs 1 input.dat qag-serial.dat >qag-serial.stdout
+"$kk" --algorithm qag --jobs 3 input.dat qag-parallel.dat >qag-parallel.stdout
+cmp qag-serial.dat qag-parallel.dat
+cmp default.dat qag-serial.dat
+
+"$kk" --interpolation cspline --epsabs 1e-9 --epsrel 1e-7 \
+  --workspace-limit 64 --quadrature-rule 61 --gsl-error-policy fail \
+  input.dat configured.dat >configured.stdout
+
+expect_failure() {
+  name=$1
+  message=$2
+  shift 2
+  if "$kk" "$@" input.dat "$name.dat" >"$name.stdout" 2>"$name.stderr"; then
+    echo "kk unexpectedly accepted invalid $name" >&2
+    exit 1
+  fi
+  grep -Fq "$message" "$name.stderr"
+}
+
+expect_failure interpolation "Interpolation method must be one of" --interpolation nearest
+expect_failure algorithm "Algorithm must be one of" --algorithm adaptive
+expect_failure jobs "Worker count must be a positive integer" --jobs 0
+if OMP_NUM_THREADS=invalid "$kk" input.dat environment.dat >environment.stdout 2>environment.stderr; then
+  echo "kk unexpectedly accepted invalid OMP_NUM_THREADS" >&2
   exit 1
 fi
-grep -Eq "unrecognized option|Unknown command-line option" obsolete.stderr
+grep -Fq "OMP_NUM_THREADS must be a comma-separated list of positive integers" environment.stderr
+if OMP_NUM_THREADS='3,invalid' "$kk" input.dat environment-tail.dat \
+  >environment-tail.stdout 2>environment-tail.stderr; then
+  echo "kk unexpectedly accepted an invalid OMP_NUM_THREADS nested level" >&2
+  exit 1
+fi
+grep -Fq "OMP_NUM_THREADS must be a comma-separated list of positive integers" environment-tail.stderr
+expect_failure analytic-controls "QAG numerical controls require --algorithm qag" --algorithm analytic --epsabs 1e-9
+expect_failure tolerances "Relative integration tolerance is too small" --algorithm qag --epsabs 0 --epsrel 0
+expect_failure workspace "Integration workspace limit must be a positive integer" --algorithm qag --workspace-limit 0
+expect_failure rule "Quadrature rule must be one of" --algorithm qag --quadrature-rule 17
+expect_failure policy "GSL error policy must be one of" --algorithm qag --gsl-error-policy abort
+
+difficult_options="--algorithm qag --epsabs 1e-300 --epsrel 0 --workspace-limit 1 --quadrature-rule 61"
+# shellcheck disable=SC2086
+"$kk" $difficult_options --gsl-error-policy ignore input.dat ignore.dat >ignore.stdout 2>ignore.stderr
+test ! -s ignore.stderr
+
+# QAG keeps its legacy default of silently returning a finite estimate.
+# shellcheck disable=SC2086
+"$kk" $difficult_options input.dat default-policy.dat >default-policy.stdout 2>default-policy.stderr
+test ! -s default-policy.stderr
+cmp ignore.dat default-policy.dat
+
+# A constrained workspace makes the local rule affect GSL's returned estimate.
+"$kk" --algorithm qag --epsabs 1e-300 --epsrel 0 --workspace-limit 1 --quadrature-rule 15 \
+  --gsl-error-policy ignore input.dat rule-15.dat >rule-15.stdout 2>rule-15.stderr
+if cmp rule-15.dat ignore.dat >/dev/null 2>&1; then
+  echo "kk quadrature rules unexpectedly produced identical constrained estimates" >&2
+  exit 1
+fi
+
+# shellcheck disable=SC2086
+"$kk" $difficult_options --jobs 3 --gsl-error-policy warn input.dat warn.dat >warn.stdout 2>warn.stderr
+grep -Fq "kk: warning: GSL QAG failed" warn.stderr
+
+# shellcheck disable=SC2086
+expect_failure convergence "GSL QAG failed" $difficult_options --jobs 3 --gsl-error-policy fail

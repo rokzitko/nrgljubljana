@@ -513,8 +513,8 @@ auto hilbert_transform(const NRG::Tools::PiecewisePolynomial<Scalar> &density, c
  */
 template <typename FNCR, typename FNCI>
 auto hilbert_transform(integrator &integration, FNCR &rhor, FNCI &rhoi, const double B, const std::complex<double> z,
-                         const double lim_direct = 1e-3, const int n = 0, const double epsabs = 1e-14, const double epsrel = 1e-10) {
-  gsl_set_error_handler_off();
+                          const double lim_direct = 1e-3, const int n = 0, const double epsabs = 1e-14, const double epsrel = 1e-10) {
+  const NRG::Tools::GslErrorHandlerGuard error_handler;
   validate_hilbert_transform_inputs(B, z, lim_direct, n, epsabs, epsrel);
   const auto x = real(z);
   const auto y = imag(z);
@@ -699,7 +699,6 @@ inline auto hilbert_transform(integrator &integration, const interpolator &rhor,
 template <typename FNCR, typename FNCI>
 auto hilbert_transform(FNCR rhor, FNCI rhoi, const double B, const std::complex<double> z, const double lim_direct = 1e-3,
                         const int n = 0, const double epsabs = 1e-14, const double epsrel = 1e-10) {
-  gsl_set_error_handler_off();
   integrator integration;
   return hilbert_transform(integration, rhor, rhoi, B, z, lim_direct, n, epsabs, epsrel);
 }
@@ -1173,7 +1172,7 @@ class Hilb {
   public:
   Hilb(int argc, char *argv[]) {
     std::cout << std::setprecision(OUTPUT_PRECISION);
-    gsl_set_error_handler_off();
+    const NRG::Tools::GslErrorHandlerGuard error_handler;
     try {
       parse_param_run(argc, argv);
       finish_output(std::cout, "<stdout>");

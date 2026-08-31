@@ -14,7 +14,7 @@ cat >valid.dat <<'EOF'
 2 2
 EOF
 
-"$kk" -i linear - <valid.dat >stream.stdout 2>stream.stderr
+"$kk" --algorithm analytic -i linear - <valid.dat >stream.stdout 2>stream.stderr
 perl -e '
   use strict;
   use warnings;
@@ -33,6 +33,24 @@ perl -e '
   $row == @expected_x or die "wrong number of stdout rows\n";
 ' stream.stdout
 test ! -s stream.stderr
+
+"$kk" -v --interpolation linear - <valid.dat >qag-stream.stdout 2>qag-stream.stderr
+perl -e '
+  use strict;
+  use warnings;
+  my $number = qr/[+-]?(?:(?:\d+(?:\.\d*)?)|(?:\.\d+))(?:[eE][+-]?\d+)?/;
+  my $rows = 0;
+  while (<>) {
+    /^\s*$number\s+$number\s*$/ or die "non-numeric QAG stream row: $_";
+    ++$rows;
+  }
+  $rows == 4 or die "wrong number of QAG stream rows: $rows\n";
+' qag-stream.stdout
+grep -Fxq '  algorithm=qag' qag-stream.stderr
+if grep -Eq '^(Time elapsed|Performance):' qag-stream.stdout; then
+  echo "kk unexpectedly emitted timing in stream mode" >&2
+  exit 1
+fi
 
 cat >malformed.dat <<'EOF'
 # heading
@@ -59,12 +77,19 @@ cat >overflow.dat <<'EOF'
 EOF
 printf '%s\n' 'preserve existing output' >overflow.out
 cp overflow.out overflow.expected
-if "$kk" -i linear overflow.dat overflow.out >overflow.stdout 2>overflow.stderr; then
+if "$kk" --algorithm analytic -i linear overflow.dat overflow.out >overflow.stdout 2>overflow.stderr; then
   echo "kk unexpectedly accepted a nonfinite transform" >&2
   exit 1
 fi
 grep -Fq "Cauchy transform is not finite" overflow.stderr
 cmp overflow.expected overflow.out
+
+if "$kk" --algorithm qag --interpolation linear --jobs 3 --gsl-error-policy ignore - \
+  <overflow.dat >qag-overflow.stdout 2>qag-overflow.stderr; then
+  echo "kk QAG unexpectedly accepted a nonfinite transform under the ignore policy" >&2
+  exit 1
+fi
+grep -Fq "QAG Cauchy transform is not finite" qag-overflow.stderr
 
 cp valid.dat preserved.dat
 if "$kk" -i linear valid.dat valid.dat >same.stdout 2>same.stderr; then

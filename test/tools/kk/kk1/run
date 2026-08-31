@@ -1,9 +1,21 @@
 #!/bin/sh
 set -eu
 
-"$1/kk" -v imaw.dat reaw.dat 2>verbose.txt
+number='[0-9]+([.][0-9]*)?([eE][+-]?[0-9]+)?'
+"$1/kk" --algorithm analytic -v imaw.dat reaw.dat >stdout.txt 2>verbose.txt
 grep -q '^kk: configuration$' verbose.txt
 grep -q '^  interpolation=akima$' verbose.txt
+grep -q '^  algorithm=analytic$' verbose.txt
+grep -q '^  jobs=' verbose.txt
+grep -q '^  jobs.source=' verbose.txt
 grep -q '^  input.lower_bound=auto ->' verbose.txt
 grep -q '^  output.precision=16$' verbose.txt
+test "$(grep -Ec '^Time elapsed:' stdout.txt)" -eq 1
+test "$(grep -Ec '^Performance:' stdout.txt)" -eq 1
+grep -Eq "^Time elapsed: ${number} s$" stdout.txt
+grep -Eq "^Performance: wall=${number}s (cpu=${number}s effective_parallelism=${number}x|cpu=n/a effective_parallelism=n/a) throughput=${number} points/s workers=[0-9]+ algorithm=analytic$" stdout.txt
+if grep -Fq 'KK done!' stdout.txt; then
+  echo "kk retained the obsolete completion line" >&2
+  exit 1
+fi
 "$2/test/compare.pl" "$3/ref"

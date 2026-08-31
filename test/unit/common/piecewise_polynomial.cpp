@@ -1,10 +1,12 @@
 #include <gtest/gtest.h>
 
+#include <cfenv>
 #include <cmath>
 #include <complex>
 #include <fstream>
 #include <limits>
 #include <map>
+#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -362,6 +364,31 @@ TEST(PiecewisePolynomial, supports_complex_coefficients_and_lower_half_plane_con
 
   expect_complex_near(NRG::Tools::cauchy_transform(polynomial, upper), scale * constant_transform(upper), 2e-13);
   expect_complex_near(NRG::Tools::cauchy_transform(polynomial, lower), scale * constant_transform(lower), 2e-13);
+}
+
+TEST(PiecewisePolynomial, guarded_real_far_fast_path_falls_back_on_cancellation) { // NOLINT
+  const std::vector<double> ordinary{1.0, 0.25, -0.5, 0.125};
+  const auto fast = NRG::Tools::detail::try_fast_real_far_interval_transform(ordinary, {}, 0.1L);
+  constexpr auto conditioning_threshold = 8.0L * std::numeric_limits<long double>::epsilon()
+                                          / std::numeric_limits<double>::epsilon();
+  if constexpr (NRG::Tools::detail::native_extended_precision && conditioning_threshold < 1.0L) {
+    ASSERT_TRUE(fast);
+    const auto hardened = NRG::Tools::detail::far_interval_transform(
+      ordinary, {}, std::complex<long double>{0.1L, 0.0L},
+      std::optional<NRG::Tools::detail::FarComplex>{}, 0.0, 1.0, {10.0, 0.0});
+    expect_complex_near(*fast, hardened, 2e-15);
+  } else {
+    EXPECT_FALSE(fast);
+  }
+
+  const std::vector<double> vanishing_first_moment{-0.5, 1.0};
+  EXPECT_FALSE(NRG::Tools::detail::try_fast_real_far_interval_transform(vanishing_first_moment, {}, 0.1L));
+
+  std::feclearexcept(FE_ALL_EXCEPT);
+  const auto maximum = std::numeric_limits<double>::max();
+  EXPECT_FALSE(NRG::Tools::detail::try_fast_real_far_interval_transform(
+    std::vector<double>{maximum, maximum}, {}, 0.49L));
+  EXPECT_EQ(std::fetestexcept(FE_OVERFLOW), 0);
 }
 
 TEST(PiecewisePolynomial, far_field_uses_stable_moment_expansion) { // NOLINT

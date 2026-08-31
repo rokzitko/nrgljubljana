@@ -234,7 +234,7 @@ class Resample
             std::transform(im.begin(), im.end(), std::back_inserter(Xpts), [] (const auto& pair){return pair.first;});
             std::transform(im.begin(), im.end(), std::back_inserter(Ypts), [] (const auto& pair){return pair.second;});
 
-            gsl_set_error_handler_off();
+            const NRG::Tools::GslErrorHandlerGuard error_handler;
             acc.reset(gsl_interp_accel_alloc());
             if (!acc) throw std::runtime_error("Failed to allocate GSL interpolation accelerator.");
             const gsl_interp_type *Interp_type = NRG::Tools::gsl_interpolation_type(interpolation_method);
@@ -246,6 +246,7 @@ class Resample
 
         void resample(std::vector<std::pair<T, T>> &grid_)
         {
+            const NRG::Tools::GslErrorHandlerGuard error_handler;
             for (auto & i : grid_) {
               if (extrapolate && i.first < Xmin) i.second = *extrapolation_below;
               else if (extrapolate && i.first > Xmax) i.second = *extrapolation_above;

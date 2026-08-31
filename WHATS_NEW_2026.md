@@ -11,6 +11,7 @@ This release summarizes development since `2024.12`, with major improvements in 
 - BLAS/LAPACK integration has been improved, including support for ILP64 numerical libraries for really large problems.
 - Threaded BLAS, MPI scheduling, and oversubscription diagnostics are handled more consistently.
 - CPU diagonalization now defaults to the divide-and-conquer LAPACK routines `dsyevd` and `zheevd`.
+- `kk` defaults to its fast adaptive QAG transform, while `--algorithm analytic` selects guarded extended-precision interval transforms with wider and exact fallbacks. Independent output points can run in parallel with `--jobs` or `OMP_NUM_THREADS`. Successful file-mode runs report wall time, with CPU utilization and throughput details under `-v`.
 
 ## Performance And Memory
 

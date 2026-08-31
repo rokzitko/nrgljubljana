@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <limits>
+#include <mutex>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -19,11 +20,18 @@
 
 namespace NRG::Tools {
 
+// GSL's error handler is process-global, so scoped changes must not overlap.
+inline auto &gsl_error_handler_mutex() {
+  static std::recursive_mutex mutex;
+  return mutex;
+}
+
 class GslErrorHandlerGuard {
+  std::unique_lock<std::recursive_mutex> lock;
   gsl_error_handler_t *previous;
 
   public:
-  GslErrorHandlerGuard() : previous{gsl_set_error_handler_off()} {}
+  GslErrorHandlerGuard() : lock{gsl_error_handler_mutex()}, previous{gsl_set_error_handler_off()} {}
   GslErrorHandlerGuard(const GslErrorHandlerGuard &) = delete;
   GslErrorHandlerGuard &operator=(const GslErrorHandlerGuard &) = delete;
   ~GslErrorHandlerGuard() {

@@ -41,7 +41,14 @@ truncated or incomplete.
 | Option | Meaning |
 | --- | --- |
 | `-h`, `--help` | Print help. |
+| `-a ALGORITHM`, `--algorithm ALGORITHM` | Select `qag` or `analytic`. Default: `qag`. |
 | `-i METHOD`, `--interpolation METHOD` | Select `linear`, `cspline`, `akima`, or `steffen`. Default: `akima`. |
+| `-j N`, `--jobs N` | Request `N` positive worker threads. The default is the first `OMP_NUM_THREADS` value, or one when the variable is unset. |
+| `--epsabs VALUE` | Set the QAG absolute tolerance. Default: `1e-12`. |
+| `--epsrel VALUE` | Set the QAG relative tolerance. Default: `1e-8`. |
+| `--workspace-limit N` | Set each QAG worker's positive workspace capacity. Default: `1000`. |
+| `--quadrature-rule RULE` | Select QAG rule `15`, `21`, `31`, `41`, `51`, or `61`. Default: `15`. |
+| `--gsl-error-policy POLICY` | Handle QAG failures with `ignore`, `warn`, or `fail`. Default: `ignore`. |
 | `-v` | Print the resolved configuration to standard error. |
 | `-vv` | Increase verbosity further. |
 | `-V`, `--version` | Print the project version. |
@@ -54,16 +61,72 @@ points. `cspline` and `akima` can overshoot between samples. `steffen` stays
 within each interval's endpoint range, but its second derivative can be
 discontinuous and its shape can be conservative near extrema.
 
-## Numerical Algorithm
+The QAG controls apply to the default algorithm. Specifying them together with
+`--algorithm analytic` is an error.
 
-The selected GSL interpolant is materialized once as a polynomial on each input
-interval: degree one for `linear` and degree three for the other methods. `kk`
-integrates each polynomial divided by $E-z$ analytically using polynomial
-division and logarithms, then combines the interval contributions with
-compensated summation. It does not use adaptive quadrature and has no
-integration-tolerance, workspace, quadrature-rule, or GSL-error-policy options.
-Intermediate moment calculations use wider or exact arithmetic when native
-precision cannot reliably distinguish cancellation from a true zero.
+## QAG Algorithm (Default)
+
+The default algorithm is the historical adaptive Gauss-Kronrod calculation.
+For each nonnegative integration coordinate it combines the positive and
+negative interpolant contributions before integration. QAG arguments must lie
+inside the interpolation domain; command-line operation satisfies this because
+output is evaluated on the input grid.
+
+QAG is generally the faster choice for large smooth tables, but its result has
+adaptive-quadrature error. Select the analytic algorithm when its stronger
+accuracy and extreme-range guarantees are required.
+
+The workspace limit applies independently to every worker. A failed QAG target
+is ignored, reported, or made fatal according to `--gsl-error-policy`.
+Nonfinite interpolation, integration, correction, or output values are always
+fatal under every policy.
+
+## Analytic Algorithm
+
+With `--algorithm analytic`, the selected GSL interpolant is materialized once
+as a polynomial on each input interval: degree one for `linear` and degree three
+for the other methods. `kk` integrates each polynomial divided by $E-z$
+analytically using polynomial division and logarithms, then combines the
+interval contributions with compensated summation. It does not use adaptive
+quadrature, so QAG controls are not accepted in this mode. A guarded real-valued
+far-interval path uses direct extended-precision error bounds for ordinary
+finite data. If cancellation, overflow, underflow, or convergence cannot be
+certified, that interval is restarted with the logarithmic, wider, and
+exact-arithmetic implementation.
+
+## Parallel Execution
+
+Output points are independent. `--jobs N` requests up to `N` workers while
+preserving input order and per-point numerical operation order. The actual
+worker count is the smaller of the requested count and the number of output
+points. Each QAG worker owns a separate GSL interpolation accelerator and
+integration workspace.
+
+When `--jobs` is omitted, `kk` uses the first positive integer in
+`OMP_NUM_THREADS`. Thus `OMP_NUM_THREADS=8` and `OMP_NUM_THREADS=8,4` both select
+eight workers. An explicit `--jobs` value overrides the environment. If the
+variable is unset, one worker is used. Invalid and nonpositive values are
+errors. The `-v` configuration report shows the resolved requested count and
+its source; the file-mode performance line shows the actual worker count.
+
+## Timing
+
+After a successful file-mode run, `kk` reports total wall time on standard
+output:
+
+```text
+Time elapsed: 1.234 s
+```
+
+The time includes command parsing, input, interpolant setup, transformation,
+and output-file writing. With `-v`, a second line reports process CPU time,
+effective parallelism (`CPU time / wall time`), total throughput, actual worker
+count, and algorithm. Effective parallelism describes observed CPU use; it is
+not a measured speedup against a separate serial run. If process CPU time is
+unavailable, the fields are reported as `cpu=n/a effective_parallelism=n/a`.
+
+Stream mode (`kk -`) emits no timing report and keeps standard output strictly
+numeric. Library construction and calls are likewise silent.
 
 At $z=a$ or $z=b$, the ordinary one-sided transform generally has a logarithmic
 divergence. For compatibility, `kk` reports the finite endpoint-subtracted
@@ -74,5 +137,5 @@ K_{\mathrm{sub}}(z)=\frac{1}{\pi}\int_a^b
 \frac{S(E)-S(z)}{E-z}\,dE.
 $$
 
-The displayed `Sum` is likewise evaluated analytically from the interval
-polynomials.
+With the analytic algorithm, the displayed `Sum` is evaluated from the interval
+polynomials. With QAG it is evaluated by GSL from the selected spline.

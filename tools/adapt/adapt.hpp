@@ -48,22 +48,6 @@ struct GslWorkspaceDeleter {
   void operator()(gsl_integration_cquad_workspace *workspace) const { gsl_integration_cquad_workspace_free(workspace); }
 };
 
-class GslErrorHandlerGuard {
-  gsl_error_handler_t *previous;
-
- public:
-  GslErrorHandlerGuard() : previous(gsl_set_error_handler_off()) {}
-  GslErrorHandlerGuard(const GslErrorHandlerGuard &) = delete;
-  GslErrorHandlerGuard &operator=(const GslErrorHandlerGuard &) = delete;
-  ~GslErrorHandlerGuard() {
-    if (previous) {
-      gsl_set_error_handler(previous);
-    } else {
-      gsl_set_error_handler_off();
-    }
-  }
-};
-
 inline void add_zero_point(Vec &v, const double small = 1e-99)
 {
   const auto [x0,y0] = v.front();
@@ -345,7 +329,7 @@ class Adapt {
     auto integrate_cumulative(const double lower,
                              const double upper,
                              gsl_integration_cquad_workspace *workspace) {
-     const GslErrorHandlerGuard error_handler;
+     const NRG::Tools::GslErrorHandlerGuard error_handler;
      gsl_function integrand;
      integrand.function = [](const double value, void *context) {
        auto *self = static_cast<Adapt *>(context);
@@ -533,7 +517,7 @@ class Adapt {
      } while (x < xmax && std::abs(y) <= max_abs);
    }
    void calc_f_integral() {
-     const GslErrorHandlerGuard error_handler;
+     const NRG::Tools::GslErrorHandlerGuard error_handler;
      const double epsabs = cquad_options.epsabs.value_or(0.0);
      const double epsrel = cquad_options.epsrel.value_or(allowed_error);
      NRG::Tools::validate_cquad_tolerances(epsabs, epsrel);
