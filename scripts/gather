@@ -1,61 +1,77 @@
-#!/usr/bin/perl
-# Gather results from a run
-# (c) Rok Zitko, rok.zitko@ijs.si, April 2005, May 2008, Nov 2010
-# $Id: gather,v 1.8 2006/01/01 16:57:19 zitko Exp zitko $
-
-# CHANGE LOG
-# 9.3.2014 - arbitrary number of comment lines in the header
+#!/usr/bin/env perl
+# Gather the last custom row from completed numeric run directories.
 
 use strict;
 use warnings;
+use FindBin qw($Bin);
+use lib $Bin;
+use TableIO qw(atomic_write data_rows parse_number read_records);
 
-my $paramname = shift;
-if (!defined $paramname) {
-    $paramname = "UNDEF";
-}
+@ARGV <= 1 or die "Usage: gather [parameter]\n";
+my $parameter_name = shift // 'UNDEF';
+opendir(my $dh, '.') or die "Can't open current directory: $!\n";
+my @dirs = map { "./$_" }
+           sort { $a <=> $b || $a cmp $b }
+           grep { /\A\d+\z/ && -d $_ } readdir($dh);
+closedir($dh) or die "Can't finish reading current directory: $!\n";
 
-my $path = ".";
-
-opendir(DIR, $path);
-my @dirs;
-@dirs = map  { $_->[1] }                # extract pathnames
-sort { $a->[0] <=> $b->[0] }    # sort names numeric
-grep { -d $_->[1] }             # path is a dir
-map  { [ $_, "$path/$_" ] }     # form (name, path)
-grep { /^\d+$/ }                # just numerics
-readdir(DIR);                   # all files
-closedir(DIR);
-
-my $fn = "custom.dat";
-
-unlink($fn);
-
-# Copy headers!
-if (-e "$dirs[0]/custom") {
-  system("grep '^#' $dirs[0]/custom >$fn"); # General stuff
-}
-
-open(F, ">>$fn") or die "Can't open $fn.";
-
-print "dirs = [@dirs]\n";
-foreach $a (@dirs) {
-    print "$a - ";
-    if (-e "$a/DONE") {
-	my $line = `tail -n 1 $a/custom`;
-	chop($line);
-	my $param = `cd $a ; getparam $paramname`;
-	chop($param);
-	$line =~ s/^\s+(.*)/$1/;	
-	my @line = split('\s', $line);
-	$line[0] = $param;
-	print F "     @line\n";
-	print "done\n";
-    } else {
-	print "not yet";
-	if (-e "$a/RUNNING") {
-	    print (" - running\n");
-	} else {
-	    print ("\n");
-	}
+my (@headers, @output_rows);
+my @status = ("dirs = [@dirs]\n");
+my ($sources, $columns) = (0, undef);
+for my $dir (@dirs) {
+    if (!-e "$dir/DONE") {
+        push @status, "$dir - not yet" . (-e "$dir/RUNNING" ? " - running" : '') . "\n";
+        next;
     }
+
+    my $path = "$dir/custom";
+    my $records = read_records($path);
+    my $data = data_rows($records);
+    @$data or die "$path: no data rows\n";
+    my @source_headers;
+    for my $record (@$records) {
+        last if $record->{type} eq 'data';
+        next unless $record->{type} eq 'comment';
+        (my $line = $record->{raw}) =~ s/[\r\n]+\z//;
+        push @source_headers, $line;
+    }
+    if (!$sources) {
+        @headers = @source_headers;
+    } elsif (@source_headers != @headers
+             || grep { $source_headers[$_] ne $headers[$_] } 0 .. $#headers) {
+        die "$path: headers do not match the first completed run\n";
+    }
+    for my $record (@$data) {
+        my $width = @{$record->{tokens}};
+        defined($columns) && $width != $columns
+            and die "$path:$record->{line}: expected $columns columns, found $width\n";
+        $columns //= $width;
+    }
+
+    open(my $param_fh, '-|', "$Bin/getparam", $parameter_name, "$dir/param")
+        or die "Can't run $Bin/getparam for $dir: $!\n";
+    my @parameter = <$param_fh>;
+    close($param_fh) or die "getparam failed for $dir (status $?)\n";
+    @parameter == 1 or die "$dir/param: getparam returned " . scalar(@parameter) . " lines\n";
+    $parameter[0] =~ s/[\r\n]+\z//;
+    $parameter[0] =~ s/\A\s+|\s+\z//g;
+    parse_number($parameter[0], "$dir/param: parameter $parameter_name");
+
+    my @fields = @{$data->[-1]{tokens}};
+    $fields[0] = $parameter[0];
+    push @output_rows, "     @fields\n";
+    push @status, "$dir - done\n";
+    $sources++;
 }
+
+$sources or die "No completed numeric run directories found\n";
+if (@headers) {
+    my @names = split ' ', $headers[-1];
+    shift(@names) eq '#' && @names == $columns
+        or die "custom header does not describe $columns columns\n";
+    $names[0] = $parameter_name;
+    $headers[-1] = '# ' . join(' ', @names);
+}
+my $content = join('', map { "$_\n" } @headers) . join('', @output_rows);
+atomic_write('custom.dat', $content);
+print @status;

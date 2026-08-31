@@ -1,54 +1,61 @@
-#!/usr/bin/perl
-# Gather results from a run
-# (c) Rok Zitko, rok.zitko@ijs.si, April 2005, May 2008, Nov 2010, Feb 2012
-
-# CHANGE LOG
-# 9.3.2014 - arbitrary number of comment lines in the header
+#!/usr/bin/env perl
+# Gather the last logical row of a requested table from completed runs.
 
 use strict;
 use warnings;
+use FindBin qw($Bin);
+use lib $Bin;
+use TableIO qw(atomic_write data_rows read_records);
 
-my $fnin = shift;
-if (!defined $fnin) {
-    $fnin = "custom";
-}
+@ARGV <= 1 or die "Usage: gatherlastlines [filename]\n";
+my $source = shift // 'custom';
+$source =~ /\A[^\\\/]+\z/ && $source ne '.' && $source ne '..'
+    or die "gatherlastlines: filename must be a basename\n";
+opendir(my $dh, '.') or die "Can't open current directory: $!\n";
+my @dirs = map { "./$_" }
+           sort { $a <=> $b || $a cmp $b }
+           grep { /\A\d+\z/ && -d $_ } readdir($dh);
+closedir($dh) or die "Can't finish reading current directory: $!\n";
 
-my $path = ".";
-
-opendir(DIR, $path);
-my @dirs;
-@dirs = map  { $_->[1] }                # extract pathnames
-sort { $a->[0] <=> $b->[0] }    # sort names numeric
-grep { -d $_->[1] }             # path is a dir
-map  { [ $_, "$path/$_" ] }     # form (name, path)
-grep { /^\d+$/ }                # just numerics
-readdir(DIR);                   # all files
-closedir(DIR);
-
-my $fnout = $fnin;
-
-unlink($fnout);
-
-# Copy headers!
-if (-e "$dirs[0]/$fnin") {
-  system("grep '^#' $dirs[0]/custom >$fnout"); # General stuff
-}
-
-open(F, ">>$fnout") or die "Can't open $fnout.";
-
-print "dirs = [@dirs]\n";
-foreach $a (@dirs) {
-    print "$a - ";
-    if (-e "$a/DONE") {
-	my $line = `tail -n 1 $a/$fnin`;
-	print F $line;
-	print "done\n";
-    } else {
-	print "not yet";
-	if (-e "$a/RUNNING") {
-	    print (" - running\n");
-	} else {
-	    print ("\n");
-	}
+my (@headers, @rows);
+my @status = ("dirs = [@dirs]\n");
+my ($sources, $columns) = (0, undef);
+for my $dir (@dirs) {
+    if (!-e "$dir/DONE") {
+        push @status, "$dir - not yet" . (-e "$dir/RUNNING" ? " - running" : '') . "\n";
+        next;
     }
+
+    my $path = "$dir/$source";
+    my $records = read_records($path);
+    my $data = data_rows($records);
+    @$data or die "$path: no data rows\n";
+    my @source_headers;
+    for my $record (@$records) {
+        last if $record->{type} eq 'data';
+        next unless $record->{type} eq 'comment';
+        (my $line = $record->{raw}) =~ s/[\r\n]+\z//;
+        push @source_headers, $line;
+    }
+    if (!$sources) {
+        @headers = @source_headers;
+    } elsif (@source_headers != @headers
+             || grep { $source_headers[$_] ne $headers[$_] } 0 .. $#headers) {
+        die "$path: headers do not match the first completed run\n";
+    }
+    for my $record (@$data) {
+        my $width = @{$record->{tokens}};
+        defined($columns) && $width != $columns
+            and die "$path:$record->{line}: expected $columns columns, found $width\n";
+        $columns //= $width;
+    }
+    (my $last = $data->[-1]{raw}) =~ s/[\r\n]+\z//;
+    push @rows, "$last\n";
+    push @status, "$dir - done\n";
+    $sources++;
 }
+
+$sources or die "No completed numeric run directories found\n";
+my $content = join('', map { "$_\n" } @headers) . join('', @rows);
+atomic_write($source, $content);
+print @status;

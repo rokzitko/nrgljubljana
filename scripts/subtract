@@ -3,40 +3,46 @@
 # Rok Zitko, rok.zitko@ijs.si, Mar, Oct 2008
 # $Id$
 
+use strict;
 use warnings;
+use FindBin qw($Bin);
+use lib $Bin;
+use TableIO qw(data_rows finite_result read_records);
 
 if (@ARGV != 2) {
-  die "Synthax: subtract <filename1> <filename2>\n";
+    die "Synthax: subtract <filename1> <filename2>\n";
 }
 
-my $filename1 = $ARGV[0];
-my $filename2 = $ARGV[1];
+my ($filename1, $filename2) = @ARGV;
+my $records1 = read_records($filename1, minimum_columns => 1, fixed_columns => 1);
+my $records2 = read_records($filename2, minimum_columns => 1, fixed_columns => 1);
+my $rows1 = data_rows($records1);
+my $rows2 = data_rows($records2);
 
-open(F1, "<$filename1") or die "Can't open $filename1: $!. Stopped";
-open(F2, "<$filename2") or die "Can't open $filename2: $!. Stopped";
+my ($count1, $count2) = (scalar @$rows1, scalar @$rows2);
+$count1 == $count2
+    or die "$filename1 and $filename2: data row count mismatch ($count1 != $count2)\n";
 
-while(<F1>) {
-    my $line1 = $_;
-    my $line2 = <F2>;
-    
-    if (/^#/) {
-	# Copy comment lines
-	print $_;
-	next;
-     }
+my @results;
+for my $row (0 .. $count1 - 1) {
+    my ($left, $right) = ($rows1->[$row], $rows2->[$row]);
+    my ($width1, $width2) = (scalar @{$left->{tokens}}, scalar @{$right->{tokens}});
+    my ($where1, $where2) = ("$left->{path}:$left->{line}", "$right->{path}:$right->{line}");
+    $width1 == $width2
+        or die "$where1 and $where2: column count mismatch ($width1 != $width2)\n";
 
-    chomp($line1);
-    chomp($line2);
-	
-    @vals1 = split(' ', $line1);
-    @vals2 = split(' ', $line2);
-	
-    @diff = @vals1;
-    for ($i = 0; $i < @diff; $i++) {
-	$diff[$i] = $vals1[$i] - $vals2[$i];
+    my @output;
+    for my $column (0 .. $width1 - 1) {
+        push @output, finite_result($left->{values}[$column] - $right->{values}[$column],
+                                    "$where1: column " . ($column + 1));
     }
-    print "@diff\n";
+    push @results, \@output;
 }
 
-close(F2);
-close(F1);
+my ($output, $row) = ('', 0);
+for my $record (@$records1) {
+    $output .= $record->{type} eq 'data'
+        ? join(' ', @{$results[$row++]}) . "\n"
+        : $record->{raw};
+}
+print $output;

@@ -4,31 +4,111 @@
 # 10.3.2016 - handles spaces in filenames
 
 use strict;
-use File::Find;
-use Cwd;
-use File::Basename;
+use warnings;
 
-my %seen;
+use Cwd qw(abs_path);
+use File::Basename qw(basename dirname);
+use File::Find qw(find);
+use File::Path qw(remove_tree);
+use File::Temp qw(tempdir tempfile);
 
-my $here = getcwd;
+@ARGV == 0 or die "Usage: compress_leafs_DMFT\n";
 
-find( sub { if (-d && -e "$_/param.loop" && (-d "$_/dmft" && -d "$_/res") || (-e "$_/dmft.tgz" || -e "$_/res.tgz")) { $seen{$File::Find::name}++; delete $seen{$File::Find::dir} }; }, '.' );
+my %candidates;
+find(
+    {
+        no_chdir => 1,
+        wanted => sub {
+            my $path = $File::Find::name;
+            return unless -d $path && !-l $path && -e "$path/param.loop";
+            return unless (-d "$path/dmft" && -d "$path/res")
+                || -e "$path/dmft.tgz" || -e "$path/res.tgz";
 
-#print join "\n", (keys %seen, undef);
+            my $canonical = abs_path($path);
+            defined($canonical) or die "Can't resolve $path: $!\n";
+            my @stat = lstat($path);
+            @stat or die "Can't inspect $path: $!\n";
+            $candidates{$canonical} = [$stat[0], $stat[1]];
+        },
+    },
+    '.',
+);
 
-for $a (keys %seen) {
-    chdir $here;
-    my $dir = dirname($a);
-    chdir $dir;
-    my $target = basename($a);
-    my $here = `pwd`;
-    chomp($here);
-    print "Compressing $target in $here\n";
-    system("tar", "zcvf", "$target.tgz", $target) == 0
-        or die "tar failed for $target in $here\n";
-    system("rm", "-rv", "$target/") == 0
-        or die "rm failed for $target in $here\n";
-#    exit(1);
+my @candidates = sort keys %candidates;
+my @leaves = grep {
+    my $candidate = $_;
+    my $prefix = $candidate eq '/' ? '/' : "$candidate/";
+    !grep { $_ ne $candidate && index($_, $prefix) == 0 } @candidates;
+} @candidates;
+
+for my $source (@leaves) {
+    my $parent = dirname($source);
+    my $target = basename($source);
+    my $archive = "$source.tgz";
+    my $work = tempdir('.dmft-work.XXXXXX', DIR => $parent, CLEANUP => 0);
+    my $quarantined = "$work/$target";
+    if (!rename($source, $quarantined)) {
+        my $error = $!;
+        rmdir($work);
+        die "Can't quarantine $source: $error\n";
+    }
+    my @stat = lstat($quarantined);
+    if (!@stat || $stat[0] != $candidates{$source}[0] || $stat[1] != $candidates{$source}[1]) {
+        rename($quarantined, $source) unless -e $source;
+        rmdir($work);
+        die "Refusing to archive changed directory $source\n";
+    }
+    my ($temporary, $removal_started);
+
+    print "Compressing $target in $parent\n";
+    eval {
+        my $fh;
+        ($fh, $temporary) = tempfile('.dmft.XXXXXX', DIR => $parent,
+                                     SUFFIX => '.tgz', UNLINK => 0);
+        close($fh) or die "Can't finish creating $temporary: $!\n";
+        system('tar', '-zcf', $temporary, '-C', $work, '--', $target) == 0
+            or die "tar creation failed for $source\n";
+        open(my $verify, '-|', 'tar', '-tzf', $temporary)
+            or die "Can't verify $temporary: $!\n";
+        1 while <$verify>;
+        close($verify) or die "tar verification failed for $source\n";
+        my @archive_stat = stat($archive);
+        if (@archive_stat) {
+            chmod($archive_stat[2] & 07777, $temporary)
+                or die "Can't preserve permissions on $archive: $!\n";
+        } else {
+            my $mask = umask;
+            umask($mask);
+            chmod(0666 & ~$mask, $temporary)
+                or die "Can't set permissions on $archive: $!\n";
+        }
+        rename($temporary, $archive)
+            or die "Can't replace $archive: $!\n";
+        undef $temporary;
+
+        $removal_started = 1;
+        my $errors;
+        remove_tree($quarantined, { error => \$errors });
+        if ($errors && @$errors) {
+            my @messages;
+            for my $error (@$errors) {
+                my ($path, $message) = %$error;
+                push @messages, "$path: $message";
+            }
+            die "Can't remove $quarantined: " . join('; ', @messages) . "\n";
+        }
+        rmdir($work) or die "Can't remove quarantine $work: $!\n";
+        1;
+    } or do {
+        my $error = $@ || "Can't archive $source\n";
+        if (defined($temporary) && !unlink($temporary) && -e $temporary) {
+            $error .= "Can't remove temporary archive $temporary: $!\n";
+        }
+        if (!$removal_started && -e $quarantined && !-e $source) {
+            rename($quarantined, $source)
+                or $error .= "Can't restore $source from $quarantined: $!\n";
+        }
+        rmdir($work) if -d $work;
+        die $error;
+    };
 }
-
-    

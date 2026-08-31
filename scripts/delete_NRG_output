@@ -1,12 +1,62 @@
 #!/usr/bin/env perl
 # Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Oct 2008
 
-use File::Path;
+use strict;
+use warnings;
 
-$cnt = 1;
-while (-d $cnt) {
-  if (-e "$cnt/param" && -e "$cnt/data") {
-      rmtree $cnt;
-  }
-  $cnt++;
+use Cwd qw(abs_path);
+use File::Basename qw(basename);
+use File::Path qw(remove_tree);
+use File::Temp qw(tempdir);
+
+@ARGV == 0 or die "Usage: delete_NRG_output\n";
+
+my $cwd = abs_path('.');
+defined($cwd) or die "Can't resolve current directory: $!\n";
+opendir(my $dh, $cwd) or die "Can't open $cwd: $!\n";
+my @names = grep { /\A[1-9][0-9]*\z/ } readdir($dh);
+closedir($dh) or die "Can't finish reading $cwd: $!\n";
+
+my $prefix = $cwd eq '/' ? '/' : "$cwd/";
+my %sources;
+for my $name (sort { length($a) <=> length($b) || $a cmp $b } @names) {
+    my $path = "$cwd/$name";
+    next unless -d $path && !-l $path;
+    next unless -f "$path/param" && !-l "$path/param";
+    next unless -f "$path/data" && !-l "$path/data";
+
+    my $canonical = abs_path($path);
+    defined($canonical) or die "Can't resolve $path: $!\n";
+    index($canonical, $prefix) == 0 && $canonical ne $cwd
+        or die "Refusing to remove $canonical outside $cwd\n";
+    my @stat = lstat($path);
+    @stat or die "Can't inspect $path: $!\n";
+    $sources{$canonical} = [$stat[0], $stat[1]];
+}
+
+for my $source (sort keys %sources) {
+    my $quarantine = tempdir('.nrg-delete.XXXXXX', DIR => $cwd, CLEANUP => 0);
+    my $held = "$quarantine/" . basename($source);
+    if (!rename($source, $held)) {
+        my $error = $!;
+        rmdir($quarantine);
+        die "Can't quarantine $source: $error\n";
+    }
+    my @stat = lstat($held);
+    if (!@stat || $stat[0] != $sources{$source}[0] || $stat[1] != $sources{$source}[1]) {
+        rename($held, $source) unless -e $source;
+        die "Refusing to remove changed directory $source\n";
+    }
+
+    my $errors;
+    remove_tree($held, { error => \$errors });
+    if ($errors && @$errors) {
+        my @messages;
+        for my $error (@$errors) {
+            my ($path, $message) = %$error;
+            push @messages, "$path: $message";
+        }
+        die "Can't remove $held: " . join('; ', @messages) . "\n";
+    }
+    rmdir($quarantine) or die "Can't remove quarantine $quarantine: $!\n";
 }

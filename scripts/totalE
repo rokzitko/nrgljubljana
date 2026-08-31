@@ -1,2 +1,24 @@
-#!/bin/sh
-grep "Total energy:" log | sed "s/Total energy:\s*//"
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use FindBin qw($Bin);
+use lib $Bin;
+use TableIO qw(parse_number);
+
+@ARGV == 0 or die "Usage: totalE\n";
+open(my $fh, '<', 'log') or die "Can't open log for reading: $!\n";
+my (@values, $line_number);
+while (my $line = <$fh>) {
+    $line_number++;
+    $line =~ s/[\r\n]+\z//;
+    next unless $line =~ /\ATotal energy:/;
+    $line =~ /\ATotal energy:\s*(\S+)\s*\z/
+        or die "log:$line_number: malformed Total energy record\n";
+    my $value = $1;
+    parse_number($value, "log:$line_number: Total energy");
+    push @values, $value;
+}
+close($fh) or die "Can't finish reading log: $!\n";
+@values or die "log: no Total energy records\n";
+print "$_\n" for @values;

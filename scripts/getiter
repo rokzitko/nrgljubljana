@@ -8,22 +8,34 @@
 use warnings;
 use strict;
 
-my $dir = shift;
-if (!defined($dir)) {
-    $dir = ".";
+use Fcntl qw(LOCK_EX O_CREAT O_RDWR);
+use FindBin qw($Bin);
+use lib $Bin;
+use TableIO qw(atomic_write);
+
+@ARGV <= 1 or die "Usage: getiter [directory]\n";
+my $dir = shift // '.';
+my $file = "$dir/ITER";
+my $lock_file = "$file.lock";
+
+if (!-e $file) {
+    -l $lock_file and die "Refusing lock symlink $lock_file\n";
+    sysopen(my $lock, $lock_file, O_RDWR | O_CREAT, 0666)
+        or die "Can't open $lock_file: $!\n";
+    flock($lock, LOCK_EX) or die "Can't lock $lock_file: $!\n";
+    atomic_write($file, '0') unless -e $file;
+    close($lock) or die "Can't release $lock_file: $!\n";
 }
-
-my $iter;
-
-my $fn = "$dir/ITER";
-
-if (-e $fn) {
-  chomp($iter = `cat $fn`);
-} else {
-  open(F, ">$fn") or die "Can't open $fn for writing: $!";
-  print F "0";
-  close(F);
-  $iter = 0;
+open(my $fh, '<', $file) or die "Can't open $file: $!\n";
+my $contents = '';
+while (1) {
+    my $bytes = sysread($fh, my $buffer, 8192);
+    defined($bytes) or die "Can't read $file: $!\n";
+    last if $bytes == 0;
+    $contents .= $buffer;
 }
+close($fh) or die "Can't finish $file: $!\n";
 
-print "$iter";
+my ($iter) = $contents =~ /\A([0-9]+)(?:\r?\n)?\z/;
+defined($iter) or die "$file: expected one nonnegative decimal integer\n";
+print STDOUT $iter or die "Can't write iteration: $!\n";

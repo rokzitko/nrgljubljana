@@ -1,18 +1,35 @@
 #!/usr/bin/env perl
-# Collect td files from working subdirectories and join the files.
-# Rok Zitko, rok.zitko@ijs.si, 2008-2020
+# Concatenate a table from numeric [1-9]* directories without sorting.
 
 use strict;
 use warnings;
+use FindBin qw($Bin);
+use lib $Bin;
+use TableIO qw(atomic_write data_rows read_records);
 
-my $prefix = shift;
-defined($prefix) or $prefix = "td";
-
-my $fn = $prefix . ".dat";
-unlink $fn;
-
-foreach (<[1-9]*>) {
-    -d or next;
-    /^\d*$/ or next;
-    system("cat $_/$prefix >>$fn");
+@ARGV <= 1 or die "Usage: gathertd_nosrt [prefix]\n";
+my $prefix = shift // 'td';
+$prefix =~ /\A[^\\\/]+\z/ && $prefix ne '.' && $prefix ne '..'
+    or die "gathertd_nosrt: prefix must be a basename\n";
+my (@parts, $columns, $row_count);
+my $sources = 0;
+for my $dir (<[1-9]*>) {
+    next unless -d $dir && $dir =~ /\A\d+\z/;
+    my $path = "$dir/$prefix";
+    my $records = read_records($path);
+    push @parts, join('', map { $_->{raw} } @$records);
+    my $data = data_rows($records);
+    @$data or die "$path: no data rows\n";
+    for my $record (@$data) {
+        my $width = @{$record->{tokens}};
+        defined($columns) && $width != $columns
+            and die "$path:$record->{line}: expected $columns columns, found $width\n";
+        $columns //= $width;
+        $row_count++;
+    }
+    $sources++;
 }
+
+$sources or die "No $prefix sources found\n";
+$row_count or die "No usable $prefix data rows found\n";
+atomic_write("$prefix.dat", join('', @parts));

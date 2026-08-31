@@ -6,8 +6,13 @@
 # This is potentially useful in DMFT calculations for situation with sharp spectral features.
 # Rok Zitko, 2025-2026
 
-use warnings;
 use strict;
+use warnings;
+
+use FindBin qw($Bin);
+use lib $Bin;
+use POSIX qw(isfinite);
+use TableIO qw(parse_number read_records);
 
 my $smalleps = 1e-38; # Anything smaller than this counts as zero frequency
 
@@ -15,84 +20,113 @@ my $debug = 1;
 my $verbose = 1;
 my $reject_zero = 1;
 
-@ARGV >= 2 or die "Syntax: optimize_mesh <filename> <delta> [dxmin] [miny]\n";
+@ARGV >= 2 && @ARGV <= 4
+    or die "Syntax: optimize_mesh <filename> <delta> [dxmin] [miny]\n";
 
-my $filename = shift; # Input file
-my $delta = shift; # Relative error for adding points, e.g. 1e-2 for pretty high accuracy
-my $dxmin = (@ARGV > 0 ? shift : 1e-12); # Minimum spacing in the mesh
-my $miny = (@ARGV > 0 ? shift : 1e-4); # Do not add points in regions where the value of the function is below $miny
+my ($filename, $delta_text, $dxmin_text, $miny_text) = @ARGV;
+$dxmin_text = 1e-12 unless defined($dxmin_text);
+$miny_text = 1e-4 unless defined($miny_text);
 
-if ($verbose) { print STDERR "optimize_mesh: filename=$filename delta=$delta dxmin=$dxmin miny=$miny\n"; }
+my $delta = parse_number($delta_text, 'optimize_mesh: delta');
+my $dxmin = parse_number($dxmin_text, 'optimize_mesh: dxmin');
+my $miny = parse_number($miny_text, 'optimize_mesh: miny');
+for my $control ([delta => $delta, $delta_text], [dxmin => $dxmin, $dxmin_text],
+                 [miny => $miny, $miny_text]) {
+    $control->[1] >= 0 or die
+        "optimize_mesh: $control->[0] must be nonnegative, got '$control->[2]'\n";
+}
 
-open(F, "<$filename") or die "Can't open $filename: $!";
-
-my $p; # previous line from the input file
-my $pp; # and the line before the previous
-my $previousremoved = ""; # last line that had been removed
+my $records = read_records($filename, columns => 2);
 
 my $maxrel = 0; # maximum relative error encountered in the file 
 my $nradd = 0; # number of mesh points added
 
 my $cntorig = 0;
 my $cntfinal = 0;
+my @history;
+my $output = '';
+my $diagnostics = '';
 
-my $line;
-my $x;
-my $y;
-while (<F>) {
-  chomp($line = $_);
-  $line =~ s/^\s+(.*)/$1/;
-
-  if (/^#/) {
-    print;
-  } else {
-      $cntorig++;
-      if (defined($p) && defined($pp)) {
-          $line =~ /(\S*)\s*(\S*)/ or die; # current
-          $x = $1;
-          $y = $2;
-          $pp =~ /(\S*)\s*(\S*)/ or die; # current-2
-          my $x1 = $1;
-          my $y1 = $2;
-          $p =~ /(\S*)\s*(\S*)/ or die; # current-1 (previous)
-          my $x2 = $1;
-          my $y2 = $2;
-          my $slope = ($y2-$y1)/($x2-$x1);
-          my $yest = $y2 + $slope * ($x-$x2); # linear extrapolation
-          my $error = abs($y - $yest);
-          my $rel = 2.0 * $error / (abs($y) + abs($yest));
-          $maxrel = ($rel > $maxrel ? $rel : $maxrel);
-
-          if ($rel > $delta && abs($x-$x2) > $dxmin && (abs($y)+abs($y2))>2.0*$miny) { # Error too large, adding point (between previous and current)
-              my $x0 = $x2 + ($x-$x2)/2.0;
-              if (!($reject_zero && abs($x0) < $smalleps)) {
-                  my $slope2 = ($y-$y2)/($x-$x2);
-                  my $y0 = $y2 + $slope2 * ($x-$x2)/2.0;
-                  if ($debug) { print STDERR "$x0 $y0 ADDED error=$error rel=$rel\n"; }
-                  print "$x0 $y0\n";
-                  $cntfinal++;
-                  $nradd++;
-              } else {
-                  if ($debug) { print STDERR "Not adding point at 0: $x0\n"; }
-              }
-          }
-          print "$x $y\n";
-          $cntfinal++;
-      } else {
-          print "$line\n";
-          $cntfinal++;
-      }
-      if (defined($p)) {
-          $pp = $p;
-      }
-      $p = $line;
-  }
+sub finite_intermediate {
+    my ($value, $where, $description) = @_;
+    isfinite($value) or die "$where: nonfinite $description\n";
+    return $value;
 }
 
-# Safeguard: never drop the last mesh point
-if ($previousremoved eq $line) {
-    print "$line\n";
+for my $record (@$records) {
+    if ($record->{type} ne 'data') {
+        $output .= $record->{raw};
+        next;
+    }
+
+    $cntorig++;
+    my ($x, $y) = @{$record->{values}};
+    my $where = "$record->{path}:$record->{line}";
+    if (@history) {
+        my $previous = $history[-1];
+        $x != $previous->{values}[0] or die
+            "$where: duplicate adjacent x '$record->{tokens}[0]' "
+            . "(previous data row at line $previous->{line})\n";
+    }
+
+    if (@history >= 2) {
+        my ($pp, $p) = @history[-2, -1];
+        my ($x1, $y1) = @{$pp->{values}};
+        my ($x2, $y2) = @{$p->{values}};
+        my $previous_dx = finite_intermediate($x2 - $x1, $where, 'previous x spacing');
+        my $previous_dy = finite_intermediate($y2 - $y1, $where, 'previous y difference');
+        my $slope = finite_intermediate($previous_dy / $previous_dx, $where,
+                                        'extrapolation slope');
+        my $dx = finite_intermediate($x - $x2, $where, 'current x spacing');
+        my $step = finite_intermediate($slope * $dx, $where, 'extrapolation step');
+        my $yest = finite_intermediate($y2 + $step, $where, 'predicted value');
+        my $scale = abs($y) > abs($yest) ? abs($y) : abs($yest);
+        my ($error, $rel) = (0, 0);
+        if ($scale != 0) {
+            my $scaled_error = abs($y / $scale - $yest / $scale);
+            my $scaled_sum = abs($y / $scale) + abs($yest / $scale);
+            $rel = finite_intermediate(2 * $scaled_error / $scaled_sum, $where,
+                                       'relative error');
+            $error = $scale * $scaled_error;
+            $error = 'overflow' unless isfinite($error);
+        }
+        $maxrel = $rel if $rel > $maxrel;
+
+        if ($rel > $delta && abs($dx) > $dxmin) {
+            my $activity = abs($y) / 2 + abs($y2) / 2;
+            if ($activity > $miny) {
+                my $x0 = finite_intermediate($x2 + $dx / 2, $where, 'midpoint x');
+                if (!($reject_zero && abs($x0) < $smalleps)) {
+                    my $dy = finite_intermediate($y - $y2, $where, 'current y difference');
+                    my $slope2 = finite_intermediate($dy / $dx, $where,
+                                                     'midpoint slope');
+                    my $midpoint_step = finite_intermediate($slope2 * $dx, $where,
+                                                            'midpoint step');
+                    my $y0 = finite_intermediate($y2 + $midpoint_step / 2, $where,
+                                                 'midpoint y');
+                    $diagnostics .= "$x0 $y0 ADDED error=$error rel=$rel\n" if $debug;
+                    $output .= "$x0 $y0\n";
+                    $cntfinal++;
+                    $nradd++;
+                } elsif ($debug) {
+                    $diagnostics .= "Not adding point at 0: $x0\n";
+                }
+            }
+        }
+    }
+
+    $output .= $record->{raw};
     $cntfinal++;
+    push @history, $record;
 }
 
-if ($verbose) { print STDERR "optimize_mesh: max_relative_error=$maxrel added=$nradd --- before=$cntorig after=$cntfinal\n"; }
+if ($verbose) {
+    print STDERR "optimize_mesh: filename=$filename delta=$delta_text "
+        . "dxmin=$dxmin_text miny=$miny_text\n";
+}
+print STDERR $diagnostics if length($diagnostics);
+print STDOUT $output or die "Can't write standard output: $!\n";
+if ($verbose) {
+    print STDERR "optimize_mesh: max_relative_error=$maxrel added=$nradd "
+        . "--- before=$cntorig after=$cntfinal\n";
+}

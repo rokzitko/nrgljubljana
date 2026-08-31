@@ -1,41 +1,93 @@
 #!/usr/bin/perl
-# Integrate column data by trapezoid rule - MOMENTS CALCULATION
-# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Feb, Jun 2008
+# Integrate moments of a piecewise-linear two-column table.
 
+use strict;
 use warnings;
+use FindBin qw($Bin);
+use lib $Bin;
+use POSIX qw(isfinite);
+use TableIO qw(data_rows read_records);
 
-$xprev = 0;
-$yprev = 0;
-$sum1 = 0;
-$sum2 = 0;
-$sum3 = 0;
-$sum4 = 0;
+my $order;
+while (@ARGV) {
+    if ($ARGV[0] eq '--') {
+        shift @ARGV;
+        last;
+    }
+    last if $ARGV[0] eq '-' || $ARGV[0] !~ /^-/;
 
-while (<>) {
-  chomp;
-  @d = split;
-  $x = $d[0];
-  $y = $d[1];
-  
-  if ($. != 1) {
-    my $f = ($y + $yprev)/2.0;
-    my $xavg = ($x + $xprev)/2.0;
-    my $integrand1 = $f * $xavg; # First moment
-    my $integrand2 = $f * $xavg**2; # Second moment
-    my $integrand3 = $f * $xavg**3; 
-    my $integrand4 = $f * $xavg**4; 
-    my $width = $x - $xprev;
-    $sum1 += $width * $integrand1;
-    $sum2 += $width * $integrand2;
-    $sum3 += $width * $integrand3;
-    $sum4 += $width * $integrand4;
-  }
-  
-  $xprev = $x;
-  $yprev = $y;
+    my $option = shift @ARGV;
+    if ($option eq '--order') {
+        defined($order) and die "moments: --order may only be specified once\n";
+        @ARGV or die "moments: --order requires a value\n";
+        $order = shift @ARGV;
+        $order =~ /\A[1-4]\z/
+            or die "moments: order must be an integer from 1 through 4\n";
+    } else {
+        die "moments: unknown option '$option'\n";
+    }
 }
 
-print "$sum1\n";
-print "$sum2\n";
-print "$sum3\n";
-print "$sum4\n";
+my @paths = @ARGV ? @ARGV : ('-');
+scalar(grep { $_ eq '-' } @paths) <= 1
+    or die "moments: standard input may be specified only once\n";
+my @rows;
+for my $path (@paths) {
+    push @rows, @{data_rows(read_records($path, columns => 2))};
+}
+@rows >= 2
+    or die "moments: expected at least 2 data rows, found " . scalar(@rows) . "\n";
+
+for my $row (1 .. $#rows) {
+    my ($previous, $current) = @rows[$row - 1, $row];
+    my ($x0, $x1) = ($previous->{values}[0], $current->{values}[0]);
+    $x1 > $x0 or die "$current->{path}:$current->{line}: x coordinate $x1 "
+        . "must be greater than $previous->{path}:$previous->{line} ($x0)\n";
+}
+
+my @orders = defined($order) ? ($order) : (1 .. 4);
+my @binomial = (undef, [1, 1], [1, 2, 1], [1, 3, 3, 1], [1, 4, 6, 4, 1]);
+my (@sum, @correction);
+$sum[$_] = $correction[$_] = 0 for @orders;
+
+for my $row (1 .. $#rows) {
+    my ($left, $right) = @rows[$row - 1, $row];
+    my ($x0, $y0) = @{$left->{values}};
+    my ($x1, $y1) = @{$right->{values}};
+    my $dx = $x1 - $x0;
+    my ($center, $radius) = isfinite($dx)
+        ? ($x0 + $dx / 2, $dx / 2)
+        : ($x0 / 2 + $x1 / 2, $x1 / 2 - $x0 / 2);
+    my $dy = $y1 - $y0;
+    my ($middle_y, $half_dy) = isfinite($dy)
+        ? ($y0 + $dy / 2, $dy / 2)
+        : ($y0 / 2 + $y1 / 2, $y1 / 2 - $y0 / 2);
+
+    for my $n (@orders) {
+        my $segment = 0;
+        # In centered coordinates, only even powers of u survive integration.
+        for my $k (0 .. $n) {
+            my $weight = $k % 2
+                ? $half_dy / ($k + 2)
+                : $middle_y / ($k + 1);
+            $segment += 2 * $binomial[$n][$k] * $center ** ($n - $k)
+                * $radius ** ($k + 1) * $weight;
+            isfinite($segment) or die
+                "$right->{path}:$right->{line}: moment $n produced a nonfinite segment\n";
+        }
+
+        my $total = $sum[$n] + $segment;
+        isfinite($total) or die
+            "$right->{path}:$right->{line}: moment $n produced a nonfinite total\n";
+        $correction[$n] += abs($sum[$n]) >= abs($segment)
+            ? ($sum[$n] - $total) + $segment
+            : ($segment - $total) + $sum[$n];
+        $sum[$n] = $total;
+    }
+}
+
+for my $n (@orders) {
+    my $result = $sum[$n] + $correction[$n];
+    isfinite($result) or die "moments: moment $n is nonfinite\n";
+    printf "%.17g\n", $result;
+}

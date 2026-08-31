@@ -1,18 +1,32 @@
 #!/usr/bin/env perl
-# Collect custom files from working subdirectories and join the files.
-# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Nov 2008, Aug 2009
+# Concatenate custom tables from [1-9]* directories without sorting.
 
 use strict;
 use warnings;
+use FindBin qw($Bin);
+use lib $Bin;
+use TableIO qw(atomic_write data_rows read_records);
 
-my @dirs = <[1-9]*>;
-
-my $fn = "custom.dat";
-unlink $fn;
-
-foreach (@dirs) {
-    my $dir = $_;
-    if (-d $dir) {
-	system("cat $dir/custom >>$fn");
+@ARGV == 0 or die "Usage: gathercustom_nosrt\n";
+my (@parts, $columns, $row_count);
+my $sources = 0;
+for my $dir (<[1-9]*>) {
+    next unless -d $dir;
+    my $path = "$dir/custom";
+    my $records = read_records($path);
+    push @parts, join('', map { $_->{raw} } @$records);
+    my $data = data_rows($records);
+    @$data or die "$path: no data rows\n";
+    for my $record (@$data) {
+        my $width = @{$record->{tokens}};
+        defined($columns) && $width != $columns
+            and die "$path:$record->{line}: expected $columns columns, found $width\n";
+        $columns //= $width;
+        $row_count++;
     }
+    $sources++;
 }
+
+$sources or die "No custom sources found\n";
+$row_count or die "No usable custom data rows found\n";
+atomic_write('custom.dat', join('', @parts));

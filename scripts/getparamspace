@@ -3,25 +3,22 @@
 # This version uses space separated (keyword value) pairs
 # Rok Zitko, rok.zitko@ijs.si, April 2008
 
-if (@ARGV != 1 && @ARGV != 2) {
-    die "Usage: getparam <keyword> [param filename]\n";
+use strict;
+use warnings;
+
+@ARGV == 1 || @ARGV == 2
+    or die "Usage: getparamspace <keyword> [param filename]\n";
+my ($keyword, $file) = @ARGV;
+$file //= 'param';
+
+open(my $fh, '<', $file) or die "Can't open $file for reading: $!\n";
+my @values;
+while (my $line = <$fh>) {
+    push @values, $1 if $line =~ /^\s*\Q$keyword\E[ \t]+(\S+)/;
 }
+close($fh) or die "Can't finish reading $file: $!\n";
 
-my $keyword = $ARGV[0];
-
-my $fn;
-if (@ARGV == 1) {
-    $fn = "param";
-} else {
-    $fn = $ARGV[1];
-}
-
-open (F, "<$fn") or die "Can't open $fn for reading: $!\n";
-
-while (<F>) {
-    if (/^$keyword (\S*)/) {
-	print "$1\n";
-    }
-}
-
-close(F);
+@values == 1
+    or die @values ? "getparamspace: Keyword $keyword is ambiguous in $file\n"
+                   : "getparamspace: Keyword $keyword not found in $file\n";
+print STDOUT "$values[0]\n" or die "Can't write parameter: $!\n";

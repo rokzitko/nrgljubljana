@@ -5,38 +5,19 @@
 use strict;
 use warnings;
 
-my $verbose = 0;
+@ARGV == 1 || @ARGV == 2
+    or die "Usage: getparam <keyword> [param filename]\n";
+my ($keyword, $file) = @ARGV;
+$file //= 'param';
 
-if (@ARGV != 1 && @ARGV != 2) {
-    die "Usage: getparam <keyword> [param filename]\n";
+open(my $fh, '<', $file) or die "Can't open $file for reading: $!\n";
+my @values;
+while (my $line = <$fh>) {
+    push @values, $1 if $line =~ /^\s*\Q$keyword\E\s*=\s*(.*)/;
 }
+close($fh) or die "Can't finish reading $file: $!\n";
 
-my $keyword = $ARGV[0];
-
-if ($verbose) {
-    print "keyword=$keyword\n";
-}
-
-my $fn;
-if (@ARGV == 1) {
-    $fn = "param";
-} else {
-    $fn = $ARGV[1];
-}
-
-if ($verbose) {
-    print "fn=$fn\n";
-}
-
-open (F, "<$fn") or die "Can't open $fn for reading: $!\n";
-
-while (<F>) {
-    if (/^\s*$keyword\s*=\s*(.*)/) {
-        print "$1\n";
-        exit(0);
-    }
-}
-
-close(F);
-
-print STDERR "getparam: Keyword $keyword not found!\n";
+@values == 1
+    or die @values ? "getparam: Keyword $keyword is ambiguous in $file\n"
+                   : "getparam: Keyword $keyword not found in $file\n";
+print STDOUT "$values[0]\n" or die "Can't write parameter: $!\n";

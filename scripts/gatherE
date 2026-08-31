@@ -1,24 +1,41 @@
 #!/usr/bin/env perl
-# Collect total energy data from working subdirectories, join the files
-# and sort the data numerically.
-# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Nov 2008, March 2009
+# Collect every Total energy record from completed numeric runs.
 
 use strict;
 use warnings;
+use FindBin qw($Bin);
+use lib $Bin;
+use TableIO qw(atomic_write parse_number);
 
-my @dirs = <[1-9]*>;
-@dirs = sort { $a <=> $b } @dirs;
-print @dirs;
-print "\n";
+@ARGV == 0 or die "Usage: gatherE\n";
+opendir(my $dh, '.') or die "Can't open current directory: $!\n";
+my @dirs = sort { $a <=> $b || $a cmp $b }
+           grep { /\A\d+\z/ && -d $_ } readdir($dh);
+closedir($dh) or die "Can't finish reading current directory: $!\n";
 
-my $fn = "E.dat";
-unlink $fn;
-
-foreach (@dirs) {
-    my $dir = $_;
-    if (-d $dir && -e "$dir/DONE") {
-        system("cd $dir ; totalE");
-	system("cd $dir ; totalE >>../$fn");
+my (@values, $sources);
+for my $dir (@dirs) {
+    next unless -e "$dir/DONE";
+    my $path = "$dir/log";
+    open(my $fh, '<', $path) or die "Can't open $path for reading: $!\n";
+    my ($line_number, $matches) = (0, 0);
+    while (my $line = <$fh>) {
+        $line_number++;
+        $line =~ s/[\r\n]+\z//;
+        next unless $line =~ /\ATotal energy:/;
+        $line =~ /\ATotal energy:\s*(\S+)\s*\z/
+            or die "$path:$line_number: malformed Total energy record\n";
+        my $value = $1;
+        parse_number($value, "$path:$line_number: Total energy");
+        push @values, $value;
+        $matches++;
     }
+    close($fh) or die "Can't finish reading $path: $!\n";
+    $matches or die "$path: no Total energy records\n";
+    $sources++;
 }
 
+$sources or die "No completed numeric run logs found\n";
+my $content = join('', map { "$_\n" } @values);
+atomic_write('E.dat', $content);
+print join('', @dirs), "\n", $content;

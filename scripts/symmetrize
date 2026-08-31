@@ -4,42 +4,63 @@
 # WARNING: the file is overwritten!
 # Rok Zitko, rok.zitko@ijs.si, April 2009
 
-use warnings;
 use strict;
+use warnings;
 
-my $fn = shift;
-unless(defined($fn)) {
-    die "Usage: symmetrize <filename>.";
+use FindBin qw($Bin);
+use lib $Bin;
+use POSIX qw(isfinite);
+use TableIO qw(atomic_write data_rows read_records);
+
+@ARGV == 1 or die "Usage: symmetrize <filename>\n";
+my $filename = $ARGV[0];
+
+$filename ne '-' or die "symmetrize: standard input cannot be replaced\n";
+-l $filename and die "symmetrize: refusing to replace symlink '$filename'\n";
+
+my $records = read_records($filename, columns => 2);
+my $rows = data_rows($records);
+@$rows or die "$filename: no data rows\n";
+
+my $tolerance = 1e-8;
+for my $index (0 .. int(@$rows / 2) - 1) {
+    my $left = $rows->[$index];
+    my $right = $rows->[@$rows - $index - 1];
+    my ($left_x, $right_x) = ($left->{values}[0], $right->{values}[0]);
+    my $scale = abs($left_x) > abs($right_x) ? abs($left_x) : abs($right_x);
+    $scale != 0 or die
+        "$filename:$left->{line} and line $right->{line}: zero is allowed only at the center\n";
+    my $relative_error = 0;
+    my ($scaled_left, $scaled_right) = ($left_x / $scale, $right_x / $scale);
+    $relative_error = 2 * abs($scaled_left + $scaled_right)
+        / (abs($scaled_left) + abs($scaled_right));
+    $relative_error <= $tolerance or die
+        "$filename:$left->{line} and line $right->{line}: x values "
+        . "'$left->{tokens}[0]' and '$right->{tokens}[0]' do not mirror\n";
+
+    my $average = $left->{values}[1] == $right->{values}[1]
+        ? $left->{values}[1]
+        : $left->{values}[1] / 2 + $right->{values}[1] / 2;
+    isfinite($average) or die
+        "$filename:$left->{line} and line $right->{line}: nonfinite y average\n";
+    $left->{output_y} = $average;
+    $right->{output_y} = $average;
 }
 
-open(F, "<$fn") or die "Can't open $fn for reading.";
-
-my @x = ();
-my @y = ();
-
-while (<F>) {
-    chomp;
-    my @d = split;
-    push(@x, $d[0]);
-    push(@y, $d[1]);
+if (@$rows % 2) {
+    my $center = $rows->[int(@$rows / 2)];
+    $center->{values}[0] == 0 or die
+        "$filename:$center->{line}: odd grid requires an exact numeric zero center\n";
 }
 
-close(F);
-
-my $len = @x;
-
-($len == @y) or die "Lengths don't match.";
-
-($len % 2 == 0) or die "The number of lines is not even.";
-
-open(F, ">$fn") or die "Can't open $fn for writing.";
-
-for (my $i = 0; $i < $len; $i++) {
-    my $omega = $x[$i];
-    # Note: we don't check if $x[$i] == - $x[$len-$i-1]
-    my $yavg = ($y[$i] + $y[$len-$i-1])/2.0;
-    print F "$omega $yavg\n";
+my $output = '';
+for my $record (@$records) {
+    if ($record->{type} eq 'data') {
+        my $y = exists($record->{output_y}) ? $record->{output_y} : $record->{tokens}[1];
+        $output .= $record->{tokens}[0] . " $y\n";
+    } else {
+        $output .= $record->{raw};
+    }
 }
 
-close(F);
-    
+atomic_write($filename, $output, $filename);

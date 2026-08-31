@@ -1,24 +1,49 @@
 #!/usr/bin/env perl
-# Collect td files from working subdirectories, join the files
-# and sort the data numerically.
-# Rok Zitko, zitko@theorie.physik.uni-goettingen.de, Nov 2008
+# Collect completed td tables and sort their data by the first column.
 
 use strict;
 use warnings;
+use FindBin qw($Bin);
+use lib $Bin;
+use TableIO qw(atomic_write read_records);
 
-my @dirs = <[1-9]*>;
-
-my $fn = "td.dat";
-my $fntmp = "$fn.tmp";
-unlink $fntmp;
-
-foreach (@dirs) {
-    my $dir = $_;
-    if (-d $dir && -e "$dir/DONE") {
-	system("cat $dir/td >>$fntmp");
+@ARGV == 0 or die "Usage: gathertd\n";
+my (@headers, @rows, $columns);
+my ($sources, $sequence) = (0, 0);
+for my $dir (<[1-9]*>) {
+    next unless -d $dir && -e "$dir/DONE";
+    my $path = "$dir/td";
+    my $records = read_records($path);
+    my (@source_headers, $seen_data, $source_rows);
+    for my $record (@$records) {
+        if ($record->{type} eq 'comment') {
+            $seen_data and die "$path: comments after data cannot be sorted safely\n";
+            (my $line = $record->{raw}) =~ s/[\r\n]+\z//;
+            push @source_headers, $line;
+            next;
+        }
+        next unless $record->{type} eq 'data';
+        $seen_data = 1;
+        $source_rows++;
+        my $width = @{$record->{tokens}};
+        defined($columns) && $width != $columns
+            and die "$path:$record->{line}: expected $columns columns, found $width\n";
+        $columns //= $width;
+        (my $line = $record->{raw}) =~ s/[\r\n]+\z//;
+        push @rows, [$record->{values}[0], $sequence++, "$line\n"];
     }
+    $source_rows or die "$path: no data rows\n";
+    if (!$sources) {
+        @headers = @source_headers;
+    } elsif (@source_headers != @headers
+             || grep { $source_headers[$_] ne $headers[$_] } 0 .. $#headers) {
+        die "$path: headers do not match the first completed run\n";
+    }
+    $sources++;
 }
 
-if (-e $fntmp) {
-  system "sortnum $fntmp >$fn";
-}
+$sources or die "No completed td sources found\n";
+@rows or die "No usable td data rows found\n";
+@rows = sort { $a->[0] <=> $b->[0] || $a->[1] <=> $b->[1] } @rows;
+my $content = join('', map { "$_\n" } @headers) . join('', map { $_->[2] } @rows);
+atomic_write('td.dat', $content);

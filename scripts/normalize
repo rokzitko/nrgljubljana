@@ -6,15 +6,43 @@
 use strict;
 use warnings;
 
-if (@ARGV != 1) {
-  die ("Usage: normalize <filename>\n");
+use FindBin qw($Bin);
+use File::Temp qw(tempfile);
+use lib $Bin;
+use POSIX qw(isfinite);
+use TableIO qw(parse_number read_records);
+
+@ARGV == 1 or die "Usage: normalize <filename>\n";
+my $file = shift;
+my $records = read_records($file, columns => 2);
+my ($snapshot_fh, $snapshot) = tempfile();
+print {$snapshot_fh} map { $_->{raw} } @$records
+    or die "Can't write normalization snapshot: $!\n";
+close($snapshot_fh) or die "Can't finish normalization snapshot: $!\n";
+
+open(my $integrate, '-|', 'integrate', $snapshot)
+    or die "Can't run integrate: $!\n";
+my $integral_output = do { local $/; <$integrate> };
+$integral_output = '' unless defined $integral_output;
+my $integrate_ok = close($integrate);
+unlink($snapshot) or die "Can't remove normalization snapshot: $!\n";
+$integrate_ok or die "integrate failed for $file\n";
+
+my @scalars = $integral_output =~ /(\S+)/g;
+@scalars == 1 or die "integrate returned " . scalar(@scalars) . " values for $file\n";
+my $norm = parse_number($scalars[0], "integral of $file");
+$norm != 0 or die "integral of $file is zero\n";
+
+my $output = '';
+for my $record (@$records) {
+    if ($record->{type} eq 'data') {
+        my $value = $record->{values}[1] / $norm;
+        isfinite($value)
+            or die "$file:$record->{line}: normalization produced a nonfinite value\n";
+        $output .= "$record->{tokens}[0] $value\n";
+    } else {
+        $output .= $record->{raw};
+    }
 }
 
-my $fn = shift;
-
-chomp(my $norm = `integrate $fn`);
-
-my $invnorm = 1.0/$norm;
-
-system "scaleby $invnorm $fn";
-
+print STDOUT $output or die "Can't write normalized table: $!\n";

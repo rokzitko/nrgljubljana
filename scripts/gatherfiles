@@ -1,28 +1,87 @@
 #!/usr/bin/env perl
-# Traverses subdirectories and collects the results from */[filename]
-# The directory names are expected in the form PARAM1=VALUE1_PARAM2=VALUE2.
-# PARAMx_ prefixes are stripped, as well as all the underscores. The resulting string is used
-# as the initial column(s) for the output file.
-# RZ, 2025
+# Collect a named table from KEY=VALUE[_KEY=VALUE...] directories.
 
-if (@ARGV != 1) {
-  die "Syntax: gatherfiles [filename]\n";
-}
+use strict;
+use warnings;
+use FindBin qw($Bin);
+use lib $Bin;
+use TableIO qw(atomic_write parse_number read_records);
 
+@ARGV == 1 or die "Syntax: gatherfiles [filename]\n";
 my $target = shift;
+$target =~ /\A[^\\\/]+\z/ && $target ne '.' && $target ne '..'
+    or die "gatherfiles: filename must be a basename\n";
+my (@keys, @comments, @rows, @unsorted);
+my ($sources, $columns, $sequence) = (0, undef, 0);
 
-open (O, "|sortnum >$target") or die;
+for my $dir (<*>) {
+    next unless -d $dir && -e "$dir/$target";
+    my (@source_keys, @prefix, @numeric_prefix, %seen_key);
+    for my $part (split /_/, $dir, -1) {
+        $part =~ /\A([^_=]+)=([^_=]+)\z/
+            or die "$dir: expected KEY=VALUE[_KEY=VALUE...] directory name\n";
+        my ($key, $value) = ($1, $2);
+        $seen_key{$key}++ and die "$dir: duplicate key '$key'\n";
+        push @source_keys, $key;
+        push @prefix, $value;
+        push @numeric_prefix, parse_number($value, "$dir: value for $key");
+    }
+    if (!$sources) {
+        @keys = @source_keys;
+    } elsif (@source_keys != @keys
+             || grep { $source_keys[$_] ne $keys[$_] } 0 .. $#keys) {
+        die "$dir: parameter keys do not match the first source\n";
+    }
 
-foreach (<*>) {
-  -d or next;
-  $dir = $_;
-  if (-s "$dir/$target") {
-    $y = `cat $dir/$target`;
-    chomp($y);
-    $x = $dir;
-    $x =~ s/([^_=]*)=//g;
-    $x =~ s/_/ /g;
-    print "$x $y\n";
-    print O "$x $y\n";
-  }
+    my $path = "$dir/$target";
+    my $records = read_records($path);
+    my ($data_rows, $seen_data) = (0, 0);
+    my @source_comments;
+    for my $record (@$records) {
+        if ($record->{type} eq 'comment') {
+            $seen_data and die "$path: comments after data cannot be sorted safely\n";
+            (my $line = $record->{raw}) =~ s/[\r\n]+\z//;
+            push @source_comments, $line;
+            next;
+        }
+        next unless $record->{type} eq 'data';
+        $seen_data = 1;
+        $data_rows++;
+        my $width = @{$record->{tokens}};
+        defined($columns) && $width != $columns
+            and die "$path:$record->{line}: expected $columns columns, found $width\n";
+        $columns //= $width;
+        my @tokens = (@prefix, @{$record->{tokens}});
+        my $line = join(' ', @tokens) . "\n";
+        push @rows, [$numeric_prefix[0], $sequence++, $line];
+        push @unsorted, $line;
+    }
+    $data_rows or die "$path: no data rows\n";
+    if (!$sources) {
+        @comments = @source_comments;
+    } elsif (@source_comments != @comments
+             || grep { $source_comments[$_] ne $comments[$_] } 0 .. $#comments) {
+        die "$path: comments do not match the first source\n";
+    }
+    $sources++;
 }
+
+$sources or die "No $target sources found\n";
+@rows or die "No usable $target data rows found\n";
+if (@comments) {
+    my @names = split ' ', $comments[-1];
+    shift(@names) eq '#' && @names == $columns
+        or die "$target: final comment does not describe $columns columns\n";
+    $comments[-1] = '# ' . join(' ', @keys, @names);
+    if (@comments > 1) {
+        my @numbers = split ' ', $comments[-2];
+        if (shift(@numbers) eq '#' && @numbers == $columns
+            && !grep { !/\A\d+\z/ } @numbers) {
+            $comments[-2] = '# ' . join(' ', 1 .. scalar(@keys) + $columns);
+        }
+    }
+}
+@rows = sort { $a->[0] <=> $b->[0] || $a->[1] <=> $b->[1] } @rows;
+my $content = join('', map { "$_\n" } @comments) . join('', map { $_->[2] } @rows);
+atomic_write($target, $content);
+print @unsorted;

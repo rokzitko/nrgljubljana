@@ -2,8 +2,12 @@
 # Determine the union of mesh points from two files (taking the first columns).
 # Rok Zitko, 2025-2026
 
-use warnings;
 use strict;
+use warnings;
+
+use FindBin qw($Bin);
+use lib $Bin;
+use TableIO qw(data_rows read_records);
 
 my $smalleps = 1e-38; # Anything smaller than this counts as zero frequency
 
@@ -12,64 +16,57 @@ my $debug = 0;
 
 @ARGV == 2 or die "Syntax: mesh_union <filename1> <filename2>\n";
 
-my $filename1 = shift;
-my $filename2 = shift;
+my ($filename1, $filename2) = @ARGV;
+my $records1 = read_records($filename1, minimum_columns => 1, numeric_columns => 1);
+my $records2 = read_records($filename2, minimum_columns => 1, numeric_columns => 1);
+my $rows1 = data_rows($records1);
+my $rows2 = data_rows($records2);
+my ($cnt1, $cnt2) = (scalar(@$rows1), scalar(@$rows2));
 
-if ($verbose) { print STDERR "mesh_union: filename1=$filename1 filename2=$filename2\n"; }
-
-my @mesh;
-
-my $cnt1 = 0;
-open(F, "<$filename1") or die "Can't open $filename1: $!";
-while (<F>) {
-    chomp(my $line = $_);
-    $line =~ s/^\s+(.*)/$1/;
-    next if /^#/;
-    my ($x, $rest) = split(' ', $line);
-    push(@mesh, $x);
-    $cnt1++;
-}
-close(F);
-
-my $cnt2 = 0;
-open(F, "<$filename2") or die "Can't open $filename2: $!";
-while (<F>) {
-    chomp(my $line = $_);
-    $line =~ s/^\s+(.*)/$1/;
-    next if /^#/;
-    my ($x, $rest) = split(' ', $line);
-    push(@mesh, $x);
-    $cnt2++;
-}
-close(F);
-
-my @inverted_mesh;
-foreach(@mesh) {
-    push(@inverted_mesh, -$_);
-}
-
-my @symmetrized_mesh = (@mesh, @inverted_mesh);
-my @sorted_mesh = sort { $a <=> $b } @symmetrized_mesh;
+my @magnitudes = map {
+    my $magnitude = abs($_->{values}[0]);
+    $magnitude < $smalleps ? 0 : $magnitude;
+} (@$rows1, @$rows2);
+@magnitudes = sort { $a <=> $b } @magnitudes;
 
 my $tol = 1e-8; # threshold for detecting duplicates (relative difference!)
-
-my $cnt = 0;
-my $prev;
-foreach(@sorted_mesh) {
-    if (!defined($prev)) {
-        print "$_ 0\n"; # 0 as 2nd (y) element
-        $cnt++;
-    } else {
-        my $different_enough = 2.0*abs($prev-$_)/(abs($prev)+abs($_)+$smalleps) > $tol;
-        if ($different_enough) {
-            print "$_ 0\n";
-            $cnt++;
+my @retained;
+my $diagnostics = '';
+for my $candidate (@magnitudes) {
+    my $different_enough = 1;
+    if (@retained) {
+        my $previous = $retained[-1];
+        if ($candidate == 0) {
+            $different_enough = 0;
         } else {
-            if ($debug) { print STDERR "DROPPING $_\n"; }
+            my $ratio = $previous / $candidate;
+            my $relative_difference = 2 * (1 - $ratio)
+                / (1 + $ratio + $smalleps / $candidate);
+            $different_enough = $relative_difference > $tol;
         }
     }
-    $prev = $_;
+    if ($different_enough) {
+        push @retained, $candidate;
+    } elsif ($debug) {
+        $diagnostics .= "DROPPING $candidate\n";
+    }
 }
+
+my @positive = grep { $_ > 0 } @retained;
+my $has_zero = @retained && $retained[0] == 0;
+my $output = '';
+for my $magnitude (reverse @positive) {
+    $output .= (-$magnitude) . " 0\n";
+}
+$output .= "0 0\n" if $has_zero;
+for my $magnitude (@positive) {
+    $output .= "$magnitude 0\n";
+}
+my $cnt = 2 * @positive + ($has_zero ? 1 : 0);
+
+if ($verbose) { print STDERR "mesh_union: filename1=$filename1 filename2=$filename2\n"; }
+print STDERR $diagnostics if length($diagnostics);
+print STDOUT $output or die "Can't write standard output: $!\n";
 
 # Note: typically cnt>cnt1,cnt2, even if one grid fully covers all the points of the other grid,
 # because the script also symmetrizes the final mesh.

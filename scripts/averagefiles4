@@ -4,58 +4,47 @@
 
 use strict;
 use warnings;
+use FindBin qw($Bin);
+use lib $Bin;
+use TableIO qw(data_rows read_records scaled_mean);
 
-my $Nz = @ARGV; # number of filenames
-    
-# Algorithm: just sum both columns and divide the sums by Nz at the
-# end. No attempt is made to check for the sanity of input files.
-my @sumx; 
-my @sumy;
-my @sumz;
-my @sumw;
-    
-for (my $i = 0; $i < $Nz; $i++) {
-    my $filename = $ARGV[$i];
-    open(F, "<$filename") or die "Can't open $filename: $!\n";
-	
-    my $cnt = 0; # line counter
-    while (<F>) {
-	chomp;
-	if (/^#/) { # skip comment lines
-	    next;
-	}
-	
-	my $line = $_;
-	$line =~ s/^\s+(.*)/$1/; # strip leading white space
-	my @vals = split(/\s+/, $line); # split on whitespace
-	my $x = $vals[0];
-	my $y = $vals[1];
-	my $z = $vals[2];
-	my $w = $vals[3];
-	
-	if ($i == 0) { 
-	    push(@sumx, $x); # push back in the first iteration
-	    push(@sumy, $y);
-	    push(@sumz, $z);
-	    push(@sumw, $w);
-	} else {
-	    $sumx[$cnt] += $x; # add in later iterations
-	    $sumy[$cnt] += $y;
-	    $sumz[$cnt] += $z;
-	    $sumw[$cnt] += $w;
-	}
-	$cnt++;
+@ARGV or die "Syntax: averagefiles4 <filename> ...\n";
+
+my $columns = 4;
+my @records = map { read_records($_, columns => $columns) } @ARGV;
+my @tables = map { data_rows($_) } @records;
+@{$tables[0]} or die "$ARGV[0]: expected at least one data row\n";
+
+my $row_count = @{$tables[0]};
+for my $file (1 .. $#tables) {
+    my $found = @{$tables[$file]};
+    $found == $row_count
+        or die "$ARGV[$file]: expected $row_count data rows to match $ARGV[0], found $found\n";
+    for my $row (0 .. $row_count - 1) {
+        my ($reference, $current) = ($tables[0]->[$row], $tables[$file]->[$row]);
+        my ($x, $other_x) = ($reference->{values}[0], $current->{values}[0]);
+        $x == $other_x or die "$current->{path}:$current->{line}: column 1 ($other_x) "
+            . "does not match $reference->{path}:$reference->{line} ($x)\n";
     }
-    close(F);
+}
+my @means = map {
+    my $row = $_;
+    [map {
+        my $column = $_;
+        scaled_mean([map { $_->[$row]{values}[$column] } @tables],
+                    "averagefiles4: row " . ($row + 1) . ", column " . ($column + 1));
+    } 1 .. $columns - 1];
+} 0 .. $row_count - 1;
+
+my @results;
+for my $row (0 .. $row_count - 1) {
+    push @results, [$tables[0]->[$row]{tokens}[0], @{$means[$row]}];
 }
 
-my $len = @sumx;
-
-for (my $l = 0; $l < $len; $l++) {
-    $sumx[$l] /= $Nz;
-    $sumy[$l] /= $Nz;
-    $sumz[$l] /= $Nz;
-    $sumw[$l] /= $Nz;
-    print "$sumx[$l] $sumy[$l] $sumz[$l] $sumw[$l]\n";
+my ($output, $row) = ('', 0);
+for my $record (@{$records[0]}) {
+    $output .= $record->{type} eq 'data'
+        ? join(' ', @{$results[$row++]}) . "\n"
+        : $record->{raw};
 }
-
+print $output;

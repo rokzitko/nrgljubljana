@@ -8,16 +8,41 @@
 use warnings;
 use strict;
 
-my $dir = shift;
-if (!defined($dir)) {
-    $dir = ".";
+use Fcntl qw(LOCK_EX O_CREAT O_RDWR);
+use FindBin qw($Bin);
+use Math::BigInt;
+use lib $Bin;
+use TableIO qw(atomic_write);
+
+@ARGV <= 1 or die "Usage: newiter [directory]\n";
+my $dir = shift // '.';
+my $file = "$dir/ITER";
+my $lock_file = "$file.lock";
+
+-l $lock_file and die "Refusing lock symlink $lock_file\n";
+sysopen(my $lock, $lock_file, O_RDWR | O_CREAT, 0666)
+    or die "Can't open $lock_file: $!\n";
+flock($lock, LOCK_EX) or die "Can't lock $lock_file: $!\n";
+
+my $contents = '';
+my $existed = -e $file;
+if ($existed) {
+    open(my $fh, '<', $file) or die "Can't open $file: $!\n";
+    while (1) {
+        my $bytes = sysread($fh, my $buffer, 8192);
+        defined($bytes) or die "Can't read $file: $!\n";
+        last if $bytes == 0;
+        $contents .= $buffer;
+    }
+    close($fh) or die "Can't finish reading $file: $!\n";
 }
 
-my $iter = `getiter $dir`;
+my $iter = '0';
+if ($existed) {
+    ($iter) = $contents =~ /\A([0-9]+)(?:\r?\n)?\z/;
+    defined($iter) or die "$file: expected one nonnegative decimal integer\n";
+}
+my $next = Math::BigInt->new($iter)->binc()->bstr();
 
-$iter++;
-
-my $fn = "$dir/ITER";
-open(F, ">$fn") or die "Can't open $fn for writing: $!";
-print F "$iter";
-close F;
+atomic_write($file, $next);
+close($lock) or die "Can't release $lock_file: $!\n";

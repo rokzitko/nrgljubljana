@@ -5,33 +5,33 @@
 
 use warnings;
 use strict;
+use FindBin qw($Bin);
+use lib $Bin;
+use TableIO qw(data_rows read_records);
 
 if (@ARGV != 2) {
-  die "Syntax: joincolumns <filename1> <filename2>\n";
+    die "Syntax: joincolumns <filename1> <filename2>\n";
 }
 
-my $filename1 = @ARGV[0];
-my $filename2 = @ARGV[1];
+my ($filename1, $filename2) = @ARGV;
+my $records1 = read_records($filename1, minimum_columns => 1, fixed_columns => 1);
+my $records2 = read_records($filename2, minimum_columns => 1, fixed_columns => 1);
+my $rows1 = data_rows($records1);
+my $rows2 = data_rows($records2);
 
-open(F1, "<$filename1") or die "Can't open $filename1: $!";
-open(F2, "<$filename2") or die "Can't open $filename2: $!";
+my ($count1, $count2) = (scalar @$rows1, scalar @$rows2);
+$count1 == $count2
+    or die "$filename1 and $filename2: data row count mismatch ($count1 != $count2)\n";
 
-while (<F1>) {
-  my $line1 = $_;
-  my $line2 = <F2>;
-
-  chomp($line1);
-  chomp($line2);
-
-  if (/^#/) {
-    print;
-  } else {
-    print "$line1 $line2\n";
-  }
+my @results;
+for my $row (0 .. $count1 - 1) {
+    push @results, [@{$rows1->[$row]{tokens}}, @{$rows2->[$row]{tokens}}];
 }
 
-close(F2);
-close(F1);
-
-
-
+my ($output, $row) = ('', 0);
+for my $record (@$records1) {
+    $output .= $record->{type} eq 'data'
+        ? join(' ', @{$results[$row++]}) . "\n"
+        : $record->{raw};
+}
+print $output;
