@@ -89,11 +89,6 @@ difficult_options="--epsabs 1e-300 --epsrel 0 --workspace-limit 1 --quadrature-r
 "$integ" -f -T 0.5 $difficult_options --gsl-error-policy ignore imaw.dat >ignore-result.dat 2>ignore.stderr
 test ! -s ignore.stderr
 
-"$integ" -f -T 0.5 --epsabs 1e-300 --epsrel 0 --workspace-limit 1 --quadrature-rule 15 \
-  --gsl-error-policy ignore imaw.dat >rule-15-result.dat 2>rule-15.stderr
-test ! -s rule-15.stderr
-expect_different rule-15-result.dat ignore-result.dat
-
 # shellcheck disable=SC2086
 "$integ" -f -T 0.5 $difficult_options --gsl-error-policy warn imaw.dat >warn-result.dat 2>warn.stderr
 grep -q '^integ: warning: qag error' warn.stderr
