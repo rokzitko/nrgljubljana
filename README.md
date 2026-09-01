@@ -3,41 +3,189 @@
 
 # NRG Ljubljana
 
-NRG Ljubljana is a framework for numerical renormalization group (NRG) calculations for quantum impurity problems. It combines a Mathematica-based initialization layer 
-(using [sneg](https://github.com/rokzitko/sneg)) with a C++20 runtime for the iterative NRG calculation, density-matrix variants, and a collection of standalone analysis tools.
+NRG Ljubljana implements Wilson's numerical renormalization group (NRG) for
+equilibrium quantum impurity models. The continuum bath is logarithmically
+discretized and mapped to a Wilson chain, whose sites are added successively to
+the impurity. The Hamiltonian is diagonalized in symmetry sectors after each
+addition and high-energy states are discarded. The resulting flow of rescaled
+many-body levels and the associated thermodynamic and dynamical observables
+span many decades of energy and temperature. For the single-impurity Anderson
+model, this resolves the free-orbital and local-moment regimes, Kondo screening,
+and the strong-coupling fixed point.
 
-NRG Ljubljana is used in published research on quantum dots, Kondo systems,
-superconducting impurities, molecular magnets, DMFT, and correlated materials.
-See [publications using NRG Ljubljana](docs/docs/publications.md).
+The impurity Hamiltonian, symmetry-adapted basis, and local operators are
+constructed in Mathematica using [sneg](https://github.com/rokzitko/sneg). The
+numerically intensive iterative diagonalization and density-matrix calculations
+are performed in C++20. Additional programs carry out logarithmic bath
+discretization, Wilson-chain construction, Hilbert transforms, and spectral
+broadening.
+
+## Physical Quantities and NRG Schemes
+
+- entropy, susceptibility, heat capacity, free energy, and local expectation values
+- many-body level flows, crossover scales, and fixed-point spectra
+- real-frequency spectral densities and Matsubara-frequency correlation functions
+- linear-response conductance, transport moments, and finite-temperature response functions
+- conventional NRG, complete-Fock-space (CFS), density-matrix NRG (DM-NRG), and full-density-matrix NRG (FDM-NRG)
+- Abelian and non-Abelian symmetry sectors for charge, spin, axial charge (isospin), and orbital degrees of freedom
+- logarithmic discretization, Wilson-chain coefficients, Hilbert transforms, $z$-averaging, and spectral broadening
+
+## Installation
+
+Install NRG Ljubljana from conda-forge in a dedicated environment with one
+command:
+
+```sh
+conda create -n nrg -c conda-forge nrgljubljana
+```
+
+Activate it with `conda activate nrg`.
+
+Packages are available for Linux x86-64, Linux aarch64, macOS x86-64,
+and macOS arm64. See the [full Conda installation guide](README.conda-forge.md)
+for Miniforge setup, updating, and troubleshooting.
+
+The conda-forge distribution provides all programs needed for bath
+discretization, Wilson-chain construction, iterative diagonalization, and
+spectral analysis.
+Mathematica is needed only to derive the symmetry-adapted Hamiltonian and
+operator matrix elements for a new impurity model with `nrginit`. The tutorial
+calculations below contain these matrix elements already and do not require
+Mathematica.
+
+## First Calculation
+
+The [NRG Ljubljana SIAM tutorial](https://github.com/rokzitko/NRG_SIAM) is the
+recommended introduction. Its first calculation considers the
+particle-hole-symmetric single-impurity Anderson model with bath half-bandwidth
+$D$, interaction $U=0.1D$, and constant hybridization spectrum
+$\Gamma(\omega)=0.01D$ for $|\omega|\leq D$. It logarithmically discretizes the
+hybridization spectrum, constructs the Wilson chain, and iteratively
+diagonalizes the many-body Hamiltonian. With NRG Ljubljana installed, the
+calculation can be completed in about ten minutes and requires Git, Bash, and
+Make:
+
+```sh
+git clone https://github.com/rokzitko/NRG_SIAM.git
+cd NRG_SIAM/01_minimal
+make
+```
+
+All required Hamiltonian and operator matrix elements are supplied in
+symmetry-adapted form, so Mathematica is not needed. The calculation produces:
+
+- `run/td`: shell-by-shell thermodynamic quantities and thermal moments of total spin and charge
+- `run/custom`: the impurity occupancy `n_d` and double occupancy `n_d_ud`
+
+Inspect the first results with:
+
+```sh
+cat run/custom
+cat run/td
+```
+
+At particle-hole symmetry, `n_d` should remain one within numerical precision.
+The subsequent lessons extract the impurity entropy and susceptibility by
+subtracting the corresponding impurity-free system, follow the crossover from
+a local moment to the screened strong-coupling fixed point, display the
+many-body level flow, and calculate the FDM-NRG impurity spectral density with
+$z$-averaging.
+
+## Example Result
+
+[Lesson 5](https://github.com/rokzitko/NRG_SIAM/tree/main/05_z_averaging)
+calculates the per-spin local impurity spectral function
+$A(\omega)=-\mathrm{Im}\,G_{d\sigma}^R(\omega)/\pi$ with FDM-NRG. The
+unbroadened, frequency-binned weights from four shifted logarithmic grids,
+$z=0.25, 0.50, 0.75, 1.00$, are averaged before a common broadening is applied.
+The figure shows $\pi\Gamma A(\omega)$: the narrow Kondo resonance is centered
+at the Fermi level, while the Hubbard satellites occur near the atomic charge
+excitation energies $\omega=\pm U/2$.
+
+[![Four-twist z-averaged FDM-NRG impurity spectral function](https://raw.githubusercontent.com/rokzitko/NRG_SIAM/main/05_z_averaging/figures/z_averaged_spectrum.svg)](https://github.com/rokzitko/NRG_SIAM/tree/main/05_z_averaging)
+
+No rescaling is used to impose the $T=0$ Friedel-sum-rule limit
+$\pi\Gamma A(0)=1$. At $T=10^{-5}D$ and the smallest nonzero mesh frequency,
+the four-grid average is $0.9986$. For each $z$, the unbroadened weights satisfy
+the zeroth-moment sum rule and the odd moments vanish by particle-hole symmetry;
+the averaged second moment is checked against the exact flat-band result. The
+lesson notes that $z$-averaging does not replace convergence checks in
+$\Lambda$, retained-state truncation, temperature, or broadening width.
+
+## Applications
+
+NRG Ljubljana is used for research on:
+
+- quantum dots, nanostructures, Kondo screening, and quantum phase transitions
+- superconducting impurities and Yu-Shiba-Rusinov states
+- molecular magnets, surface impurities, and multiorbital impurity models
+- impurities in Dirac, Weyl, altermagnetic, and other structured hosts
+- dynamical mean-field theory (DMFT) and correlated materials
+- equilibrium reference calculations and benchmarks for other many-body methods
+
+For research-grade DMFT(NRG) calculations for strongly correlated electron
+systems, see
+[DMFT_NRG_KLM](https://github.com/rokzitko/DMFT_NRG_KLM), a Kondo-lattice-model
+implementation in which NRG is the DMFT impurity solver. It uses the improved
+logarithmic discretization and self-energy estimator, accepts a user-specified
+tabulated noninteracting density of states, adjusts the chemical potential to
+the desired filling, and calculates single-particle spectra and transport
+coefficients.
+
+## Publications Using NRG Ljubljana
+
+The [research bibliography](docs/docs/publications.md) collects a
+representative, non-exhaustive selection of applications by independent groups
+and project collaborators in quantum impurity physics, superconductivity,
+nanostructures, DMFT, and correlated materials.
 
 If you publish work using NRG Ljubljana, please add your paper via a
 [pull request](https://github.com/rokzitko/nrgljubljana/edit/master/docs/docs/publications.md)
 or [open an issue](https://github.com/rokzitko/nrgljubljana/issues).
 
-## What It Covers
+## Documentation
 
-- multiple symmetry backends, including QS, QSZ, ISO, ISOSZ, SPSU2, and extended symmetry sets
-- standard NRG iteration together with CFS, DM-NRG, and FDM workflows
-- thermodynamic quantities, expectation values, spectral functions, Matsubara quantities, and conductance-related calculations
-- preprocessing and postprocessing tools for discretization, chain generation, broadening, Hilbert transforms, resampling, and file conversion
-- structured output in text, binary, and HDF5 formats
+The [current documentation](http://auger.ijs.si/nrgljubljana/site/) describes
+the definition of an impurity problem, numerical parameters, observables,
+normalization conventions, and advanced numerical considerations. Useful
+starting points are:
 
-## Applications
+- [specifying the impurity problem and numerical parameters](docs/docs/input-and-configuration.md)
+- [complete parameter reference](docs/docs/parameter-reference.md)
+- [physical quantities and output conventions](docs/docs/output-formats.md)
+- [bath discretization and spectral-analysis programs](docs/docs/tools.md)
+- [construction of Hamiltonian and operator matrix elements with `nrginit`](docs/docs/nrginit-workflow.md)
+- [compilation from source](docs/docs/getting-started.md)
+- [parallel execution and numerical-library threading](docs/docs/parallelism.md)
 
-- dynamical mean-field theory (DMFT); see a simple sample code for [Kondo lattice
-model](https://github.com/rokzitko/DMFT_NRG_KLM)
+Older scientific notes remain available under `doc/`.
 
-## Installation
+## Citation
 
-NRG Ljubljana is available from conda-forge:
+If you use results produced with NRG Ljubljana, please cite the method paper
+and the archived software release:
 
-   conda install -c conda-forge nrgljubljana
+- R. Zitko and T. Pruschke, "Energy resolution and discretization artifacts in the numerical renormalization group," *Physical Review B* **79**, 085106 (2009), [doi:10.1103/PhysRevB.79.085106](https://doi.org/10.1103/PhysRevB.79.085106).
+- R. Zitko, "NRG Ljubljana" (version 8f90ac4), Zenodo (2021), [doi:10.5281/zenodo.4841076](https://doi.org/10.5281/zenodo.4841076).
 
-Packages are available for Linux x86-64, Linux aarch64, macOS x86-64,
-and macOS arm64. Source builds remain appropriate when CUDA support or
-nonstandard numerical-library configurations are required.
+[`CITATION.cff`](CITATION.cff) gives the software citation in a standard
+citation format.
 
-## Source builds
+## Questions and Contributions
+
+- Questions about setting up or interpreting a calculation, and reports of
+  suspected numerical problems, can be posted as
+  [GitHub issues](https://github.com/rokzitko/nrgljubljana/issues).
+- See [`CONTRIBUTING.md`](CONTRIBUTING.md) for instructions on compiling and
+  testing changes.
+- Visit the [project home page](http://nrgljubljana.ijs.si/) for additional background and examples.
+- Contact Rok Zitko at [rok.zitko@ijs.si](mailto:rok.zitko@ijs.si) for project and research inquiries.
+
+## Advanced: Compilation from Source
+
+Most users should install the conda-forge distribution. Compile from source
+when modifying the NRG implementation, enabling CUDA diagonalization, or using
+a specific BLAS/LAPACK installation.
 
 ### Requirements
 
@@ -54,10 +202,9 @@ all dependency modes:
 
 OpenMP is required only when application-level OpenMP regions are enabled or
 when the selected BLAS/LAPACK threading implementation requires it. Wolfram
-Mathematica is required for the `nrginit` workflow, which prepares the initial
-Hamiltonian, basis, and operator data used by the C++ executable. CUDA support
-is optional and requires a CUDA Toolkit that provides cuSOLVER, cuBLAS, and
-cuDART.
+Mathematica is required for `nrginit`, which constructs the initial Hamiltonian,
+symmetry-adapted basis, and operator matrix elements. CUDA support is optional
+and requires a CUDA Toolkit that provides cuSOLVER, cuBLAS, and cuDART.
 
 By default, `NRGLJUBLJANA_USE_SYSTEM_DEPS` is `OFF`. Configuration downloads
 CPM.cmake and uses it to obtain GoogleTest 1.15.2 when tests are enabled,
@@ -72,7 +219,7 @@ HighFive, fmt 11 or newer, and range-v3, then configure with
 default test build is enabled. The test suite additionally uses Perl and the
 HDF5 command-line tools; use `-DBuild_Tests=OFF` when tests are not needed.
 
-### Build and test
+### Compilation and Tests
 
 CMake requires an explicit absolute install prefix. Configure, build, install,
 and load the installed environment with:
@@ -98,21 +245,21 @@ ctest --test-dir build --output-on-failure --timeout 3600 --no-tests=error
 
 Increase `--timeout` for slow machines or debug builds.
 
-Useful developer options:
+Useful CMake options:
 
 - `-DCMAKE_BUILD_TYPE=Debug`
 - `-DBuild_Tests=ON|OFF` controls the test build (default: `ON` for a top-level build)
 - `-DTEST_LONG=ON`
 - `-DASAN=ON -DUBSAN=ON`
 - `-DANALYZE_SOURCES=ON`
-- `-DNRGLJUBLJANA_ENABLE_APP_OPENMP=ON|OFF` enables application-level OpenMP regions such as simultaneous diagonalisation scheduling (default: `OFF`)
+- `-DNRGLJUBLJANA_ENABLE_APP_OPENMP=ON|OFF` enables application-level OpenMP regions such as simultaneous diagonalization scheduling (default: `OFF`)
 - `-DNRGLJUBLJANA_ENABLE_CUDA=ON|OFF` requests CUDA/cuSOLVER support (default: `OFF`)
 - `-DNRGLJUBLJANA_ENABLE_MATHEMATICA=ON|OFF` controls `FindMathematica` (default: `OFF` on `aarch64`, `ON` otherwise)
 - `-DNRGLJUBLJANA_BLAS_ILP64=ON|OFF` selects the 64-bit or 32-bit BLAS/LAPACK integer ABI (default: `OFF`)
 - `-DNRGLJUBLJANA_INSTALL_NRGINIT=ON|OFF` controls installation of the `nrginit` scripts (default: `ON`)
 - `-DNRGLJUBLJANA_USE_SYSTEM_DEPS=ON|OFF` uses preinstalled dependencies instead of CPM downloads (default: `OFF`)
 
-### BLAS/LAPACK integer ABI
+### BLAS/LAPACK Integer ABI
 
 The default LP64 BLAS/LAPACK interface uses 32-bit integers even on a 64-bit
 system. `NRGLJUBLJANA_BLAS_ILP64=ON` changes the project declarations and
@@ -125,48 +272,44 @@ Conda variants are LP64. See the
 [getting-started guide](docs/docs/getting-started.md#blaslapack-integer-abi) for
 the full compatibility constraints.
 
-## Parallelism Model
+### Parallelism Model
 
-NRG Ljubljana's default performance model is BLAS/LAPACK-internal threading. The executable should normally have one numerical threading backend in the process: threaded MKL or threaded OpenBLAS. Application-level OpenMP regions are disabled by default so the code does not accidentally link a second OpenMP runtime such as GNU `libgomp` together with Intel `libiomp5`.
+NRG Ljubljana normally obtains parallelism from threaded BLAS/LAPACK. A
+calculation should use one numerical threading library, either threaded MKL or
+threaded OpenBLAS. Application-level OpenMP regions are disabled by default so
+that GNU `libgomp` and Intel `libiomp5` are not inadvertently loaded into the
+same process.
 
 Use `MKL_NUM_THREADS`, `OPENBLAS_NUM_THREADS`, `OMP_NUM_THREADS`, and scheduler CPU binding to control numerical kernel threading. When running with MPI, choose the BLAS/LAPACK thread count together with the rank count; `mpi_ranks * blas_threads` should usually not exceed the CPUs allocated to the job.
 
-For MKL builds that use the `mkl_rt` dispatcher, set `-DNRGLJUBLJANA_MKL_THREADING_LAYER=GNU`, `INTEL`, or `LLVM` when you need an explicit threading backend. This links the matching compiler OpenMP runtime through CMake's `OpenMP::OpenMP_CXX` target while keeping application-level OpenMP regions disabled unless `NRGLJUBLJANA_ENABLE_APP_OPENMP=ON` is also set.
+For MKL builds that use the `mkl_rt` dispatcher, set `-DNRGLJUBLJANA_MKL_THREADING_LAYER=GNU`, `INTEL`, or `LLVM` when an explicit threading layer is needed. This links the matching compiler OpenMP runtime through CMake's `OpenMP::OpenMP_CXX` target while keeping application-level OpenMP regions disabled unless `NRGLJUBLJANA_ENABLE_APP_OPENMP=ON` is also set.
 
-`-DNRGLJUBLJANA_ENABLE_APP_OPENMP=ON` is an expert option for simultaneous diagonalisation scheduling (`diag_mode=OpenMP`, `diagth>1`) and a few non-BLAS loops. It can create nested parallelism when BLAS/LAPACK is also threaded, so CMake checks the visible link line for mixed OpenMP runtime families and the executable prints startup diagnostics and warnings about the detected MKL/OpenBLAS/OpenMP/MPI threading configuration.
+`-DNRGLJUBLJANA_ENABLE_APP_OPENMP=ON` is an expert option for simultaneous diagonalization scheduling (`diag_mode=OpenMP`, `diagth>1`) and a few non-BLAS loops. It can create nested parallelism when BLAS/LAPACK is also threaded, so CMake checks the visible link line for mixed OpenMP runtime families and the executable prints startup diagnostics and warnings about the detected MKL/OpenBLAS/OpenMP/MPI threading configuration.
 
-## Repository Map
+## Contents of the Distribution
 
-- `c++/`: core NRG engine, runtime flow, diagonalization, symmetry framework, operators, stores, and numerical utilities
-- `tools/`: standalone preprocessing and postprocessing executables
-- `nrginit/`: Mathematica-side model initialization and input generation
-- `nrgspawn/`: examples and reference outputs for prepared runs generated by `tools/instantiate/`
-- `test/`: unit tests, regression suites, tool tests, and Mathematica-driven integration tests
-- `share/`: installed auxiliary CMake files and runtime assets
-- `scripts/`: small helper scripts for inspecting and postprocessing outputs
-- `doc/`: legacy Sphinx documentation
-- `docs/`: new MkDocs documentation tree
-
-## Documentation
-
-The in-tree documentation refresh is being migrated to MkDocs under `docs/`, while the legacy Sphinx content in `doc/` remains available.
-
-MkDocs documentation: http://auger.ijs.si/nrgljubljana/site/
+- `c++/`: iterative diagonalization, truncation, symmetries, operators, density matrices, and numerical routines
+- `tools/`: bath discretization, Wilson-chain construction, spectral analysis, and numerical transformations
+- `nrginit/`: Mathematica construction of the impurity Hamiltonian, basis, and operators
+- `nrgspawn/`: example inputs and reference results prepared with `tools/instantiate/`
+- `test/`: numerical checks, reference calculations, and tests involving Mathematica
+- `share/`: CMake and environment files installed with NRG Ljubljana
+- `scripts/`: utilities for inspecting and combining numerical results
+- `doc/`: older scientific documentation
+- `docs/`: current documentation
 
 ## Contributing
 
-See `CONTRIBUTING.md` for the local build, test, sanitizer, analysis, and documentation commands used in development.
+See `CONTRIBUTING.md` for instructions on compiling the sources, running the
+tests, and checking changes.
 
 ## License
 
 NRG Ljubljana is distributed under the GNU General Public License. See `COPYING` for the full license text.
 
-## Contact
-
-- project home page: http://nrgljubljana.ijs.si/
-- Rok Zitko, "Jozef Stefan" Institute, Ljubljana, Slovenia
-- rok.zitko@ijs.si
-
 ## Acknowledgements
 
-NRG Ljubljana started during Rok Zitko's PhD work at the University of Ljubljana and the "Jozef Stefan" Institute. The codebase reflects collaboration and discussions with multiple researchers in the NRG community and contributions from collaborators over many years.
+NRG Ljubljana started during Rok Zitko's PhD work at the University of
+Ljubljana and the "Jozef Stefan" Institute. The implementation reflects
+collaboration and discussions with researchers in the NRG community and
+contributions from collaborators over many years.
