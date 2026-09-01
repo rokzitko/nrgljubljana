@@ -10,7 +10,7 @@ open (R, ">matsu_reG.dat");
 for ($i = 0; $i <= 50; $i ++) {
   $om = (2*$i+1)*$pi/$beta; # fermionic
 
-  $y = `hilb -d imaw.dat -G 0 $om`; # input to 'hilb' is DOS, i.e. A(w)
+  $y = `hilb --algorithm analytic -d imaw.dat -G 0 $om`; # input to 'hilb' is DOS, i.e. A(w)
   chomp($y);
   $y =~ /\((.*),(.*)\)/;
   $re = $1;

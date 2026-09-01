@@ -1,5 +1,8 @@
 #!/bin/sh
 set -eu
 
-"$1/hilb" points.dat >results.dat
+unset OMP_NUM_THREADS
+"$1/hilb" --jobs 1 points.dat >results.dat
+"$1/hilb" --jobs 3 points.dat >parallel.dat
+cmp results.dat parallel.dat
 "$2/test/compare.pl" "$3/ref"

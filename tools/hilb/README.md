@@ -17,9 +17,13 @@ The command-line tool uses a real density of states. The low-level C++
 functions in `hilb.hpp` can also transform a complex function
 $\rho(E)=\rho_r(E)+i\rho_i(E)$.
 
-All numeric output uses `std::numeric_limits<double>::max_digits10`
+All transform-data numbers use `std::numeric_limits<double>::max_digits10`
 significant digits so that finite `double` values can be read back without
-losing precision.
+losing precision. Timing and diagnostics are human-readable reports.
+
+The command-line default is adaptive QAG for both the built-in and tabulated
+densities. The alternative analytic algorithm is available only for a
+tabulated density selected with `-d`.
 
 ## Usage
 
@@ -89,6 +93,8 @@ label Re(H_n) Im(H_n)
 
 The `-o FILE` option writes these data to a file instead of standard output.
 The program's `# hilb ...` identification line remains on standard output.
+All argument records are read and staged before parallel transformation begins,
+and output rows retain their input order.
 
 ### DMFT self-energy conversion
 
@@ -154,6 +160,10 @@ function transform. For `n>0` it is the corresponding energy-weighted
 transform. The `-o` option is invalid in this mode; the two output paths are
 the final positional arguments.
 
+Both self-energy files are read and paired in full before parallel
+transformation begins. Results are nevertheless written in the original row
+order.
+
 ## Output Safety
 
 An output path must not refer to an input file or the tabulated density of
@@ -164,12 +174,14 @@ names that differ only in ASCII letter case within one directory are
 conservatively treated as the same location.
 
 `hilb` assembles complete output text in memory before opening a destination.
-An existing file therefore survives input parsing and transform-calculation
-failures. Output open, write, flush, and close failures are fatal, but writing
-is not an atomic replacement: a failure after opening can leave a destination
-truncated or incomplete. The two DMFT outputs are written sequentially, so the
-first can be updated if writing the second fails. On systems that provide it,
-`-o /dev/stdout` sends the staged data to standard output.
+The tabulated density, argument file, or paired DMFT inputs are likewise staged
+before worker threads start. An existing file therefore survives input parsing
+and transform-calculation failures. Output open, write, flush, and close
+failures are fatal, but writing is not an atomic replacement: a failure after
+opening can leave a destination truncated or incomplete. The two DMFT outputs
+are written sequentially, so the first can be updated if writing the second
+fails. On systems that provide it, `-o /dev/stdout` sends the staged data to
+standard output and does not enable a timing report.
 
 ## Options
 
@@ -180,7 +192,9 @@ first can be updated if writing the second fails. On systems that provide it,
 | `-vv` | Also print detailed setup diagnostics to standard error. |
 | `-V`, `--version` | Print the project version. |
 | `-d FILE` | Read a tabulated density of states from `FILE`. Otherwise use the built-in semicircular density. |
+| `--algorithm ALGORITHM` | Select `qag` or `analytic`. Default: `qag`. This option has no short form; `analytic` requires `-d`. |
 | `-i METHOD`, `--interpolation METHOD` | Interpolate a tabulated density with `linear`, `cspline`, `akima`, or `steffen`. Default: `cspline`. |
+| `-j N`, `--jobs N` | Request `N` positive workers. Otherwise use the first value of a fully valid `OMP_NUM_THREADS` list, or `1` when it is unset. |
 | `-n N` | Multiply the density by $E^N$. `N` must be a nonnegative integer. Default: `0`. |
 | `-G` | Print or write both parts of the raw complex transform instead of the mode-specific default. |
 | `-s SCALE` | Set the positive scale $s$ of the built-in semicircular density, with $B=1/s$. |
@@ -189,12 +203,12 @@ first can be updated if writing the second fails. On systems that provide it,
 | `-x DX` | Add `DX` to the real part of every transform argument. |
 | `-y DY` | Add `DY` to the imaginary part of every transform argument. |
 | `-c C` | Set the positive clipping magnitude for $\mathrm{Im}\,\Sigma$ in DMFT mode. Default: $c_{\min}\simeq1.4917\times10^{-154}$. |
-| `-t T` | Set the direct/singularity-subtracted threshold for the built-in density. Default: $10^{-3}$. |
-| `-a A`, `--epsabs A` | Set the absolute QAG tolerance for the built-in density. Default: $10^{-14}$. |
-| `-r R`, `--epsrel R` | Set the relative QAG tolerance for the built-in density. Default: $10^{-10}$. |
-| `--workspace-limit N` | Set the positive QAG workspace subdivision limit for the built-in density. Default: `1000`. |
-| `--quadrature-rule RULE` | Select built-in-density Gauss-Kronrod rule `15`, `21`, `31`, `41`, `51`, or `61`. Default: `15`. |
-| `--gsl-error-policy POLICY` | Handle built-in-density QAG failures with `ignore`, `warn`, or `fail`. Default: `warn`. |
+| `-t T` | Set the QAG direct/singularity-subtracted threshold. Default: $10^{-3}$. |
+| `-a A`, `--epsabs A` | Set the absolute QAG tolerance. Default: $10^{-14}$. |
+| `-r R`, `--epsrel R` | Set the relative QAG tolerance. Default: $10^{-10}$. |
+| `--workspace-limit N` | Set each QAG worker's positive workspace subdivision limit. Default: `1000`. |
+| `--quadrature-rule RULE` | Select QAG Gauss-Kronrod rule `15`, `21`, `31`, `41`, `51`, or `61`. Default: `15`. |
+| `--gsl-error-policy POLICY` | Handle QAG failures with `ignore`, `warn`, or `fail`. Default: `warn`. |
 | `-f F` | Set the absolute frequency-label tolerance in DMFT mode. Default: $10^{-6}$. |
 
 Use either `-s` or `-B`; if both are present, the last one takes effect. They
@@ -203,8 +217,13 @@ The shifts affect $z$, not the integration energy $E$ or the factor $E^n$.
 Verbose diagnostics are written to standard error and never mix with numeric
 standard output.
 
-The short options `-a` and `-r` are retained as legacy aliases for the uniform
-long options `--epsabs` and `--epsrel`.
+`--algorithm` is deliberately long-only. The short option `-a` remains an
+alias for `--epsabs`, not an algorithm selector; `-r` remains an alias for
+`--epsrel`. Explicit QAG controls (`-t`, `-a`/`--epsabs`,
+`-r`/`--epsrel`, `--workspace-limit`, `--quadrature-rule`, or
+`--gsl-error-policy`) are silently ignored with `--algorithm analytic`. Their
+values are still parsed and must satisfy each option's individual constraints,
+but QAG-specific combinations are not validated in analytic mode.
 
 Malformed options, invalid numeric arguments, and positional argument counts
 other than 1, 2, or 4 produce a nonzero exit status. Help and version requests
@@ -245,9 +264,10 @@ nonnumeric values, and nonfinite values are rejected with a filename and line
 number.
 
 Records are sorted by energy after loading. The implementation constructs one
-GSL interpolant through the supplied density values, materializes its
-intervalwise polynomial coefficients, and reuses them for normalization and
-every transform. `linear` is piecewise linear and requires at least two points;
+GSL interpolant through the supplied density values and materializes its
+intervalwise polynomial coefficients. QAG evaluates the selected interpolant;
+the analytic algorithm uses the coefficients directly, as does the reported
+DOS integral. `linear` is piecewise linear and requires at least two points;
 `cspline` is a natural cubic spline and requires at least three points; `akima`
 is a local piecewise-cubic interpolant and requires at least five points;
 `steffen` is a monotonicity-preserving piecewise-cubic interpolant and requires
@@ -259,6 +279,13 @@ $$
 [-B,B],\qquad B=\max(|E_{\min}|,|E_{\max}|).
 $$
 
+Under the default QAG algorithm, integration is performed over this full
+`[-B,B]` interval and every evaluation outside `[Emin,Emax]` returns zero.
+Each polynomial interval is integrated in its own normalized local coordinate,
+so narrow intervals remain representable and are sampled independently. The
+analytic algorithm integrates the same materialized interval polynomials,
+which represents the same zero extension.
+
 The data are not normalized automatically. In verbose mode, `hilb` reports the
 analytic integral of the interval polynomials and checks that it is finite.
 Energies must be finite and strictly increasing after sorting; duplicate
@@ -268,15 +295,16 @@ positivity. `steffen` stays within each interval's endpoint range and therefore
 preserves positivity of nonnegative samples, at the cost of a possibly
 discontinuous second derivative and a more conservative shape near extrema.
 
-For an energy-weighted transform, interpolation is performed first and each
-interval polynomial is multiplied by the power exactly:
+For an energy-weighted transform, interpolation is performed first:
 
 $$
 g(E)=E^n S_\rho(E).
 $$
 
-This is intentionally different from constructing a spline through the
-weighted samples $E_i^n\rho(E_i)$.
+The analytic algorithm forms this numerator by multiplying every interval
+polynomial by the power exactly; QAG evaluates the same product at its sampling
+points. Both are intentionally different from constructing a spline through
+the weighted samples $E_i^n\rho(E_i)$.
 
 ## Numerical Algorithm
 
@@ -286,9 +314,18 @@ $$
 g(E)=E^n\rho(E)=g_r(E)+ig_i(E).
 $$
 
-### Tabulated densities
+### Algorithm selection
 
-For a density selected with `-d`, and for the tabulated C++ interfaces, the
+The executable accepts `--algorithm qag|analytic`; there is no short algorithm
+option. QAG is the default for both the built-in semicircular density and a
+tabulated density. The analytic algorithm requires `-d` and is unavailable for
+the built-in density. It uses the existing piecewise-polynomial transform
+described below. QAG controls are valid for built-in and tabulated QAG alike,
+and are accepted but silently ignored by the analytic algorithm.
+
+### Analytic tabulated algorithm
+
+With `--algorithm analytic -d FILE`, and in the tabulated C++ interfaces, the
 selected GSL interpolant is represented as a polynomial on every input
 interval. The transform of each weighted polynomial is evaluated analytically
 using polynomial division and complex logarithms. A global subtraction of the
@@ -298,18 +335,28 @@ loss of precision far from the tabulated support. Ambiguous cancellation in
 the moments is resolved with wider or exact arithmetic before the result is
 narrowed to the public numeric type.
 
-This path performs no adaptive quadrature. The `-t`, QAG tolerance, workspace,
-quadrature-rule, and GSL-error-policy options are validated for compatibility
-but have no numerical effect with `-d`. No GSL integration workspace is
-allocated. The transform still requires a nonzero imaginary part as described
-under [Identities And Limitations](#identities-and-limitations).
+This path performs no adaptive quadrature and allocates no GSL integration
+workspace. Explicit QAG threshold, tolerance, workspace, quadrature-rule, and
+error-policy options are therefore silently ignored. The transform still
+requires a nonzero imaginary part as described under
+[Identities And Limitations](#identities-and-limitations).
 
-### Built-in and callable densities
+### QAG for built-in, tabulated, and callable densities
 
-For the built-in semicircular density and arbitrary callable C++ interfaces,
-the real and imaginary parts of the transform are integrated separately. The
-algorithm switches between direct adaptive quadrature and a
-singularity-subtracted form according to the magnitude of $y=\mathrm{Im}\,z$.
+For the built-in semicircular density, a tabulated density under the default
+QAG algorithm, and arbitrary callable C++ interfaces, the real and imaginary
+parts of the transform are integrated separately. The algorithm switches
+between direct adaptive quadrature and a singularity-subtracted form according
+to the magnitude of $y=\mathrm{Im}\,z$.
+
+A tabulated QAG calculation treats every polynomial interval as a separate
+local-coordinate partition. For small $|y|$, the weighted polynomial value
+nearest $\mathrm{Re}\,z$ is subtracted on each interval and its constant
+transform is restored with complex logarithms. This removes the narrow pole
+before quadrature without converting close knots through a global coordinate.
+Component error estimates are rescaled, summed across all intervals, and
+compared with the requested tolerance for the final transform. Local QAG
+statuses are included in diagnostics only when that global target is missed.
 
 #### Direct quadrature
 
@@ -329,13 +376,15 @@ $$
 $$
 
 Each is integrated over `[-B,B]` with GSL `gsl_integration_qag` using the
-selected Gauss-Kronrod rule. The default is the 15-point rule.
+selected Gauss-Kronrod rule. The default is the 15-point rule. Tabulated QAG
+instead maps each spline interval to `[0,1]`, includes its physical width in the
+integrand, and combines the interval results with compensated summation.
 
 #### Small imaginary part
 
-When $|y|<T$, direct quadrature would need to resolve a narrow structure near
-$E=x$. The implementation instead subtracts the complete weighted numerator
-at that point:
+For the built-in and callable paths, when $|y|<T$, direct quadrature would need
+to resolve a narrow structure near $E=x$. The implementation instead subtracts
+the complete weighted numerator at that point:
 
 $$
 H_n(z)=
@@ -382,13 +431,13 @@ to `-36.8`, for which $e^r$ is approximately $10^{-16}$.
 
 ### QAG settings
 
-The executable uses these defaults:
+The executable uses these defaults for both built-in and tabulated QAG:
 
 | Setting | Value |
 | --- | ---: |
 | GSL routine | `gsl_integration_qag` |
 | Local rule (`--quadrature-rule`) | `15` |
-| Workspace subdivision limit (`--workspace-limit`) | `1000` |
+| Workspace subdivision limit (`--workspace-limit`) | `1000` per worker |
 | Absolute tolerance (`-a`, `--epsabs`) | $10^{-14}$ |
 | Relative tolerance (`-r`, `--epsrel`) | $10^{-10}$ |
 | GSL error policy (`--gsl-error-policy`) | `warn` |
@@ -398,13 +447,13 @@ The rule can be `15`, `21`, `31`, `41`, `51`, or `61`; its number is the number
 of Kronrod points used on each adaptive subinterval. Higher-order rules can be
 more efficient for smooth integrands, while lower-order rules can better focus
 adaptive subdivision around local difficulties. The workspace limit bounds
-the number of stored subintervals. Tolerances must be finite and nonnegative
-and must form a combination accepted by GSL.
+the number of stored subintervals in each worker's workspace. Tolerances must
+be finite and nonnegative and must form a combination accepted by GSL.
 
 The callable C++ `hilbert_transform` interface exposes `lim_direct`, `epsabs`,
 and `epsrel`. An overload accepting an `integrator&` lets callers select the
 workspace, rule, and policy and reuse the workspace. The executable uses one
-workspace for all requested built-in-density transforms. The overload taking
+workspace per actual QAG worker for either density source. The overload taking
 a `PiecewisePolynomial` and an explicit $B$ requires the polynomial support to
 lie within `[-B,B]`.
 
@@ -414,6 +463,66 @@ retains GSL's returned result, `warn` retains it and writes at most one summary
 line to standard error with counts and the first failure, and `fail` aborts
 with a nonzero exit status. Input errors and unrelated runtime errors remain
 fatal under every policy.
+
+## Parallel Execution
+
+Every command-line output point is independent. `-j N` or `--jobs N` requests
+up to `N` positive workers. If neither form is present, `hilb` validates the
+entire comma-separated `OMP_NUM_THREADS` value as a list of positive integers
+and uses its first value. Thus `OMP_NUM_THREADS=8` and
+`OMP_NUM_THREADS=8,4` both request eight workers, while a malformed or
+nonpositive value anywhere in the list is an error. If the variable is unset,
+one worker is requested. An explicit jobs option takes precedence over the
+environment. The verbose configuration report shows the requested count and
+whether it came from the option, environment, or built-in default.
+
+The actual worker count is
+
+$$
+N_{\mathrm{workers}}=\min(N_{\mathrm{requested}},N_{\mathrm{points}}).
+$$
+
+Each actual QAG worker owns a separate GSL integration workspace; analytic
+workers need none. Every selected input file, including a tabulated DOS, an
+argument file, or paired DMFT files, is staged before workers start. Parallel
+scheduling does not change output order: rows and labels are emitted
+deterministically in input order.
+
+The worker pool is an internal command-line implementation detail. No public
+batch API is added. Existing scalar C++ APIs remain synchronous and emit no
+CLI progress, timing, or performance reports; their existing numerical-error
+policy behavior is unchanged.
+
+## Timing
+
+Only successful runs that write transform data to regular files report timing.
+This comprises single-point and argument-file modes with `-o FILE`, and DMFT
+mode when both output destinations are regular files. The report is written to
+standard output after all required output writes have succeeded:
+
+```text
+Time elapsed: 1.234 s
+```
+
+The wall time includes command parsing, input staging, density/interpolant
+setup, transformation, and output-file writing. With `-v` or `-vv`, a second
+line reports wall time, process CPU time, effective parallelism (CPU time divided
+by wall time), throughput, the actual worker count, and the selected algorithm:
+
+```text
+Performance: wall=1.234s cpu=2.100s effective_parallelism=1.70178x throughput=810.373 points/s workers=4 algorithm=qag
+```
+
+The `workers` field is the actual count after capping by the number of points,
+not the requested count. If process CPU time is unavailable, the relevant
+fields are `cpu=n/a effective_parallelism=n/a`. Effective parallelism describes
+observed CPU use and is not a speedup measurement against a separate serial
+run.
+
+No timing is emitted when transform data go to standard output, including when
+`-o` is omitted or `-o /dev/stdout` is used. A DMFT run involving
+`/dev/stdout` likewise emits no timing report. Failed calculations or output
+writes do not report timing.
 
 ## Identities And Limitations
 
@@ -437,10 +546,11 @@ Numerical limitations include:
   public API. `hilb` does not expose a real-axis principal-value mode.
 - Large powers can overflow or underflow in $E^n$ and can amplify cancellation
   in the integral.
-- The clipping magnitude and callable direct/subtracted threshold are absolute
+- The clipping magnitude and QAG direct/subtracted threshold are absolute
   energy scales and are not scaled with the bandwidth. The absolute QAG
   tolerance has the units of the transformed integral; the relative tolerance
   is dimensionless.
-- Callable-path singularity subtraction assumes that $g(E)$ is sufficiently
-  smooth near $E=x$. Discontinuous callable densities are difficult cases.
+- QAG singularity subtraction assumes that $g(E)$ is sufficiently smooth near
+  $E=x$. Discontinuous callable densities and zero-extension jumps at
+  tabulated-support endpoints are difficult cases.
 - Descriptive headers and comments are not part of the numeric input grammar.

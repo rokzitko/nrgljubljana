@@ -122,12 +122,19 @@ These tools operate on tabulated spectral or response data after the main `nrg` 
 - strong reliance on `tools/common/tabulated.hpp`
 - a lot of command-line option parsing and validation
 - frequent interaction with GSL-based interpolation or integration routines
-- `hilb -d` and the optional analytic `kk` algorithm materialize GSL
-  interpolants as interval polynomials; `kk` defaults to adaptive QAG and also
-  supports parallel output-point evaluation
-- successful file-mode `kk` runs report total wall time; `-v` adds CPU use,
-  throughput, actual worker count, and algorithm, while stream mode stays
-  numeric-only
+- `hilb` defaults to adaptive QAG for both its built-in semicircular density
+  and tabulated densities; tabulated QAG evaluates the selected interpolant as
+  zero outside its support over the enclosing symmetric integration interval
+- long-only `hilb --algorithm analytic` requires `-d`, uses the existing
+  interval-polynomial transform, and silently ignores QAG numerical controls;
+  `kk` also offers QAG and analytic algorithms
+- `hilb` and `kk` can evaluate independent output points in parallel with an
+  explicit worker count or `OMP_NUM_THREADS`, while preserving output order and
+  assigning a separate GSL workspace to each QAG worker
+- successful regular-file Hilb output and file-mode `kk` output report wall
+  time after writing; verbose mode adds CPU use, effective parallelism,
+  throughput, actual workers, and algorithm, while numerical standard output
+  remains free of timing reports
 
 ### Notable Distinctions
 

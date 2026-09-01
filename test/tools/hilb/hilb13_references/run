@@ -12,7 +12,7 @@ run_complex_case() {
   power=$2
   real=$3
   imaginary=$4
-  "$hilb" -d "$generated/cubic_cspline_dos.dat" -i cspline -G -n "$power" -- "$real" "$imaginary" \
+  "$hilb" --algorithm analytic -d "$generated/cubic_cspline_dos.dat" -i cspline -G -n "$power" -- "$real" "$imaginary" \
     >"$name.out" 2>"$name.err"
   test ! -s "$name.err"
 }
@@ -22,12 +22,12 @@ run_complex_case cubic_lower_knot 0 -0.25 -0.09375
 run_complex_case cubic_power1 1 0.75 0.25
 run_complex_case cubic_power2_lower 2 -1.5 -0.1875
 
-"$hilb" -d "$generated/cubic_cspline_dos.dat" \
+"$hilb" --algorithm analytic -d "$generated/cubic_cspline_dos.dat" \
   "$generated/dmft_resigma.dat" "$generated/dmft_imsigma.dat" mapped_re.out mapped_im.out \
   >mapped.stdout 2>mapped.stderr
 test ! -s mapped.stderr
 
-"$hilb" -G -d "$generated/cubic_cspline_dos.dat" \
+"$hilb" --algorithm analytic -G -d "$generated/cubic_cspline_dos.dat" \
   "$generated/dmft_resigma.dat" "$generated/dmft_imsigma.dat" raw_re.out raw_im.out \
   >raw.stdout 2>raw.stderr
 test ! -s raw.stderr

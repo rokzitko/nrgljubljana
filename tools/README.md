@@ -11,9 +11,10 @@ each tool directory.
 | `-v` | all tools | Report the resolved configuration and verbose diagnostics on standard error. |
 | `-vv` | all tools | Also enable detailed diagnostics where available. |
 | `-V`, `--version` | all tools | Print the NRG Ljubljana project version and exit immediately. |
-| `-a ALGORITHM`, `--algorithm ALGORITHM` | `kk` | Select adaptive `qag` (default) or the optional analytic transform. |
+| `--algorithm ALGORITHM` | `hilb`, `kk` | Select adaptive `qag` (default) or the optional analytic transform. `hilb` provides only this long form. |
+| `-a ALGORITHM` | `kk` | Short alias for `kk --algorithm`; `hilb -a` instead sets `epsabs`. |
 | `-i METHOD`, `--interpolation METHOD` | `hilb`, `kk`, `integ`, `resample` | Select `linear`, `cspline`, `akima`, or `steffen` interpolation. |
-| `-j N`, `--jobs N` | `kk` | Select the worker count; otherwise use the first `OMP_NUM_THREADS` value, or one. |
+| `-j N`, `--jobs N` | `hilb`, `kk` | Select a positive worker count; otherwise use the first value of a fully valid `OMP_NUM_THREADS` list, or one when unset. |
 | `--epsabs VALUE` | `hilb`, `kk` QAG, `integ`, `adapt` integral | Set the absolute adaptive-integration tolerance. |
 | `--epsrel VALUE` | `hilb`, `kk` QAG, `integ`, `adapt` integral | Set the relative adaptive-integration tolerance. |
 | `--workspace-limit N` | `hilb`, `kk` QAG, `integ`, `adapt` integral | Set the GSL workspace capacity; QAG requires `N >= 1` and CQUAD requires `N >= 3`. |
@@ -22,11 +23,12 @@ each tool directory.
 
 Configuration reports use `auto -> VALUE` when a value is derived from input
 data, another setting, or an environment-dependent default. Verbosity does not
-change machine-readable standard output or numerical output files. The one
-standard-output exception is `kk` file mode, whose `-v` performance summary is
-described below; `kk` stream mode remains numeric-only.
+change machine-readable numerical output or numerical output files. The
+standard-output exceptions are the `hilb` and `kk` successful file-output
+timing reports described below; `-v` adds their performance line.
 
-`hilb` retains `-a` and `-r` as aliases for `--epsabs` and `--epsrel`.
+`hilb --algorithm` is long-only. `hilb` retains `-a` and `-r` as aliases for
+`--epsabs` and `--epsrel`, so `-a` does not select its algorithm.
 `integ` retains `-w` as an alias for `--gsl-error-policy ignore`; its `-a`
 option selects the integral of the absolute value and is not an `epsabs`
 alias.
@@ -42,8 +44,9 @@ that the control is not available.
 
 | Tool or mode | Interpolation | `epsabs` | `epsrel` | Workspace | QAG rule | Error policy |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
-| `hilb`, built-in DOS | - | `1e-14` | `1e-10` | `1000` | `15` | `warn` |
-| `hilb`, tabulated DOS | `cspline` | - | - | - | - | - |
+| `hilb`, built-in DOS, QAG (default) | - | `1e-14` | `1e-10` | `1000` per worker | `15` | `warn` |
+| `hilb`, tabulated DOS, QAG (default) | `cspline` | `1e-14` | `1e-10` | `1000` per worker | `15` | `warn` |
+| `hilb`, tabulated DOS, analytic | `cspline` | - | - | - | - | - |
 | `kk`, QAG (default) | `akima` | `1e-12` | `1e-8` | `1000` per worker | `15` | `ignore` |
 | `kk`, analytic | `akima` | - | - | - | - | - |
 | `integ` | `akima` | `1e-12` | `1e-8` | `1000` | `15` | `warn` |
@@ -67,11 +70,14 @@ of nonnegative samples, but its second derivative can be discontinuous and its
 shape can be conservative near extrema.
 
 `hilb -d`, analytic `kk`, and `integ` materialize the selected GSL interpolant
-as a polynomial on each input interval. `hilb -d` and analytic `kk` evaluate the
-corresponding Cauchy transforms analytically. The QAG controls accepted by
-`hilb` affect only its built-in density; they are validated but have no
-numerical effect with `-d`. QAG controls apply to `kk` by default and are
-rejected when `--algorithm analytic` is selected.
+as a polynomial on each input interval. `hilb --algorithm analytic -d` and
+analytic `kk` evaluate the corresponding Cauchy transforms analytically. Hilb's
+analytic algorithm requires `-d`. Its default QAG algorithm applies to both the
+built-in and tabulated DOS; tabulated QAG evaluates the selected interpolant as
+zero outside its support over the symmetric enclosing interval `[-B,B]` and
+integrates each polynomial interval in a local normalized coordinate.
+Hilb silently ignores explicit QAG controls with `--algorithm analytic`, while
+analytic `kk` rejects them.
 
 `integ` analytically evaluates its total, bounded, positive, negative,
 absolute, negative-absolute, first-moment, and zero-temperature Fermi modes.
@@ -79,15 +85,16 @@ Absolute modes locate roots in each polynomial interval before integrating.
 Only positive-temperature Fermi mode uses QAG, separately on every interval
 and with additional temperature-scaled breakpoints around zero.
 
-For the built-in `hilb` density, QAG `kk`, and positive-temperature `integ`
-Fermi mode, QAG applies the selected Gauss-Kronrod rule on each adaptive
+For built-in and tabulated `hilb` QAG, QAG `kk`, and positive-temperature
+`integ` Fermi mode, QAG applies the selected Gauss-Kronrod rule on each adaptive
 subinterval. The rule number is the number of Kronrod points. Higher-order rules
 can be more efficient for smooth integrands; lower-order rules can leave more
 work to adaptive subdivision near local difficulties. The workspace limit
-bounds the number of stored subintervals. Tolerances must be finite and
-nonnegative, the workspace limit must meet the algorithm-specific minimum, and
-the tolerance pair must be accepted by GSL. Limits that could overflow GSL's
-internal allocations are rejected.
+bounds the number of stored subintervals, independently for each parallel QAG
+worker where applicable. Tolerances must be finite and nonnegative, the
+workspace limit must meet the algorithm-specific minimum, and the tolerance
+pair must be accepted by GSL. Limits that could overflow GSL's internal
+allocations are rejected.
 
 The error policies apply when adaptive integration fails its effective error
 target. `integ` rescales and sums its interval error estimates before applying
@@ -110,13 +117,24 @@ the interval polynomials. QAG `kk` obtains it from the selected GSL spline. See
 the [`integ` documentation](integ/README.md) for its complete input, quantity,
 and algorithm contract.
 
-Successful file-mode `kk` runs report total wall time on standard output. With
-`-v`, a second line adds process CPU time, effective parallelism, throughput,
-actual worker count, and algorithm. The actual worker count is capped by the
-number of output points and can therefore be lower than the requested `--jobs`
-or `OMP_NUM_THREADS` value. Unavailable process CPU time is shown as
-`cpu=n/a effective_parallelism=n/a`. Stream mode remains numeric-only and emits
-no timing report.
+For `hilb` and `kk`, an explicit `--jobs` value takes precedence over
+`OMP_NUM_THREADS`. Otherwise the entire comma-separated environment value must
+be a valid list of positive integers, after which its first value is used; an
+unset variable selects one worker. The actual count is
+`min(requested workers, output points)`. Inputs are staged before parallel
+calculation, output order is deterministic, and each actual QAG worker owns a
+separate GSL workspace.
+
+Successful regular-file `hilb -o` runs, Hilb DMFT runs with two regular-file
+outputs, and successful file-mode `kk` runs report `Time elapsed: ... s` on
+standard output after output writes. With `-v`, a second `Performance:` line
+adds wall time, process CPU time, effective parallelism, throughput, actual
+worker count, and algorithm. Unavailable process CPU time is shown as
+`cpu=n/a effective_parallelism=n/a`. Hilb emits no timing when numerical output
+goes to standard output, including `-o /dev/stdout` or a DMFT `/dev/stdout`
+destination; `kk` stream mode likewise remains numeric-only. Hilb's worker pool
+is CLI-internal: no public batch API is added, and its scalar APIs emit no CLI
+timing or performance output.
 
 ## Installed Integration Front Ends
 

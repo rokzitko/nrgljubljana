@@ -10,7 +10,7 @@ open (R, ">matsu_resigma.dat");
 for ($i = 0; $i <= 50; $i ++) {
   $om = (2*$i+1)*$pi/$beta; # fermionic
 
-  $y = `hilb -d imsigma.dat -G 0 $om`; # input to 'hilb' is DOS, i.e. A(w)=-1/pi G"
+  $y = `hilb --algorithm analytic -d imsigma.dat -G 0 $om`; # input to 'hilb' is DOS, i.e. A(w)=-1/pi G"
   chomp($y);
   $y =~ /\((.*),(.*)\)/;
   $re = $1;

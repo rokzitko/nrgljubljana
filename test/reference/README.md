@@ -25,7 +25,8 @@ $1/(E-x)$.
 `quadratic` is an explicit continuous piecewise quadratic. `cubic_cspline` is
 the natural cubic spline through the headerless uneven-grid data in
 `generated/cubic_cspline_dos.dat`; its endpoint second derivatives vanish, so
-the file is also a direct `hilb -d ... -i cspline` fixture. `legendre3` has
+the file is also a direct `hilb --algorithm analytic -d ... -i cspline`
+fixture. `legendre3` has
 three exactly vanishing leading far-field moments, while `ill_conditioned`
 has a small nonzero leading moment formed by cancellation of coefficients of
 order `1e100`. Together they distinguish true cancellation from arithmetic

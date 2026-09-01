@@ -12,6 +12,7 @@ This release summarizes development since `2024.12`, with major improvements in 
 - Threaded BLAS, MPI scheduling, and oversubscription diagnostics are handled more consistently.
 - CPU diagonalization now defaults to the divide-and-conquer LAPACK routines `dsyevd` and `zheevd`.
 - `kk` defaults to its fast adaptive QAG transform, while `--algorithm analytic` selects guarded extended-precision interval transforms with wider and exact fallbacks. Independent output points can run in parallel with `--jobs` or `OMP_NUM_THREADS`. Successful file-mode runs report wall time, with CPU utilization and throughput details under `-v`.
+- `hilb` now defaults to adaptive QAG for both built-in and tabulated densities, with tabulated interpolation extended by zero over the enclosing integration interval. The long-only `--algorithm analytic` requires `-d` and retains the interval-polynomial transform, while `-a` remains the absolute QAG tolerance and explicit QAG controls are silently ignored in analytic mode. Independent points run in parallel with `--jobs` or a validated `OMP_NUM_THREADS` list, deterministic output order, and one workspace per QAG worker. Successful regular-file output reports `Time elapsed: ... s` after writing, with CPU utilization, throughput, actual workers, and algorithm under `-v`; numerical standard output remains timing-free.
 
 ## Performance And Memory
 

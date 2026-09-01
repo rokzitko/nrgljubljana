@@ -1,10 +1,20 @@
 #!/bin/sh
 set -eu
-"$1/hilb" -v -c 1e-8 -d DOS.dat resigma.dat imsigma.dat reaw.dat imaw.dat 2>stderr.txt
+number='[0-9]+([.][0-9]*)?([eE][+-]?[0-9]+)?'
+unset OMP_NUM_THREADS
+"$1/hilb" -v --jobs 3 -c 1e-8 -d DOS.dat resigma.dat imsigma.dat reaw.dat imaw.dat \
+  >stdout.txt 2>stderr.txt
 grep -q "hilb: clipped" stderr.txt
 grep -q '^hilb: configuration$' stderr.txt
+grep -q '^  algorithm=qag$' stderr.txt
+grep -q '^  jobs=3$' stderr.txt
+grep -q '^  jobs.source=--jobs$' stderr.txt
 grep -q '^  dos.interpolation=cspline$' stderr.txt
 grep -q '^  dos.half_bandwidth=auto ->' stderr.txt
-grep -q '^  integration.qag.active=auto -> false ' stderr.txt
+grep -q '^  integration.qag.active=true$' stderr.txt
 grep -q '^  output.precision=17$' stderr.txt
+test "$(grep -Ec '^Time elapsed:' stdout.txt)" -eq 1
+test "$(grep -Ec '^Performance:' stdout.txt)" -eq 1
+grep -Eq "^Time elapsed: ${number} s$" stdout.txt
+grep -Eq "^Performance: wall=${number}s (cpu=${number}s effective_parallelism=${number}x|cpu=n/a effective_parallelism=n/a) throughput=${number} points/s workers=3 algorithm=qag$" stdout.txt
 "$2/test/compare.pl" "$3/ref"

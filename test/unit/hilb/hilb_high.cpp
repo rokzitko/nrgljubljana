@@ -12,6 +12,7 @@
 #include <ios>
 #include <istream>
 #include <limits>
+#include <mutex>
 #include <ostream>
 #include <sstream>
 #include <stdexcept>
@@ -472,6 +473,14 @@ TEST(Hilb, energy_power_parser_requires_nonnegative_integer) { // NOLINT
   EXPECT_THROW(NRG::Hilb::hilbert_transform(rho, zero, B, std::complex<double>{0.0, 0.1}, 1e-3, -1), std::invalid_argument);
 }
 
+TEST(Hilb, algorithm_parser_accepts_only_supported_backends) { // NOLINT
+  EXPECT_EQ(NRG::Hilb::parse_algorithm("qag"), NRG::Hilb::Algorithm::qag);
+  EXPECT_EQ(NRG::Hilb::parse_algorithm("analytic"), NRG::Hilb::Algorithm::analytic);
+  EXPECT_EQ(NRG::Hilb::algorithm_name(NRG::Hilb::Algorithm::qag), "qag");
+  EXPECT_EQ(NRG::Hilb::algorithm_name(NRG::Hilb::Algorithm::analytic), "analytic");
+  EXPECT_THROW((void)NRG::Hilb::parse_algorithm("adaptive"), std::invalid_argument);
+}
+
 TEST(Hilb, minimum_safe_imaginary_part_avoids_underflow) { // NOLINT
   auto rho = [](const double energy) { return 0.5 + 0.1 * energy; };
   auto zero = [](const double) { return 0.0; };
@@ -513,6 +522,18 @@ TEST(Hilb, integration_workspace_is_reusable_and_copyable) { // NOLINT
   NRG::Hilb::integrator assigned(10);
   assigned = integration;
   expect_complex_near(NRG::Hilb::hilbert_transform(assigned, rho, zero, B, second_z), flat_band_h0(second_z), 1e-10);
+}
+
+TEST(Hilb, callable_exceptions_do_not_unwind_through_gsl) { // NOLINT
+  auto throwing_density = [](const double) -> double { throw std::runtime_error("density callback failed"); };
+  auto zero = [](const double) { return 0.0; };
+
+  try {
+    (void)NRG::Hilb::hilbert_transform(throwing_density, zero, B, std::complex<double>{0.2, 0.4});
+    FAIL() << "throwing density callback unexpectedly succeeded";
+  } catch (const std::runtime_error &error) {
+    EXPECT_STREQ(error.what(), "density callback failed");
+  }
 }
 
 TEST(Hilb, integrator_accepts_configured_workspace_rule_and_policy) { // NOLINT
@@ -793,6 +814,178 @@ TEST(Hilb, cli_legacy_interpolation_default_is_cubic) { // NOLINT
   EXPECT_GT(std::abs(std::stod(legacy.out) - std::stod(linear.out)), 1e-3);
 
   std::remove(dos.c_str());
+}
+
+TEST(Hilb, cli_defaults_to_qag_and_accepts_tabulated_analytic_mode) { // NOLINT
+  const std::string dos = "hilb_algorithm_dos.dat";
+  const std::string narrow_dos = "hilb_algorithm_narrow_dos.dat";
+  const std::string wide_dos = "hilb_algorithm_wide_dos.dat";
+  const std::string far_dos = "hilb_algorithm_far_dos.dat";
+  const std::string opposite_dos = "hilb_algorithm_opposite_dos.dat";
+  const std::string endpoint_dos = "hilb_algorithm_endpoint_dos.dat";
+  const std::string midpoint_dos = "hilb_algorithm_midpoint_dos.dat";
+  const std::string local_dos = "hilb_algorithm_local_dos.dat";
+  write_file(dos, "-1 0\n-0.5 0.2\n0 1\n0.5 0.1\n1 0\n");
+  write_file(narrow_dos, "-1 0\n0.9998 0\n0.9999 1\n1 0\n");
+  write_file(wide_dos, "0 0\n5000000000 0\n5000000000.000001 1e10\n5000000000.000002 0\n10000000000 0\n");
+  write_file(far_dos, "0 1e100\n1 1e100\n");
+  write_file(opposite_dos, "-1e308 1\n-9e307 1\n");
+  write_file(endpoint_dos, "-1 1\n0 1\n1 1\n");
+  write_file(midpoint_dos, "-1 1e100\n1 1e100\n");
+  write_file(local_dos, "5000000000 0\n5000000000.000001 1\n");
+
+  const auto defaults = run_hilb_captured({"hilb", "-d", dos, "-G", "0.2", "0.4"});
+  const auto qag = run_hilb_captured({"hilb", "--algorithm", "qag", "-d", dos, "-G", "0.2", "0.4"});
+  const auto analytic = run_hilb_captured({"hilb", "--algorithm", "analytic", "-d", dos, "-G", "0.2", "0.4"});
+  const auto analytic_with_qag_control = run_hilb_captured(
+    {"hilb", "--algorithm", "analytic", "--epsabs", "1e-10", "-d", dos, "-G", "0.2", "0.4"});
+
+  EXPECT_TRUE(defaults.err.empty());
+  EXPECT_TRUE(qag.err.empty());
+  EXPECT_TRUE(analytic.err.empty());
+  EXPECT_TRUE(analytic_with_qag_control.err.empty());
+  EXPECT_EQ(defaults.out, qag.out);
+  EXPECT_EQ(analytic.out, analytic_with_qag_control.out);
+  expect_complex_near(parse_complex_output(qag.out), parse_complex_output(analytic.out), 1e-9);
+  EXPECT_THROW(run_hilb({"hilb", "--algorithm", "analytic", "0.2", "0.4"}), std::runtime_error);
+  EXPECT_THROW(run_hilb({"hilb", "--algorithm", "adaptive", "0.2", "0.4"}), std::invalid_argument);
+
+  const auto narrow_qag = parse_complex_output(
+    run_hilb_captured({"hilb", "--algorithm", "qag", "-i", "linear", "-d", narrow_dos, "-G", "0", "0.4"}).out);
+  const auto narrow_analytic = parse_complex_output(
+    run_hilb_captured({"hilb", "--algorithm", "analytic", "-i", "linear", "-d", narrow_dos, "-G", "0", "0.4"}).out);
+  EXPECT_NE(narrow_qag, std::complex<double>{});
+  expect_complex_near(narrow_qag, narrow_analytic, 2e-18);
+  const auto narrow_small_imaginary_qag = parse_complex_output(
+    run_hilb_captured({"hilb", "--algorithm", "qag", "--gsl-error-policy", "fail", "-i", "linear", "-d",
+                       narrow_dos, "-G", "0", "1e-6"}).out);
+  const auto narrow_small_imaginary_analytic = parse_complex_output(
+    run_hilb_captured({"hilb", "--algorithm", "analytic", "-i", "linear", "-d", narrow_dos, "-G", "0",
+                       "1e-6"}).out);
+  expect_complex_near(narrow_small_imaginary_qag, narrow_small_imaginary_analytic, 2e-18);
+  const auto wide_qag = parse_complex_output(
+    run_hilb_captured({"hilb", "--algorithm", "qag", "--gsl-error-policy", "fail", "-i", "linear", "-d",
+                       wide_dos, "-G", "0", "0.4"}).out);
+  const auto wide_analytic = parse_complex_output(
+    run_hilb_captured({"hilb", "--algorithm", "analytic", "-i", "linear", "-d", wide_dos, "-G", "0",
+                       "0.4"}).out);
+  expect_complex_near(wide_qag, wide_analytic, 2e-18);
+  const auto wide_small_imaginary_qag = parse_complex_output(
+    run_hilb_captured({"hilb", "--algorithm", "qag", "--gsl-error-policy", "fail", "-i", "linear", "-d",
+                       wide_dos, "-G", "0", "1e-6"}).out);
+  const auto wide_small_imaginary_analytic = parse_complex_output(
+    run_hilb_captured({"hilb", "--algorithm", "analytic", "-i", "linear", "-d", wide_dos, "-G", "0",
+                       "1e-6"}).out);
+  expect_complex_near(wide_small_imaginary_qag, wide_small_imaginary_analytic, 2e-18);
+  const auto far_qag = parse_complex_output(
+    run_hilb_captured({"hilb", "--algorithm", "qag", "--gsl-error-policy", "fail", "-i", "linear", "-d",
+                       far_dos, "-G", "1e100", "1e-6"}).out);
+  const auto far_analytic = parse_complex_output(
+    run_hilb_captured({"hilb", "--algorithm", "analytic", "-i", "linear", "-d", far_dos, "-G", "1e100",
+                       "1e-6"}).out);
+  expect_complex_near(far_qag, far_analytic, 2e-18);
+  const auto opposite_qag = parse_complex_output(
+    run_hilb_captured({"hilb", "--algorithm", "qag", "--gsl-error-policy", "fail", "-i", "linear", "-d",
+                       opposite_dos, "-G", "1e308", "0.4"}).out);
+  const auto opposite_analytic = parse_complex_output(
+    run_hilb_captured({"hilb", "--algorithm", "analytic", "-i", "linear", "-d", opposite_dos, "-G", "1e308",
+                       "0.4"}).out);
+  expect_complex_near(opposite_qag, opposite_analytic, 2e-18);
+  const auto endpoint_qag = parse_complex_output(
+    run_hilb_captured({"hilb", "--algorithm", "qag", "--gsl-error-policy", "fail", "-i", "linear", "-d",
+                       endpoint_dos, "-G", "1e-20", "1e-30"}).out);
+  const auto endpoint_analytic = parse_complex_output(
+    run_hilb_captured({"hilb", "--algorithm", "analytic", "-i", "linear", "-d", endpoint_dos, "-G",
+                       "1e-20", "1e-30"}).out);
+  expect_complex_near(endpoint_qag, endpoint_analytic, 2e-18);
+  const auto midpoint_qag = parse_complex_output(
+    run_hilb_captured({"hilb", "--algorithm", "qag", "--gsl-error-policy", "fail", "-i", "linear", "-d",
+                       midpoint_dos, "-G", "0", "1e-4"}).out);
+  const auto midpoint_analytic = parse_complex_output(
+    run_hilb_captured({"hilb", "--algorithm", "analytic", "-i", "linear", "-d", midpoint_dos, "-G", "0",
+                       "1e-4"}).out);
+  EXPECT_DOUBLE_EQ(midpoint_qag.real(), 0.0);
+  expect_complex_near(midpoint_qag / midpoint_analytic, {1.0, 0.0}, 2e-14);
+  const auto shifted_midpoint_qag = parse_complex_output(
+    run_hilb_captured({"hilb", "--algorithm", "qag", "--gsl-error-policy", "fail", "-i", "linear", "-d",
+                       midpoint_dos, "-G", "1e-20", "1e-4"}).out);
+  const std::complex<double> shifted_midpoint_expected{
+    1e100 * NRG::Hilb::reQ(1e-20, 1e-4, 1.0), 1e100 * NRG::Hilb::imQ(1e-20, 1e-4, 1.0)};
+  expect_complex_near(shifted_midpoint_qag / shifted_midpoint_expected, {1.0, 0.0}, 2e-14);
+  const auto local_qag = parse_complex_output(
+    run_hilb_captured({"hilb", "--algorithm", "qag", "--epsabs", "1e-4", "--gsl-error-policy", "fail", "-i",
+                       "linear", "-d", local_dos, "-G", "5000000000", "2e-154"}).out);
+  EXPECT_NEAR(local_qag.real(), -1.0, 2e-14);
+
+  std::remove(dos.c_str());
+  std::remove(narrow_dos.c_str());
+  std::remove(wide_dos.c_str());
+  std::remove(far_dos.c_str());
+  std::remove(opposite_dos.c_str());
+  std::remove(endpoint_dos.c_str());
+  std::remove(midpoint_dos.c_str());
+  std::remove(local_dos.c_str());
+}
+
+TEST(Hilb, cli_parallel_batches_preserve_order_and_values) { // NOLINT
+  const std::string dos = "hilb_parallel_dos.dat";
+  const std::string input = "hilb_parallel_input.dat";
+  write_file(dos, "-1 0\n-0.5 0.2\n0 1\n0.5 0.1\n1 0\n");
+  write_file(input, "3 0.2 0.4\n1 -0.3 0.2\n2 1.5 0.1\n4 0 0.8\n");
+
+  for (const std::string algorithm : {"qag", "analytic"}) {
+    SCOPED_TRACE(algorithm);
+    const auto serial_file = "hilb_parallel_" + algorithm + "_serial.dat";
+    const auto parallel_file = "hilb_parallel_" + algorithm + "_parallel.dat";
+    const auto serial = run_hilb_captured({"hilb", "--algorithm", algorithm, "--jobs", "1", "-d", dos,
+                                           "-G", "-o", serial_file, input});
+    const auto parallel = run_hilb_captured({"hilb", "--algorithm", algorithm, "--jobs", "3", "-d", dos,
+                                             "-G", "-o", parallel_file, input});
+    EXPECT_TRUE(serial.err.empty());
+    EXPECT_TRUE(parallel.err.empty());
+    EXPECT_EQ(read_file(serial_file), read_file(parallel_file));
+    EXPECT_NE(serial.out.find("Time elapsed:"), std::string::npos);
+    EXPECT_NE(parallel.out.find("Time elapsed:"), std::string::npos);
+    std::remove(serial_file.c_str());
+    std::remove(parallel_file.c_str());
+  }
+
+  std::remove(dos.c_str());
+  std::remove(input.c_str());
+}
+
+TEST(Hilb, parallel_qag_restores_the_process_gsl_handler) { // NOLINT
+  const std::string dos = "hilb_parallel_handler_dos.dat";
+  const std::string input = "hilb_parallel_handler_input.dat";
+  const std::string output = "hilb_parallel_handler_output.dat";
+  write_file(dos, "-1 0\n-0.5 0.2\n0 1\n0.5 0.1\n1 0\n");
+  write_file(input, "1 0.2 0.4\n2 -0.3 0.2\n3 0 0.8\n");
+
+  const std::lock_guard handler_lock(NRG::Tools::gsl_error_handler_mutex());
+  auto *previous_handler = gsl_set_error_handler(&count_gsl_handler_calls);
+  try {
+    const auto result = run_hilb_captured({"hilb", "--jobs", "3", "-d", dos, "-G", "-o", output, input});
+    EXPECT_TRUE(result.err.empty());
+    auto *restored_handler = gsl_set_error_handler_off();
+    EXPECT_EQ(restored_handler, &count_gsl_handler_calls);
+    if (previous_handler)
+      gsl_set_error_handler(previous_handler);
+    else
+      gsl_set_error_handler_off();
+  } catch (...) {
+    if (previous_handler)
+      gsl_set_error_handler(previous_handler);
+    else
+      gsl_set_error_handler_off();
+    std::remove(dos.c_str());
+    std::remove(input.c_str());
+    std::remove(output.c_str());
+    throw;
+  }
+
+  std::remove(dos.c_str());
+  std::remove(input.c_str());
+  std::remove(output.c_str());
 }
 
 TEST(Hilb, cli_argument_shifts_and_bandwidth_scaling_are_effective) { // NOLINT

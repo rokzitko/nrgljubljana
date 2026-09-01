@@ -1,8 +1,10 @@
 #!/bin/sh
 set -eu
 
-rm -f result.txt
+rm -f ./*.dat ./*.txt ./*.stdout ./*.stderr
+unset OMP_NUM_THREADS
 number='[-+]?([0-9]+([.][0-9]*)?|[.][0-9]+)([eE][-+]?[0-9]+)?'
+nonnegative='[0-9]+([.][0-9]*)?([eE][+-]?[0-9]+)?'
 
 if "$1/hilb" >stdout.txt 2>stderr.txt; then
   exit 1
@@ -17,19 +19,140 @@ grep -q "Real argument must be a finite representable number" stderr.txt
 
 "$1/hilb" -G --workspace-limit 64 --quadrature-rule 61 --gsl-error-policy fail \
   --epsabs 1e-10 --epsrel 1e-8 0.2 0.4 >stdout.txt 2>stderr.txt
-grep -Eq "^\\(${number},${number}\\)$" stdout.txt
+grep -Eq "^\(${number},${number}\)$" stdout.txt
 test ! -s stderr.txt
 
 "$1/hilb" -G -o result.txt 0.2 0.4 >stdout.txt 2>stderr.txt
-test ! -s stdout.txt
 test ! -s stderr.txt
-grep -Eq "^\\(${number},${number}\\)$" result.txt
+grep -Eq "^\(${number},${number}\)$" result.txt
+test "$(grep -Ec '^Time elapsed:' stdout.txt)" -eq 1
+grep -Eq "^Time elapsed: ${nonnegative} s$" stdout.txt
+if grep -q '^Performance:' stdout.txt; then
+  echo "hilb unexpectedly emitted verbose performance details without -v" >&2
+  exit 1
+fi
 
 if test -e /dev/stdout; then
   "$1/hilb" -G -o /dev/stdout 0.2 0.4 >stdout.txt 2>stderr.txt
-  grep -Eq "^\\(${number},${number}\\)$" stdout.txt
+  grep -Eq "^\(${number},${number}\)$" stdout.txt
+  if grep -q '^Time elapsed:' stdout.txt; then
+    echo "hilb unexpectedly emitted timing with numeric /dev/stdout output" >&2
+    exit 1
+  fi
   test ! -s stderr.txt
 fi
+
+if test -e /dev/null; then
+  "$1/hilb" -G -o /dev/null 0.2 0.4 >stdout.txt 2>stderr.txt
+  test ! -s stdout.txt
+  test ! -s stderr.txt
+fi
+
+cat >DOS.dat <<'EOF'
+-1 0
+-0.5 0.2
+0 1
+0.5 0.1
+1 0
+EOF
+cat >points.dat <<'EOF'
+3 0.2 0.4
+1 -0.3 0.2
+2 1.5 0.1
+4 0 0.8
+EOF
+
+"$1/hilb" -G -d DOS.dat 0.2 0.4 >default-qag.txt 2>default-qag.stderr
+"$1/hilb" -G --algorithm qag -d DOS.dat 0.2 0.4 >explicit-qag.txt 2>explicit-qag.stderr
+cmp default-qag.txt explicit-qag.txt
+test ! -s default-qag.stderr
+test ! -s explicit-qag.stderr
+"$1/hilb" -G --algorithm analytic -d DOS.dat 0.2 0.4 >analytic.txt 2>analytic.stderr
+grep -Eq "^\(${number},${number}\)$" analytic.txt
+test ! -s analytic.stderr
+
+if "$1/hilb" --algorithm analytic 0.2 0.4 >invalid.stdout 2>invalid.stderr; then
+  echo "hilb unexpectedly accepted analytic mode without a tabulated DOS" >&2
+  exit 1
+fi
+grep -Fq "analytic algorithm requires a tabulated density" invalid.stderr
+"$1/hilb" -G --algorithm analytic -t 0 --epsabs 0 --epsrel 0 --workspace-limit 1 \
+  --quadrature-rule 61 --gsl-error-policy fail -d DOS.dat 0.2 0.4 \
+  >analytic-controls.txt 2>analytic-controls.stderr
+cmp analytic.txt analytic-controls.txt
+test ! -s analytic-controls.stderr
+if "$1/hilb" --algorithm analytic --workspace-limit 0 -d DOS.dat 0.2 0.4 \
+  >invalid.stdout 2>invalid.stderr; then
+  echo "hilb unexpectedly accepted an invalid QAG control value in analytic mode" >&2
+  exit 1
+fi
+grep -Fq "Workspace limit must be a positive integer" invalid.stderr
+if "$1/hilb" --algorithm adaptive 0.2 0.4 >invalid.stdout 2>invalid.stderr; then
+  echo "hilb unexpectedly accepted an invalid algorithm" >&2
+  exit 1
+fi
+grep -Fq "Algorithm must be one of" invalid.stderr
+if "$1/hilb" --jobs 0 0.2 0.4 >invalid.stdout 2>invalid.stderr; then
+  echo "hilb unexpectedly accepted zero workers" >&2
+  exit 1
+fi
+grep -Fq "Worker count must be a positive integer" invalid.stderr
+
+"$1/hilb" --jobs 1 -v -G -d DOS.dat -o serial.dat points.dat >serial.stdout 2>serial.stderr
+grep -Fxq '  jobs=1' serial.stderr
+grep -Fxq '  jobs.source=--jobs' serial.stderr
+OMP_NUM_THREADS=3 "$1/hilb" -v -G -d DOS.dat -o parallel.dat points.dat \
+  >parallel.stdout 2>parallel.stderr
+cmp serial.dat parallel.dat
+grep -Fxq '  algorithm=qag' parallel.stderr
+grep -Fxq '  jobs=auto -> 3 (OMP_NUM_THREADS)' parallel.stderr
+grep -Fxq '  jobs.source=OMP_NUM_THREADS' parallel.stderr
+test "$(grep -Ec '^Time elapsed:' parallel.stdout)" -eq 1
+test "$(grep -Ec '^Performance:' parallel.stdout)" -eq 1
+grep -Eq "^Performance: wall=${nonnegative}s (cpu=${nonnegative}s effective_parallelism=${nonnegative}x|cpu=n/a effective_parallelism=n/a) throughput=${nonnegative} points/s workers=3 algorithm=qag$" parallel.stdout
+
+"$1/hilb" --algorithm analytic --jobs 1 -G -d DOS.dat -o analytic-serial.dat points.dat \
+  >analytic-serial.stdout 2>analytic-serial.stderr
+"$1/hilb" --algorithm analytic --jobs 3 -v -G -d DOS.dat -o analytic-parallel.dat points.dat \
+  >analytic-parallel.stdout 2>analytic-parallel.stderr
+cmp analytic-serial.dat analytic-parallel.dat
+grep -Fxq '  algorithm=analytic' analytic-parallel.stderr
+grep -Fxq '  integration.qag.active=false' analytic-parallel.stderr
+grep -Eq "^Performance: wall=${nonnegative}s (cpu=${nonnegative}s effective_parallelism=${nonnegative}x|cpu=n/a effective_parallelism=n/a) throughput=${nonnegative} points/s workers=3 algorithm=analytic$" analytic-parallel.stdout
+
+OMP_NUM_THREADS='3,2' "$1/hilb" -v -G -d DOS.dat -o nested.dat points.dat \
+  >nested.stdout 2>nested.stderr
+cmp serial.dat nested.dat
+grep -Fxq '  jobs=auto -> 3 (OMP_NUM_THREADS)' nested.stderr
+OMP_NUM_THREADS=4 "$1/hilb" --jobs 2 -v -G -d DOS.dat -o explicit.dat points.dat \
+  >explicit.stdout 2>explicit.stderr
+cmp serial.dat explicit.dat
+grep -Fxq '  jobs=2' explicit.stderr
+grep -Fxq '  jobs.source=--jobs' explicit.stderr
+if OMP_NUM_THREADS='3,invalid' "$1/hilb" 0.2 0.4 >invalid.stdout 2>invalid.stderr; then
+  echo "hilb unexpectedly accepted an invalid OMP_NUM_THREADS list" >&2
+  exit 1
+fi
+grep -Fq "OMP_NUM_THREADS must be a comma-separated list of positive integers" invalid.stderr
+
+difficult_options='--workspace-limit 1 --quadrature-rule 15 --epsabs 0 --epsrel 2e-14 --gsl-error-policy warn'
+# shellcheck disable=SC2086
+"$1/hilb" --jobs 1 $difficult_options -G points.dat >warn-serial.stdout 2>warn-serial.stderr
+# shellcheck disable=SC2086
+"$1/hilb" --jobs 3 $difficult_options -G points.dat >warn-parallel.stdout 2>warn-parallel.stderr
+cmp warn-serial.stdout warn-parallel.stdout
+cmp warn-serial.stderr warn-parallel.stderr
+grep -Fq "hilb: warning:" warn-parallel.stderr
+
+printf '%s\n' 'preserve existing output' >fail-output.dat
+cp fail-output.dat fail-output.expected
+if "$1/hilb" --jobs 3 --workspace-limit 1 --quadrature-rule 15 --epsabs 0 --epsrel 2e-14 \
+  --gsl-error-policy fail -G -o fail-output.dat points.dat >fail.stdout 2>fail.stderr; then
+  echo "hilb unexpectedly completed a failing parallel batch" >&2
+  exit 1
+fi
+cmp fail-output.expected fail-output.dat
+grep -Fq "qag error:" fail.stderr
 
 if "$1/hilb" --workspace-limit 1 --quadrature-rule 15 --gsl-error-policy fail \
   --epsabs 0 --epsrel 2e-14 0.2 0.4 >stdout.txt 2>stderr.txt; then
