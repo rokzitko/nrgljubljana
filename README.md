@@ -173,11 +173,13 @@ citation format.
 
 ## Questions and Contributions
 
-- Questions about setting up or interpreting a calculation, and reports of
-  suspected numerical problems, can be posted as
-  [GitHub issues](https://github.com/rokzitko/nrgljubljana/issues).
-- See [`CONTRIBUTING.md`](CONTRIBUTING.md) for instructions on compiling and
-  testing changes.
+- Ask questions about setting up or interpreting a calculation in
+  [GitHub Discussions](https://github.com/rokzitko/nrgljubljana/discussions/categories/q-a).
+  Reproducible numerical problems can be submitted with the
+  [bug report](https://github.com/rokzitko/nrgljubljana/issues/new?template=bug.md).
+- See [`CONTRIBUTING.md`](CONTRIBUTING.md) for ways to add a published
+  application, example, model, benchmark, documentation improvement, or code
+  change.
 - Visit the [project home page](http://nrgljubljana.ijs.si/) for additional background and examples.
 - Contact Rok Zitko at [rok.zitko@ijs.si](mailto:rok.zitko@ijs.si) for project and research inquiries.
 
@@ -300,8 +302,8 @@ For MKL builds that use the `mkl_rt` dispatcher, set `-DNRGLJUBLJANA_MKL_THREADI
 
 ## Contributing
 
-See `CONTRIBUTING.md` for instructions on compiling the sources, running the
-tests, and checking changes.
+See `CONTRIBUTING.md` for research, documentation, example, benchmark, and code
+contributions. Most contributions do not require compiling the source.
 
 ## License
 
