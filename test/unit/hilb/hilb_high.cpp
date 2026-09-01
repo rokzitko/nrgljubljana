@@ -50,6 +50,10 @@ void run_hilb(std::vector<std::string> arguments) {
   std::vector<char *> argv;
   argv.reserve(arguments.size());
   for (auto &argument : arguments) argv.push_back(argument.data());
+#if defined(__APPLE__)
+  // BSD getopt keeps additional parser state between invocations.
+  optreset = 1;
+#endif
   optind = 1;
   NRG::Hilb::Hilb(static_cast<int>(argv.size()), argv.data());
 }
@@ -890,7 +894,9 @@ TEST(Hilb, cli_defaults_to_qag_and_accepts_tabulated_analytic_mode) { // NOLINT
   const auto opposite_analytic = parse_complex_output(
     run_hilb_captured({"hilb", "--algorithm", "analytic", "-i", "linear", "-d", opposite_dos, "-G", "1e308",
                        "0.4"}).out);
-  expect_complex_near(opposite_qag, opposite_analytic, 2e-18);
+  const auto opposite_tolerance =
+    2.0 * std::numeric_limits<double>::epsilon() * std::abs(opposite_analytic);
+  expect_complex_near(opposite_qag, opposite_analytic, opposite_tolerance);
   const auto endpoint_qag = parse_complex_output(
     run_hilb_captured({"hilb", "--algorithm", "qag", "--gsl-error-policy", "fail", "-i", "linear", "-d",
                        endpoint_dos, "-G", "1e-20", "1e-30"}).out);

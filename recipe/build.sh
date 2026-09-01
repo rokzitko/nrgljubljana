@@ -79,6 +79,7 @@ if [ "${build_tests}" = "ON" ]; then
   export OMP_NUM_THREADS=1
   export MKL_NUM_THREADS=1
   export OPENBLAS_NUM_THREADS=1
+  export UCX_TLS="${UCX_TLS:-tcp,sm,self}"
   ctest_args=(--test-dir build --output-on-failure --parallel "${test_jobs}" --timeout "${test_timeout}" --no-tests=error)
   if [ -n "${test_regex}" ]; then
     ctest_args+=(-R "${test_regex}")
