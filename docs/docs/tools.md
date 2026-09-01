@@ -128,13 +128,13 @@ These tools operate on tabulated spectral or response data after the main `nrg` 
 - long-only `hilb --algorithm analytic` requires `-d`, uses the existing
   interval-polynomial transform, and silently ignores QAG numerical controls;
   `kk` also offers QAG and analytic algorithms
-- `hilb` and `kk` can evaluate independent output points in parallel with an
-  explicit worker count or `OMP_NUM_THREADS`, while preserving output order and
-  assigning a separate GSL workspace to each QAG worker
-- successful regular-file Hilb output and file-mode `kk` output report wall
+- `broaden`, `hilb`, and `kk` can evaluate independent output points in parallel
+  with an explicit worker count or `OMP_NUM_THREADS` while preserving output
+  order; Hilb and KK assign a separate GSL workspace to each QAG worker
+- successful `broaden`, regular-file Hilb, and file-mode `kk` output report wall
   time after writing; verbose mode adds CPU use, effective parallelism,
-  throughput, actual workers, and algorithm, while numerical standard output
-  remains free of timing reports
+  throughput, actual workers, and algorithm or kernel details, while numerical
+  standard output remains free of timing reports
 
 ### Notable Distinctions
 

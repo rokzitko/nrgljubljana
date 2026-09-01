@@ -7,11 +7,15 @@
 #include <fstream>
 #include <sstream>
 #include <iomanip>
+#include <atomic>
+#include <chrono>
 #include <cstddef>
 #include <cmath>
 #include <cstdlib>
+#include <ctime>
 #include <cassert>
 #include <cfloat>
+#include <exception>
 #include <utility>
 #include <vector>
 #include <map>
@@ -20,9 +24,13 @@
 #include <functional>
 #include <ios>
 #include <istream>
+#include <limits>
+#include <mutex>
+#include <optional>
 #include <ostream>
 #include <stdexcept>
 #include <numeric>
+#include <thread>
 
 #include <unistd.h>
 #include <getopt.h>
@@ -34,6 +42,9 @@
 #include "basicio.hpp"
 
 #include "../common/diagnostics.hpp"
+#include "../common/gsl_config.hpp"
+#include "../common/output_file.hpp"
+#include "../common/parallel.hpp"
 
 namespace NRG::Broaden {
 
@@ -59,16 +70,65 @@ inline double derfd_kernel(const double x, const double y, const double sigma) {
   return 1.0 / ((1.0 + std::cosh(d)) * 2.0 * sigma);
 }
 
+template<typename FNC>
+void for_each_index(const size_t count, const size_t requested_workers, FNC &&calculate) {
+  if (count == 0) return;
+  if (requested_workers == 0) throw std::invalid_argument("Worker count must be positive.");
+  const auto worker_count = std::min(count, requested_workers);
+  if (worker_count == 1) {
+    for (size_t index = 0; index < count; ++index) calculate(index);
+    return;
+  }
+
+  std::atomic<size_t> next_index{0};
+  std::atomic<bool> stopped{false};
+  std::exception_ptr failure;
+  auto failure_index = std::numeric_limits<size_t>::max();
+  std::mutex failure_mutex;
+  auto run_worker = [&] {
+    while (!stopped.load(std::memory_order_relaxed)) {
+      const auto index = next_index.fetch_add(1, std::memory_order_relaxed);
+      if (index >= count) break;
+      try {
+        calculate(index);
+      } catch (...) {
+        {
+          const std::lock_guard lock(failure_mutex);
+          if (!failure || index < failure_index) {
+            failure = std::current_exception();
+            failure_index = index;
+          }
+        }
+        stopped.store(true, std::memory_order_relaxed);
+      }
+    }
+  };
+
+  std::vector<std::thread> workers;
+  workers.reserve(worker_count);
+  try {
+    for (size_t worker = 0; worker < worker_count; ++worker) workers.emplace_back(run_worker);
+  } catch (...) {
+    stopped.store(true, std::memory_order_relaxed);
+    for (auto &worker : workers) worker.join();
+    throw;
+  }
+  for (auto &worker : workers) worker.join();
+  if (failure) std::rethrow_exception(failure);
+}
+
 template<typename S, typename T, typename FNC>
 void convolve(const std::vector<S> &mesh, std::vector<T> &a, const double sigma, 
-              FNC kernel, const double cutoff_ratio = 100) {
+              const size_t jobs, FNC kernel, const double cutoff_ratio = 100) {
   const auto nr_mesh = mesh.size();
   if (nr_mesh == 0) throw std::runtime_error("Output mesh is empty.");
   if (sigma <= 0.0) throw std::invalid_argument("Convolution width must be greater than 0.");
   auto b(a); // source
-  a[0]           = b[0];
-  a[nr_mesh - 1] = b[nr_mesh - 1];
-  for (auto i = 1; i < nr_mesh - 1; i++) {
+  for_each_index(nr_mesh, jobs, [&](const size_t i) {
+    if (i == 0 || i + 1 == nr_mesh) {
+      a[i] = b[i];
+      return;
+    }
     const auto x = mesh[i];
     if (std::abs(x) < cutoff_ratio * sigma) {
       auto sum = 0.0;
@@ -86,7 +146,7 @@ void convolve(const std::vector<S> &mesh, std::vector<T> &a, const double sigma,
       // High temperatures: convolution not necessary
       a[i] = b[i];
     }
-  }
+  });
 }
 
 template<typename S, typename T>
@@ -98,7 +158,14 @@ void save(const std::string &filename, const std::vector<S> &x, const std::vecto
   F << std::setprecision(SAVE_PREC);
   assert(x.size() == y.size());
   const auto nr = x.size();
-  for (auto i = 0; i < nr; i++) { F << x[i] << " " << y[i] << std::endl; }
+  for (auto i = 0; i < nr; i++) F << x[i] << " " << y[i] << '\n';
+  NRG::Tools::finish_output(F, filename);
+  try {
+    F.close();
+  } catch (const std::ios_base::failure &error) {
+    throw std::runtime_error(filename + ": output close failed: " + error.what());
+  }
+  if (!F) throw std::runtime_error(filename + ": output close failed.");
 }
 
 // Estimate the weight using the trapezoidal rule. The x array must be sorted.
@@ -227,6 +294,11 @@ class Broaden {
    vec a;    // Spectral function
    vec c;    // Cumulative spectrum = int_{-inf}^omega a(x)dx.
    std::string mesh_filename = "";
+   size_t jobs = 1;
+   std::string jobs_source = "default";
+   size_t actual_workers = 0;
+   std::chrono::steady_clock::time_point wall_start;
+   std::clock_t cpu_start;
    
    void usage(std::ostream &F = std::cout) {
      F << "Usage: broaden <name> <Nz> <alpha> <T> [omega0_ratio]" << std::endl;
@@ -236,6 +308,7 @@ class Broaden {
       F << " -v -- print resolved configuration and enable verbose diagnostics" << std::endl;
       F << " -vv -- enable very verbose diagnostics" << std::endl;
       F << " -V, --version -- show version and exit" << std::endl;
+      F << " -j <n>, --jobs <n> -- worker count (default: first OMP_NUM_THREADS value, or 1)" << std::endl;
      F << " -m <min> -- minimal mesh frequency" << std::endl;
      F << " -M <max> -- maximal mesh frequency" << std::endl;
      F << " -r <ratio> -- ratio between two consecutive frequency points" << std::endl;
@@ -257,14 +330,32 @@ class Broaden {
      F << " -B -- output only negative frequencies" << std::endl;
      F << " -L <filename> -- load the frequency mesh from a file" << std::endl;
    }
-   
+
+   void resolve_jobs(const std::optional<size_t> requested) {
+     if (requested) {
+       jobs = *requested;
+       jobs_source = "--jobs";
+     } else if (const auto *environment = std::getenv("OMP_NUM_THREADS")) {
+       jobs = NRG::Tools::parse_worker_count(environment, "OMP_NUM_THREADS");
+       jobs_source = "OMP_NUM_THREADS";
+     } else {
+       jobs = 1;
+       jobs_source = "default";
+     }
+   }
+
    void cmd_line(int argc, char *argv[]) {
      if (argc == 2 && std::string(argv[1]) == "-h") {
        usage();
        std::exit(EXIT_SUCCESS);
      }
+     static const option long_options[] = {
+       {"jobs", required_argument, nullptr, 'j'},
+       {nullptr, 0, nullptr, 0}
+     };
+     std::optional<size_t> requested_jobs;
      int c_;
-     while ((c_ = getopt(argc, argv, "vm:M:r:o23nscgf:x:a:l:h:PNABL:")) != -1) {
+     while ((c_ = getopt_long(argc, argv, "vj:m:M:r:o23nscgf:x:a:l:h:PNABL:", long_options, nullptr)) != -1) {
        switch (c_) {
        case 'c': cumulative = true; break;
        case 's': sumrules = true; break;
@@ -272,6 +363,7 @@ class Broaden {
          if (verbose) veryverbose = true;
          verbose = true;
          break;
+       case 'j': requested_jobs = NRG::Tools::parse_positive_size(optarg, "Worker count"); break;
         case 'm':
           broaden_min = atof(optarg);
           break;
@@ -316,9 +408,10 @@ class Broaden {
        case 'L':
          mesh_filename = std::string(optarg);
          break;
-       default: std::abort();
+       default: throw std::invalid_argument("Unknown command-line option.");
        }
      }
+     resolve_jobs(requested_jobs);
      auto remaining = argc - optind; // arguments left
      if (remaining != 5 && remaining != 4) {
        usage();
@@ -347,6 +440,10 @@ class Broaden {
       std::cout << "Processing: " << name << std::endl;
      }
 
+    auto kernel_mode_name() const {
+      return gaussian ? "gaussian" : normalization ? "hybrid_peak_frequency" : "hybrid_output_frequency";
+    }
+
     void resolve_mesh() {
       if (mesh_filename != "") {
         mesh = load_mesh(mesh_filename, verbose);
@@ -373,7 +470,12 @@ class Broaden {
         report.value("omega0_ratio", omega0_ratio);
       }
       report.resolved("omega0", omega0, "omega0_ratio*temperature");
-      report.value("kernel_mode", gaussian ? "gaussian" : normalization ? "hybrid_peak_frequency" : "hybrid_output_frequency");
+      report.value("kernel_mode", kernel_mode_name());
+      if (jobs_source == "--jobs")
+        report.value("jobs", jobs);
+      else
+        report.resolved("jobs", jobs, jobs_source);
+      report.value("jobs.source", jobs_source);
       report.value("normalization_mode", normalization);
       report.value("sum_rules", sumrules);
       report.value("cumulative", cumulative);
@@ -412,6 +514,31 @@ class Broaden {
       report.value("cumulative_file", cumulative ? cumulative_filename : "disabled");
       report.write(std::cerr);
     }
+
+     void report_timing() const {
+       const auto wall_seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - wall_start).count();
+       const auto cpu_end = std::clock();
+       std::optional<double> cpu_seconds;
+       if (cpu_start != static_cast<std::clock_t>(-1) && cpu_end != static_cast<std::clock_t>(-1)
+           && cpu_end >= cpu_start)
+         cpu_seconds = static_cast<double>(cpu_end - cpu_start) / static_cast<double>(CLOCKS_PER_SEC);
+
+       std::ostringstream report;
+       report << std::setprecision(6) << "Time elapsed: " << wall_seconds << " s\n";
+       if (verbose) {
+         const auto throughput = wall_seconds > 0.0 ? static_cast<double>(mesh.size()) / wall_seconds : 0.0;
+         const auto passes = 1 + static_cast<int>(finalgaussian) + static_cast<int>(finalderfd);
+         report << "Performance: wall=" << wall_seconds << "s";
+         if (cpu_seconds && wall_seconds > 0.0)
+           report << " cpu=" << *cpu_seconds << "s effective_parallelism=" << *cpu_seconds / wall_seconds << "x";
+         else
+           report << " cpu=n/a effective_parallelism=n/a";
+         report << " throughput=" << throughput << " points/s workers=" << actual_workers
+                << " passes=" << passes << " kernel=" << kernel_mode_name() << '\n';
+       }
+       std::cout << report.str();
+       NRG::Tools::finish_output(std::cout, "<stdout>");
+     }
 
     void check_buffer_normalisation(const std::vector<double> &buffer, const int col_) {
      const auto cols = 1 + nrcol;
@@ -501,7 +628,7 @@ class Broaden {
 
     // e - output energy
     // ept - energy of the delta peak (data point)
-    auto bfnc(const double e, const double ept) {
+    auto bfnc(const double e, const double ept) const {
       if (gaussian) {
         return NRG::Broadening::gaussian(e, ept, alpha);
       } else {
@@ -514,10 +641,13 @@ class Broaden {
    vec broaden(const vec &mesh_) {
       if (verbose) { std::cerr << "Broadening. Number of mesh points = " << mesh_.size() << std::endl; }
      vec result(mesh_.size());
-     std::transform(mesh_.begin(), mesh_.end(), result.begin(), [this](const auto m) {
-       return std::transform_reduce(vspec.begin(), vspec.end(), vfreq.begin(), 0.0, std::plus<>(), 
-                                    [this,m](const auto weight, const auto freq) {
-                                      return weight * bfnc(m, freq); }); });
+     for_each_index(mesh_.size(), jobs, [&](const size_t index) {
+       const auto m = mesh_[index];
+       result[index] = std::transform_reduce(vspec.begin(), vspec.end(), vfreq.begin(), 0.0, std::plus<>(),
+                                             [this,m](const auto weight, const auto freq) {
+                                               return weight * bfnc(m, freq);
+                                             });
+     });
      return result;
    }
    
@@ -549,7 +679,9 @@ class Broaden {
      }
    }
  public:
-    Broaden(int argc, char *argv[]) {
+    Broaden(int argc, char *argv[])
+        : wall_start{std::chrono::steady_clock::now()}, cpu_start{std::clock()} {
+      std::cout << "broaden - finite-temperature broadening tool" << std::endl;
       cmd_line(argc, argv);
     }
     void calc() {
@@ -558,18 +690,20 @@ class Broaden {
       filter();
       if (sumrules) integrals_for_sumrules();
       resolve_mesh();
+      actual_workers = std::min(jobs, mesh.size());
       if (verbose) report_configuration();
       if (verbose) check_normalizations(mesh);
       a = broaden(mesh);
-     if (finalgaussian) convolve(mesh, a, ggamma * T, gaussian_kernel);
-     if (finalderfd) convolve(mesh, a, dgamma * T, derfd_kernel);
+     if (finalgaussian) convolve(mesh, a, ggamma * T, jobs, gaussian_kernel);
+     if (finalderfd) convolve(mesh, a, dgamma * T, jobs, derfd_kernel);
      std::cout << "Estimated weight (trapezoidal rule)=" << trapez(mesh, a) << std::endl;
      save(output_filename, mesh, a, verbose);
      if (cumulative) {
        calc_cumulative(mesh, c);
        save(cumulative_filename, mesh, c, verbose);
      }
-   }
+     report_timing();
+    }
 };
 
 } // namespace

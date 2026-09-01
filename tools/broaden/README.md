@@ -306,6 +306,7 @@ normalization guarantee in that case.
 | `-v` | Print the resolved configuration and input, mesh, total-weight, and kernel-area diagnostics to standard error. |
 | `-vv` | Enable very verbose diagnostics. |
 | `-V` or `--version` | Print the project version and exit immediately. |
+| `-j N` or `--jobs N` | Use `N` workers for independent output frequencies. `N` must be positive. |
 | `-m min` | Set the smallest geometric mesh scale. Default: `1e-7`. |
 | `-M max` | Set the largest mesh frequency. Default: `2.0`. |
 | `-r ratio` | Set the ratio between geometric mesh scales. Must exceed one. Default: `1.01`. |
@@ -326,6 +327,44 @@ normalization guarantee in that case.
 | `-A` | Generate only the positive output mesh. |
 | `-B` | Generate only the negative output mesh. |
 | `-L filename` | Load the output mesh from the first column of a two-column text file. |
+
+## Parallel execution
+
+The primary broadening calculation and each enabled final convolution evaluate
+output frequencies independently. `-j N` or `--jobs N` selects the requested
+worker count for those passes. If it is omitted, `broaden` uses the first value
+of `OMP_NUM_THREADS`, or one worker when that variable is unset. The complete
+comma-separated environment value must contain only positive integers. An
+explicit option takes precedence over the environment.
+
+The actual worker count is
+
+```text
+min(requested workers, output mesh points).
+```
+
+Work is dynamically distributed between `std::thread` workers. Results are
+stored by mesh index, so parallel and serial runs retain the same numerical
+reduction order at each frequency and write frequencies in the same order.
+Trapezoidal integration, cumulative-spectrum calculation, and output writing
+remain serial.
+
+## Timing
+
+After `spec.dat` and, when requested, `cumulative.dat` have been written
+successfully, `broaden` reports total wall time on standard output:
+
+```text
+Time elapsed: 1.234 s
+```
+
+The interval includes command-line parsing, input and mesh loading, all
+calculations, and output writing. With `-v` or `-vv`, a second `Performance:`
+line reports wall and process CPU time, effective parallelism, final output
+points per second, the actual worker count, the number of pointwise passes, and
+the primary kernel. Unavailable process CPU time is reported as
+`cpu=n/a effective_parallelism=n/a`. Help, version, failed calculations, and
+failed output writes do not produce timing reports.
 
 ## Examples
 

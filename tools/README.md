@@ -14,7 +14,7 @@ each tool directory.
 | `--algorithm ALGORITHM` | `hilb`, `kk` | Select adaptive `qag` (default) or the optional analytic transform. `hilb` provides only this long form. |
 | `-a ALGORITHM` | `kk` | Short alias for `kk --algorithm`; `hilb -a` instead sets `epsabs`. |
 | `-i METHOD`, `--interpolation METHOD` | `hilb`, `kk`, `integ`, `resample` | Select `linear`, `cspline`, `akima`, or `steffen` interpolation. |
-| `-j N`, `--jobs N` | `hilb`, `kk` | Select a positive worker count; otherwise use the first value of a fully valid `OMP_NUM_THREADS` list, or one when unset. |
+| `-j N`, `--jobs N` | `broaden`, `hilb`, `kk` | Select a positive worker count; otherwise use the first value of a fully valid `OMP_NUM_THREADS` list, or one when unset. |
 | `--epsabs VALUE` | `hilb`, `kk` QAG, `integ`, `adapt` integral | Set the absolute adaptive-integration tolerance. |
 | `--epsrel VALUE` | `hilb`, `kk` QAG, `integ`, `adapt` integral | Set the relative adaptive-integration tolerance. |
 | `--workspace-limit N` | `hilb`, `kk` QAG, `integ`, `adapt` integral | Set the GSL workspace capacity; QAG requires `N >= 1` and CQUAD requires `N >= 3`. |
@@ -24,7 +24,7 @@ each tool directory.
 Configuration reports use `auto -> VALUE` when a value is derived from input
 data, another setting, or an environment-dependent default. Verbosity does not
 change machine-readable numerical output or numerical output files. The
-standard-output exceptions are the `hilb` and `kk` successful file-output
+standard-output exceptions are the `broaden`, `hilb`, and `kk` successful file-output
 timing reports described below; `-v` adds their performance line.
 
 `hilb --algorithm` is long-only. `hilb` retains `-a` and `-r` as aliases for
@@ -117,24 +117,27 @@ the interval polynomials. QAG `kk` obtains it from the selected GSL spline. See
 the [`integ` documentation](integ/README.md) for its complete input, quantity,
 and algorithm contract.
 
-For `hilb` and `kk`, an explicit `--jobs` value takes precedence over
+For `broaden`, `hilb`, and `kk`, an explicit `--jobs` value takes precedence over
 `OMP_NUM_THREADS`. Otherwise the entire comma-separated environment value must
 be a valid list of positive integers, after which its first value is used; an
 unset variable selects one worker. The actual count is
 `min(requested workers, output points)`. Inputs are staged before parallel
-calculation, output order is deterministic, and each actual QAG worker owns a
-separate GSL workspace.
+calculation, and output order is deterministic. Each actual Hilb or KK QAG
+worker owns a separate GSL workspace. Broaden applies the worker count to its
+primary output-frequency pass and enabled final convolution passes; its
+trapezoidal and cumulative integrations and file writes remain serial.
 
-Successful regular-file `hilb -o` runs, Hilb DMFT runs with two regular-file
-outputs, and successful file-mode `kk` runs report `Time elapsed: ... s` on
+Successful `broaden` runs, regular-file `hilb -o` runs, Hilb DMFT runs with two
+regular-file outputs, and file-mode `kk` runs report `Time elapsed: ... s` on
 standard output after output writes. With `-v`, a second `Performance:` line
-adds wall time, process CPU time, effective parallelism, throughput, actual
-worker count, and algorithm. Unavailable process CPU time is shown as
-`cpu=n/a effective_parallelism=n/a`. Hilb emits no timing when numerical output
-goes to standard output, including `-o /dev/stdout` or a DMFT `/dev/stdout`
-destination; `kk` stream mode likewise remains numeric-only. Hilb's worker pool
-is CLI-internal: no public batch API is added, and its scalar APIs emit no CLI
-timing or performance output.
+adds wall time, process CPU time, effective parallelism, throughput, and actual
+worker count. Hilb and KK also identify their algorithm; Broaden reports its
+pointwise pass count and primary kernel. Unavailable process CPU time is shown
+as `cpu=n/a effective_parallelism=n/a`. Hilb emits no timing when numerical
+output goes to standard output, including `-o /dev/stdout` or a DMFT
+`/dev/stdout` destination; `kk` stream mode likewise remains numeric-only.
+Hilb's worker pool is CLI-internal: no public batch API is added, and its scalar
+APIs emit no CLI timing or performance output.
 
 ## Installed Integration Front Ends
 

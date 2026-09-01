@@ -1,0 +1,97 @@
+#!/bin/sh
+set -eu
+
+broaden="$1/broaden"
+unset OMP_NUM_THREADS
+nonnegative='[0-9]+([.][0-9]*)?([eE][+-]?[0-9]+)?'
+
+perl -e 'print pack("d*", -0.8, 0.2, -0.4, 0.5, 0.2, 1.0, 0.8, 0.3)' >spec.bin
+
+"$broaden" --jobs 1 -L mesh.dat -o spec.bin 1 0.3 0.2 1 >primary-serial.stdout 2>primary-serial.stderr
+mv spec.dat primary-serial.dat
+"$broaden" -j 3 -L mesh.dat -o spec.bin 1 0.3 0.2 1 >primary-parallel.stdout 2>primary-parallel.stderr
+cmp primary-serial.dat spec.dat
+test "$(grep -Ec '^Time elapsed:' primary-parallel.stdout)" -eq 1
+grep -Eq "^Time elapsed: ${nonnegative} s$" primary-parallel.stdout
+if grep -q '^Performance:' primary-parallel.stdout; then
+  echo "broaden unexpectedly emitted verbose performance details without -v" >&2
+  exit 1
+fi
+
+"$broaden" --jobs 1 -c -f 0.2 -x 0.3 -L mesh.dat -o spec.bin 1 0.3 0.2 1 \
+  >all-serial.stdout 2>all-serial.stderr
+mv spec.dat all-serial.dat
+mv cumulative.dat cumulative-serial.dat
+OMP_NUM_THREADS='3,2' "$broaden" -v -c -f 0.2 -x 0.3 -L mesh.dat -o spec.bin 1 0.3 0.2 1 \
+  >all-parallel.stdout 2>all-parallel.stderr
+cmp all-serial.dat spec.dat
+cmp cumulative-serial.dat cumulative.dat
+grep -Fxq '  jobs=auto -> 3 (OMP_NUM_THREADS)' all-parallel.stderr
+grep -Fxq '  jobs.source=OMP_NUM_THREADS' all-parallel.stderr
+test "$(grep -Ec '^Time elapsed:' all-parallel.stdout)" -eq 1
+test "$(grep -Ec '^Performance:' all-parallel.stdout)" -eq 1
+grep -Eq "^Performance: wall=${nonnegative}s (cpu=${nonnegative}s effective_parallelism=${nonnegative}x|cpu=n/a effective_parallelism=n/a) throughput=${nonnegative} points/s workers=3 passes=3 kernel=hybrid_output_frequency$" all-parallel.stdout
+
+OMP_NUM_THREADS=invalid "$broaden" --jobs 2 -v -L mesh.dat -o spec.bin 1 0.3 0.2 1 \
+  >explicit.stdout 2>explicit.stderr
+cmp primary-serial.dat spec.dat
+grep -Fxq '  jobs=2' explicit.stderr
+grep -Fxq '  jobs.source=--jobs' explicit.stderr
+
+"$broaden" --jobs 20 -v -L mesh.dat -o spec.bin 1 0.3 0.2 1 >capped.stdout 2>capped.stderr
+grep -Eq "^Performance: wall=${nonnegative}s (cpu=${nonnegative}s effective_parallelism=${nonnegative}x|cpu=n/a effective_parallelism=n/a) throughput=${nonnegative} points/s workers=6 passes=1 kernel=hybrid_output_frequency$" capped.stdout
+
+"$broaden" -v -L mesh.dat -o spec.bin 1 0.3 0.2 1 >default.stdout 2>default.stderr
+grep -Fxq '  jobs=auto -> 1 (default)' default.stderr
+grep -Fxq '  jobs.source=default' default.stderr
+
+"$broaden" -h >help.stdout 2>help.stderr
+grep -Fq -- '-j <n>, --jobs <n>' help.stdout
+test ! -s help.stderr
+
+if "$broaden" --jobs 0 -L mesh.dat -o spec.bin 1 0.3 0.2 1 >invalid-jobs.stdout 2>invalid-jobs.stderr; then
+  echo "broaden unexpectedly accepted zero workers" >&2
+  exit 1
+fi
+grep -Fq 'Worker count must be a positive integer' invalid-jobs.stderr
+if grep -q '^Time elapsed:' invalid-jobs.stdout; then
+  echo "broaden emitted timing after invalid worker configuration" >&2
+  exit 1
+fi
+
+if OMP_NUM_THREADS='3,invalid' "$broaden" -L mesh.dat -o spec.bin 1 0.3 0.2 1 \
+  >invalid-environment.stdout 2>invalid-environment.stderr; then
+  echo "broaden unexpectedly accepted an invalid OMP_NUM_THREADS list" >&2
+  exit 1
+fi
+grep -Fq 'OMP_NUM_THREADS must be a comma-separated list of positive integers' invalid-environment.stderr
+if grep -q '^Time elapsed:' invalid-environment.stdout; then
+  echo "broaden emitted timing after invalid environment configuration" >&2
+  exit 1
+fi
+
+rm -f spec.dat cumulative.dat
+mkdir spec.dat
+if "$broaden" --jobs 3 -L mesh.dat -o spec.bin 1 0.3 0.2 1 >output-failure.stdout 2>output-failure.stderr; then
+  echo "broaden unexpectedly wrote to a directory" >&2
+  exit 1
+fi
+grep -Fq 'Failed to open spec.dat for writing.' output-failure.stderr
+if grep -q '^Time elapsed:' output-failure.stdout; then
+  echo "broaden emitted timing after an output failure" >&2
+  exit 1
+fi
+rmdir spec.dat
+
+mkdir cumulative.dat
+if "$broaden" --jobs 3 -c -L mesh.dat -o spec.bin 1 0.3 0.2 1 \
+  >cumulative-failure.stdout 2>cumulative-failure.stderr; then
+  echo "broaden unexpectedly wrote cumulative output to a directory" >&2
+  exit 1
+fi
+grep -Fq 'Failed to open cumulative.dat for writing.' cumulative-failure.stderr
+if grep -q '^Time elapsed:' cumulative-failure.stdout; then
+  echo "broaden emitted timing after a cumulative output failure" >&2
+  exit 1
+fi
+rmdir cumulative.dat
