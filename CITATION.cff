@@ -7,10 +7,10 @@ authors:
   - family-names: "Žitko"
     given-names: "Rok"
     affiliation: "Jožef Stefan Institute"
-    orcid: "http://orcid.org/0000-0002-0525-4056"
+    orcid: "https://orcid.org/0000-0002-0525-4056"
 
 repository-code: "https://github.com/rokzitko/nrgljubljana"
-url: "https://nrgljubljana.ijs.si/"
+url: "http://nrgljubljana.ijs.si/"
 license: "GPL-3.0-or-later"
 
 version: "2026.09"
