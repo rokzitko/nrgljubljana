@@ -1,6 +1,6 @@
 # NRG Ljubljana 2026.09: Major New Release
 
-This release summarizes development since `2024.12`, with major improvements in GPU accelerator support, performance, memory efficiency, physical capabilities, and workflows.
+This release summarizes changes since the `2024.12` release, with major improvements in GPU accelerator support, performance, memory efficiency, physical capabilities, and workflows.
 
 ## CUDA And Numerical Performance
 
@@ -11,13 +11,12 @@ This release summarizes development since `2024.12`, with major improvements in 
 - BLAS/LAPACK integration has been improved, including support for ILP64 numerical libraries for really large problems.
 - Threaded BLAS, MPI scheduling, and oversubscription diagnostics are handled more consistently.
 - CPU diagonalization now defaults to the divide-and-conquer LAPACK routines `dsyevd` and `zheevd`.
-- `kk` defaults to its fast adaptive QAG transform, while `--algorithm analytic` selects guarded extended-precision interval transforms with wider and exact fallbacks. Independent output points can run in parallel with `--jobs` or `OMP_NUM_THREADS`. Successful file-mode runs report wall time, with CPU utilization and throughput details under `-v`.
-- `hilb` now defaults to adaptive QAG for both built-in and tabulated densities, with tabulated interpolation extended by zero over the enclosing integration interval. The long-only `--algorithm analytic` requires `-d` and retains the interval-polynomial transform, while `-a` remains the absolute QAG tolerance and explicit QAG controls are silently ignored in analytic mode. Independent points run in parallel with `--jobs` or a validated `OMP_NUM_THREADS` list, deterministic output order, and one workspace per QAG worker. Successful regular-file output reports `Time elapsed: ... s` after writing, with CPU utilization, throughput, actual workers, and algorithm under `-v`; numerical standard output remains timing-free.
 
 ## Performance And Memory
 
 - All unnecessary matrix, eigenspace, and density-matrix copies have been eliminated.
-- Seed operators, diagonalization data, and obsolete eigenvector representations are released earlier.
+- Multithreading in tools (kk, hilb, broaden).
+- Seed operators, diagonalization data, and obsolete eigenvector representations are released from memory earlier.
 - FDM and DMNRG spectral kernels now reuse weights, contractions, and existing operator-block information.
 - FDM back-iteration exploits the diagonal structure of discarded-state density matrices.
 - Memory requirements for diagonalization workspaces are now reported more clearly.
@@ -40,10 +39,8 @@ This release summarizes development since `2024.12`, with major improvements in 
 - `broaden` accepts arbitrary user-provided output-frequency meshes.
 - `adapt --flat Gamma` directly supports constant hybridization functions.
 - `hilb`, `kk`, `integ`, and `resample` can select GSL's monotonicity-preserving Steffen interpolation.
-- `integ` is now a unified one-result integrator for strict two-column data from standard input, one file, or multiple files. It adds explicit total and paired bounded selectors, negative-absolute integration, and the exact first moment $\int x s(x)\,dx$ alongside the existing positive, negative, absolute, and Fermi modes.
-- Total, bounded, sign-restricted, absolute, negative-absolute, and moment modes use analytic interval-polynomial integration; absolute modes split at polynomial roots. Positive-temperature Fermi integration alone uses a stable factor and interval-wise adaptive QAG, while `T=0` is exactly the negative-domain integral.
+- `integ` is now a unified integrator
 - Thermal Fermi and Bose kernels are stable at extreme energies and near the Bose pole.
-- Large Matsubara meshes no longer suffer from a small-integer index limitation.
 - FDM partition-function accumulators consistently retain high numerical precision.
 - Level-flow energies can be reported in user-selected or physical energy units.
 - Raw HDF5 output and broadening sum-rule diagnostics received correctness fixes.
@@ -51,11 +48,8 @@ This release summarizes development since `2024.12`, with major improvements in 
 ## Workflows And Reliability
 
 - Parameter files, spectral meshes, and truncated inputs now receive substantially stricter validation.
-- The installed `integrate`, `integrateab`, `integratepos`, `integrateneg`, `integrateabs`, `integratenegabs`, and `integrateeps` commands are corrected linear-interpolation front ends to `integ`. They now apply absolute value after interpolation, clip crossing segments to bounded or sign-restricted domains, evaluate the first moment exactly, reject malformed or extra input fields, sort the logical input table, and print at `max_digits10` precision. `integrateab` continues to default to `[-1,1]`.
 - The new `instantiate`/`nrgspawn` workflow can run prepared model templates without invoking Mathematica for every parameter point.
 - Basis, Hamiltonian, and operator blocks can be saved and reused in parameter sweeps.
-- Checkpoints and density matrices are written atomically and loaded transactionally.
-- The `DONE` marker is created only after all requested calculation stages complete successfully.
 - Conda packaging and build coverage now include broader Linux, macOS, ARM, BLAS, and compiler configurations.
 
 ## Installation
