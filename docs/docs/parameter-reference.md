@@ -386,8 +386,8 @@ Real-data choices are `dsyev`, `dsyevd`, `dsyevr`, `cuda`, and `cuda_dsyevd`.
 Complex-data choices are `zheev`, `zheevd`, `zheevr`, `cuda`, and
 `cuda_zheevd`. CUDA choices require a CUDA-enabled build and a usable device.
 
-`diagratio` applies to the partial `dsyevr` and `zheevr` solvers. CFS and FDM
-calculations require `diagratio=1`.
+`diagratio` applies to the partial `dsyevr` and `zheevr` solvers. CFS, FDM, and
+Floquet calculations require `diagratio=1`.
 
 ## Effective Defaults And Interactions
 

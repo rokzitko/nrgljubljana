@@ -290,6 +290,24 @@ TEST(params, validate_rejects_invalid_thresholds) {
   EXPECT_NO_THROW(P.validate());
 }
 
+TEST(params, validate_rejects_partial_diagonalisation_for_floquet) {
+  for (const auto &diag : {"dsyevr"s, "zheevr"s}) {
+    SCOPED_TRACE(diag);
+    Params P;
+    P.diag = diag;
+    P.diagratio = 0.5;
+    P.floquet = true;
+    EXPECT_THROW(P.validate(), std::invalid_argument);
+
+    P.diagratio = 1.0;
+    EXPECT_NO_THROW(P.validate());
+
+    P.diagratio = 0.5;
+    P.floquet = false;
+    EXPECT_NO_THROW(P.validate());
+  }
+}
+
 TEST(params, h5save_stores_nlen) {
   Params P;
   P.Nmax = 7;
