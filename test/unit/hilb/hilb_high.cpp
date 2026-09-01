@@ -6,6 +6,7 @@
 #include <complex>
 #include <cstddef>
 #include <cstdio>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <initializer_list>
@@ -91,16 +92,19 @@ auto read_file(const std::string &filename) {
 }
 
 auto parse_complex_output(const std::string &output) {
-  std::istringstream input(output);
-  char open = 0;
-  char comma = 0;
-  char close = 0;
-  double real = 0.0;
-  double imaginary = 0.0;
-  if (!(input >> open >> real >> comma >> imaginary >> close) || open != '(' || comma != ',' || close != ')')
+  const auto *begin = output.c_str();
+  if (*begin != '(') throw std::runtime_error("Expected one complex numeric value.");
+
+  auto *end = static_cast<char *>(nullptr);
+  const auto real = std::strtod(begin + 1, &end);
+  if (end == begin + 1 || *end != ',') throw std::runtime_error("Expected one complex numeric value.");
+
+  const auto *imaginary_begin = end + 1;
+  const auto imaginary = std::strtod(imaginary_begin, &end);
+  if (end == imaginary_begin || *end != ')')
     throw std::runtime_error("Expected one complex numeric value.");
-  input >> std::ws;
-  if (!input.eof()) throw std::runtime_error("Unexpected trailing complex-output data.");
+  if (output.find_first_not_of(" \t\r\n", static_cast<size_t>(end + 1 - begin)) != std::string::npos)
+    throw std::runtime_error("Unexpected trailing complex-output data.");
   return std::complex<double>{real, imaginary};
 }
 
