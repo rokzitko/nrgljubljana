@@ -76,7 +76,7 @@ with ILP64 only when the installed library was built for 64-bit integers and
 exports a symbol convention detected by this project. Apple Accelerate is an
 LP64 choice with the supported CMake versions. ILP64 declarations currently
 use a 64-bit C++ `long`, so the option is not supported on LLP64 platforms such
-as Windows. The ILP64 path is not covered by the current CI matrix.
+as Windows. The ILP64 path is covered in CI on Linux x86-64 with Intel MKL.
 
 ## Build
 
