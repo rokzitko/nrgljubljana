@@ -51,6 +51,7 @@ jobs:
           - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12, blas: imkl-ilp64, cmake_flags: "-DNRGLJUBLJANA_BLAS_ILP64=ON -DBLA_VENDOR=Intel10_64ilp", openblas_threads: "1", mkl_threads: "2", omp_threads: "2"}
           - {os: ubuntu-22.04-arm, cc: clang-15, cxx: clang++-15, blas: openBLAS, cmake_flags: "-DBLA_VENDOR=OpenBLAS", openblas_threads: "1", mkl_threads: "1", omp_threads: "", openblas_coretype: ARMV8}
           - {os: ubuntu-24.04, cc: gcc-14, cxx: g++-14, blas: openBLAS, cmake_flags: "-DBLA_VENDOR=OpenBLAS", openblas_threads: "2", mkl_threads: "1", omp_threads: ""}
+          - {os: ubuntu-24.04, cc: gcc-14, cxx: g++-14, blas: openBLAS-cuda13.3, cuda: true, cmake_flags: "-DBLA_VENDOR=OpenBLAS -DNRGLJUBLJANA_ENABLE_CUDA=ON -DCUDAToolkit_ROOT=/usr/local/cuda-13.3", openblas_threads: "2", mkl_threads: "1", omp_threads: ""}
           - {os: ubuntu-24.04, cc: clang-18, cxx: clang++-18, blas: openBLAS, cmake_flags: "-DBLA_VENDOR=OpenBLAS", openblas_threads: "1", mkl_threads: "1", omp_threads: ""}
           - {os: ubuntu-24.04-arm, cc: clang-18, cxx: clang++-18, blas: openBLAS, cmake_flags: "-DBLA_VENDOR=OpenBLAS", openblas_threads: "1", mkl_threads: "1", omp_threads: "", openblas_coretype: ARMV8}
           - {os: macos-14, cc: clang, cxx: clang++, blas: accelerate, cmake_flags: "", omp_threads: ""}
@@ -142,6 +143,20 @@ jobs:
         libopenmpi-dev
         openmpi-bin
 
+    - name: Install CUDA 13.3 dependencies
+      if: ${{ matrix.cuda == true }}
+      run: |
+        wget -q -O /tmp/cuda-keyring.deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-keyring_1.1-1_all.deb
+        sudo dpkg -i /tmp/cuda-keyring.deb
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          cuda-nvcc-13-3 \
+          libcublas-dev-13-3 \
+          libcusolver-dev-13-3 \
+          libcusparse-dev-13-3 \
+          libnvjitlink-dev-13-3
+        sudo apt-get clean
+
     - name: Install ubuntu 24.04 dependencies (openBLAS, Clang 18)
       if: ${{ startsWith(matrix.os, 'ubuntu-24.04') && (matrix.cc == 'clang-18') && contains(matrix.blas, 'openBLAS') }}
       run: >
@@ -214,6 +229,44 @@ jobs:
           echo "OPENBLAS_CORETYPE=${{ matrix.openblas_coretype }}" >> "$GITHUB_ENV"
         fi
 
+    - name: Verify CUDA build and runtime
+      if: ${{ matrix.cuda == true }}
+      run: |
+        set -euo pipefail
+
+        grep -Fxq 'set(NRGLJUBLJANA_ENABLE_CUDA ON)' build/share/cmake/nrgljubljana-config.cmake
+
+        ldd build/c++/libnrgljubljana_c.so | tee build/cuda-linkage.txt
+        if grep -Fq 'not found' build/cuda-linkage.txt; then
+          exit 1
+        fi
+        for library in libcudart libcublas libcusolver; do
+          grep -Fq "$library" build/cuda-linkage.txt
+        done
+
+        LD_BIND_NOW=1 build/c++/nrg --version
+
+        build/test/unit/openmp_test/openmp_test \
+          --gtest_filter=openMP.report \
+          --gtest_color=no 2>&1 | tee build/cuda-runtime.txt
+        grep -Fq '[CUDA] CUDA/cuSOLVER/cuBLAS support: enabled at build time' build/cuda-runtime.txt
+        grep -Fq '[CUDA] CUDART compile-time version:' build/cuda-runtime.txt
+        grep -Fq '[CUDA] Runtime version:' build/cuda-runtime.txt
+
+        if grep -Eq '\[CUDA\] Devices detected: [1-9][0-9]*' build/cuda-runtime.txt; then
+          build/test/unit/diag_test/diag_test \
+            --gtest_filter='Diag.cuda_*' \
+            --gtest_color=no 2>&1 | tee build/cuda-diag.txt
+          build/test/unit/numerics/numerics \
+            --gtest_filter='numerics.*CUDA*:numerics.*cuda*' \
+            --gtest_color=no 2>&1 | tee build/cuda-numerics.txt
+          if grep -Fq '[  SKIPPED ]' build/cuda-diag.txt build/cuda-numerics.txt; then
+            exit 1
+          fi
+        else
+          printf '%s\n' 'No usable CUDA device detected; compile and runtime linkage checks completed.'
+        fi
+
     - name: Test NRG Ljubljana
       run: |
         ctest_args=()
@@ -231,6 +284,7 @@ jobs:
         path: |
           build/Testing/Temporary/LastTest.log
           build/Testing/Temporary/LastTestsFailed.log
+          build/cuda-*.txt
           build/test/**/log
         if-no-files-found: ignore
 
