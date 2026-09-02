@@ -23,7 +23,7 @@ source:
   git_depth: 1
 
 build:
-  number: 9
+  number: 10
   skip: true  # [win]
   ignore_run_exports_from:
     # fmt is used as a header-only library, so no libfmt runtime link is needed.
@@ -54,6 +54,7 @@ requirements:
     - gmp
     - gsl >=2.0
     - hdf5
+    - libboost-devel
     - libboost-mpi
     - llvm-openmp
     - blas-devel * *{{ blas_impl }}
@@ -62,6 +63,12 @@ requirements:
     - mpich
 
 test:
+  source_files:
+    - test/installed-consumer
+  requires:
+    - {{ compiler('cxx') }}
+    - cmake >=3.25
+    - ninja
   commands:
     - test -x "${PREFIX}/bin/nrg"  # [unix]
     - test -x "${PREFIX}/bin/adapt"  # [unix]
@@ -81,6 +88,9 @@ test:
     - test -f "${PREFIX}/lib/libnrgljubljana_c.so"  # [linux]
     - test -f "${PREFIX}/lib/libnrgljubljana_c.dylib"  # [osx]
     - test -f "${PREFIX}/lib/cmake/nrgljubljana/nrgljubljana-config.cmake"  # [unix]
+    - test -f "${PREFIX}/include/boost/mpi/environment.hpp"  # [unix]
+    - cmake -S test/installed-consumer -B consumer-build -G Ninja -DCMAKE_PREFIX_PATH="${PREFIX}"  # [unix]
+    - cmake --build consumer-build  # [unix]
     - test -f "${PREFIX}/etc/conda/activate.d/nrgljubljana.sh"  # [unix]
     - test -f "${PREFIX}/etc/conda/deactivate.d/nrgljubljana.sh"  # [unix]
     - grep -q 'CONDA_PREFIX}/nrginit' "${PREFIX}/etc/conda/activate.d/nrgljubljana.sh"  # [unix]
