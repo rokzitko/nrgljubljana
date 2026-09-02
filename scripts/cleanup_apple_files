@@ -1,0 +1,2 @@
+#!/bin/sh
+find "$(git rev-parse --show-toplevel)" -type d -name .AppleDouble -prune -exec rm -rf {} +
