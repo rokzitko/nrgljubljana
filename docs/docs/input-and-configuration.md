@@ -60,7 +60,6 @@ Startup flow in the constructor is roughly:
 3. print any leftover keys as unused settings
 4. optionally parse `[extra]`
 5. validate the resulting configuration
-6. initialize resume-related bookkeeping
 
 The C++ parser rejects duplicate keys. Unrecognized keys are reported rather
 than rejected so that the shared file can contain initializer settings.
@@ -78,6 +77,12 @@ The `InputData` constructor performs these steps:
 5. load the seed `f` operators into `Opch<S>`
 6. read the remaining operator blocks and coefficient tables
 7. finalize chain-length-related derived parameters in `Params`
+
+After `InputData` has finalized `Nmax`, `NRG_calculation` scans the exact
+checkpoint directory when `resume=true`. Deferring discovery until this point
+ensures the scan covers the actual runtime iteration range. Every archive in
+the discovered prefix is then validated before existing result files are
+replaced.
 
 The marker in `data` versions the producer/consumer hand-off, but the layout is
 not a general interchange contract. Its current role is described in the

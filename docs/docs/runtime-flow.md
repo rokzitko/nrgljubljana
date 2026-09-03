@@ -18,7 +18,7 @@ Execution starts in `c++/nrg.cc`:
 1. initialize MPI
 2. report OpenMP and environment information
 3. validate that `param` and `data` exist
-4. set up the temporary workdir
+4. set up either a unique temporary workdir or an exact checkpoint directory
 5. run master or slave behavior depending on MPI rank
 
 The executable-facing orchestration then moves into `NRG_calculation` in `c++/nrg-general.hpp`.
@@ -53,6 +53,10 @@ Important methods in `NRG_calculation`:
 4. read operator blocks and coefficient tables
 5. finalize `Nmax` and related derived parameters
 
+Checkpoint discovery runs after these steps because its iteration range depends
+on the finalized `Nmax` value. The discovered prefix is fully validated before
+phase output streams are opened.
+
 See [Input and configuration](input-and-configuration.md) for the input-side details.
 
 ## Main NRG Phase
@@ -63,8 +67,8 @@ At a high level, each iteration does the following:
 
 1. build the next-shell `SubspaceStructure`
 2. convert that into a `TaskList`
-3. construct the Hamiltonian blocks for each invariant subspace
-4. diagonalize each block through the selected `DiagEngine`
+3. load a completed checkpoint or construct the Hamiltonian blocks
+4. diagonalize each uncached block through the selected `DiagEngine`
 5. establish energy references and truncation criteria
 6. split eigenvectors into ancestor blocks when needed
 7. update iteration metadata and basic diagnostics
@@ -93,17 +97,17 @@ This is still driven through the same broad iteration machinery, but with differ
 The runtime produces several forms of output:
 
 - spectral and thermodynamic files in the working directory
-- temporary stored eigenspectra and density matrices inside the generated workdir
+- stored eigenspectra and density matrices inside the temporary or checkpoint workdir
 - optional HDF5 output via `Output` and `h5save` helpers
 - logs and diagnostic dumps when enabled by parameters
 
 The workdir is represented by `Workdir` in `c++/workdir.hpp` and is used for transient iteration-state files such as unitary matrices and density matrices.
 
 Persistent result files are written in the calculation directory, not the
-temporary workdir. See the [output format reference](output-formats.md) for
+workdir. See the [output format reference](output-formats.md) for
 filenames, columns, units, and lifecycle behavior. See [State and
 persistence](state-and-persistence.md) for the in-memory storage model and
-temporary serialization boundaries.
+serialization boundaries.
 
 ## Mathematica Side
 

@@ -12,6 +12,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <ostream>
+#include <stdexcept>
 #include <utility>
 #include <boost/mpi/collectives.hpp>
 #if defined(NRGLJUBLJANA_ENABLE_FP_TRAPS) && NRGLJUBLJANA_ENABLE_FP_TRAPS
@@ -205,19 +206,43 @@ void enable_fp_traps()
 inline auto help(int argc, char **argv, const std::string &help_message) -> bool
 {
   std::vector<std::string> args(argv+1, argv+argc); // NOLINT
-  if (args.size() >= 1 && args[0] == "-h") {
+  if (!args.empty() && args[0] == "-h") {
     std::cout << help_message << std::endl;
     return true;
   }
   return false;
 }
 
-auto set_workdir(int argc, char **argv) { // not inline!
+struct WorkdirOptions {
+  std::string dir;
+  WorkdirMode mode;
+};
+
+auto parse_workdir_options(int argc, char **argv) {
   std::string dir = default_workdir; // defined in workdir.h
   if (const char *env_w = std::getenv("NRG_WORKDIR")) dir = env_w;
-  std::vector<std::string> args(argv+1, argv+argc); // NOLINT
-  if (args.size() == 2 && args[0] == "-w") dir = args[1];
-  return std::make_unique<Workdir>(dir);
+  auto mode = WorkdirMode::unique_temporary;
+  bool workdir_option_seen = false;
+
+  for (int index = 1; index < argc; ++index) {
+    const std::string option = argv[index]; // NOLINT
+    if (option != "-w" && option != "--checkpoint-dir") {
+      throw std::invalid_argument("Unknown argument '" + option + "'");
+    }
+    if (workdir_option_seen) {
+      throw std::invalid_argument("Specify only one of -w DIR and --checkpoint-dir DIR");
+    }
+    if (index + 1 >= argc) throw std::invalid_argument("Option " + option + " requires DIR");
+
+    const std::string value = argv[++index]; // NOLINT
+    if (value.empty() || value == "-h" || value == "-w" || value == "--checkpoint-dir") {
+      throw std::invalid_argument("Option " + option + " requires DIR");
+    }
+    dir = value;
+    mode = option == "--checkpoint-dir" ? WorkdirMode::persistent_exact : WorkdirMode::unique_temporary;
+    workdir_option_seen = true;
+  }
+  return WorkdirOptions{dir, mode};
 }
 
 int main(int argc, char **argv) {
@@ -230,16 +255,34 @@ int main(int argc, char **argv) {
   if (!prepare_parallel_runtime(std::cerr, mpiw.rank() == 0)) return 1;
 
   constexpr int startup_continue = -1;
+  const std::string help_message =
+    "Usage: nrg [-h] [-V|--version] [-w DIR | --checkpoint-dir DIR]\n"
+    "  -w DIR                 create a unique temporary workdir below DIR\n"
+    "  --checkpoint-dir DIR   create or reopen exactly DIR and preserve it";
   int startup_status = startup_continue;
+  std::unique_ptr<Workdir> workdir;
   if (mpiw.rank() == 0) {
-    if (help(argc, argv, "Usage: nrg [-h] [-V|--version] [-w workdir]")) {
+    if (help(argc, argv, help_message)) {
       startup_status = EXIT_SUCCESS;
-    } else if (!file_exists("data")) {
-      std::cout << "Input file 'data' does not exist. Terminating." << std::endl;
-      startup_status = EXIT_FAILURE;
-    } else if (!file_exists("param")) {
-      std::cout << "Input file 'param' does not exist. Terminating." << std::endl;
-      startup_status = EXIT_FAILURE;
+    } else {
+      try {
+        const auto options = parse_workdir_options(argc, argv);
+        workdir = std::make_unique<Workdir>(options.dir, options.mode, true);
+        clear_done_marker();
+        if (!file_exists("data")) {
+          std::cout << "Input file 'data' does not exist. Terminating." << std::endl;
+          startup_status = EXIT_FAILURE;
+        } else if (!file_exists("param")) {
+          std::cout << "Input file 'param' does not exist. Terminating." << std::endl;
+          startup_status = EXIT_FAILURE;
+        }
+      } catch (const std::invalid_argument &error) {
+        std::cerr << "nrg: " << error.what() << '\n' << help_message << std::endl;
+        startup_status = EXIT_FAILURE;
+      } catch (const std::runtime_error &error) {
+        std::cerr << "nrg: " << error.what() << std::endl;
+        startup_status = EXIT_FAILURE;
+      }
     }
   }
 
@@ -249,8 +292,13 @@ int main(int argc, char **argv) {
   if (mpiw.rank() == 0) {
     std::cout << "MPI job running on " << mpiw.size() << " processors." << std::endl << std::endl;
     report_openMP(std::cout, mpiw.size());
-    auto workdir = set_workdir(argc, argv);
-    run_nrg_master(mpienv, mpiw, std::move(workdir));
+    std::cout << "workdir=" << workdir->get() << std::endl << std::endl;
+    try {
+      run_nrg_master(mpienv, mpiw, std::move(workdir));
+    } catch (const std::exception &error) {
+      std::cerr << "nrg: " << error.what() << std::endl;
+      return EXIT_FAILURE;
+    }
   } else {
     run_nrg_slave(mpienv, mpiw); // slaves do no disk I/O to workdir
   }

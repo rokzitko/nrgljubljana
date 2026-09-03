@@ -334,11 +334,29 @@ symmetry/backend combinations abort when interleaved recalculation is selected.
 | `prec_td` | integer | `10` | Significant digits in `td` and `tdfdm`. |
 | `prec_custom` | integer | `10` | Significant digits in custom expectation-value output. |
 | `prec_xy` | integer | `10` | Significant digits in spectral text output. |
-| `resume` | boolean | `false` | Intended to scan for saved unitary files, but the current startup order scans before `Nmax` is loaded and therefore does not recover a prior run. |
+| `resume` | boolean | `false` | Save and reuse per-iteration checkpoints. Requires `nrg --checkpoint-dir DIR`; cached iterations are replayed to rebuild outputs and in-memory state. |
 
 `dumpabs=true` and `dumpscaled=true` are mutually incompatible. Widths are
 minimum padding widths, not fixed field boundaries; parse output as
 whitespace-separated text.
+
+To make a run resumable, set `resume=true` before its first invocation and use
+the same exact checkpoint directory each time:
+
+```sh
+nrg --checkpoint-dir /scratch/my-calculation
+```
+
+The directory is created if necessary, exclusively locked while `nrg` owns it,
+and never recursively removed by `nrg`. Exact checkpoint directories reject
+runs with `resume=false`. Checkpoints must form a contiguous sequence beginning
+at `Ninit`; gaps are rejected, and every discovered archive is validated before
+result files are opened. They are native same-build artifacts and must only be
+reused with the same `param` and `data` inputs. A resumed run replays cached
+shells rather than appending to partial result files, so statistics, operators,
+and outputs are rebuilt consistently. Resumable artifacts are retained after
+both failed and successful runs, independently of `removefiles`; remove the
+checkpoint directory explicitly when it is no longer needed.
 
 ### Logging, Diagnostics, HDF5, And Compatibility
 
@@ -359,7 +377,7 @@ whitespace-separated text.
 | `dumpstates` | boolean | `false` | Write energy and available vector diagnostics to `states.nrg`. |
 | `dumpenergiesunscaled` | boolean | `false` | Convert energy/state dumps from shell units to bandwidth units. |
 | `dumpabsenergies` | boolean | `false` | Write `absolute_energies.dat`. |
-| `removefiles` | boolean | `true` | Remove temporary phase files as they are consumed. The temporary workdir is still removed after a normal run. |
+| `removefiles` | boolean | `true` | Remove temporary phase files as they are consumed. Resumable artifacts are retained when `resume=true`. |
 | `checksumrules` | boolean | `false` | Check operator sum rules. |
 | `absolute` | boolean | `false` | Run without the usual NRG energy rescaling; generated input must also use `data_has_rescaled_energies=false`. |
 | `diag_mode` | string | `default` | Scheduling mode: `default`, `MPI`, `OpenMP`, or `serial`. |

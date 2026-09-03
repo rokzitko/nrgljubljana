@@ -1,7 +1,10 @@
 #ifndef _operators_hpp_
 #define _operators_hpp_
 
+#include <algorithm>
+#include <array>
 #include <cstddef>
+#include <cstdint>
 #include <ios>
 #include <istream>
 #include <map>
@@ -11,6 +14,7 @@
 #include <iomanip>
 #include <ostream>
 #include <string>
+#include <string_view>
 #include <stdexcept>
 #include <system_error>
 #include <vector>
@@ -29,6 +33,39 @@
 #include "numerics.hpp"// read_matrix
 
 namespace NRG {
+
+inline constexpr std::string_view density_checkpoint_magic = "NRGLjubljana-density\n";
+inline constexpr std::uint32_t density_checkpoint_version = 1;
+
+inline void validate_density_checkpoint_magic(std::istream &input, const std::string &filename) {
+  std::array<char, density_checkpoint_magic.size()> magic{};
+  input.read(magic.data(), static_cast<std::streamsize>(magic.size()));
+  if (!input || !std::equal(magic.begin(), magic.end(), density_checkpoint_magic.begin()))
+    throw std::runtime_error(fmt::format("Unsupported density checkpoint format in {}", filename));
+}
+
+template<scalar S>
+void validate_density_checkpoint_metadata(boost::archive::binary_iarchive &ia, const size_t N,
+                                          const std::string &prefix, const Params &P, const std::string &filename) {
+  const auto version = read_one<std::uint32_t>(ia);
+  if (version != density_checkpoint_version)
+    throw std::runtime_error(fmt::format("Unsupported density checkpoint format in {}", filename));
+  const auto stored_N = read_one<size_t>(ia);
+  const auto stored_prefix = read_one<std::string>(ia);
+  const auto stored_Nmax = read_one<size_t>(ia);
+  const auto stored_Ninit = read_one<size_t>(ia);
+  const auto stored_symtype = read_one<std::string>(ia);
+  const auto stored_complex = read_one<bool>(ia);
+  const auto stored_param_fingerprint = read_one<std::uint64_t>(ia);
+  const auto stored_data_fingerprint = read_one<std::uint64_t>(ia);
+  const auto stored_unitary_fingerprint = read_one<std::uint64_t>(ia);
+  if (stored_N != N || stored_prefix != prefix || stored_Nmax != P.Nmax || stored_Ninit != P.Ninit.value() ||
+      stored_symtype != std::string(P.symtype) || stored_complex != is_complex<S>::value ||
+      stored_param_fingerprint != P.checkpoint_param_fingerprint || stored_data_fingerprint != P.checkpoint_data_fingerprint)
+    throw std::runtime_error(fmt::format("Density checkpoint {} is incompatible with the current calculation", filename));
+  if (stored_unitary_fingerprint != P.checkpoint_unitary_fingerprint)
+    throw std::runtime_error(fmt::format("Density checkpoint {} belongs to a different unitary chain", filename));
+}
 
 template<scalar S, typename t_matel = matel_traits<S>, typename Matrix = Matrix_traits<S>>
 class MatrixElements : public std::map<Twoinvar, Matrix> {
@@ -90,63 +127,86 @@ class MatrixElements : public std::map<Twoinvar, Matrix> {
 template<scalar S, typename Matrix = Matrix_traits<S>>
 class DensMatElements : public std::map<Invar, Matrix> {
  public:
-   template <typename MF>
-      auto trace(MF mult) const {
-        return ranges::accumulate(*this, 0.0, {},
-                                  [mult](const auto &z) { const auto &[I, mat] = z; return mult(I) * trace_real(mat); });
-      }
-     void save(const size_t N, const Params &P, const std::string &prefix) const {
-       const auto fn = P.workdir->rhofn(N, prefix);
-       const auto tmp_fn = fn + ".tmp";
-      struct temp_file_guard {
-        std::string filename;
-        bool active = true;
-        ~temp_file_guard() {
-          if (active) {
-            std::error_code ec;
-            std::filesystem::remove(filename, ec);
-          }
-        }
-       } guard{tmp_fn};
-       std::ofstream MATRIXF(tmp_fn, std::ios::binary | std::ios::out);
-       if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for writing.", fn));
-       {
-         boost::archive::binary_oarchive oa(MATRIXF);
-         oa << this->size();
-         for (const auto &[I, mat] : *this) {
-           oa << I;
-           NRG::save(oa, mat);
-           if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error writing {}", fn));
+   template <typename MF> auto trace(MF mult) const {
+     return ranges::accumulate(*this, 0.0, {},
+                               [mult](const auto &z) { const auto &[I, mat] = z; return mult(I) * trace_real(mat); });
+   }
+   void save(const size_t N, const Params &P, const std::string &prefix) const {
+     const auto fn = P.workdir->rhofn(N, prefix);
+     const auto tmp_fn = fn + ".tmp";
+     struct temp_file_guard {
+       std::string filename;
+       bool active = true;
+       ~temp_file_guard() {
+         if (active) {
+           std::error_code ec;
+           std::filesystem::remove(filename, ec);
          }
        }
-       MATRIXF.flush();
-       if (!MATRIXF) throw std::runtime_error(fmt::format("Error writing {}", fn));
-       MATRIXF.close();
-       if (!MATRIXF) throw std::runtime_error(fmt::format("Error writing {}", fn));
-       std::filesystem::rename(tmp_fn, fn);
-       guard.active = false;
+     } guard{tmp_fn};
+     std::ofstream MATRIXF(tmp_fn, std::ios::binary | std::ios::out);
+     if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for writing.", fn));
+     MATRIXF.write(density_checkpoint_magic.data(), static_cast<std::streamsize>(density_checkpoint_magic.size()));
+     if (!MATRIXF) throw std::runtime_error(fmt::format("Error writing {}", fn));
+     {
+       boost::archive::binary_oarchive oa(MATRIXF);
+       oa << density_checkpoint_version
+          << N
+          << prefix
+          << P.Nmax
+          << P.Ninit.value()
+          << std::string(P.symtype)
+          << is_complex<S>::value
+          << P.checkpoint_param_fingerprint
+          << P.checkpoint_data_fingerprint
+          << P.checkpoint_unitary_fingerprint;
+       oa << this->size();
+       for (const auto &[I, mat] : *this) {
+         oa << I;
+         NRG::save(oa, mat);
+         if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error writing {}", fn));
+       }
      }
-     void load(const size_t N, const Params &P, const std::string &prefix, const bool remove_files) {
-       const auto fn = P.workdir->rhofn(N, prefix);
-       std::ifstream MATRIXF(fn, std::ios::binary | std::ios::in);
-       if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for reading", fn));
+     MATRIXF.flush();
+     if (!MATRIXF) throw std::runtime_error(fmt::format("Error writing {}", fn));
+     MATRIXF.close();
+     if (!MATRIXF) throw std::runtime_error(fmt::format("Error writing {}", fn));
+     std::filesystem::rename(tmp_fn, fn);
+     guard.active = false;
+   }
+   void load(const size_t N, const Params &P, const std::string &prefix, const bool remove_files) {
+     const auto fn = P.workdir->rhofn(N, prefix);
+     std::ifstream MATRIXF(fn, std::ios::binary | std::ios::in);
+     if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for reading", fn));
+     DensMatElements<S> loaded;
+     validate_density_checkpoint_magic(MATRIXF, fn);
+     {
+       boost::archive::binary_iarchive ia(MATRIXF);
+       validate_density_checkpoint_metadata<S>(ia, N, prefix, P, fn);
+       const auto nr = read_one<size_t>(ia);
+       for ([[maybe_unused]] const auto cnt : range0(nr)) {
+         const auto inv = read_one<Invar>(ia);
+         loaded[inv] = NRG::load<S>(ia);
+         if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error reading {}", fn));
+       }
+       if (loaded.size() != nr) throw std::runtime_error(fmt::format("Duplicate subspaces in density checkpoint {}", fn));
+     }
+     MATRIXF.close();
+     if (!MATRIXF) throw std::runtime_error(fmt::format("Error reading {}", fn));
+     if (remove_files) {
+       if (NRG::remove(fn)) throw std::runtime_error(fmt::format("Error removing {}", fn));
+     }
+     this->swap(loaded);
+   }
+   static bool compatible_file(const size_t N, const Params &P, const std::string &prefix) {
+     try {
        DensMatElements<S> loaded;
-       {
-         boost::archive::binary_iarchive ia(MATRIXF);
-         const auto nr = read_one<size_t>(ia);
-         for ([[maybe_unused]] const auto cnt : range0(nr)) {
-           const auto inv = read_one<Invar>(ia);
-           loaded[inv] = NRG::load<S>(ia);
-           if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error reading {}", fn));
-         }
-       }
-       MATRIXF.close();
-       if (!MATRIXF) throw std::runtime_error(fmt::format("Error reading {}", fn));
-       if (remove_files) {
-         if (NRG::remove(fn)) throw std::runtime_error(fmt::format("Error removing {}", fn));
-       }
-       this->swap(loaded);
+       loaded.load(N, P, prefix, false);
+       return true;
+     } catch (const std::exception &) {
+       return false;
      }
+   }
 };
 
 // Map of operator matrices

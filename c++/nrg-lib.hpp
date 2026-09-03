@@ -14,7 +14,9 @@
 namespace NRG {
 
 void print_about_message();
+void clear_done_marker();
 void run_nrg_master(const std::string &workdir);
+void run_nrg_master(const std::string &workdir, WorkdirMode mode);
 
 void run_nrg_master(boost::mpi::environment &mpienv, boost::mpi::communicator &mpiw, std::unique_ptr<Workdir> workdir);
 void run_nrg_slave(boost::mpi::environment &mpienv, boost::mpi::communicator &mpiw);

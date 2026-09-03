@@ -1,0 +1,137 @@
+#!/bin/bash
+set -euo pipefail
+
+nrg=$1
+last_checkpoint=${2:-2}
+last_cached=$((last_checkpoint - 1))
+test_density_rebuild=${3:-}
+shopt -s nullglob
+
+rm -rf checkpoint
+rm -rf fresh-results
+rm -f DONE fresh.log resume.log density-reuse.log invalid-input.log incompatible.log data-incompatible.log density-rebuild.log param.original data.original fresh-raw.h5 \
+  td td.clean custom custom.clean tdfdm customfdm annotated.dat raw.h5 raw.h5.tree *_dens_*.dat
+
+"$nrg" --checkpoint-dir checkpoint >fresh.log 2>&1
+test -f DONE
+test -f checkpoint/unitary0
+test -f "checkpoint/unitary${last_checkpoint}"
+mkdir fresh-results
+outputs=(td custom tdfdm customfdm annotated.dat *_dens_*.dat)
+for output in "${outputs[@]}"; do
+  test -f "$output" && cp "$output" fresh-results/
+done
+if test -f raw.h5 && command -v h5ls >/dev/null 2>&1; then
+  h5ls -r raw.h5 >fresh-results/raw.h5.tree
+fi
+if test -f raw.h5; then
+  cp raw.h5 fresh-raw.h5
+fi
+saved_outputs=(fresh-results/*)
+test "${#saved_outputs[@]}" -gt 0
+
+compare_results() {
+  for expected in fresh-results/*; do
+    cmp "$expected" "${expected#fresh-results/}"
+  done
+  if test -f fresh-raw.h5 && command -v h5diff >/dev/null 2>&1; then
+    h5diff fresh-raw.h5 raw.h5
+  fi
+}
+
+remove_results() {
+  for expected in fresh-results/*; do
+    rm -f "${expected#fresh-results/}"
+  done
+  rm -f raw.h5
+}
+
+refresh_h5_tree() {
+  if test -f fresh-results/raw.h5.tree && command -v h5ls >/dev/null 2>&1; then
+    h5ls -r raw.h5 >raw.h5.tree
+  fi
+}
+
+rm "checkpoint/unitary${last_checkpoint}" DONE
+remove_results
+"$nrg" --checkpoint-dir checkpoint >resume.log 2>&1
+refresh_h5_tree
+
+test -f DONE
+test -f "checkpoint/unitary${last_checkpoint}"
+compare_results
+grep -q "Resuming through iteration ${last_cached}." resume.log
+grep -q "Loading checkpoint for iteration 0." resume.log
+grep -q "Loading checkpoint for iteration ${last_cached}." resume.log
+if grep -q "Loading checkpoint for iteration ${last_checkpoint}." resume.log; then
+  exit 1
+fi
+if test "$test_density_rebuild" = density; then
+  grep -q "The unitary checkpoint chain was recomputed. Computing density matrices." resume.log
+
+  rm DONE
+  remove_results
+  "$nrg" --checkpoint-dir checkpoint >density-reuse.log 2>&1
+  refresh_h5_tree
+  test -f DONE
+  compare_results
+  grep -q "Resuming through iteration ${last_checkpoint}." density-reuse.log
+  grep -q "Loading checkpoint for iteration ${last_checkpoint}." density-reuse.log
+  if grep -q '^\[FDM\] ' density-reuse.log; then
+    exit 1
+  fi
+fi
+
+test -f DONE
+cp param param.original
+trap 'mv -f param.original param' EXIT
+printf '\ndone=invalid\n' >>param
+set +e
+"$nrg" --checkpoint-dir checkpoint >invalid-input.log 2>&1
+status=$?
+set -e
+test "$status" -eq 1
+test ! -e DONE
+compare_results
+mv param.original param
+trap - EXIT
+
+cp param param.original
+trap 'mv -f param.original param' EXIT
+printf '\n# fingerprint mismatch\n' >>param
+set +e
+"$nrg" --checkpoint-dir checkpoint >incompatible.log 2>&1
+status=$?
+set -e
+test "$status" -eq 1
+grep -q "is incompatible with the current calculation" incompatible.log
+test ! -e DONE
+compare_results
+mv param.original param
+trap - EXIT
+
+cp data data.original
+trap 'mv -f data.original data' EXIT
+printf '\n# fingerprint mismatch\n' >>data
+set +e
+"$nrg" --checkpoint-dir checkpoint >data-incompatible.log 2>&1
+status=$?
+set -e
+test "$status" -eq 1
+grep -q "is incompatible with the current calculation" data-incompatible.log
+test ! -e DONE
+compare_results
+mv data.original data
+trap - EXIT
+
+if test "$test_density_rebuild" = density; then
+  cp data data.original
+  trap 'mv -f data.original data' EXIT
+  printf '\n# changed density fingerprint\n' >>data
+  rm checkpoint/unitary*
+  "$nrg" --checkpoint-dir checkpoint >density-rebuild.log 2>&1
+  grep -q "The unitary checkpoint chain was recomputed. Computing density matrices." density-rebuild.log
+  compare_results
+  mv data.original data
+  trap - EXIT
+fi

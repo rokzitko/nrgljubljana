@@ -5,6 +5,8 @@
 #define _param_hpp_
 
 #include <cstddef>
+#include <cstdint>
+#include <array>
 #include <fstream>
 #include <iomanip>
 #include <ios>
@@ -38,6 +40,25 @@ using namespace std::string_literals;
 inline auto to_lower(std::string value) {
   std::transform(value.begin(), value.end(), value.begin(), [](const unsigned char c) { return static_cast<char>(std::tolower(c)); });
   return value;
+}
+
+inline constexpr std::uint64_t checkpoint_fingerprint_offset_basis = 14695981039346656037ULL;
+inline constexpr std::uint64_t checkpoint_fingerprint_prime = 1099511628211ULL;
+
+// Stable file identity used to reject accidental checkpoint reuse with changed state.
+inline std::uint64_t checkpoint_file_fingerprint(const std::string &filename,
+                                                 std::uint64_t fingerprint = checkpoint_fingerprint_offset_basis) {
+  auto input = safe_open_for_reading(filename, true);
+  std::array<char, 8192> buffer{};
+  while (input) {
+    input.read(buffer.data(), static_cast<std::streamsize>(buffer.size()));
+    for (std::streamsize i = 0; i < input.gcount(); i++) {
+      fingerprint ^= static_cast<unsigned char>(buffer[static_cast<size_t>(i)]);
+      fingerprint *= checkpoint_fingerprint_prime;
+    }
+  }
+  if (!input.eof()) throw std::runtime_error(fmt::format("Error reading {} while fingerprinting checkpoint inputs", filename));
+  return fingerprint;
 }
 
 enum class RUNTYPE { NRG, DMNRG }; // First or second sweep? Used in class Step.
@@ -445,6 +466,9 @@ class Params {
   // Automatically determines the number of files.
   param<bool> resume{"resume", "Attempt restart?", "false", all}; // N
   std::optional<size_t> laststored;                             // has value if stored data is found
+  std::uint64_t checkpoint_param_fingerprint = 0;
+  std::uint64_t checkpoint_data_fingerprint = 0;
+  std::uint64_t checkpoint_unitary_fingerprint = 0;
 
   /* Fine-grained control over data logging with the following tokens:
    @ - follow the program flow
@@ -614,22 +638,53 @@ class Params {
     return !do_recalc_kept(runtype);
   }
 
-   // What is the last iteration completed in the previous NRG runs?
-  void init_laststored() {
-    if (resume) {
-      laststored = std::nullopt;
-      for (size_t N = Ninit; N < Nmax; N++) {
-        const std::string fn = workdir->unitaryfn(N);
-        std::ifstream F(fn);
-        if (F.good())
-          laststored = N;
-      }
-      if (laststored.has_value()) 
-        std::cout << "Last unitary file found: " << laststored.value() << std::endl;
-      else 
-        std::cout << "No unitary files found." << std::endl;
-    }
+  // What is the last iteration completed in the previous NRG runs?
+  void initialize_checkpointing(const std::string &param_filename = "param", const std::string &data_filename = "data") {
+    checkpoint_param_fingerprint = checkpoint_file_fingerprint(param_filename);
+    checkpoint_data_fingerprint = checkpoint_file_fingerprint(data_filename);
+    init_laststored();
   }
+
+  void init_laststored() {
+    laststored = std::nullopt;
+    if (workdir->persistent() && !resume)
+      throw std::invalid_argument("An exact persistent workdir requires resume=true");
+    if (!resume) return;
+    if (!workdir->persistent())
+      throw std::invalid_argument("resume=true requires an exact persistent workdir; use --checkpoint-dir DIR");
+
+    bool missing_checkpoint = false;
+    for (size_t N = Ninit; N < Nmax; N++) {
+      const auto fn = workdir->unitaryfn(N);
+      if (std::ifstream(fn, std::ios::binary).good()) {
+        if (missing_checkpoint)
+          throw std::runtime_error(fmt::format("Non-contiguous checkpoint sequence: found {} after a missing iteration", fn));
+        laststored = N;
+      } else {
+        missing_checkpoint = true;
+      }
+    }
+    if (laststored)
+      std::cout << "Resuming through iteration " << laststored.value() << '.' << std::endl;
+    else
+      std::cout << "No checkpoints found; starting a new resumable run." << std::endl;
+  }
+
+  [[nodiscard]] bool resume_iteration(const size_t N) const noexcept {
+    return resume && laststored && N <= laststored.value();
+  }
+
+  [[nodiscard]] bool reused_complete_checkpoint_chain() const noexcept {
+    return resume && laststored && laststored.value() + 1 == Nmax;
+  }
+
+  void initialize_unitary_checkpoint_fingerprint() {
+    checkpoint_unitary_fingerprint = checkpoint_fingerprint_offset_basis;
+    for (size_t N = Ninit; N < Nmax; N++)
+      checkpoint_unitary_fingerprint = checkpoint_file_fingerprint(workdir->unitaryfn(N), checkpoint_unitary_fingerprint);
+  }
+
+  [[nodiscard]] bool remove_consumed_files() const noexcept { return removefiles && !resume; }
 
   void validate() {
     if (T <= 0.0) throw std::invalid_argument("T must be greater than 0.");
@@ -714,7 +769,6 @@ class Params {
       }
     }
     validate();
-    init_laststored();
     if (!quiet) dump();
   }
   explicit Params() : workdir(std::make_unique<Workdir>()), embedded(true) {

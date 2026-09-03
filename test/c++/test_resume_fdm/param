@@ -1,0 +1,15 @@
+[param]
+symtype=QS
+Lambda=2.0
+T=0.1
+keep=100
+ops=n_d A_d sigma_d
+specs=n_d-n_d
+specd=A_d-A_d
+spect=sigma_d-sigma_d
+fdm=true
+fdmmats=true
+mats=3
+bins=200
+diag_mode=serial
+resume=true

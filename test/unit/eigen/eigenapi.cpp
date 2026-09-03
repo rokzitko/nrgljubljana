@@ -7,6 +7,7 @@
 #include <gtest/gtest.h>
 #include <filesystem>
 #include <ios>
+#include <memory>
 #include <ostream>
 #include <utility>
 #include <vector>
@@ -116,7 +117,7 @@ TEST(Diag, save_uses_temporary_file) { // NOLINT
   diag[Invar()] = NRG::Eigen<double>(std::vector<double>{1.0}, 1.0);
 
   const auto fn = P.workdir->unitaryfn(0);
-  diag.save(0, P);
+  diag.save(0, P, 1.25);
 
   EXPECT_TRUE(std::filesystem::exists(fn));
   EXPECT_FALSE(std::filesystem::exists(fn + ".tmp"));
@@ -151,7 +152,7 @@ TEST(Diag, load_removes_file_after_success_when_requested) { // NOLINT
   DiagInfo<double> diag_out;
   diag_out[Invar()] = NRG::Eigen<double>(std::vector<double>{3.0}, 1.0);
   const auto fn = P.workdir->unitaryfn(0);
-  diag_out.save(0, P);
+  diag_out.save(0, P, 1.25);
 
   DiagInfo<double> diag_in;
   diag_in.load(0, P, true);
@@ -159,6 +160,24 @@ TEST(Diag, load_removes_file_after_success_when_requested) { // NOLINT
   EXPECT_FALSE(std::filesystem::exists(fn));
   ASSERT_EQ(diag_in.size(), 1U);
   EXPECT_DOUBLE_EQ(diag_in.at(Invar()).values.rel(0), 3.0);
+  EXPECT_TRUE(diag_in.loaded_from_checkpoint());
+  EXPECT_DOUBLE_EQ(diag_in.checkpoint_Egs(), 1.25);
+}
+
+TEST(Diag, load_rejects_incompatible_checkpoint) { // NOLINT
+  Params writer;
+  writer.Nmax = 2;
+  writer.checkpoint_data_fingerprint = 123;
+  DiagInfo<double> diag;
+  diag[Invar()] = NRG::Eigen<double>(std::vector<double>{3.0}, 1.0);
+  diag.save(0, writer, 1.25);
+
+  Params reader;
+  reader.Nmax = 2;
+  reader.workdir = std::make_unique<Workdir>(writer.workdir->get(), WorkdirMode::persistent_exact, true);
+
+  EXPECT_THROW(DiagInfo<double>(0, reader), std::runtime_error);
+  EXPECT_TRUE(std::filesystem::exists(writer.workdir->unitaryfn(0)));
 }
 
 template<typename T>

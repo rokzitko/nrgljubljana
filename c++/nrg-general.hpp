@@ -108,6 +108,12 @@ private:
   BackiterStore store_all;
   MemTime mt; // memory and timing statistics
 
+  void preflight_resume_checkpoints() const {
+    if (!P.laststored) return;
+    for (size_t N = P.Ninit; N <= P.laststored.value(); N++)
+      static_cast<void>(DiagInfo<S>(N, P));
+  }
+
   void select_diag_engine() {
     if (P.diag_mode == "default") {
       if (eng->nodes() == 1) eng = std::make_shared<DiagSerial<S>>();
@@ -197,6 +203,8 @@ public:
     P("param", "param", std::move(workdir), embedded), eng(_eng), input(P, "data"), Sym(input.Sym),
     stats(P, Sym->get_td_fields(), input.GS_energy), store(P.Ninit, P.Nlen), store_all(P.Ninit, P.Nlen)
   {
+    P.initialize_checkpointing();
+    preflight_resume_checkpoints();
     auto operators_seed = std::move(input.operators);
     auto diag_seed = std::move(input.diag);
     auto coef_seed = std::move(input.coef);
@@ -209,12 +217,18 @@ public:
 
     auto diag = run_phase(RUNTYPE::NRG, operators_seed, coef_seed, diag_seed);
     if (P.dm) {
+      P.initialize_unitary_checkpoint_fingerprint();
       if (P.need_rho()) prepare_rho(diag);
       if (P.need_rhoFDM()) prepare_rhoFDM();
       run_dm_phase(operators_seed, coef_seed, diag_seed);
     }
 
-    if (P.done) { std::ofstream D("DONE"); } // Indicate successful completion by creating a flag file
+    if (P.done) {
+      std::ofstream D("DONE"); // Indicate successful completion by creating a flag file
+      if (!D) throw std::runtime_error("Can't create DONE");
+      D.close();
+      if (!D) throw std::runtime_error("Can't finish writing DONE");
+    }
   }
   NRG_calculation(const NRG_calculation &) = delete;
   NRG_calculation(NRG_calculation &&) = delete;

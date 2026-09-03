@@ -118,13 +118,17 @@ auto load_or_compute_diag(const Step &step, const Operators<S> &operators, const
                           Output<S> &output, const TaskList &tasklist, const Symmetry<S> *Sym, DiagEngine<S> *eng, MemTime &mt,
                           const Params &P, const double diagratio) {
   if (step.nrg()) {
-    if (!(P.resume && P.laststored.has_value() && step.ndx() <= P.laststored.value())) {
+    if (!P.resume_iteration(step.ndx())) {
       const auto section_timing = mt.time_it("diag");
       return eng->diagonalisations(step, operators.opch, coef, diagprev, output, tasklist.get(), DiagParams(P, diagratio), Sym, P);
     }
+    std::cout << "Loading checkpoint for iteration " << step.ndx() << '.' << std::endl;
+    if (P.h5raw && P.h5ham && (P.h5all || (P.h5last && step.last())))
+      for (const auto &I : tasklist.get())
+        static_cast<void>(hamiltonian(step, I, operators.opch, coef, diagprev, output, Sym, P));
     return DiagInfo<S>(step.ndx(), P, false);
   }
-  auto diag = DiagInfo<S>(step.ndx(), P, P.removefiles);
+  auto diag = DiagInfo<S>(step.ndx(), P, P.remove_consumed_files());
   diag.subtract_GS_energy(stats.GS_energy);
   return diag;
 }
@@ -196,6 +200,10 @@ auto do_diag(const Step &step, Operators<S> &operators, const Coef<S> &coef, Sta
   while (true) {
     try {
       diag = load_or_compute_diag(step, operators, coef, stats, diagprev, output, tasklist, Sym, eng, mt, P, diagratio);
+      if (diag.loaded_from_checkpoint()) {
+        if (step.nrg()) stats.Egs = diag.checkpoint_Egs();
+        break;
+      }
       initialize_diag_energy_reference(P, stats, diag);
       fix_diag_splittings(diag, P);
       if (P.floquet)
@@ -251,8 +259,8 @@ void finalize_nrg_iteration_metadata(const Step &step, Stats<S> &stats, DiagInfo
 template<scalar S>
 void persist_nrg_iteration_outputs(const Step &step, Stats<S> &stats, DiagInfo<S> &diag, Output<S> &output,
                                    const SubspaceStructure &substruct, const Symmetry<S> *Sym, const Params &P) {
-  if (P.dm && !(P.resume && P.laststored.has_value() && step.ndx() <= P.laststored.value()))
-    diag.save(step.ndx(), P);
+  if ((P.dm || P.resume) && !diag.loaded_from_checkpoint())
+    diag.save(step.ndx(), P, stats.Egs);
   perform_basic_measurements(step, diag, Sym, stats, output, P);
   if (P.h5raw && (P.h5all || (P.h5last && step.last()))) {
     diag.h5save(*output.h5raw, std::to_string(step.ndx()+1) + "/eigen/", P.h5vectors);
@@ -287,7 +295,8 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
                 MemTime &mt, const Params &P) {
   nrglog('@', "after_diag()");
   if (step.nrg()) {
-    split_in_blocks(diag, substruct, true); // true = discard
+    if (!diag.loaded_from_checkpoint())
+      split_in_blocks(diag, substruct, true); // true = discard
     finalize_nrg_iteration_metadata(step, stats, diag, P);
     persist_nrg_iteration_outputs(step, stats, diag, output, substruct, Sym, P);
   }

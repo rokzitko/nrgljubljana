@@ -10,6 +10,18 @@ foreach(test ${simple_tests})
   set_tests_properties(${test} PROPERTIES ENVIRONMENT "${TEST_BUILD_ENV}")
 endforeach()
 
+configure_file(test_resume/param test_resume/param COPYONLY)
+configure_file(test0_minimal_Nmax3/data test_resume/data COPYONLY)
+add_test(NAME test_resume COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/resume_test $<TARGET_FILE:nrg> 2
+         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test_resume)
+set_tests_properties(test_resume PROPERTIES ENVIRONMENT "${TEST_BUILD_ENV}")
+
+configure_file(test_resume_fdm/param test_resume_fdm/param COPYONLY)
+configure_file(test_fdm_only/data test_resume_fdm/data COPYONLY)
+add_test(NAME test_resume_fdm COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/resume_test $<TARGET_FILE:nrg> 3 density
+         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test_resume_fdm)
+set_tests_properties(test_resume_fdm PROPERTIES ENVIRONMENT "${TEST_BUILD_ENV}")
+
 if(GPROF)
   gprof("${simple_tests}" ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 endif()

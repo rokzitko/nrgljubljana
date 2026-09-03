@@ -370,6 +370,52 @@ TEST(params, parser_rejects_invalid_bool_values) {
   std::remove(filename);
 }
 
+TEST(params, resume_requires_persistent_workdir) {
+  Params P;
+  P.resume = true;
+  P.Nmax = 2;
+  EXPECT_THROW(P.init_laststored(), std::invalid_argument);
+}
+
+TEST(params, persistent_workdir_requires_resume) {
+  Workdir parent(".", true);
+  Params P;
+  P.workdir = std::make_unique<Workdir>(parent.get() + "/checkpoint", WorkdirMode::persistent_exact, true);
+
+  EXPECT_THROW(P.init_laststored(), std::invalid_argument);
+}
+
+TEST(params, resume_finds_contiguous_checkpoint_prefix) {
+  Workdir parent(".", true);
+  Params P;
+  P.workdir = std::make_unique<Workdir>(parent.get() + "/checkpoint", WorkdirMode::persistent_exact, true);
+  P.resume = true;
+  P.Ninit = 1;
+  P.Nmax = 4;
+  std::ofstream(P.workdir->unitaryfn(1), std::ios::binary) << "checkpoint";
+  std::ofstream(P.workdir->unitaryfn(2), std::ios::binary) << "checkpoint";
+
+  P.init_laststored();
+
+  ASSERT_TRUE(P.laststored.has_value());
+  EXPECT_EQ(P.laststored.value(), 2U);
+  EXPECT_TRUE(P.resume_iteration(1));
+  EXPECT_TRUE(P.resume_iteration(2));
+  EXPECT_FALSE(P.resume_iteration(3));
+}
+
+TEST(params, resume_rejects_checkpoint_gaps) {
+  Workdir parent(".", true);
+  Params P;
+  P.workdir = std::make_unique<Workdir>(parent.get() + "/checkpoint", WorkdirMode::persistent_exact, true);
+  P.resume = true;
+  P.Nmax = 3;
+  std::ofstream(P.workdir->unitaryfn(0), std::ios::binary) << "checkpoint";
+  std::ofstream(P.workdir->unitaryfn(2), std::ios::binary) << "checkpoint";
+
+  EXPECT_THROW(P.init_laststored(), std::runtime_error);
+}
+
 int main(int argc, char **argv) {
    ::testing::InitGoogleTest(&argc, argv);
    return RUN_ALL_TESTS();

@@ -37,6 +37,47 @@ TEST(workdir, remove_workdir_removes_files) {
   EXPECT_FALSE(std::filesystem::exists(path));
 }
 
+TEST(workdir, temporary_workdir_is_removed_at_destruction) {
+  std::string path;
+  {
+    Workdir workdir(".", true);
+    path = workdir.get();
+    std::ofstream(workdir.rhofn(1, "rho")) << "data";
+    ASSERT_TRUE(std::filesystem::exists(path));
+  }
+  EXPECT_FALSE(std::filesystem::exists(path));
+}
+
+TEST(workdir, persistent_exact_reuses_path_and_survives) {
+  Workdir test_parent(".", true);
+  const auto path = test_parent.get() + "/checkpoint";
+  const auto marker = path + "/marker";
+  ASSERT_FALSE(std::filesystem::exists(path));
+
+  {
+    Workdir workdir(path, WorkdirMode::persistent_exact, true);
+    EXPECT_EQ(workdir.get(), path);
+    ASSERT_TRUE(std::filesystem::is_directory(path));
+    std::ofstream(marker) << "checkpoint data";
+  }
+  ASSERT_TRUE(std::filesystem::exists(marker));
+
+  {
+    Workdir workdir(path, WorkdirMode::persistent_exact, true);
+    EXPECT_EQ(workdir.get(), path);
+    EXPECT_TRUE(std::filesystem::exists(marker));
+  }
+  EXPECT_TRUE(std::filesystem::exists(path));
+}
+
+TEST(workdir, persistent_exact_rejects_concurrent_owner) {
+  Workdir test_parent(".", true);
+  const auto path = test_parent.get() + "/checkpoint";
+  Workdir owner(path, WorkdirMode::persistent_exact, true);
+
+  EXPECT_THROW(Workdir(path, WorkdirMode::persistent_exact, true), std::runtime_error);
+}
+
 int main(int argc, char **argv) {
    ::testing::InitGoogleTest(&argc, argv);
    return RUN_ALL_TESTS();

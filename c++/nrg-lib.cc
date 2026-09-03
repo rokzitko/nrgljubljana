@@ -1,9 +1,12 @@
 #include <complex>
+#include <filesystem>
 #include <iostream>
 #include <memory>
 #include <ostream>
 #include <string>
 #include <utility>
+#include <system_error>
+#include <stdexcept>
 
 #include "nrg-general.hpp"
 
@@ -15,9 +18,16 @@ void print_about_message() {
   fmt::print("Compiled on {} at {}\n\n", __DATE__, __TIME__);
 }
 
+void clear_done_marker() {
+  std::error_code ec;
+  static_cast<void>(std::filesystem::remove("DONE", ec));
+  if (ec) throw std::runtime_error("Can't remove stale DONE: " + ec.message());
+}
+
 template <scalar S>
 void run_nrg_master_impl(boost::mpi::environment &mpienv, boost::mpi::communicator &mpiw, std::unique_ptr<Workdir> workdir) {
   std::shared_ptr<DiagEngine<S>> eng = std::make_shared<DiagMPI<S>>(mpienv, mpiw);
+  clear_done_marker();
   const bool embedded = false;
   NRG_calculation<S> calc(std::move(workdir), eng, embedded);
 }
@@ -31,8 +41,7 @@ void run_nrg_master(boost::mpi::environment &mpienv, boost::mpi::communicator &m
 }
 
 template <scalar S>
-void run_nrg_master_impl(const std::string &dir) {
-  auto workdir = set_workdir(dir);
+void run_nrg_master_impl(std::unique_ptr<Workdir> workdir) {
   std::shared_ptr<DiagEngine<S>> eng = std::make_shared<DiagOpenMP<S>>();
   const bool embedded = true;
   NRG_calculation<S> calc(std::move(workdir), eng, embedded);
@@ -40,10 +49,16 @@ void run_nrg_master_impl(const std::string &dir) {
 
 // Called from a third-party application
 void run_nrg_master(const std::string &dir) {
+  run_nrg_master(dir, WorkdirMode::unique_temporary);
+}
+
+void run_nrg_master(const std::string &dir, const WorkdirMode mode) {
+  auto workdir = set_workdir(dir, mode);
+  clear_done_marker();
   if (complex_data())
-    run_nrg_master_impl<std::complex<double>>(dir);
+    run_nrg_master_impl<std::complex<double>>(std::move(workdir));
   else
-    run_nrg_master_impl<double>(dir);
+    run_nrg_master_impl<double>(std::move(workdir));
 }
 
 template<scalar S>

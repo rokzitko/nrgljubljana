@@ -2,9 +2,12 @@
 
 This page describes which data lives only inside the current phase, which data is archived across iterations, and which data is serialized to disk.
 
-## Workdir-Owned Temporary State
+## Workdir-Owned State
 
-`Workdir` in `c++/workdir.hpp` creates a temporary directory for iteration artifacts.
+`Workdir` in `c++/workdir.hpp` normally creates a unique temporary directory
+for iteration artifacts. `nrg --checkpoint-dir DIR` instead creates or reopens
+exactly `DIR`, requires `resume=true`, holds an exclusive process lock, and
+does not recursively remove that caller-owned directory.
 
 Important file families stored there include:
 
@@ -12,6 +15,15 @@ Important file families stored there include:
 - shell density matrices via `rhofn(...)`
 
 These files are used to bridge phases such as the second DM-NRG or FDM sweep.
+With `resume=true`, unitary files also serve as restart checkpoints. Discovery
+runs after `data` establishes `Nmax` and accepts only a contiguous prefix from
+`Ninit`. Cached shells skip diagonalization and checkpoint preprocessing but
+are replayed to reconstruct statistics, stores, operators, and result files.
+All discovered unitary archives are read and validated before result files are
+opened. Density archives are reused only when the complete unitary chain was
+reused and their stored chain fingerprint matches those exact unitary files.
+Resumable archives are not consumed and remain in the exact checkpoint
+directory until the user removes them.
 
 ## In-Memory Current-Step State
 
@@ -61,8 +73,13 @@ Several types serialize themselves directly:
 - `DensMatElements<S>::save/load(...)` in `c++/operators.hpp`
 - HDF5 save helpers across `Values`, `DiagInfo`, `Operators`, `Stats`, and stores
 
-Temporary workdir archives are written to temporary files and renamed after
-successful serialization. Persistent result files such as `td`, spectra, and
+Workdir archives are written to temporary files and renamed after successful
+serialization. Unitary and density checkpoints include a format version,
+iteration and configuration metadata, and input fingerprints; unitary files
+also store the shell ground-state shift needed for replay, while density files
+are bound to the complete unitary chain. They are native same-build state, not
+a cross-version interchange format.
+Persistent result files such as `td`, spectra, and
 HDF5 output are generally opened directly and can remain partial after an
 interrupted run.
 

@@ -218,11 +218,11 @@ void calculate_spectral_and_expv_impl(const Step &step,
   DensMatElements<S> rho, rhoFDM;
   if (step.dmnrg()) {
     if (P.need_rho()) {
-      rho.load(step.ndx(), P, fn_rho, P.removefiles);
+      rho.load(step.ndx(), P, fn_rho, P.remove_consumed_files());
       if (P.checkrho) check_trace_rho(rho, Sym->multfnc()); // Check if Tr[rho]=1, i.e. the normalization
     }
     if (P.need_rhoFDM())
-      rhoFDM.load(step.ndx(), P, fn_rhoFDM, P.removefiles);
+      rhoFDM.load(step.ndx(), P, fn_rhoFDM, P.remove_consumed_files());
   }
   // Calculate all spectral functions
   calc_Z(step, stats, diag, Sym->multfnc(), P); // required for FT and CFS approaches

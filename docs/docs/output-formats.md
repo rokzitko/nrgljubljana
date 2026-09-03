@@ -19,17 +19,19 @@ results:
 - `nrg` reads `param` and `data` and writes result files beside them.
 - `nrg -w DIR` and `NRG_WORKDIR=DIR` select only the parent of a uniquely named
   temporary workdir. They do not relocate persistent results.
+- `nrg --checkpoint-dir DIR` creates or reopens exactly `DIR` for resumable
+  iteration state. It requires `resume=true`, holds an exclusive process lock,
+  and does not relocate persistent results.
 
 Most result streams truncate a file when that output is opened. Files from
 features that are no longer requested are not removed, so a reused calculation
-directory can contain stale spectra, diagnostics, HDF5 files, or completion
-markers. Final result files are generally written in place rather than through
+directory can contain stale spectra, diagnostics, or HDF5 files. Final result
+files are generally written in place rather than through
 an atomic temporary-file rename; an interrupted run can leave partial output.
 
 Use the program's exit status as the primary success signal. With `done=true`,
-`nrg` creates an empty `DONE` file after the requested phases return. It does
-not remove an existing `DONE` at startup, so a marker in a reused directory
-does not prove that the latest invocation succeeded.
+`nrg` removes a previous `DONE` marker at startup and creates an empty one only
+after the requested phases return.
 
 ## Artifact Summary
 
@@ -52,8 +54,8 @@ does not prove that the latest invocation succeeded.
 | `subspaces.dat` | `dumpsubspaces=true` | Per-subspace dimension diagnostic. |
 | `raw.h5` | `h5raw=true` during the NRG phase | Implementation-dependent HDF5 state. |
 | `raw-dm.h5` | `h5raw=true` during a second phase | Implementation-dependent HDF5 DM/FDM state. |
-| `DONE` | `done=true` and requested phases return | Empty completion marker with stale-file caveats. |
-| `unitaryN`, `rhoN`, `rhofdmN` | Required by selected multiphase workflows | Temporary Boost archives inside the generated workdir. |
+| `DONE` | `done=true` and requested phases return | Empty completion marker for the latest successful invocation. |
+| `unitaryN`, `rhoN`, `rhofdmN` | Required by selected multiphase or resumable workflows | Native Boost archives inside the temporary or exact checkpoint workdir. |
 
 C++ and Mathematica extension modules can create additional model-specific
 files that are outside this inventory.
@@ -395,17 +397,20 @@ expressions, and timings after the log is opened. Early launcher and parser
 messages can remain console-only. The content is intended for troubleshooting,
 not machine parsing.
 
-## Temporary Workdir Files
+## Workdir Files
 
 Multiphase calculations can store `unitaryN`, `rhoN`, and `rhofdmN` in the
-generated workdir. They are Boost binary archives used only by the running
-solver. They are not portable across Boost versions, architectures, scalar
-types, or releases.
+workdir. With `resume=true`, these versioned, input-fingerprinted archives can
+be used by later invocations as well as by the running solver. They remain
+native binary state and are not portable across Boost versions, architectures,
+scalar types, or releases.
 
 Individual archives are written through temporary files and renamed after
-serialization. During normal shutdown, the workdir is removed recursively;
-`removefiles=false` can delay per-file deletion but does not preserve the whole
-workdir after a normal run. A crash can leave it behind.
+serialization. A unique temporary workdir is removed recursively during normal
+shutdown. An exact directory selected with `--checkpoint-dir` is never removed
+recursively. When `resume=true`, intermediate files are retained after a
+failed or successful run regardless of `removefiles`. Remove the exact
+checkpoint directory explicitly when it is no longer needed.
 
 ## Standard Output, Standard Error, And `log`
 

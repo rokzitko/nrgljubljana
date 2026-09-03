@@ -1,0 +1,10 @@
+[param]
+symtype=QS
+Lambda=2.0
+keep=100
+ops=n_d
+diag_mode=MPI
+resume=true
+h5raw=true
+h5all=true
+h5ham=true

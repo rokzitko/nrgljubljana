@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 #include <ios>
 #include <iostream>
+#include <memory>
 #include <ostream>
 #include <stdexcept>
 
@@ -142,6 +143,52 @@ TEST(Operators, DensMatLoadRemovesFileAfterSuccessWhenRequested) { // NOLINT
   EXPECT_FALSE(std::filesystem::exists(fn));
   ASSERT_EQ(rho_in.size(), 1U);
   EXPECT_DOUBLE_EQ(rho_in.at(Invar())(0,0), 5.0);
+}
+
+TEST(Operators, DensMatRejectsIncompatibleCheckpoint) { // NOLINT
+  Params writer;
+  writer.Nmax = 2;
+  writer.checkpoint_data_fingerprint = 123;
+  DensMatElements<double> rho_out;
+  rho_out[Invar()] = zero_matrix<double>(1);
+  rho_out.save(0, writer, fn_rho);
+
+  Params reader;
+  reader.Nmax = 2;
+  reader.workdir = std::make_unique<Workdir>(writer.workdir->get(), WorkdirMode::persistent_exact, true);
+
+  EXPECT_FALSE(DensMatElements<double>::compatible_file(0, reader, fn_rho));
+  EXPECT_THROW(DensMatElements<double>().load(0, reader, fn_rho, false), std::runtime_error);
+  EXPECT_TRUE(std::filesystem::exists(writer.workdir->rhofn(0, fn_rho)));
+}
+
+TEST(Operators, DensMatRejectsDifferentUnitaryChain) { // NOLINT
+  Params writer;
+  writer.Nmax = 2;
+  writer.checkpoint_unitary_fingerprint = 123;
+  DensMatElements<double> rho_out;
+  rho_out[Invar()] = zero_matrix<double>(1);
+  rho_out.save(0, writer, fn_rho);
+
+  Params reader;
+  reader.Nmax = 2;
+  reader.workdir = std::make_unique<Workdir>(writer.workdir->get(), WorkdirMode::persistent_exact, true);
+
+  EXPECT_FALSE(DensMatElements<double>::compatible_file(0, reader, fn_rho));
+}
+
+TEST(Operators, DensMatCompatibilityReadsEntirePayload) { // NOLINT
+  Params P;
+  DensMatElements<double> rho_out;
+  rho_out[Invar()] = zero_matrix<double>(2);
+  rho_out.save(0, P, fn_rho);
+  const auto fn = P.workdir->rhofn(0, fn_rho);
+  const auto size = std::filesystem::file_size(fn);
+  ASSERT_GT(size, 1U);
+  std::filesystem::resize_file(fn, size - 1);
+
+  EXPECT_FALSE(DensMatElements<double>::compatible_file(0, P, fn_rho));
+  EXPECT_THROW(DensMatElements<double>().load(0, P, fn_rho, false), std::exception);
 }
 
 int main(int argc, char **argv) {

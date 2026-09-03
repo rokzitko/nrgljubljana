@@ -230,11 +230,16 @@ auto calc_densitymatrix_iterN(const DiagInfo<S> &diag, const DensMatElements<S> 
 }
 
 // Returns true if all the required density matrices are already saved on the disk.
-inline bool already_computed(const std::string &prefix, const Params &P) {
+template<scalar S>
+bool already_computed(const std::string &prefix, const Params &P) {
+  if (!P.reused_complete_checkpoint_chain()) {
+    std::cout << "The unitary checkpoint chain was recomputed. Computing density matrices." << std::endl;
+    return false;
+  }
   for (auto N = P.Nmax - 1; N > P.Ninit; N--) {
     const std::string fn = P.workdir->rhofn(N-1, prefix); // note the minus 1
-    if (!file_exists(fn)) {
-      std::cout << fn << " not found. Computing." << std::endl;
+    if (!DensMatElements<S>::compatible_file(N - 1, P, prefix)) {
+      std::cout << fn << " not found or incompatible. Computing." << std::endl;
       return false;
     }
   }
@@ -246,7 +251,7 @@ inline bool already_computed(const std::string &prefix, const Params &P) {
 template<scalar S>
 void calc_densitymatrix(DensMatElements<S> &rho, const BackiterStore &store_all, const Symmetry<S> *Sym,
                         MemTime &mt, const Params &P, const std::string filename = fn_rho) {
-  if (P.resume && already_computed(filename, P)) return;
+  if (P.resume && already_computed<S>(filename, P)) return;
   if (P.checkrho) check_trace_rho(rho, Sym->multfnc()); // Must be 1.
   const auto section_timing = mt.time_it("DM");
   for (size_t N = P.Nmax - 1; N > P.Ninit; N--) {
@@ -351,7 +356,7 @@ auto calc_fulldensitymatrix_iterN(const Step &step, // only required for step::l
 template<scalar S>
 void calc_fulldensitymatrix(const Step &step, DensMatElements<S> &rhoFDM, const ThermoStore<S> &store, const BackiterStore &store_all, const Stats<S> &stats,
                             const Symmetry<S> *Sym, MemTime &mt, const Params &P, const std::string &filename = fn_rhoFDM) {
-  if (P.resume && already_computed(filename, P)) return;
+  if (P.resume && already_computed<S>(filename, P)) return;
   const auto section_timing = mt.time_it("FDM");
   for (size_t N = P.Nmax - 1; N > P.Ninit; N--) {
     std::cout << "[FDM] " << N << std::endl;

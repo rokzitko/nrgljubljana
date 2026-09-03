@@ -2,12 +2,15 @@
 #define _eigen_hpp_
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cmath>
 #include <complex>
 #include <cstddef>
+#include <cstdint>
 #include <vector>
 #include <string>
+#include <string_view>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -17,6 +20,7 @@
 #include <limits> // quiet_NaN
 #include <map>
 #include <numeric>
+#include <optional>
 #include <ostream>
 #include <stdexcept>
 #include <system_error>
@@ -39,6 +43,10 @@
 #include <fmt/format.h>
 
 namespace NRG {
+
+inline constexpr std::string_view unitary_checkpoint_magic = "NRGLjubljana-unitary\n";
+inline constexpr std::uint32_t unitary_checkpoint_version = 1;
+inline constexpr std::uint32_t unitary_checkpoint_stage_replay_ready = 1;
 
 template<typename T>
 std::vector<T> negate_copy(const std::vector<T>& v) {
@@ -474,6 +482,9 @@ class StoredEigen {
 // Full information after diagonalizations (eigenspectra in all subspaces)
 template <scalar S, typename Matrix = Matrix_traits<S>, typename t_eigen = eigen_traits<S>>
 class DiagInfo : public std::map<Invar, Eigen<S>> {
+ private:
+   std::optional<t_eigen> loaded_checkpoint_Egs;
+
  public:
    explicit DiagInfo() = default;
    DiagInfo(std::istream &fdata, const size_t nsubs, const Params &P) {
@@ -489,6 +500,11 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
    }
    explicit DiagInfo(const size_t N, const Params &P, const bool remove_files = false) {  // called from do_diag()
        load(N, P, remove_files);
+   }
+   [[nodiscard]] bool loaded_from_checkpoint() const noexcept { return loaded_checkpoint_Egs.has_value(); }
+   [[nodiscard]] auto checkpoint_Egs() const {
+     if (!loaded_checkpoint_Egs) throw std::logic_error("DiagInfo was not loaded from a checkpoint");
+     return loaded_checkpoint_Egs.value();
    }
     [[nodiscard]] auto subspaces() const noexcept { return *this | boost::adaptors::map_keys; }
     [[nodiscard]] auto eigs() const noexcept { return *this | boost::adaptors::map_values; }
@@ -581,58 +597,99 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
            fmt::print("({}) {} states: {}\n", I.str(), eig.getnrstored(), eig.values.all_rel());
        fmt::print("Number of states (multiplicity taken into account): {}\n\n", count_states(mult));
      }
-     void save(const size_t N, const Params &P) const {
-       const std::string fn = P.workdir->unitaryfn(N);
-       const auto tmp_fn = fn + ".tmp";
-      struct temp_file_guard {
-        std::string filename;
-        bool active = true;
-        ~temp_file_guard() {
-          if (active) {
-            std::error_code ec;
-            std::filesystem::remove(filename, ec);
-          }
-        }
-       } guard{tmp_fn};
-       std::ofstream MATRIXF(tmp_fn, std::ios::binary | std::ios::out);
-       if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for writing.", fn));
-       {
-         boost::archive::binary_oarchive oa(MATRIXF);
-         oa << this->size();
-         for(const auto &[I, eig]: *this) {
-           oa << I;
-           eig.save(oa);
-           if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error writing {}", fn));
+   void save(const size_t N, const Params &P, const t_eigen Egs) const {
+     const std::string fn = P.workdir->unitaryfn(N);
+     if (!std::isfinite(Egs)) throw std::runtime_error(fmt::format("Can't checkpoint non-finite Egs for iteration {}", N));
+     const auto tmp_fn = fn + ".tmp";
+     struct temp_file_guard {
+       std::string filename;
+       bool active = true;
+       ~temp_file_guard() {
+         if (active) {
+           std::error_code ec;
+           std::filesystem::remove(filename, ec);
          }
        }
-       MATRIXF.flush();
-       if (!MATRIXF) throw std::runtime_error(fmt::format("Error writing {}", fn));
-       MATRIXF.close();
-       if (!MATRIXF) throw std::runtime_error(fmt::format("Error writing {}", fn));
-       std::filesystem::rename(tmp_fn, fn);
-       guard.active = false;
-     }
-     void load(const size_t N, const Params &P, const bool remove_files = false) {
-       const std::string fn = P.workdir->unitaryfn(N);
-       std::ifstream MATRIXF(fn, std::ios::binary | std::ios::in);
-       if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for reading", fn));
-       DiagInfo<S> loaded;
-       {
-         boost::archive::binary_iarchive ia(MATRIXF);
-         const auto nr = read_one<size_t>(ia); // Number of subspaces
-         for ([[maybe_unused]] const auto cnt : range0(nr)) {
-           const auto inv = read_one<Invar>(ia);
-           loaded[inv].load(ia);
-           if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error reading {}", fn));
-         }
+     } guard{tmp_fn};
+     std::ofstream MATRIXF(tmp_fn, std::ios::binary | std::ios::out);
+     if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for writing.", fn));
+     MATRIXF.write(unitary_checkpoint_magic.data(), static_cast<std::streamsize>(unitary_checkpoint_magic.size()));
+     if (!MATRIXF) throw std::runtime_error(fmt::format("Error writing {}", fn));
+     {
+       boost::archive::binary_oarchive oa(MATRIXF);
+       oa << unitary_checkpoint_version
+          << unitary_checkpoint_stage_replay_ready
+          << N
+          << P.Nmax
+          << P.Ninit.value()
+          << std::string(P.symtype)
+          << is_complex<S>::value
+          << P.checkpoint_param_fingerprint
+          << P.checkpoint_data_fingerprint
+          << Egs;
+       oa << this->size();
+       for (const auto &[I, eig]: *this) {
+         oa << I;
+         eig.save(oa);
+         if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error writing {}", fn));
        }
-       MATRIXF.close();
-       if (!MATRIXF) throw std::runtime_error(fmt::format("Error reading {}", fn));
-       if (remove_files) {
-         if (NRG::remove(fn)) throw std::runtime_error(fmt::format("Error removing {}", fn));
-       }
-       this->swap(loaded);
      }
+     MATRIXF.flush();
+     if (!MATRIXF) throw std::runtime_error(fmt::format("Error writing {}", fn));
+     MATRIXF.close();
+     if (!MATRIXF) throw std::runtime_error(fmt::format("Error writing {}", fn));
+     std::filesystem::rename(tmp_fn, fn);
+     guard.active = false;
+   }
+   void load(const size_t N, const Params &P, const bool remove_files = false) {
+     const std::string fn = P.workdir->unitaryfn(N);
+     std::ifstream MATRIXF(fn, std::ios::binary | std::ios::in);
+     if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for reading", fn));
+     DiagInfo<S> loaded;
+     t_eigen Egs{};
+     std::array<char, unitary_checkpoint_magic.size()> magic{};
+     MATRIXF.read(magic.data(), static_cast<std::streamsize>(magic.size()));
+     if (!MATRIXF || !std::equal(magic.begin(), magic.end(), unitary_checkpoint_magic.begin()))
+       throw std::runtime_error(fmt::format("Unsupported checkpoint format in {}", fn));
+     {
+       boost::archive::binary_iarchive ia(MATRIXF);
+       const auto version = read_one<std::uint32_t>(ia);
+       if (version != unitary_checkpoint_version)
+         throw std::runtime_error(fmt::format("Unsupported checkpoint format in {}", fn));
+       const auto stage = read_one<std::uint32_t>(ia);
+       if (stage != unitary_checkpoint_stage_replay_ready)
+         throw std::runtime_error(fmt::format("Unsupported checkpoint format in {}", fn));
+       const auto stored_N = read_one<size_t>(ia);
+       const auto stored_Nmax = read_one<size_t>(ia);
+       const auto stored_Ninit = read_one<size_t>(ia);
+       const auto stored_symtype = read_one<std::string>(ia);
+       const auto stored_complex = read_one<bool>(ia);
+       const auto stored_param_fingerprint = read_one<std::uint64_t>(ia);
+       const auto stored_data_fingerprint = read_one<std::uint64_t>(ia);
+       Egs = read_one<t_eigen>(ia);
+       if (!std::isfinite(Egs)) throw std::runtime_error(fmt::format("Checkpoint {} contains non-finite Egs", fn));
+       if (stored_N != N)
+         throw std::runtime_error(fmt::format("Checkpoint {} contains iteration {}, expected {}", fn, stored_N, N));
+       if (stored_Nmax != P.Nmax || stored_Ninit != P.Ninit.value() || stored_symtype != std::string(P.symtype) ||
+           stored_complex != is_complex<S>::value || stored_param_fingerprint != P.checkpoint_param_fingerprint ||
+           stored_data_fingerprint != P.checkpoint_data_fingerprint)
+         throw std::runtime_error(fmt::format("Checkpoint {} is incompatible with the current calculation", fn));
+       const auto nr = read_one<size_t>(ia); // Number of subspaces
+       for ([[maybe_unused]] const auto cnt : range0(nr)) {
+         const auto inv = read_one<Invar>(ia);
+         loaded[inv].load(ia);
+         if (MATRIXF.bad()) throw std::runtime_error(fmt::format("Error reading {}", fn));
+       }
+       if (loaded.size() != nr) throw std::runtime_error(fmt::format("Duplicate subspaces in checkpoint {}", fn));
+     }
+     MATRIXF.close();
+     if (!MATRIXF) throw std::runtime_error(fmt::format("Error reading {}", fn));
+     if (remove_files) {
+       if (NRG::remove(fn)) throw std::runtime_error(fmt::format("Error removing {}", fn));
+     }
+     this->swap(loaded);
+     loaded_checkpoint_Egs = Egs;
+   }
    void h5save(H5Easy::File &fd, const std::string &name, const bool save_vectors = true) const {
      for (const auto &[I, eig]: *this) eig.h5save(fd, name + "/" + I.name(), save_vectors);
    }
