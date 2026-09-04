@@ -100,7 +100,7 @@ install(TARGETS nrg RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # ========= Static Analyzer Checks ==========
 
-option(ANALYZE_SOURCES OFF "Run static analyzer checks if found (clang-tidy, cppcheck)")
+option(ANALYZE_SOURCES "Run static analyzer checks if found (clang-tidy, cppcheck)" OFF)
 if(ANALYZE_SOURCES)
 
   # Locate static analyzer tools
