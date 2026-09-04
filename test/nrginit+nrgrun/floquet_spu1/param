@@ -22,7 +22,7 @@ diagratio=1
 diag_mode=serial
 mult=blas
 
-keep=64
+keep=66
 safeguard=0
 strategy=kept
 lastalloverride=true
