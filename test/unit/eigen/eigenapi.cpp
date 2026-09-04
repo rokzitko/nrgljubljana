@@ -54,6 +54,9 @@ TEST(Eigen, diagonal) { // NOLINT
   EVEC v = { 1.0, 2.0, 3.0 };
   e.diagonal(v);
   EXPECT_DOUBLE_EQ(e.values.rel(0), 1.0);
+  EXPECT_EQ(e.getdim(), 3U);
+  EXPECT_EQ(e.vectors.M(), 3U);
+  EXPECT_EQ(e.vectors.dim(), 3U);
   const auto m = e.vectors.get();
   EXPECT_DOUBLE_EQ(m(0,0), 1.0); // identity matrix
   EXPECT_DOUBLE_EQ(m(0,1), 0.0);
@@ -100,6 +103,37 @@ TEST(Eigen, hdf5io) { // NOLINT
  // e.values.set_scale(1.0);
   auto h5 = H5Easy::File("Eigen.h5", H5Easy::File::Overwrite);
   e.h5save(h5, "test");
+}
+
+TEST(Eigen, reconstructs_discarded_vectors_for_output) { // NOLINT
+  NRG::Eigen<double> e(2, 3);
+  EigenMatrix<double> first(2, 1);
+  first << 1.0, 0.0;
+  EigenMatrix<double> empty(2, 0);
+  EigenMatrix<double> last(2, 2);
+  last << 0.0, 0.0,
+          1.0, 0.0;
+  e.U.resize(3);
+  e.U.set(0, std::move(first));
+  e.U.set(1, std::move(empty));
+  e.U.set(2, std::move(last));
+  e.vectors.shrink();
+
+  std::ostringstream output;
+  e.dump_vectors(output);
+  EXPECT_NE(output.str().find("vec(0)=[1, 0, 0] norm-1=0"), std::string::npos);
+  EXPECT_NE(output.str().find("vec(1)=[0, 1, 0] norm-1=0"), std::string::npos);
+
+  {
+    auto h5 = H5Easy::File("Eigen-reconstructed.h5", H5Easy::File::Overwrite);
+    e.h5save(h5, "test");
+    const auto reconstructed = H5Easy::load<EigenMatrix<double>>(h5, "test/matrix");
+    EigenMatrix<double> expected(2, 3);
+    expected << 1.0, 0.0, 0.0,
+                0.0, 1.0, 0.0;
+    MATRIX_DOUBLE_EQ(reconstructed, expected);
+  }
+  std::filesystem::remove("Eigen-reconstructed.h5");
 }
 
 TEST(io, read_std_vector) { // NOLINT

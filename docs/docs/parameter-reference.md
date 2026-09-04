@@ -379,7 +379,7 @@ checkpoint directory explicitly when it is no longer needed.
 | `dumpenergies` | boolean | `false` | Write all diagonalized energies to `energies.nrg`. |
 | `dumpcorr` | boolean | `false` | Add corrected energies to `energies.nrg`; requires `dumpenergies`. |
 | `dumpcrit` | boolean | `false` | Add truncation criteria to `energies.nrg`; requires `dumpenergies`. |
-| `dumpstates` | boolean | `false` | Write energy and available vector diagnostics to `states.nrg`. |
+| `dumpstates` | boolean | `false` | Write energies and all computed vector diagnostics to `states.nrg`. |
 | `dumpenergiesunscaled` | boolean | `false` | Convert energy/state dumps from shell units to bandwidth units. |
 | `dumpabsenergies` | boolean | `false` | Write `absolute_energies.dat`. |
 | `removefiles` | boolean | `true` | Remove temporary phase files as they are consumed. Resumable artifacts are retained when `resume=true`. |
@@ -391,7 +391,7 @@ checkpoint directory explicitly when it is no longer needed.
 | `h5last` | boolean | `true` | Store HDF5 data at the final iteration. |
 | `h5ham` | boolean | `false` | Include Hamiltonian matrices in HDF5 output. |
 | `h5ops` | boolean | `false` | Include iteration operator matrices in HDF5 output; a seed group written by `h5all` includes operators independently. |
-| `h5vectors` | boolean | `false` | Include available iteration eigenspectrum vectors in HDF5 output; a seed group written by `h5all` can include vectors independently. |
+| `h5vectors` | boolean | `false` | Include iteration eigenspectrum vectors in HDF5 output, reconstructing them from blocks after dense-vector release; a seed group written by `h5all` can include vectors independently. |
 | `h5U` | boolean | `false` | Include block transformation matrices in HDF5 output. |
 | `h5struct` | boolean | `false` | Include ancestor/subspace structure in HDF5 output. |
 | `project` | string | empty | Measurement projection. Universal value `trivial` retains everything; other values are symmetry-specific. |

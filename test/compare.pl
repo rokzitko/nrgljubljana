@@ -5,12 +5,14 @@ use strict;
 use warnings;
 
 use FindBin qw($RealBin);
+use File::Basename qw(dirname);
 use File::Spec;
 use Getopt::Long qw(GetOptions);
 use lib $RealBin;
 use PhysicalOutput qw(is_physical_output is_spectral_output is_text_physical_output);
 
 my $VALIDATION_MANIFEST = '.physical-outputs';
+my $NUMBER_RE = qr/[+-]?(?:(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)/;
 my $actual_dir = '.';
 my $ignore_signs = 0;
 my $strict = 0;
@@ -19,6 +21,171 @@ my @exclude;
 sub is_finite {
     my ($value) = @_;
     return $value == $value && $value - $value == 0;
+}
+
+sub finite_number {
+    my ($token) = @_;
+    return undef unless defined($token) && $token =~ /\A$NUMBER_RE\z/;
+    my $value = 0 + $token;
+    return undef unless is_finite($value);
+    my $mantissa = $token;
+    $mantissa =~ s/[eE].*\z//;
+    $mantissa =~ s/[^0-9]//g;
+    return undef if $value == 0 && $mantissa =~ /[1-9]/;
+    return $value;
+}
+
+sub finite_real_list {
+    my ($text) = @_;
+    $text =~ s/^\s+|\s+$//g;
+    return undef if $text eq '';
+    my @fields = split(/\s+/, $text);
+    my @values;
+    for my $field (@fields) {
+        my $value = finite_number($field);
+        return undef unless defined $value;
+        push @values, $value;
+    }
+    return \@values;
+}
+
+sub finite_real_list_size {
+    my ($text) = @_;
+    my $values = finite_real_list($text);
+    return defined($values) ? scalar @$values : undef;
+}
+
+sub finite_vector {
+    my ($text) = @_;
+    my (@values, $kind);
+    pos($text) = 0;
+    while (1) {
+        $text =~ /\G\s*/gc;
+        last if pos($text) == length($text);
+        if ($text =~ /\G\(($NUMBER_RE),($NUMBER_RE)\)/gc) {
+            my ($real, $imaginary) = ($1, $2);
+            my ($real_value, $imaginary_value) = (finite_number($real), finite_number($imaginary));
+            return undef unless defined($real_value) && defined($imaginary_value)
+                && (!defined($kind) || $kind eq 'complex');
+            $kind = 'complex';
+            push @values, [$real_value, $imaginary_value];
+        } elsif ($text =~ /\G($NUMBER_RE)/gc) {
+            my $value = finite_number($1);
+            return undef unless defined($value) && (!defined($kind) || $kind eq 'real');
+            $kind = 'real';
+            push @values, [$value, 0];
+        } else {
+            return undef;
+        }
+        $text =~ /\G\s*/gc;
+        last if pos($text) == length($text);
+        return undef unless $text =~ /\G,\s*/gc;
+        return undef if pos($text) == length($text);
+    }
+    return @values ? {kind => $kind, values => \@values} : undef;
+}
+
+sub orthonormal_rows {
+    my ($rows) = @_;
+    my $tolerance = 1e-4;
+    for my $i (0 .. $#$rows) {
+        my $norm = 0;
+        $norm += $_->[0] * $_->[0] + $_->[1] * $_->[1] for @{$rows->[$i]};
+        return 0 if abs($norm - 1) > $tolerance;
+        for my $j (0 .. $i-1) {
+            my ($real, $imaginary) = (0, 0);
+            for my $column (0 .. $#{$rows->[$i]}) {
+                my ($ar, $ai) = @{$rows->[$j][$column]};
+                my ($br, $bi) = @{$rows->[$i][$column]};
+                $real += $ar * $br + $ai * $bi;
+                $imaginary += $ar * $bi - $ai * $br;
+            }
+            return 0 if $real * $real + $imaginary * $imaginary > $tolerance * $tolerance;
+        }
+    }
+    return 1;
+}
+
+sub canonical_integer {
+    my ($token) = @_;
+    my $negative = $token =~ s/^-//;
+    $token =~ s/^\+//;
+    $token =~ s/^0+//;
+    return '0' if $token eq '';
+    my $limit = $negative ? '2147483648' : '2147483647';
+    return undef if length($token) > length($limit)
+        || (length($token) == length($limit) && $token gt $limit);
+    return ($negative ? '-' : '') . $token;
+}
+
+sub canonical_invariant {
+    my ($text) = @_;
+    my @values;
+    for my $token (split(/\s+/, $text)) {
+        my $value = canonical_integer($token);
+        return undef unless defined $value;
+        push @values, $value;
+    }
+    return join(' ', @values);
+}
+
+sub canonical_real_list {
+    my ($values) = @_;
+    return map { $_ == 0 ? '0' : sprintf('%.17g', $_) } @$values;
+}
+
+sub energy_dump_structure {
+    my ($path) = @_;
+    open(my $input, '<', $path) or input_error("Can't read $path: $!");
+    my (@labels, @signature);
+    my ($iteration, $iteration_ordinal, $invariant, $expected_values, $last_count);
+    my $line_number = 0;
+    while (my $line = <$input>) {
+        $line_number++;
+        $line =~ s/\r?\n\z//;
+        $line =~ s/^\s+|\s+$//g;
+        next if $line eq '';
+
+        if ($line =~ /\A===== Iteration number: (\d+)\z/) {
+            if ($expected_values) { close($input); return (undef, "missing energies before line $line_number"); }
+            my $canonical = canonical_integer($1);
+            if (!defined($canonical)) { close($input); return (undef, "invalid iteration at line $line_number"); }
+            $iteration = 0 + $canonical;
+            push @labels, $iteration;
+            $iteration_ordinal = $#labels;
+        } elsif ($line =~ /\ASubspace: ([+-]?\d+(?:\s+[+-]?\d+)*)\z/) {
+            if (!defined($iteration) || $expected_values) {
+                close($input);
+                return (undef, "misplaced subspace at line $line_number");
+            }
+            $invariant = canonical_invariant($1);
+            if (!defined($invariant)) { close($input); return (undef, "invalid subspace at line $line_number"); }
+            $expected_values = 1;
+            $last_count = undef;
+        } elsif ($expected_values) {
+            my $values = finite_real_list($line);
+            if (!defined($values) || !@$values) {
+                close($input);
+                return (undef, "invalid energies at line $line_number");
+            }
+            push @signature, join("\t", $iteration_ordinal, $iteration, $invariant,
+                                  scalar(@$values), canonical_real_list($values));
+            $last_count = scalar @$values;
+            $expected_values = 0;
+        } elsif ($line =~ /\A(?:corr|crit)=(.*)\z/) {
+            my $count = finite_real_list_size($1);
+            if (!defined($count) || !defined($last_count) || $count != $last_count) {
+                close($input);
+                return (undef, "invalid corrected energies at line $line_number");
+            }
+        } else {
+            close($input);
+            return (undef, "malformed record at line $line_number");
+        }
+    }
+    close($input) or input_error("Can't finish reading $path: $!");
+    return (undef, 'missing final energies') if $expected_values;
+    return ({labels => \@labels, signature => \@signature}, undef);
 }
 
 sub usage_error {
@@ -82,12 +249,13 @@ if (-e $manifest_path) {
         input_error("$manifest_path:$line_number: expected VALIDATOR FILE.")
             unless defined($validator) && defined($name) && !@extra;
         input_error("$manifest_path:$line_number: unsupported validator '$validator'.")
-            unless $validator =~ /\A(?:binary-complex|binary-real|hdf5|subspaces)\z/;
+            unless $validator =~ /\A(?:binary-complex|binary-real|hdf5|states|subspaces)\z/;
         input_error("$manifest_path:$line_number: '$name' is not a physical output name.")
             unless is_physical_output($name);
         input_error("$manifest_path:$line_number: validator '$validator' is incompatible with '$name'.")
             if (($validator =~ /\Abinary-/ && ($name !~ /\.bin\z/ || !is_spectral_output($name)))
                 || ($validator eq 'hdf5' && $name !~ /\.h5\z/)
+                || ($validator eq 'states' && $name ne 'states.nrg')
                 || ($validator eq 'subspaces' && $name ne 'subspaces.dat'));
         next if $excluded{$name};
         input_error("$manifest_path:$line_number: duplicate output '$name'.")
@@ -208,6 +376,121 @@ sub validate_subspaces {
     return undef;
 }
 
+sub validate_states {
+    my ($path) = @_;
+    -f $path or return "Result $path does not exist or is not a regular file.";
+    -s $path or return "State-vector result $path is empty.";
+    open(my $input, '<', $path) or input_error("Can't read $path: $!");
+
+    my ($iterations, $blocks, $iteration_blocks, $active, $stage, $energy_count,
+        $vector_count, $vector_width, $invariant_arity, $coefficient_kind)
+        = (0, 0, 0, 0, '', 0, 0, undef, undef, undef);
+    my (@labels, @signature, @vectors);
+    my ($current_label, $current_iteration_ordinal, $current_invariant);
+    my %seen_subspace;
+    my $line_number = 0;
+    my $finish_block = sub {
+        return undef unless $active;
+        return "State-vector result $path has an incomplete subspace before line $line_number."
+            unless $stage eq 'vectors' && $vector_count == $energy_count
+                && defined($vector_width) && $vector_width >= $energy_count
+                && orthonormal_rows(\@vectors);
+        $active = 0;
+        return undef;
+    };
+
+    while (my $line = <$input>) {
+        $line_number++;
+        $line =~ s/\r?\n\z//;
+        $line =~ s/^\s+|\s+$//g;
+        next if $line eq '';
+
+        if ($line =~ /\A===== Iteration number: (\d+)\z/) {
+            my $canonical = canonical_integer($1);
+            unless (defined($canonical)) { close($input); return "State-vector result $path has an invalid iteration at line $line_number."; }
+            my $label = 0 + $canonical;
+            if (my $error = $finish_block->()) { close($input); return $error; }
+            if ($iterations && !$iteration_blocks) { close($input); return "State-vector result $path has an empty iteration before line $line_number."; }
+            if (@labels && !(($iterations == 1 && $label == 0 && $labels[-1] == 0)
+                    || $label == $labels[-1] + 1)) {
+                close($input);
+                return "State-vector result $path has an invalid iteration sequence at line $line_number.";
+            }
+            push @labels, $label;
+            $current_label = $label;
+            $current_iteration_ordinal = $#labels;
+            $iterations++;
+            $iteration_blocks = 0;
+            %seen_subspace = ();
+        } elsif ($line =~ /\ASubspace: ([+-]?\d+(?:\s+[+-]?\d+)*)\z/) {
+            my $invariant = canonical_invariant($1);
+            if (my $error = $finish_block->()) { close($input); return $error; }
+            unless ($iterations) { close($input); return "State-vector result $path has a subspace before an iteration header."; }
+            unless (defined($invariant)) { close($input); return "State-vector result $path has invalid subspace metadata at line $line_number."; }
+            my $arity = scalar split(/\s+/, $invariant);
+            if ((defined($invariant_arity) && $arity != $invariant_arity) || $seen_subspace{$invariant}++) {
+                close($input);
+                return "State-vector result $path has invalid subspace metadata at line $line_number.";
+            }
+            $invariant_arity = $arity unless defined $invariant_arity;
+            $current_invariant = $invariant;
+            ($active, $stage, $energy_count, $vector_count, $vector_width)
+                = (1, 'energies', 0, 0, undef);
+            @vectors = ();
+            $blocks++;
+            $iteration_blocks++;
+        } elsif ($line =~ /\AEnergies \(rel\):\s*(.*)\z/) {
+            unless ($active && $stage eq 'energies') { close($input); return "State-vector result $path has misplaced energies at line $line_number."; }
+            my $values = finite_real_list($1);
+            unless (defined($values) && @$values) { close($input); return "State-vector result $path has invalid energies at line $line_number."; }
+            $energy_count = scalar @$values;
+            push @signature, join("\t", $current_iteration_ordinal, $current_label, $current_invariant,
+                                  $energy_count, canonical_real_list($values));
+            $stage = 'heading';
+        } elsif ($line eq 'Vectors:') {
+            unless ($active && $stage eq 'heading') { close($input); return "State-vector result $path has a misplaced vector heading at line $line_number."; }
+            $stage = 'vectors';
+        } elsif ($line =~ /\Avec\((\d+)\)=\[(.*)\]\s+norm-1=($NUMBER_RE)\z/) {
+            my ($index, $contents, $norm_token) = ($1, $2, $3);
+            unless ($active && $stage eq 'vectors' && $index == $vector_count) {
+                close($input);
+                return "State-vector result $path has an invalid vector index at line $line_number.";
+            }
+            my $vector = finite_vector($contents);
+            my $norm = finite_number($norm_token);
+            my $width = defined($vector) ? scalar @{$vector->{values}} : undef;
+            unless (defined($width) && defined($norm) && abs($norm) <= 1e-8
+                    && (!defined($vector_width) || $width == $vector_width)
+                    && (!defined($coefficient_kind) || $vector->{kind} eq $coefficient_kind)) {
+                close($input);
+                return "State-vector result $path has an invalid vector at line $line_number.";
+            }
+            $coefficient_kind = $vector->{kind} unless defined $coefficient_kind;
+            $vector_width = $width;
+            push @vectors, $vector->{values};
+            $vector_count++;
+        } else {
+            close($input);
+            return "State-vector result $path has a malformed record at line $line_number.";
+        }
+    }
+    if (my $error = $finish_block->()) { close($input); return $error; }
+    unless (!$iterations || $iteration_blocks) { close($input); return "State-vector result $path has an empty final iteration."; }
+    close($input) or input_error("Can't finish reading $path: $!");
+    return "State-vector result $path contains no complete iteration data."
+        unless $iterations && $blocks;
+    my $energies_path = File::Spec->catfile(dirname($path), 'energies.nrg');
+    if ($reference_file{'energies.nrg'} && -f $energies_path) {
+        my ($energy_structure, $error) = energy_dump_structure($energies_path);
+        return "State-vector result $path cannot be correlated with the energy dump: $error."
+            if defined $error;
+        return "State-vector result $path does not cover all energy-dump eigenpairs."
+            unless join(',', @labels) eq join(',', @{$energy_structure->{labels}})
+                && join("\n", @signature) eq join("\n", @{$energy_structure->{signature}});
+    }
+    return undef;
+}
+
 for my $name (sort keys %validated_file) {
     my $path = File::Spec->catfile($actual_dir, $name);
     my $validator = $validated_file{$name};
@@ -218,6 +501,8 @@ for my $name (sort keys %validated_file) {
         $message = validate_binary($path, 3);
     } elsif ($validator eq 'hdf5') {
         $message = validate_hdf5($path);
+    } elsif ($validator eq 'states') {
+        $message = validate_states($path);
     } else {
         $message = validate_subspaces($path);
     }

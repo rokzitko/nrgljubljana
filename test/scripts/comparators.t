@@ -214,6 +214,174 @@ subtest 'directory manifests and physical output cleanup' => sub {
     is($status, 1, 'a contradictory subspace dump fails semantic validation');
     unlink("$strict_actual/subspaces.dat") or die $!;
 
+    write_file("$strict_ref/.physical-outputs", "states states.nrg\n");
+    write_file("$strict_actual/states.nrg", <<'STATES');
+===== Iteration number: 0
+Subspace: 0 1
+Energies (rel): 0 1
+Vectors:
+vec(0)=[(1,0), (0,0)] norm-1=0
+vec(1)=[(0,0), (1,0)] norm-1=0
+STATES
+    ($status) = run_command($dir, $^X, $compare, '--strict', '--actual', $strict_actual, $strict_ref);
+    is($status, 0, 'a complete finite state-vector dump passes semantic validation');
+    write_file("$strict_actual/states.nrg", <<'STATES');
+===== Iteration number: 0
+Subspace: 0 1
+Energies (rel): 0 1
+Vectors:
+vec(0)=[1, 0] norm-1=0
+vec(1)=[1, 0] norm-1=0
+STATES
+    ($status) = run_command($dir, $^X, $compare, '--strict', '--actual', $strict_actual, $strict_ref);
+    is($status, 1, 'non-orthogonal state vectors fail semantic validation');
+    write_file("$strict_actual/states.nrg", <<'STATES');
+===== Iteration number: 0
+Subspace: 0 1
+Energies (rel): 0
+Vectors:
+vec(0)=[] norm-1=-1
+STATES
+    ($status) = run_command($dir, $^X, $compare, '--strict', '--actual', $strict_actual, $strict_ref);
+    is($status, 1, 'an empty state vector fails semantic validation');
+    write_file("$strict_actual/states.nrg", <<'STATES');
+===== Iteration number: 0
+Subspace: 0 1
+Energies (rel): 0
+Vectors:
+vec(0)=[1e-9999] norm-1=0
+STATES
+    ($status) = run_command($dir, $^X, $compare, '--strict', '--actual', $strict_actual, $strict_ref);
+    is($status, 1, 'an underflowed state-vector coefficient fails semantic validation');
+
+    write_file("$strict_actual/states.nrg", <<'STATES');
+===== Iteration number: 0
+Subspace: 0 1
+Energies (rel): 0
+Vectors:
+vec(0)=[1] norm-1=0
+STATES
+    my $energy_dump = <<'ENERGIES';
+===== Iteration number: 0
+Subspace: 0 1
+0
+===== Iteration number: 1
+Subspace: 0 1
+0
+ENERGIES
+    write_file("$strict_ref/energies.nrg", $energy_dump);
+    write_file("$strict_actual/energies.nrg", $energy_dump);
+    ($status) = run_command($dir, $^X, $compare, '--strict', '--actual', $strict_actual, $strict_ref);
+    is($status, 1, 'a truncated state-vector dump cannot omit energy-dump iterations');
+
+    $energy_dump = <<'ENERGIES';
+===== Iteration number: 0
+Subspace: 0 1
+0
+Subspace: 1 1
+1
+ENERGIES
+    write_file("$strict_ref/energies.nrg", $energy_dump);
+    write_file("$strict_actual/energies.nrg", $energy_dump);
+    ($status) = run_command($dir, $^X, $compare, '--strict', '--actual', $strict_actual, $strict_ref);
+    is($status, 1, 'a state-vector dump cannot omit an energy-dump subspace');
+
+    $energy_dump = <<'ENERGIES';
+===== Iteration number: 0
+Subspace: 0 1
+0 1
+ENERGIES
+    write_file("$strict_ref/energies.nrg", $energy_dump);
+    write_file("$strict_actual/energies.nrg", $energy_dump);
+    ($status) = run_command($dir, $^X, $compare, '--strict', '--actual', $strict_actual, $strict_ref);
+    is($status, 1, 'a state-vector dump cannot omit an energy-dump eigenpair');
+
+    $energy_dump = <<'ENERGIES';
+===== Iteration number: 0
+Subspace: 0 1
+1
+ENERGIES
+    write_file("$strict_ref/energies.nrg", $energy_dump);
+    write_file("$strict_actual/energies.nrg", $energy_dump);
+    ($status) = run_command($dir, $^X, $compare, '--strict', '--actual', $strict_actual, $strict_ref);
+    is($status, 1, 'state-vector energies must match the energy dump');
+
+    $energy_dump = <<'ENERGIES';
+===== Iteration number: 0
+Subspace: 0 1
+0
+Subspace: 1 1
+0
+===== Iteration number: 0
+Subspace: 2 1
+0
+ENERGIES
+    write_file("$strict_ref/energies.nrg", $energy_dump);
+    write_file("$strict_actual/energies.nrg", $energy_dump);
+    write_file("$strict_actual/states.nrg", <<'STATES');
+===== Iteration number: 0
+Subspace: 0 1
+Energies (rel): 0
+Vectors:
+vec(0)=[1] norm-1=0
+===== Iteration number: 0
+Subspace: 1 1
+Energies (rel): 0
+Vectors:
+vec(0)=[1] norm-1=0
+Subspace: 2 1
+Energies (rel): 0
+Vectors:
+vec(0)=[1] norm-1=0
+STATES
+    ($status) = run_command($dir, $^X, $compare, '--strict', '--actual', $strict_actual, $strict_ref);
+    is($status, 1, 'state-vector subspaces cannot move across duplicate iteration-zero sections');
+    unlink("$strict_ref/energies.nrg") or die $!;
+    unlink("$strict_actual/energies.nrg") or die $!;
+
+    write_file("$strict_actual/states.nrg", <<'STATES');
+===== Iteration number: 0
+Subspace: 0 1
+Energies (rel): 0
+Vectors:
+vec(0)=[1] norm-1=0
+Subspace: +0 01
+Energies (rel): 0
+Vectors:
+vec(0)=[1] norm-1=0
+STATES
+    ($status) = run_command($dir, $^X, $compare, '--strict', '--actual', $strict_actual, $strict_ref);
+    is($status, 1, 'equivalent integer spellings cannot duplicate a state-vector subspace');
+
+    write_file("$strict_actual/states.nrg", <<'STATES');
+===== Iteration number: 5
+Subspace: 0 1
+Energies (rel): 0
+Vectors:
+vec(0)=[1] norm-1=0
+===== Iteration number: 5
+Subspace: 0 1
+Energies (rel): 0
+Vectors:
+vec(0)=[1] norm-1=0
+STATES
+    ($status) = run_command($dir, $^X, $compare, '--strict', '--actual', $strict_actual, $strict_ref);
+    is($status, 1, 'only the initial zero iteration may be duplicated');
+
+    write_file("$strict_actual/states.nrg", <<'STATES');
+===== Iteration number: 0
+Subspace: 0 1
+Energies (rel): 0
+Vectors:
+vec(0)=[1] norm-1=0
+STATES
+    write_file("$strict_actual/energies.nrg", "stale\n");
+    ($status) = run_command($dir, $^X, $compare, '--strict', '--exclude', 'energies.nrg',
+                            '--actual', $strict_actual, $strict_ref);
+    is($status, 0, 'an excluded energy dump does not constrain state-vector validation');
+    unlink("$strict_actual/energies.nrg") or die $!;
+    unlink("$strict_actual/states.nrg") or die $!;
+
     write_file("$strict_ref/.physical-outputs", "binary-real spec_x/../../outside.dat\n");
     ($status) = run_command($dir, $^X, $compare, '--strict', '--actual', $strict_actual, $strict_ref);
     is($status, 2, 'manifest output names must be basenames');

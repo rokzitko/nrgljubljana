@@ -197,6 +197,7 @@ class Vectors {
     Matrix & ref_m() { return m; }
     [[nodiscard]] auto M() const noexcept { return size1(m); }
     [[nodiscard]] auto dim() const noexcept { return _dim; }
+    [[nodiscard]] bool available() const noexcept { return M() != 0; }
     void set(Matrix m_) {
       m = std::move(m_);
       _dim = size2(m);
@@ -205,7 +206,10 @@ class Vectors {
     }
     [[nodiscard]] const auto & get() const noexcept { return m; }
     [[nodiscard]] const auto & operator()() const noexcept { return m; }
-    void standard_basis(const size_t size) { m = id_matrix<t_matel>(size); }
+    void standard_basis(const size_t size) {
+      m = id_matrix<t_matel>(size);
+      _dim = size;
+    }
     auto submatrix_const(const std::pair<size_t,size_t> &r1, const std::pair<size_t,size_t> &r2) const {
       return NRG::submatrix_const(m, r1, r2);
     }
@@ -227,18 +231,21 @@ class Vectors {
     void h5save(H5Easy::File &fd, const std::string &name) const {
       h5_dump_matrix(fd, name + "/matrix", m);
     }
-   void dump(std::ostream &F) const {
-     for (size_t i = 0; i < M(); i++) {
-       F << "vec(" << i << ")=[";
-       double sum = 0.0;
-       for (size_t j = 0; j < dim(); j++) {
-         F << m(i,j) << (j != dim()-1 ? ", " : "");
-          sum += std::pow(std::abs(m(i,j)),2);
-       }
-       const double diff = sum-1.0;
-       F << "] norm-1=" << diff << std::endl;
-     }
-   }
+    static void dump_matrix(const Matrix &matrix, std::ostream &F) {
+      const auto rows = size1(matrix);
+      const auto columns = size2(matrix);
+      for (size_t i = 0; i < rows; i++) {
+        F << "vec(" << i << ")=[";
+        double sum = 0.0;
+        for (size_t j = 0; j < columns; j++) {
+          F << matrix(i,j) << (j != columns-1 ? ", " : "");
+          sum += std::pow(std::abs(matrix(i,j)),2);
+        }
+        const double diff = sum-1.0;
+        F << "] norm-1=" << diff << std::endl;
+      }
+    }
+    void dump(std::ostream &F) const { dump_matrix(m, F); }
 };
 
 // Eigenvectors separated according to the invariant subspace from which they originate.
@@ -282,6 +289,43 @@ public:
     for (auto &b: blocks) b = NRG::load<S>(ia);
   }
   void clear() { ranges::fill(blocks, Matrix()); }
+  [[nodiscard]] Matrix reconstruct(const size_t rows, const size_t columns) const {
+    Matrix result(rows, columns);
+    size_t offset = 0;
+    for (const auto &block : blocks) {
+      if (size1(block) != rows || size2(block) > columns-offset)
+        throw std::logic_error("Invalid eigenvector block dimensions");
+      for (const auto row : range0(rows))
+        for (const auto column : range0(size2(block)))
+          result(row, offset+column) = block(row, column);
+      offset += size2(block);
+    }
+    if (offset != columns)
+      throw std::logic_error("Eigenvector blocks do not span the full vector space");
+    return result;
+  }
+  void dump(const size_t rows, const size_t columns, std::ostream &F) const {
+    size_t total_columns = 0;
+    for (const auto &block : blocks) {
+      if (size1(block) != rows || size2(block) > columns-total_columns)
+        throw std::logic_error("Invalid eigenvector block dimensions");
+      total_columns += size2(block);
+    }
+    if (total_columns != columns)
+      throw std::logic_error("Eigenvector blocks do not span the full vector space");
+    for (const auto row : range0(rows)) {
+      F << "vec(" << row << ")=[";
+      double sum = 0.0;
+      size_t column = 0;
+      for (const auto &block : blocks)
+        for (const auto block_column : range0(size2(block))) {
+          const auto value = block(row, block_column);
+          F << value << (++column != columns ? ", " : "");
+          sum += std::pow(std::abs(value), 2);
+        }
+      F << "] norm-1=" << sum-1.0 << std::endl;
+    }
+  }
 };
 
 // Result of a diagonalisation: eigenvalues and eigenvectors
@@ -439,6 +483,13 @@ public:
     vectors.shrink();
     U.clear();
   }
+  void dump_vectors(std::ostream &F) const {
+    if (vectors.available()) {
+      vectors.dump(F);
+    } else {
+      U.dump(getnrcomputed(), getdim(), F);
+    }
+  }
   void save(boost::archive::binary_oarchive &oa) const {
     values.save(oa);
     vectors.save(oa);
@@ -453,7 +504,14 @@ public:
   }
   void h5save(H5Easy::File &fd, const std::string &name, const bool save_vectors = true) const {
     values.h5save(fd, name);
-    if (save_vectors) vectors.h5save(fd, name);
+    if (save_vectors) {
+      if (vectors.available()) {
+        vectors.h5save(fd, name);
+      } else {
+        const auto reconstructed = U.reconstruct(getnrcomputed(), getdim());
+        h5_dump_matrix(fd, name + "/matrix", reconstructed);
+      }
+    }
     h5_dump_scalar(fd, name + "/nrkept", getnrkept());
   }
 };
@@ -716,7 +774,7 @@ void dump_all_states(const DiagInfo<S> &diag, const double rescaled_by, std::ost
     F << "Subspace: " << I << std::endl;
     F << "Energies (rel): " << rescaled(eig.values.all_rel(), rescaled_by) << std::endl;
     F << "Vectors:" << std::endl;
-    eig.vectors.dump(F);
+    eig.dump_vectors(F);
     F << std::endl; // empty line
   }
 }

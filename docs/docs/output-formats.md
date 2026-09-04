@@ -295,9 +295,10 @@ Both use blocks beginning with:
 
 `energies.nrg` then contains `Subspace:` sections and raw eigenvalues. Optional
 `corr=` and `crit=` records are enabled by `dumpcorr` and `dumpcrit` when
-`dumpenergies=true`. `states.nrg` adds the vector information still available
-at the point where the diagnostic is written. These files use diagnostic
-formatting and should not be treated as complete restart data.
+`dumpenergies=true`. `states.nrg` adds every computed eigenvector, reconstructing
+the dense rows from ancestor blocks if the original dense matrix has already
+been released. These files use diagnostic formatting and should not be treated
+as complete restart data.
 
 For iterative Floquet blocks, `crit=` contains the shifted ranking criterion
 defined in [Floquet truncation](floquet-truncation.md). The seed block retains
@@ -370,6 +371,10 @@ is not uniform for every seed and runtime group. With `h5all=true`, seed
 operators and eigenspectrum vectors are stored independently of `h5ops` and
 `h5vectors`; those parameters control later iteration saves. Consumers must
 inspect the actual file produced by their release and parameter set.
+
+`h5U=true` stores only ancestor blocks with positive width. Internal
+zero-width combination slots are retained for recalculation indexing but are
+not exposed as HDF5 datasets; `|nr=` keeps the original combination index.
 
 ## `nrginit` Hand-Off Files
 

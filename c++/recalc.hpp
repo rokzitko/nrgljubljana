@@ -64,8 +64,13 @@ inline void h5save_blocks_Eigen(H5Easy::File &fd, const std::string &name, const
   // For certain symmetry types (SPSU2) the same ancestor subspace may contribute more than one
   // time, thus we add a suffix with a counter (nr).
   const auto range = range0(sub.combs());
-  for (const auto & [nr, i]: range | ranges::views::enumerate)
-    h5_dump_matrix(fd, name + "/" + sub.ancestor(i).name() + "|nr=" + std::to_string(nr), eig.U.get(i));
+  for (const auto & [nr, i]: range | ranges::views::enumerate) {
+    if (!sub.exists(i)) continue;
+    const auto &block = eig.U.get(i);
+    my_assert(size1(block) == eig.getnrstored());
+    my_assert(size2(block) == sub.rmax(i));
+    h5_dump_matrix(fd, name + "/" + sub.ancestor(i).name() + "|nr=" + std::to_string(nr), block);
+  }
 }
 
 template<scalar S>

@@ -1,6 +1,9 @@
 #include <gtest/gtest.h>
 
 #include <initializer_list>
+#include <filesystem>
+#include <numeric>
+#include <string>
 #include <vector>
 
 #include <core.hpp>
@@ -43,6 +46,39 @@ TEST(recalc, split_in_blocks_Eigen) { // NOLINT
   SubspaceStructure substruct{diag, Sym};
   substruct.dump();
 #endif
+}
+
+TEST(recalc, h5save_blocks_skips_zero_width_ancestors) { // NOLINT
+  Params P;
+  const auto SymSP = setup_Sym<double>(P);
+  auto *Sym = SymSP.get();
+  const auto previous = setup_diag<double>(P, Sym);
+  const SubspaceStructure substruct(previous, Sym);
+  DiagInfo<double> diag;
+
+  for (const auto &[I, sub] : substruct) {
+    if (sub.total() == 0) continue;
+    std::vector<double> values(sub.total());
+    std::iota(values.begin(), values.end(), 0.0);
+    diag[I] = NRG::Eigen<double>(values, 1.0);
+    split_in_blocks_Eigen(diag.at(I), sub, true);
+  }
+
+  {
+    auto h5 = H5Easy::File("recalc-blocks.h5", H5Easy::File::Overwrite);
+    h5save_blocks(h5, "U/", diag, substruct);
+    for (const auto &[I, sub] : substruct)
+      for (const auto i : range0(sub.combs())) {
+        const auto path = "U/" + I.name() + "/" + sub.ancestor(i).name() + "|nr=" + std::to_string(i);
+        EXPECT_EQ(h5.exist(path), sub.exists(i));
+        if (sub.exists(i)) {
+          const auto block = H5Easy::load<EigenMatrix<double>>(h5, path);
+          EXPECT_EQ(size1(block), diag.at(I).getnrstored());
+          EXPECT_EQ(size2(block), sub.rmax(i));
+        }
+      }
+  }
+  std::filesystem::remove("recalc-blocks.h5");
 }
 
 #ifdef NRG_SYM_ALL
