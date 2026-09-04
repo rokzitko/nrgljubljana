@@ -361,6 +361,10 @@ def numerical_principal_value(model, power, argument):
 
 
 def assert_close(actual, expected, description):
+    if not mp.isfinite(actual) or not mp.isfinite(expected):
+        raise ArithmeticError(
+            f"multiprecision cross-check produced a non-finite value for {description}"
+        )
     tolerance = decimal("1e-85") * max(decimal("1e-300"), abs(actual), abs(expected))
     if abs(actual - expected) > tolerance:
         raise ArithmeticError(

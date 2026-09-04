@@ -6,3 +6,10 @@ add_test(
           ${PROJECT_SOURCE_DIR}/scripts $<TARGET_FILE_DIR:integ>
 )
 set_tests_properties(scripts_helpers PROPERTIES TIMEOUT 120)
+
+add_test(
+  NAME comparator_contract
+  COMMAND ${PERL_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/comparators.t
+          ${PROJECT_SOURCE_DIR}/test
+)
+set_tests_properties(comparator_contract PROPERTIES TIMEOUT 120)

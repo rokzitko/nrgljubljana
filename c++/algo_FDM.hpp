@@ -245,8 +245,10 @@ class Algo_FDMmats : public Algo<S> {
         const auto weightB = op1ji * rho_op2(j, i) * (-sign);
         return std::make_tuple(energy, weightA, weightB);
       };
-      const auto term2 = [&mats_freq](const auto energy, const auto weightA, const auto weightB, const auto n) {
-        return (weightA + weightB) / (mats_freq[n] - energy);
+       const auto term2 = [T, this, &mats_freq](const auto energy, const auto weightA, const auto weightB, const auto n) -> t_weight {
+         if (gt == gf_type::fermionic || n > 0 || std::abs(energy) > WEIGHT_TOL)
+           return (weightA + weightB) / (mats_freq[n] - energy);
+         return -weightA / T;
       };
       const auto term3_factors = [&absGi, &absGj, &boltzGj, &op1, &op2, &op2_rho, wnf, this](const auto i, const auto j) {
         const auto Ei = absGi[i];
@@ -257,8 +259,10 @@ class Algo_FDMmats : public Algo<S> {
         const auto weightB = (-sign) * op1ji * op2(j, i) * wnf * boltzGj[j];
         return std::make_tuple(energy, weightA, weightB);
       };
-      const auto term3 = [&mats_freq](const auto energy, const auto weightA, const auto weightB, const auto n) {
-        return (weightA + weightB) / (mats_freq[n] - energy);
+       const auto term3 = [T, this, &mats_freq](const auto energy, const auto weightA, const auto weightB, const auto n) -> t_weight {
+         if (gt == gf_type::fermionic || n > 0 || std::abs(energy) > WEIGHT_TOL)
+           return (weightA + weightB) / (mats_freq[n] - energy);
+         return -weightA / T;
       };
       for (const auto j : diagIj.Drange())
         for (const auto i : diagIi.Drange()) {

@@ -25,16 +25,16 @@ MatrixElements<SC> SymmetryDBLSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
     Invar Ip;
 
     Ip = Invar(ii11 - 1, ii21);
-    RECALC_TAB("dblsu2/dblsu2-2ch-doubletm0.dat", Invar(2, 0));
+    RECALC_TAB("dblsu2/dblsu2-2ch-doubletm0.dat", Invar(2, 1));
 
     Ip = Invar(ii11 + 1, ii21);
-    RECALC_TAB("dblsu2/dblsu2-2ch-doubletp0.dat", Invar(2, 0));
+    RECALC_TAB("dblsu2/dblsu2-2ch-doubletp0.dat", Invar(2, 1));
 
     Ip = Invar(ii11, ii21 - 1);
-    RECALC_TAB("dblsu2/dblsu2-2ch-doublet0m.dat", Invar(0, 2));
+    RECALC_TAB("dblsu2/dblsu2-2ch-doublet0m.dat", Invar(1, 2));
 
     Ip = Invar(ii11, ii21 + 1);
-    RECALC_TAB("dblsu2/dblsu2-2ch-doublet0p.dat", Invar(0, 2));
+    RECALC_TAB("dblsu2/dblsu2-2ch-doublet0p.dat", Invar(1, 2));
   }
   return cnew;
 }

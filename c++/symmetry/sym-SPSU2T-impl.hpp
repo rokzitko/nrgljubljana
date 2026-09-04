@@ -65,7 +65,9 @@ class SymmetrySPSU2T : public Symmetry<SC> {
     const int ttp    = 2 * tp + 1;
     const int tt1    = 2 * t1 + 1;
     my_assert(std::abs(ttp - tt1) == 2 || ttp == tt1);
-    double angmomfactor = switch3(tt1, ttp + 2, 1. + (ttp - 1) / 3., ttp, ttp / 3., ttp - 2, (-2. + ttp) / 3.);
+    const double angmomfactor = tt1 == 1 && ttp == 1
+                                  ? 0.0
+                                  : switch3(tt1, ttp + 2, 1. + (ttp - 1) / 3., ttp, ttp / 3., ttp - 2, (-2. + ttp) / 3.);
     return spinfactor * angmomfactor;
   }
 

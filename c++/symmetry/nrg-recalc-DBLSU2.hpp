@@ -46,52 +46,52 @@ MatrixElements<SC> SymmetryDBLSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
 
     Ip = Invar(ii11 - 1, ii21);
     {
-  nrglog('f', "RECALC(fn=" << "dblsu2/dblsu2-2ch-doubletm0.dat" << ", Iop=" << Invar(2, 0) << ")");
+  nrglog('f', "RECALC(fn=" << "dblsu2/dblsu2-2ch-doubletm0.dat" << ", Iop=" << Invar(2, 1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (this->have_stored_subspaces(diag, I1, Ip)) {
     std::initializer_list<Recalc<SC>> recalc_table = {
 #include "dblsu2/dblsu2-2ch-doubletm0.dat"
     };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 0));
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 1));
     if (cn) cnew[II] = *cn;
   }
 };
 
     Ip = Invar(ii11 + 1, ii21);
     {
-  nrglog('f', "RECALC(fn=" << "dblsu2/dblsu2-2ch-doubletp0.dat" << ", Iop=" << Invar(2, 0) << ")");
+  nrglog('f', "RECALC(fn=" << "dblsu2/dblsu2-2ch-doubletp0.dat" << ", Iop=" << Invar(2, 1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (this->have_stored_subspaces(diag, I1, Ip)) {
     std::initializer_list<Recalc<SC>> recalc_table = {
 #include "dblsu2/dblsu2-2ch-doubletp0.dat"
     };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 0));
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 1));
     if (cn) cnew[II] = *cn;
   }
 };
 
     Ip = Invar(ii11, ii21 - 1);
     {
-  nrglog('f', "RECALC(fn=" << "dblsu2/dblsu2-2ch-doublet0m.dat" << ", Iop=" << Invar(0, 2) << ")");
+  nrglog('f', "RECALC(fn=" << "dblsu2/dblsu2-2ch-doublet0m.dat" << ", Iop=" << Invar(1, 2) << ")");
   auto II = Twoinvar(I1, Ip);
   if (this->have_stored_subspaces(diag, I1, Ip)) {
     std::initializer_list<Recalc<SC>> recalc_table = {
 #include "dblsu2/dblsu2-2ch-doublet0m.dat"
     };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 2));
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2));
     if (cn) cnew[II] = *cn;
   }
 };
 
     Ip = Invar(ii11, ii21 + 1);
     {
-  nrglog('f', "RECALC(fn=" << "dblsu2/dblsu2-2ch-doublet0p.dat" << ", Iop=" << Invar(0, 2) << ")");
+  nrglog('f', "RECALC(fn=" << "dblsu2/dblsu2-2ch-doublet0p.dat" << ", Iop=" << Invar(1, 2) << ")");
   auto II = Twoinvar(I1, Ip);
   if (this->have_stored_subspaces(diag, I1, Ip)) {
     std::initializer_list<Recalc<SC>> recalc_table = {
 #include "dblsu2/dblsu2-2ch-doublet0p.dat"
     };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 2));
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2));
     if (cn) cnew[II] = *cn;
   }
 };

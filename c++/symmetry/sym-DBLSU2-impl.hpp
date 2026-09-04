@@ -35,13 +35,26 @@ class SymmetryDBLSU2 : public Symmetry<SC> {
   // We always must have I1 >= 0 and I2 >= 0.
   bool Invar_allowed(const Invar &I) const override { return (I.get("II1") > 0) && (I.get("II2") > 0); }
 
-  // TO DO: support for the doublets wrt the second quantum number
+  // The doublet operator transforms under either II1 or II2. The other
+  // isospin contributes its full spectator multiplicity.
   double specdens_factor(const Invar &Ip, const Invar &I1) const override {
     const int ii1p = Ip.get("II1");
     const int ii11 = I1.get("II1");
-    my_assert(std::abs(ii11 - ii1p) == 1);
-    const double isofactor = (ii11 == ii1p + 1 ? ISO(ii1p) + 1.0 : ISO(ii1p));
-    return isofactor;
+    const int ii2p = Ip.get("II2");
+    const int ii21 = I1.get("II2");
+    if (std::abs(ii11 - ii1p) == 1) {
+      const double isofactor = (ii11 == ii1p + 1 ? ISO(ii1p) + 1.0 : ISO(ii1p));
+      my_assert(ii2p == ii21);
+      my_assert(ii2p >= 1);
+      return isofactor * ii2p;
+    }
+    if (std::abs(ii21 - ii2p) == 1) {
+      const double isofactor = (ii21 == ii2p + 1 ? ISO(ii2p) + 1.0 : ISO(ii2p));
+      my_assert(ii1p == ii11);
+      my_assert(ii1p >= 1);
+      return isofactor * ii1p;
+    }
+    my_assert_not_reached();
   }
 
   void load() override {

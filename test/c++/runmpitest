@@ -6,6 +6,7 @@ set -o pipefail
 project_source_dir="$1"
 test_source_dir="$2"
 shift 2
+"${project_source_dir}/test/clean-physical-output.pl" || exit 1
 "$@" 2>&1 | tee log
 if [ "${PIPESTATUS[0]}" -ne 0 ]; then
   echo "Abnormal termination. Skipping comparisons."
@@ -15,4 +16,4 @@ if [ ! -f "DONE" ]; then
   echo "File DONE not found. Skipping comparisons."
   exit 1
 fi
-"${project_source_dir}/test/compare.pl" "${test_source_dir}/ref"
+"${project_source_dir}/test/compare.pl" --strict "${test_source_dir}/ref"

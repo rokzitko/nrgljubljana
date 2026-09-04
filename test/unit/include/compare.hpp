@@ -26,15 +26,15 @@ void compare(const std::string &a, const std::string &b) {
 template<typename U, typename V>
 void VECTOR_EQ(const U &A, const V &B)
 {
-  EXPECT_EQ(A.size(), B.size());
+  ASSERT_EQ(A.size(), B.size());
   for(int i = 0; i < A.size(); i++) EXPECT_EQ(A[i], B[i]);
 }
     
 template<typename U, typename V> // XXX: concept matrix: size1(), size2(), (i,j) accessor
 void MATRIX_EQ(const U &A, const V &B)
 {
-  EXPECT_EQ(size1(A), size1(B));
-  EXPECT_EQ(size2(A), size2(B));
+  ASSERT_EQ(size1(A), size1(B));
+  ASSERT_EQ(size2(A), size2(B));
   for(int i = 0; i < size1(A); i++)
     for(int j = 0; j < size2(A); j++)
       EXPECT_EQ(A(i,j), B(i,j));
@@ -43,15 +43,15 @@ void MATRIX_EQ(const U &A, const V &B)
 template<typename U, typename V> // XXX: concept vector: .size, [] accessor; constrain to double
 void VECTOR_DOUBLE_EQ(const U &A, const V &B)
 {
-  EXPECT_EQ(A.size(), B.size());
+  ASSERT_EQ(A.size(), B.size());
   for(int i = 0; i < A.size(); i++) EXPECT_DOUBLE_EQ(A[i], B[i]);
 }
     
 template<typename U, typename V> // XXX: concept matrix: size1(), size2(), (i,j) accessor; constrain to double
 void MATRIX_DOUBLE_EQ(const U &A, const V &B)
 {
-  EXPECT_EQ(size1(A), size1(B));
-  EXPECT_EQ(size2(A), size2(B));
+  ASSERT_EQ(size1(A), size1(B));
+  ASSERT_EQ(size2(A), size2(B));
   for(int i = 0; i < size1(A); i++)
     for(int j = 0; j < size2(A); j++)
       EXPECT_DOUBLE_EQ(A(i,j), B(i,j));

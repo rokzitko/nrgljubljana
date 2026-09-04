@@ -25,22 +25,22 @@ MatrixElements<SC> SymmetrySPSU2T<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
     // Two different lengths: D_3CH_a and D_3CH_b
 
     Ip = Invar(ss1 + 1, t1 - 1);
-    RECALC_TAB("spsu2t/spsu2t-doubletp-1.dat", Invar(1, 2, 1));
+    RECALC_TAB("spsu2t/spsu2t-doubletp-1.dat", Invar(2, 1));
 
     Ip = Invar(ss1 - 1, t1 - 1);
-    RECALC_TAB("spsu2t/spsu2t-doubletm-1.dat", Invar(1, 2, 1));
+    RECALC_TAB("spsu2t/spsu2t-doubletm-1.dat", Invar(2, 1));
 
     Ip = Invar(ss1 + 1, t1);
-    RECALC_TAB("spsu2t/spsu2t-doubletp0.dat", Invar(1, 2, 1));
+    RECALC_TAB("spsu2t/spsu2t-doubletp0.dat", Invar(2, 1));
 
     Ip = Invar(ss1 - 1, t1);
-    RECALC_TAB("spsu2t/spsu2t-doubletm0.dat", Invar(1, 2, 1));
+    RECALC_TAB("spsu2t/spsu2t-doubletm0.dat", Invar(2, 1));
 
     Ip = Invar(ss1 + 1, t1 + 1);
-    RECALC_TAB("spsu2t/spsu2t-doubletp+1.dat", Invar(1, 2, 1));
+    RECALC_TAB("spsu2t/spsu2t-doubletp+1.dat", Invar(2, 1));
 
     Ip = Invar(ss1 - 1, t1 + 1);
-    RECALC_TAB("spsu2t/spsu2t-doubletm+1.dat", Invar(1, 2, 1));
+    RECALC_TAB("spsu2t/spsu2t-doubletm+1.dat", Invar(2, 1));
   }
   return cnew;
 }

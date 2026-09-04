@@ -776,7 +776,7 @@ spincoupledQ["QSTZ", {{q1_, ss1_, tz1_, i1___}, {q2_, ss2_, tz2_, i2___}}] :=
 
 coupledQ["QSZTZ", {{q1_, ssz1_, tz1_, i1___}, {q2_, ssz2_, tz2_, i2___}}] :=
   If[q1 == q2+1 && Abs[ssz1-ssz2] == 1 && Abs[tz1-tz2] <= 1, True, False, MyError["oops"]];
-spincoupledQ["QSTZ", {{q1_, ssz1_, tz1_, i1___}, {q2_, ssz2_, tz2_, i2___}}] :=
+spincoupledQ["QSZTZ", {{q1_, ssz1_, tz1_, i1___}, {q2_, ssz2_, tz2_, i2___}}] :=
   If[q1 == q2 && (ssz1 == ssz2 || ssz1 == ssz2-2 || ssz1 == ssz2+2) && tz1 == tz2, True, False,
     MyError["oops"]];
 

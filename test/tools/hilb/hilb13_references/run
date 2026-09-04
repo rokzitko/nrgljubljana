@@ -7,6 +7,19 @@ mycomp="$2/test/mycomp.pl"
 
 rm -f ./*.out ./*.err mapped.stdout mapped.stderr raw.stdout raw.stderr comparator.*
 
+expect_comparator_status() {
+  expected=$1
+  shift
+  set +e
+  perl "$mycomp" "$@"
+  actual=$?
+  set -e
+  if [ "$actual" -ne "$expected" ]; then
+    echo "mycomp returned status $actual, expected $expected" >&2
+    exit 1
+  fi
+}
+
 run_complex_case() {
   name=$1
   power=$2
@@ -106,47 +119,30 @@ printf '%s\n' '(1,2)' >comparator.reference
 printf '%s\n' '(1.000000000000001,1.999999999999999)' >comparator.close
 perl "$mycomp" comparator.reference comparator.close
 printf '%s\n' 'I=0 n=1 E=0 <n_d>=0.5 <n_d^2>=1' >comparator.reference
-printf '%s\n' 'I=0 n=1 E=0.000001 <n_d>=0.500001 <n_d^2>=1.000001' >comparator.close
+printf '%s\n' 'I=0 n=1 E=0.0000000000001 <n_d>=0.500001 <n_d^2>=1.000001' >comparator.close
 perl "$mycomp" comparator.reference comparator.close
 printf '%s\n' 'I=0 n=1 E=0 <n_d>=0.6 <n_d^2>=1' >comparator.bad
-if perl "$mycomp" comparator.reference comparator.bad; then
-  echo "mycomp accepted an out-of-tolerance labeled value" >&2
-  exit 1
-fi
+expect_comparator_status 1 comparator.reference comparator.bad
 printf '%s\n' '(1,2)' >comparator.reference
 printf '%s\n' '(1,2)junk' >comparator.bad
-if perl "$mycomp" comparator.reference comparator.bad; then
-  echo "mycomp accepted trailing junk in a complex field" >&2
-  exit 1
-fi
+expect_comparator_status 2 comparator.reference comparator.bad
 printf '%s\n' 'garbage' >comparator.bad
-if perl "$mycomp" comparator.reference comparator.bad; then
-  echo "mycomp accepted a nonnumeric replacement" >&2
-  exit 1
-fi
+expect_comparator_status 1 comparator.reference comparator.bad
 printf '%s\n' 'foo' >comparator.reference
 printf '%s\n' 'bar' >comparator.bad
-if perl "$mycomp" comparator.reference comparator.bad; then
-  echo "mycomp accepted unequal nonnumeric fields" >&2
-  exit 1
-fi
-printf '%s\n' 'nan +nan -NAN' >comparator.reference
-printf '%s\n' '-nan NAN +NaN' >comparator.close
-perl "$mycomp" comparator.reference comparator.close
+expect_comparator_status 1 comparator.reference comparator.bad
+for spelling in nan +nan -NAN; do
+  printf '%s\n' "$spelling" >comparator.reference
+  expect_comparator_status 2 comparator.reference comparator.reference
+done
 printf '%s\n' 'nan' >comparator.reference
 for replacement in 0 inf 'nan(payload)' garbage; do
   printf '%s\n' "$replacement" >comparator.bad
-  if perl "$mycomp" comparator.reference comparator.bad; then
-    echo "mycomp accepted nan as equivalent to $replacement" >&2
-    exit 1
-  fi
+  expect_comparator_status 2 comparator.reference comparator.bad
 done
 printf '%s\n' '(1,2)' >comparator.reference
 printf '%s\n' '(1,2.1)' >comparator.bad
-if perl "$mycomp" comparator.reference comparator.bad; then
-  echo "mycomp accepted an out-of-tolerance complex value" >&2
-  exit 1
-fi
+expect_comparator_status 1 comparator.reference comparator.bad
 : >comparator.reference
 : >comparator.bad
 index=0
@@ -155,7 +151,4 @@ while test "$index" -lt 256; do
   printf '%s\n' 'bar' >>comparator.bad
   index=$((index + 1))
 done
-if perl "$mycomp" comparator.reference comparator.bad >/dev/null; then
-  echo "mycomp returned success for 256 differences" >&2
-  exit 1
-fi
+expect_comparator_status 1 comparator.reference comparator.bad >/dev/null

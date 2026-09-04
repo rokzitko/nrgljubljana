@@ -225,39 +225,39 @@ MatrixElements<SC> SymmetryQSZTZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, c
 
     Ip = Invar(q1, ssz1, tz1);
     {
-  nrglog('f', "RECALC(fn=" << "qsztz/qsztz-triplets.dat" << ", Iop=" << Invar(0, 3, 0) << ")");
+  nrglog('f', "RECALC(fn=" << "qsztz/qsztz-triplets.dat" << ", Iop=" << Invar(0, 0, 0) << ")");
   auto II = Twoinvar(I1, Ip);
   if (this->have_stored_subspaces(diag, I1, Ip)) {
     std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qsztz/qsztz-triplets.dat"
     };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3, 0));
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 0, 0));
     if (cn) cnew[II] = *cn;
   }
 };
 
     Ip = Invar(q1, ssz1 + 2, tz1);
     {
-  nrglog('f', "RECALC(fn=" << "qsztz/qsztz-tripletp.dat" << ", Iop=" << Invar(0, 3, 0) << ")");
+  nrglog('f', "RECALC(fn=" << "qsztz/qsztz-tripletp.dat" << ", Iop=" << Invar(0, -2, 0) << ")");
   auto II = Twoinvar(I1, Ip);
   if (this->have_stored_subspaces(diag, I1, Ip)) {
     std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qsztz/qsztz-tripletp.dat"
     };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3, 0));
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, -2, 0));
     if (cn) cnew[II] = *cn;
   }
 };
 
     Ip = Invar(q1, ssz1 - 2, tz1);
     {
-  nrglog('f', "RECALC(fn=" << "qsztz/qsztz-tripletm.dat" << ", Iop=" << Invar(0, 3, 0) << ")");
+  nrglog('f', "RECALC(fn=" << "qsztz/qsztz-tripletm.dat" << ", Iop=" << Invar(0, +2, 0) << ")");
   auto II = Twoinvar(I1, Ip);
   if (this->have_stored_subspaces(diag, I1, Ip)) {
     std::initializer_list<Recalc<SC>> recalc_table = {
 #include "qsztz/qsztz-tripletm.dat"
     };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3, 0));
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, +2, 0));
     if (cn) cnew[II] = *cn;
   }
 };

@@ -22,11 +22,11 @@ MatrixElements<SC> SymmetrySPU1LR<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
     int p1      = I1.get("P");
     Invar Ip;
 
-    Ip = Invar(ssz1 + 1);
+    Ip = Invar(ssz1 + 1, p1);
     ONETWO(`RECALC_TAB("spu1lr/spu1lr-1ch-doubletp.dat", Invar(-1, 1))',
            `RECALC_TAB("spu1lr/spu1lr-2ch-doubletp.dat", Invar(-1, 1))');
 
-    Ip = Invar(ssz1-1);
+    Ip = Invar(ssz1-1, p1);
     ONETWO(`RECALC_TAB("spu1lr/spu1lr-1ch-doubletm.dat", Invar(+1, 1))',
            `RECALC_TAB("spu1lr/spu1lr-2ch-doubletm.dat", Invar(+1, 1))');
   }

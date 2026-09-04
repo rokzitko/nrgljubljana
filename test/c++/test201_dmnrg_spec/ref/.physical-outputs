@@ -1,0 +1,4 @@
+# Binary spectra are checked for complete, finite (energy, weight) records.
+binary-real corr_DMNRG_dens_n_d-n_d.bin
+binary-real spec_DMNRG_dens_A_d-A_d-d.bin
+binary-real spec_DMNRG_dens_A_d-A_d-u.bin

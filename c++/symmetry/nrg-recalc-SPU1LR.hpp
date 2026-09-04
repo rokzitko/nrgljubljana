@@ -42,7 +42,7 @@ MatrixElements<SC> SymmetrySPU1LR<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
     int p1      = I1.get("P");
     Invar Ip;
 
-    Ip = Invar(ssz1 + 1);
+    Ip = Invar(ssz1 + 1, p1);
     switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "spu1lr/spu1lr-1ch-doubletp.dat" << ", Iop=" << Invar(-1, 1) << ")");
@@ -69,7 +69,7 @@ MatrixElements<SC> SymmetrySPU1LR<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
   default: my_assert_not_reached();
   };
 
-    Ip = Invar(ssz1-1);
+    Ip = Invar(ssz1-1, p1);
     switch (P.channels) {
   case 1: { {
   nrglog('f', "RECALC(fn=" << "spu1lr/spu1lr-1ch-doubletm.dat" << ", Iop=" << Invar(+1, 1) << ")");

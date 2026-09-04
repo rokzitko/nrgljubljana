@@ -17,7 +17,7 @@ class SymmetrySPSU2LR : public SymLR<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetrySPSU2LR(const Params &P) : SymLR<SC>(P, std::vector{"<Sz^2>"}, Invar(0,1)) {
+   SymmetrySPSU2LR(const Params &P) : SymLR<SC>(P, std::vector{"<Sz^2>"}, Invar(1,1)) {
      initInvar({
         {"SS", additive},     // spin
         {"P", multiplicative} // parity
@@ -39,7 +39,6 @@ class SymmetrySPSU2LR : public SymLR<SC> {
   }
 
   double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) const override {
-    check_diff(Ip, I1, "Q", 0);
     const int ssp = Ip.get("SS");
     const int ss1 = I1.get("SS");
     my_assert((std::abs(ss1 - ssp) == 2 || ss1 == ssp));
@@ -47,7 +46,6 @@ class SymmetrySPSU2LR : public SymLR<SC> {
   }
 
   double specdens_factor(const Invar &Ip, const Invar &I1) const override {
-    check_diff(Ip, I1, "Q", 1);
     const int ssp = Ip.get("SS");
     const int ss1 = I1.get("SS");
     return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));

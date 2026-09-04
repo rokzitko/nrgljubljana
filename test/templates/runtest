@@ -11,6 +11,7 @@ if [ ! -e data ]; then
   "$1/nrginit/nrginit" "$4"
 fi
 
+"$1/test/clean-physical-output.pl"
 if ! "$2/c++/nrg" 2>&1 | tee log; then
   echo "Abnormal termination. Skipping comparisons."
   exit 1
@@ -19,4 +20,4 @@ if [ ! -f "DONE" ]; then
   echo "File DONE not found. Skipping comparisons."
   exit 1
 fi
-"$1/test/compare.pl" "$3/ref"
+"$1/test/compare.pl" --strict "$3/ref"

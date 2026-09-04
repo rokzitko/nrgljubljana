@@ -46,78 +46,78 @@ MatrixElements<SC> SymmetrySPSU2T<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
 
     Ip = Invar(ss1 + 1, t1 - 1);
     {
-  nrglog('f', "RECALC(fn=" << "spsu2t/spsu2t-doubletp-1.dat" << ", Iop=" << Invar(1, 2, 1) << ")");
+  nrglog('f', "RECALC(fn=" << "spsu2t/spsu2t-doubletp-1.dat" << ", Iop=" << Invar(2, 1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (this->have_stored_subspaces(diag, I1, Ip)) {
     std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spsu2t/spsu2t-doubletp-1.dat"
     };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2, 1));
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 1));
     if (cn) cnew[II] = *cn;
   }
 };
 
     Ip = Invar(ss1 - 1, t1 - 1);
     {
-  nrglog('f', "RECALC(fn=" << "spsu2t/spsu2t-doubletm-1.dat" << ", Iop=" << Invar(1, 2, 1) << ")");
+  nrglog('f', "RECALC(fn=" << "spsu2t/spsu2t-doubletm-1.dat" << ", Iop=" << Invar(2, 1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (this->have_stored_subspaces(diag, I1, Ip)) {
     std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spsu2t/spsu2t-doubletm-1.dat"
     };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2, 1));
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 1));
     if (cn) cnew[II] = *cn;
   }
 };
 
     Ip = Invar(ss1 + 1, t1);
     {
-  nrglog('f', "RECALC(fn=" << "spsu2t/spsu2t-doubletp0.dat" << ", Iop=" << Invar(1, 2, 1) << ")");
+  nrglog('f', "RECALC(fn=" << "spsu2t/spsu2t-doubletp0.dat" << ", Iop=" << Invar(2, 1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (this->have_stored_subspaces(diag, I1, Ip)) {
     std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spsu2t/spsu2t-doubletp0.dat"
     };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2, 1));
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 1));
     if (cn) cnew[II] = *cn;
   }
 };
 
     Ip = Invar(ss1 - 1, t1);
     {
-  nrglog('f', "RECALC(fn=" << "spsu2t/spsu2t-doubletm0.dat" << ", Iop=" << Invar(1, 2, 1) << ")");
+  nrglog('f', "RECALC(fn=" << "spsu2t/spsu2t-doubletm0.dat" << ", Iop=" << Invar(2, 1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (this->have_stored_subspaces(diag, I1, Ip)) {
     std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spsu2t/spsu2t-doubletm0.dat"
     };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2, 1));
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 1));
     if (cn) cnew[II] = *cn;
   }
 };
 
     Ip = Invar(ss1 + 1, t1 + 1);
     {
-  nrglog('f', "RECALC(fn=" << "spsu2t/spsu2t-doubletp+1.dat" << ", Iop=" << Invar(1, 2, 1) << ")");
+  nrglog('f', "RECALC(fn=" << "spsu2t/spsu2t-doubletp+1.dat" << ", Iop=" << Invar(2, 1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (this->have_stored_subspaces(diag, I1, Ip)) {
     std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spsu2t/spsu2t-doubletp+1.dat"
     };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2, 1));
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 1));
     if (cn) cnew[II] = *cn;
   }
 };
 
     Ip = Invar(ss1 - 1, t1 + 1);
     {
-  nrglog('f', "RECALC(fn=" << "spsu2t/spsu2t-doubletm+1.dat" << ", Iop=" << Invar(1, 2, 1) << ")");
+  nrglog('f', "RECALC(fn=" << "spsu2t/spsu2t-doubletm+1.dat" << ", Iop=" << Invar(2, 1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (this->have_stored_subspaces(diag, I1, Ip)) {
     std::initializer_list<Recalc<SC>> recalc_table = {
 #include "spsu2t/spsu2t-doubletm+1.dat"
     };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2, 1));
+    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 1));
     if (cn) cnew[II] = *cn;
   }
 };

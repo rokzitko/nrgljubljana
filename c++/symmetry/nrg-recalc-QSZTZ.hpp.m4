@@ -90,13 +90,13 @@ MatrixElements<SC> SymmetryQSZTZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, c
     Invar Ip;
 
     Ip = Invar(q1, ssz1, tz1);
-    RECALC_TAB("qsztz/qsztz-triplets.dat", Invar(0, 3, 0));
+    RECALC_TAB("qsztz/qsztz-triplets.dat", Invar(0, 0, 0));
 
     Ip = Invar(q1, ssz1 + 2, tz1);
-    RECALC_TAB("qsztz/qsztz-tripletp.dat", Invar(0, 3, 0));
+    RECALC_TAB("qsztz/qsztz-tripletp.dat", Invar(0, -2, 0));
 
     Ip = Invar(q1, ssz1 - 2, tz1);
-    RECALC_TAB("qsztz/qsztz-tripletm.dat", Invar(0, 3, 0));
+    RECALC_TAB("qsztz/qsztz-tripletm.dat", Invar(0, +2, 0));
   }
   return cnew;
 }

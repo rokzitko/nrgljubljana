@@ -55,6 +55,8 @@ test[mat,  {{0}, {1}}];
 test[Dimensions[mat], {2,1}];
 test[Dimensions[mat], {Length[bazavc[{-1,2}]], Length[bazavc[{-2,1}]]}];
 test[op2matrix[f[CR,0,UP], {-1,2}, {-2,1 }], {{1}, {0}}];
+test[spincoupledQ["QSZTZ", {{0,1,0}, {0,3,0}}], True];
+test[spincoupledQ["QSZTZ", {{0,1,0}, {0,1,1}}], False];
 
 
 report[]

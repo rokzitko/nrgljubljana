@@ -9,6 +9,7 @@ set -euo pipefail
 
 "$2/tools/instantiate"
 
+"$1/test/clean-physical-output.pl"
 if ! "$2/c++/nrg" 2>&1 | tee log; then
   echo "Abnormal termination. Skipping comparisons."
   exit 1
@@ -18,5 +19,6 @@ if [ ! -f "DONE" ]; then
   exit 1
 fi
 
-# We need 'ignoresigns' version to compare 'data'
-"$1/test/compare-ignoresigns.pl" "$3/ref"
+# The initializer basis has a gauge-dependent sign; physical results do not.
+"$1/test/mycomp-ignoresigns.pl" "$3/ref/data" data
+"$1/test/compare.pl" --strict --exclude data "$3/ref"

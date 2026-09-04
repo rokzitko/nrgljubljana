@@ -22,10 +22,10 @@ MatrixElements<SC> SymmetrySPSU2LR<SC>::recalc_doublet(const DiagInfo<SC> &diag,
     Invar Ip;
 
     Ip = Invar(ss1 + 1, p1);
-    RECALC_TAB("spsu2lr/spsu2lr-2ch-doubletp.dat", Invar(-1, 1));
+    RECALC_TAB("spsu2lr/spsu2lr-2ch-doubletp.dat", Invar(2, 1));
 
     Ip = Invar(ss1 - 1, p1);
-    RECALC_TAB("spsu2lr/spsu2lr-2ch-doubletm.dat", Invar(+1, 1));
+    RECALC_TAB("spsu2lr/spsu2lr-2ch-doubletm.dat", Invar(2, 1));
   }
   return cnew;
 }
@@ -70,13 +70,13 @@ MatrixElements<SC> SymmetrySPSU2LR<SC>::recalc_triplet(const DiagInfo<SC> &diag,
     Invar Ip;
 
     Ip = Invar(ss1, p1);
-    RECALC_TAB("spsu2lr/spsu2lr-2ch-triplets.dat", Invar(0, 1));
+    RECALC_TAB("spsu2lr/spsu2lr-2ch-triplets.dat", Invar(3, 1));
 
     Ip = Invar(ss1 + 2, p1);
-    RECALC_TAB("spsu2lr/spsu2lr-2ch-tripletp.dat", Invar(-2, 1));
+    RECALC_TAB("spsu2lr/spsu2lr-2ch-tripletp.dat", Invar(3, 1));
 
     Ip = Invar(ss1 - 2, p1);
-    RECALC_TAB("spsu2lr/spsu2lr-2ch-tripletm.dat", Invar(+2, 1));
+    RECALC_TAB("spsu2lr/spsu2lr-2ch-tripletm.dat", Invar(3, 1));
   }
   return cnew;
 }
