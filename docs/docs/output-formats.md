@@ -299,6 +299,10 @@ Both use blocks beginning with:
 at the point where the diagnostic is written. These files use diagnostic
 formatting and should not be treated as complete restart data.
 
+For iterative Floquet blocks, `crit=` contains the shifted ranking criterion
+defined in [Floquet truncation](floquet-truncation.md). The seed block retains
+the criterion supplied by generated input.
+
 Iteration labels are zero-based. With `calc0=true` and `Ninit=0`, a seed block
 and the first iterative block can both carry label `0`.
 

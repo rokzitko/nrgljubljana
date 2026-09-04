@@ -297,6 +297,7 @@ TEST(params, validate_rejects_partial_diagonalisation_for_floquet) {
     P.diag = diag;
     P.diagratio = 0.5;
     P.floquet = true;
+    P.extra_params["Omega"] = "1";
     EXPECT_THROW(P.validate(), std::invalid_argument);
 
     P.diagratio = 1.0;
@@ -306,6 +307,81 @@ TEST(params, validate_rejects_partial_diagonalisation_for_floquet) {
     P.floquet = false;
     EXPECT_NO_THROW(P.validate());
   }
+}
+
+TEST(params, validate_floquet_omega) {
+  Params P;
+  P.floquet = true;
+
+  for (const auto &value : {"1", "0.25", "+1e-3", "2E+2", "1e-300", "4e-324",
+                            "2.4703282292062328e-324", "1.7976931348623158e308"}) {
+    SCOPED_TRACE(value);
+    P.extra_params["Omega"] = value;
+    EXPECT_NO_THROW(P.validate());
+    EXPECT_GT(P.floquet_omega(), 0.0);
+    EXPECT_TRUE(std::isfinite(P.floquet_omega()));
+  }
+
+  P.extra_params["Omega"] = "1e-32";
+  P.validate();
+  EXPECT_EQ(P.floquet_omega(), 1e-32);
+
+  for (const auto &value : {"", "0", "-0", "-1", "1junk", "1 2", "nan", "inf", "1e9999", "1e-9999",
+                            "1.7976931348623159e308", "2e-324", "2.4703282292062327e-324"}) {
+    SCOPED_TRACE(value);
+    P.extra_params["Omega"] = value;
+    EXPECT_THROW(P.validate(), std::invalid_argument);
+  }
+
+  P.extra_params.clear();
+  EXPECT_THROW(P.validate(), std::invalid_argument);
+}
+
+TEST(params, ignores_floquet_omega_when_disabled) {
+  Params P;
+  P.extra_params["Omega"] = "not-a-number";
+  EXPECT_NO_THROW(P.validate());
+  EXPECT_THROW(static_cast<void>(P.floquet_omega()), std::logic_error);
+}
+
+TEST(params, floquet_keeps_existing_algorithm_paths_enabled) {
+  Params P;
+  P.floquet = true;
+  P.extra_params["Omega"] = "0.5";
+  P.dm = true;
+  P.finite = true;
+  P.finitemats = true;
+  P.dmnrg = true;
+  P.dmnrgmats = true;
+  P.cfs = true;
+  P.cfsgt = true;
+  P.cfsls = true;
+  P.fdm = true;
+  P.fdmgt = true;
+  P.fdmls = true;
+  P.fdmmats = true;
+  P.fdmexpv = true;
+  P.specs = "m-m";
+  P.specd = "d-d";
+  P.spect = "s-s";
+  P.specq = "q-q";
+  P.specot = "o-o";
+
+  EXPECT_NO_THROW(P.validate());
+}
+
+TEST(params, floquet_runtime_metadata_is_unregistered) {
+  Params P;
+  P.floquet = true;
+  P.extra_params["Omega"] = "0.5";
+  P.validate();
+  P.set_floquet_mode_bounds({-2.0, 2.0});
+  EXPECT_EQ(P.floquet_mode_bounds(), std::make_pair(-2.0, 2.0));
+
+  std::ostringstream output;
+  P.dump(output);
+  EXPECT_EQ(output.str().find("Omega"), std::string::npos);
+  EXPECT_EQ(output.str().find("mode_bounds"), std::string::npos);
 }
 
 TEST(params, h5save_stores_nlen) {

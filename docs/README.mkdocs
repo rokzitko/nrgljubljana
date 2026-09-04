@@ -5,7 +5,7 @@ The new contributor-facing documentation lives in this directory and is built wi
 ## Local preview
 
 ```sh
-python3 -m pip install mkdocs
+python3 -m pip install mkdocs pymdown-extensions
 cd docs
 make serve
 ```
@@ -13,7 +13,7 @@ make serve
 ## Build the static site
 
 ```sh
-python3 -m pip install mkdocs
+python3 -m pip install mkdocs pymdown-extensions
 cd docs
 make
 ```

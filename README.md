@@ -155,6 +155,7 @@ starting points are:
 - [physical quantities and output conventions](docs/docs/output-formats.md)
 - [bath discretization and spectral-analysis programs](docs/docs/tools.md)
 - [construction of Hamiltonian and operator matrix elements with `nrginit`](docs/docs/nrginit-workflow.md)
+- [single-frequency Floquet formalism, model construction, and truncation](docs/docs/floquet-formalism.md)
 - [compilation from source](docs/docs/getting-started.md)
 - [parallel execution and numerical-library threading](docs/docs/parallelism.md)
 

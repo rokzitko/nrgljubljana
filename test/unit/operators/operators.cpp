@@ -13,6 +13,7 @@
 #include "test_common.hpp"
 #include "test_clean.hpp"
 #include <operators.hpp>
+#include <floquet.hpp>
 
 using namespace NRG;
 
@@ -58,6 +59,114 @@ TEST(Operators, MatrixElements) { // NOLINT
     std::istringstream ss(str);
     EXPECT_THROW(MatrixElements(ss, diag), std::runtime_error);
   }
+}
+
+TEST(Operators, MatrixElementsRejectsDuplicateBlocks) { // NOLINT
+  Params P;
+  auto SymSP = setup_Sym<double>(P);
+  auto diag = setup_diag<double>(P, SymSP.get());
+  std::istringstream input(
+    "2\n"
+    "0 1 0 1\n"
+    "1 0\n0 1\n"
+    "0 1 0 1\n"
+    "1 0\n0 1\n");
+  EXPECT_THROW(MatrixElements<double>(input, diag), std::runtime_error);
+}
+
+template<scalar S>
+Operators<S> valid_floquet_operators(const DiagInfo<S> &diag) {
+  Operators<S> operators;
+  MatrixElements<S> mode;
+  for (const auto &[I, eig] : diag) {
+    auto matrix = zero_matrix<S>(eig.getnrstored());
+    for (size_t i = 0; i < eig.getnrstored(); i++)
+      matrix(i, i) = eig.getnrstored() == 1 ? 0.0 : -1.0 + 2.0 * static_cast<double>(i) / static_cast<double>(eig.getnrstored()-1);
+    mode[Twoinvar(I, I)] = std::move(matrix);
+  }
+  operators.ops["m"] = std::move(mode);
+  return operators;
+}
+
+TEST(Operators, ValidatesFloquetModeOperator) { // NOLINT
+  Params P;
+  auto SymSP = setup_Sym<double>(P);
+  const auto diag = setup_diag<double>(P, SymSP.get());
+  const auto operators = valid_floquet_operators(diag);
+
+  const auto bounds = validate_floquet_mode_operator(diag, operators);
+  EXPECT_NEAR(bounds.first, -1.0, 1e-14);
+  EXPECT_NEAR(bounds.second, 1.0, 1e-14);
+}
+
+TEST(Operators, AcceptsZeroFloquetModeOperator) { // NOLINT
+  Params P;
+  auto SymSP = setup_Sym<double>(P);
+  const auto diag = setup_diag<double>(P, SymSP.get());
+  auto operators = valid_floquet_operators(diag);
+  for (auto &[sectors, matrix] : operators.ops.at("m")) matrix.setZero();
+
+  const auto bounds = validate_floquet_mode_operator(diag, operators);
+  EXPECT_DOUBLE_EQ(bounds.first, 0.0);
+  EXPECT_DOUBLE_EQ(bounds.second, 0.0);
+}
+
+TEST(Operators, RejectsInvalidFloquetModeContainers) { // NOLINT
+  Params P;
+  auto SymSP = setup_Sym<double>(P);
+  const auto diag = setup_diag<double>(P, SymSP.get());
+  Operators<double> missing;
+  EXPECT_THROW(validate_floquet_mode_operator(diag, missing), std::invalid_argument);
+
+  auto wrong_type = valid_floquet_operators(diag);
+  wrong_type.opsg["m"] = std::move(wrong_type.ops.at("m"));
+  wrong_type.ops.erase("m");
+  EXPECT_THROW(validate_floquet_mode_operator(diag, wrong_type), std::invalid_argument);
+
+  auto duplicate_type = valid_floquet_operators(diag);
+  duplicate_type.opsg["m"] = duplicate_type.ops.at("m");
+  EXPECT_THROW(validate_floquet_mode_operator(diag, duplicate_type), std::invalid_argument);
+}
+
+TEST(Operators, RejectsInvalidFloquetModeBlocks) { // NOLINT
+  Params P;
+  auto SymSP = setup_Sym<double>(P);
+  const auto diag = setup_diag<double>(P, SymSP.get());
+  auto missing = valid_floquet_operators(diag);
+  missing.ops.at("m").erase(missing.ops.at("m").begin());
+  EXPECT_THROW(validate_floquet_mode_operator(diag, missing), std::invalid_argument);
+
+  auto cross = valid_floquet_operators(diag);
+  const auto first = diag.begin()->first;
+  const auto second = std::next(diag.begin())->first;
+  cross.ops.at("m").erase(Twoinvar(first, first));
+  cross.ops.at("m")[Twoinvar(first, second)] = zero_matrix<double>(diag.at(first).getnrstored(), diag.at(second).getnrstored());
+  EXPECT_THROW(validate_floquet_mode_operator(diag, cross), std::invalid_argument);
+
+  auto wrong_shape = valid_floquet_operators(diag);
+  wrong_shape.ops.at("m").at(Twoinvar(first, first)).resize(1, 1);
+  EXPECT_THROW(validate_floquet_mode_operator(diag, wrong_shape), std::invalid_argument);
+
+  auto nonhermitian = valid_floquet_operators(diag);
+  nonhermitian.ops.at("m").at(Twoinvar(first, first))(0, 1) = 1.0;
+  EXPECT_THROW(validate_floquet_mode_operator(diag, nonhermitian), std::invalid_argument);
+}
+
+TEST(Operators, ValidatesComplexHermitianFloquetModeOperator) { // NOLINT
+  Params P;
+  auto SymSP = setup_Sym<std::complex<double>>(P);
+  const auto diag = setup_diag<std::complex<double>>(P, SymSP.get());
+  auto operators = valid_floquet_operators(diag);
+  const auto first = diag.begin()->first;
+  auto &matrix = operators.ops.at("m").at(Twoinvar(first, first));
+  matrix(0, 0) = 0.0;
+  matrix(1, 1) = 0.0;
+  matrix(0, 1) = std::complex<double>(0.0, 1.0);
+  matrix(1, 0) = std::complex<double>(0.0, -1.0);
+
+  EXPECT_NO_THROW(validate_floquet_mode_operator(diag, operators));
+  matrix(1, 0) = matrix(0, 1);
+  EXPECT_THROW(validate_floquet_mode_operator(diag, operators), std::invalid_argument);
 }
 
 TEST(Operators, Opch_empty) { // NOLINT

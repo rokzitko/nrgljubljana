@@ -42,10 +42,11 @@ keep=100
 - List-valued parameters such as `ops` and `specd` use whitespace-separated
   tokens unless their entry below states otherwise.
 
-An `nrginit` value beginning with `!` is evaluated as a Mathematica expression.
-The `perturb` parameter and advanced hook files also execute Mathematica code
-without that prefix. Use these features only with trusted input. They are not
-part of the portable literal syntax recommended for reproducible runs.
+Unless a parameter documents narrower syntax, an `nrginit` value beginning with
+`!` is evaluated as a Mathematica expression. The `perturb` parameter and
+advanced hook files also execute Mathematica code without that prefix. Use
+these features only with trusted input. They are not part of the portable
+literal syntax recommended for reproducible runs.
 
 ## Ownership And Diagnostics
 
@@ -135,7 +136,7 @@ Builds made without the extended symmetry sets support only a subset. Complex
 | `dos` | path | `Delta.dat` | Tabulated density of states for methods that require one. |
 | `xmax` | number | `30` | Largest argument used by the `asymode` and `adapt` solver tables. |
 | `solpath` | path | `..` | Directory containing `FSOL*` and `GSOL*` files. |
-| `floquet` | boolean | `false` | Generate input for Floquet quasi-energies; runtime use also requires `[extra] Omega` and `ops=m`. |
+| `floquet` | boolean | `false` | Generate input for Floquet quasi-energies; runtime use also requires `[extra] Omega` and `ops=m`. See [Floquet model construction](floquet-nrginit.md). |
 | `data_has_rescaled_energies` | boolean | `true` | Compatibility switch for the seed-energy convention in `data`. |
 
 Recognized `tri` values are `old`, `sc`, `sc2`, `orth`, `cpp`, `none`,
@@ -189,8 +190,10 @@ LRTRICK COMPLEX MPVCSLOW GENERATE_TEMPLATE GENERATE_TEMPLATE_ALL
 GENERATE_TEMPLATE_F LRSPIN NOGSSHIFT CHOP NOSCHUR
 ```
 
-Some models accept valued tokens such as `Nph=value`. Options affect generated
-Mathematica artifacts and are not a general replacement for named parameters.
+Some models accept valued tokens such as `Nph=value`. The Floquet initializer
+requires exactly one `Ncut=value` token with a non-negative decimal integer.
+Options affect generated Mathematica artifacts and are not a general
+replacement for named parameters.
 
 ### The `[extra]` Block
 
@@ -199,7 +202,9 @@ models can introduce arbitrary keys, so there is no finite global table for
 this block. Every entry becomes available to Mathematica model code. The C++
 runtime normally preserves these as strings; the built-in exception is
 `floquet=true`, which requires `Omega` in `[extra]` and an operator named `m`
-in generated input (`ops=m`).
+in generated input (`ops=m`). `Omega` must round to a finite positive C++
+`double` and accepts decimal-literal syntax rather than `!expression`. The
+complete input contract is described in [Floquet model construction](floquet-nrginit.md).
 
 For reproducibility, document the model name and all `[extra]` keys alongside
 published results. Do not assume that an unknown `[extra]` key is validated.
@@ -236,7 +241,7 @@ An empty string default means that the feature or list is disabled.
 | `safeguard` | number | `1e-5` | Near-degeneracy tolerance in current eigenspectrum units; non-positive disables it. |
 | `safeguardmax` | non-negative integer | `200` | Maximum extra states retained by `safeguard`. |
 | `fixeps` | number | `1e-15` | Threshold in current eigenspectrum units for correcting floating-point eigenvalue splitting. |
-| `floquet` | boolean | `false` | Interpret energies as Floquet quasi-energies; requires `[extra] Omega` and an operator named `m` in `data`. |
+| `floquet` | boolean | `false` | Interpret energies as Floquet quasi-energies; requires `[extra] Omega` and an operator named `m` in `data`. See [Floquet truncation](floquet-truncation.md). |
 | `T` | number | `0.001` | Physical temperature; must be positive. |
 | `betabar` | number | `1.0` | Effective inverse-temperature factor for shell thermodynamics. |
 
@@ -405,7 +410,8 @@ Complex-data choices are `zheev`, `zheevd`, `zheevr`, `cuda`, and
 `cuda_zheevd`. CUDA choices require a CUDA-enabled build and a usable device.
 
 `diagratio` applies to the partial `dsyevr` and `zheevr` solvers. CFS, FDM, and
-Floquet calculations require `diagratio=1`.
+Floquet calculations require `diagratio=1`; the Floquet runtime sequence is
+described in [Floquet truncation](floquet-truncation.md).
 
 ## Effective Defaults And Interactions
 

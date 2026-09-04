@@ -65,6 +65,7 @@ If[PARSED =!= True,
 ];
 
 loadmodule["sym.m"];
+loadmodule["floquet.m"];
 
 (********)
 
@@ -138,11 +139,21 @@ realt     = getmodelparam["t", 0.];
 parsevalue[str_String] /;  klicaj[str] := ToExpression[StringDrop[str, 1]];
 parsevalue[str_String] /; !klicaj[str] := importnum[str];
 
+If[FLOQUET,
+  If[!paramexists["Omega", "extra"],
+    MyError["Floquet calculations require Omega in the [extra] block."]
+  ];
+  floquetOmegaValue = parsefloquetomega[data["extra"]["Omega"]];
+];
+
+parseextravalue[key_String, raw_String] :=
+  If[FLOQUET && key === "Omega", floquetOmegaValue, parsevalue[raw]];
+
 (* Define extraPARAM=VALUE for all PARAM=VALUE lines in [extra]
    block of the input file (for backward compatibility). *)
 If[listdata["extra"] =!= {},
    exmap = Map[ {ToExpression["extra" <> First[#]],
-          parsevalue @ Last[#] }&, listdata["extra"] ];
+          parseextravalue[First[#], Last[#]] }&, listdata["extra"] ];
    MapThread[Set, Transpose[exmap]];
 ];
 
@@ -198,6 +209,13 @@ calcoplist[prefix_] := Module[{len, l, stringstrip},
 defined in the parameters file. *)
 loptions = MyStringSplit[OPTIONS];
 MyPrint["Options: ", loptions];
+
+If[FLOQUET,
+  ncut = parsefloquetcutoff[loptions];
+  If[!MemberQ[lops, "m"],
+    MyError["Floquet calculations require the singlet operator m in ops."]
+  ];
+];
 
 (* option[keyword] returns True if option 'keyword' is specified *)
 option[keyword_] := MemberQ[locateoption[keyword], True];
@@ -319,6 +337,16 @@ snegfermionoperators[{f, BANDSPIN}, a, b, d, e, g];
 
 Get["hamiltonian.m", Path->PACKAGEPATH];
 
+If[FLOQUET && MAKEFLOQUET =!= 1,
+  MyError["A Floquet model must set MAKEFLOQUET=1."]
+];
+If[!FLOQUET && MAKEFLOQUET =!= Null,
+  MyError["A model that sets MAKEFLOQUET also requires floquet=true."]
+];
+If[FLOQUET && (!IntegerQ[ncut] || ncut < 0),
+  MyError["The model changed ncut to an invalid value: ", ncut]
+];
+
 (************************ Parameter handling *****************************)
 
 (* All PARAM=VALUE lines in [extra] block of the input file get transformed
@@ -326,7 +354,8 @@ Get["hamiltonian.m", Path->PACKAGEPATH];
    of their appearance in the list, this implies that the preexisting rules
    take precendence over the automatically appended ones. *)
 If[ValueQ[listdata["extra"]],
-  params2 = Map[ToExpression[First[#]] -> parsevalue @ Last[#] &,
+  params2 = Map[ToExpression[First[#]] ->
+                  parseextravalue[First[#], Last[#]] &,
                 listdata["extra"]];
   params = Join[params, params2];
 ];
@@ -2009,6 +2038,8 @@ maketable[]:=Module[{t},
   If[ tops =!= $Failed,
     t = Join[t, tops];
   ];
+
+  If[FLOQUET, validatefloquetmodedeclarations[t]];
     
   STAGE = 3; (* Wilson chain coefficients *)
 

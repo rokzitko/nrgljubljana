@@ -78,6 +78,11 @@ The `InputData` constructor performs these steps:
 6. read the remaining operator blocks and coefficient tables
 7. finalize chain-length-related derived parameters in `Params`
 
+With `floquet=true`, this input stage also checks the model-owned singlet
+operator `m` and records its seed spectral interval. See [Floquet model
+construction](floquet-nrginit.md#mode-operator-export) for the generated-data
+contract.
+
 After `InputData` has finalized `Nmax`, `NRG_calculation` scans the exact
 checkpoint directory when `resume=true`. Deferring discovery until this point
 ensures the scan covers the actual runtime iteration range. Every archive in

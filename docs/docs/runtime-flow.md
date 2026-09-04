@@ -69,7 +69,8 @@ At a high level, each iteration does the following:
 2. convert that into a `TaskList`
 3. load a completed checkpoint or construct the Hamiltonian blocks
 4. diagonalize each uncached block through the selected `DiagEngine`
-5. establish energy references and truncation criteria
+5. establish energy references and truncation criteria, including the
+   [Floquet criterion](floquet-truncation.md) when selected
 6. split eigenvectors into ancestor blocks when needed
 7. update iteration metadata and basic diagnostics
 8. for `strategy=all`, recalculate operators and measure before truncation

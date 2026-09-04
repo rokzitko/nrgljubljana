@@ -20,6 +20,7 @@
 #include "params.hpp"
 #include "eigen.hpp"
 #include "operators.hpp"
+#include "floquet.hpp"
 #include "coef.hpp"
 #include "mk_sym.hpp"
 
@@ -147,6 +148,8 @@ private:
     initialize_symmetry(P, header);
     read_seed_data(fdata, header, P);
     read_blocks(fdata, P);
+    if (P.floquet)
+      P.set_floquet_mode_bounds(validate_floquet_mode_operator(diag, operators));
     finalize_coefficients(P, header);
   }
 public:

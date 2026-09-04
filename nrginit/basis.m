@@ -332,21 +332,6 @@ If[GENERATEBASIS == True,
     MyVPrint[2, "PHONON baza (vc)=", bvc];
   ];
 
-  If[ MAKEFLOQUET =!= Null,
-    MyVPrint[1, "MAKEFLOQUET=", MAKEFLOQUET];
-    If[!ValueQ[cutoffs],
-      If[MAKEFLOQUET == 1, cutoffs = {ncut}];
-      If[MAKEFLOQUET == 2, cutoffs = {ncut, ncut}];
-    ];
-    MyVPrint[1, "Adding Floquet modes, cutoffs=", cutoffs];
-
-    bz = transformtoFL[bz, cutoffs];
-    MyVPrint[2, "FLOQUET baza (op)=", bz];
-
-    bvc = bzop2bzvc[bz, vak];
-    MyVPrint[2, "FLOQUET baza (vc)=", bvc];
-  ];
-
   (*** Step 5: Generate parity-adapted basis ***)
   dolr[] := Module[{},
     If[ (isLR[] || option["LRTRICK"]) && CHANNELS == 2,
@@ -602,8 +587,33 @@ If[GENERATEBASIS == True,
     bvc = bzop2bzvc[bz, vak];
   ];
 
-  (* Hook for possible changes of the basis states *)
+  (*** Step 9: Hook for possible changes of the basis states. ***)
   hookfile["hook_basis"];
+
+  (*** Step 10: Add the final Floquet tensor factor. ***)
+  If[ MAKEFLOQUET =!= Null,
+    MyVPrint[1, "MAKEFLOQUET=", MAKEFLOQUET];
+    If[MAKEFLOQUET =!= 1,
+      MyError["Only one Floquet frequency is supported."]
+    ];
+    floquetcutoffs = {ncut};
+    MyVPrint[1, "Adding Floquet modes, cutoffs=", floquetcutoffs];
+
+    bz = floquetpreparebasis[bvc, vak];
+    If[bz =!= $Failed,
+      floquetbasiscount = Total[Length /@ bvc[[All, 2]]];
+      bz = transformtoFL[bz, floquetcutoffs];
+      MyVPrint[2, "FLOQUET baza (op)=", bz];
+
+      bvc = bzop2bzvc[bz, vak];
+      MyVPrint[2, "FLOQUET baza (vc)=", bvc];
+      If[Total[Length /@ bvc[[All, 2]]] =!=
+          (2 ncut+1) floquetbasiscount,
+        MyError["Floquet basis has the wrong dimension."]
+      ];
+      floquetvalidatebasis[bvc, ncut];
+    ];
+  ];
 
   MyPut[bvc, basisfilename];
   timeadd["basis"];

@@ -39,8 +39,11 @@ The flow is:
 2. report Wilson-chain coefficients via `Sym->show_coefficients(...)`
 3. attempt to obtain the eigenspectra with `load_or_compute_diag(...)`
 4. initialize the energy reference with `initialize_diag_energy_reference(...)`
-5. prepare truncation metadata with `prepare_diag_for_truncation(...)`
-6. catch `NotEnough` and optionally retry with a larger `diagratio`
+5. resolve small eigenvalue splittings with `fix_diag_splittings(...)`
+6. optionally prepare the [Floquet criterion](floquet-truncation.md) with
+   `prepare_floquet_for_truncation(...)`
+7. prepare retained-state counts with `truncate_prepare(...)`
+8. catch `NotEnough` and optionally retry with a larger `diagratio`
 
 This is where the eigensolver policy and restart behavior meet.
 
@@ -64,7 +67,7 @@ This is the point where the generic iteration engine hands off to the symmetry b
 The main branches are:
 
 1. if this is an NRG step:
-   - handle Floquet-specific postprocessing or split eigenvectors into blocks
+   - split eigenvectors into ancestor blocks and release the dense representation
    - finalize metadata such as scale and total-energy shifts
    - persist outputs for the current iteration
 2. optionally recalculate operators and measure before truncation
@@ -107,3 +110,4 @@ The most useful function-level reading order in `core.hpp` is:
 - [Data structures](data-structures.md)
 - [State and persistence](state-and-persistence.md)
 - [Symmetry framework](symmetry-framework.md)
+- [Floquet truncation](floquet-truncation.md)

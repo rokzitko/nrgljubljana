@@ -93,8 +93,11 @@ template <scalar T> auto read_Eigen_vector(std::istream &F, const bool nr_is_max
 template <scalar T> auto read_Eigen_matrix(std::istream &F, const size_t size1, const size_t size2) {
   EigenMatrix<T> m(size1, size2);
   for (auto j1 = 0; j1 < size1; j1++)
-    for (auto j2 = 0; j2 < size2; j2++)
-      m(j1, j2) = assert_isfinite( read_one<T>(F) );
+    for (auto j2 = 0; j2 < size2; j2++) {
+      const auto value = read_one<T>(F);
+      if (!my_isfinite(value)) throw std::runtime_error("Non-finite number in matrix input.");
+      m(j1, j2) = value;
+    }
   if (F.fail()) throw std::runtime_error("read_matrix() error. Input file is corrupted.");
   return m;
 }

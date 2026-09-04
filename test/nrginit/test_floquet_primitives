@@ -1,0 +1,203 @@
+#!/bin/sh
+set -eu
+
+source_dir=$1
+kernel=$2
+
+"$kernel" -batchinput -batchoutput <<EOF
+DEBUG = 0;
+ExitOnError = False;
+SYMTYPE = "runtime";
+If[Get["$source_dir/nrginit/sneg.m"] === \$Failed, Exit[1]];
+If[Get["$source_dir/nrginit/misc.m"] === \$Failed, Exit[1]];
+If[Get["$source_dir/nrginit/initialparse.m"] === \$Failed, Exit[1]];
+If[Get["$source_dir/nrginit/floquet.m"] === \$Failed, Exit[1]];
+
+failures = 0;
+check[label_, value_, expected_] :=
+  If[value =!= expected,
+    Print["FAILED: ", label, " value=", InputForm[value],
+      " expected=", InputForm[expected]];
+    failures++
+  ];
+checkTrue[label_, value_] := check[label, TrueQ[value], True];
+
+check["basis Ncut=0", floquetbasis[0], {ket[0]}];
+check["signed basis", floquetbasis[2],
+  {ket[-2], ket[-1], ket[0], ket[1], ket[2]}];
+modeKets = floquetbasis[1];
+modeVC = vc /@ modeKets;
+modeNumber = DiagonalMatrix[{-1, 0, 1}];
+modePlus = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}};
+check["number matrix", matrixrepresentationvc[floquetnumber[1], modeVC],
+  modeNumber];
+check["number operator-basis matrix",
+  matrixrepresentationop[floquetnumber[1], modeKets], modeNumber];
+check["identity matrix", matrixrepresentationvc[floquetid[1], modeVC],
+  IdentityMatrix[3]];
+check["positive shift matrix",
+  matrixrepresentationvc[floquetshift[1, 1], modeVC], modePlus];
+check["negative shift matrix",
+  matrixrepresentationvc[floquetshift[-1, 1], modeVC], Transpose[modePlus]];
+check["no positive wrap", floquetshift[1, 0], 0];
+check["shift beyond cutoff", floquetshift[3, 1], 0];
+check["adjoint shifts", Expand[conj[floquetshift[1, 2]]],
+  floquetshift[-1, 2]];
+check["cosine convention", floquetcos[1],
+  floquetshift[1, 1] + floquetshift[-1, 1]];
+
+sambeMatrix = matrixrepresentationop[
+  0.7 floquetnumber[1] + 0.2 floquetcos[1], floquetbasis[1]];
+sambeEigenvalues = Sort[N[Eigenvalues[sambeMatrix]]];
+analyticEigenvalues = Sort[N[{0, -Sqrt[0.7^2 + 2 0.2^2],
+  Sqrt[0.7^2 + 2 0.2^2]}]];
+checkTrue["three-mode analytic spectrum",
+  Max[Abs[sambeEigenvalues-analyticEigenvalues]] < 10^-12];
+
+base = {{{7}, {1}}};
+transformed = transformtoFL[base, {1}];
+check["basis invariant", transformed[[1, 1]], {7}];
+check["basis ordering", transformed[[1, 2]],
+  {ket[-1], ket[0], ket[1]}];
+check["basis dimension", Length[transformed[[1, 2]]], 3];
+
+phononBasis = transformtoPH[base, {1}];
+combinedBasis = transformtoFL[phononBasis, {1}];
+combinedKets = Cases[combinedBasis, ket[__], Infinity];
+checkTrue["phonon/Floquet tensor width",
+  And @@ Map[Length[List @@ #] == 2&, combinedKets]];
+checkTrue["phonon coordinate precedes Floquet coordinate",
+  MemberQ[combinedKets, ket[1, -1]] && MemberQ[combinedKets, ket[0, 1]]];
+
+compositeKets = Flatten[Table[ket[p, m], {p, 0, 1}, {m, -1, 1}]];
+compositeVC = vc /@ compositeKets;
+phononPlus = {{0, 0}, {1, 0}};
+check["composite number matrix",
+  matrixrepresentationvc[floquetnumber[1], compositeVC],
+  KroneckerProduct[IdentityMatrix[2], modeNumber]];
+check["composite identity matrix",
+  matrixrepresentationvc[floquetid[1], compositeVC], IdentityMatrix[6]];
+check["composite shift matrix",
+  matrixrepresentationvc[floquetplus[1], compositeVC],
+  KroneckerProduct[IdentityMatrix[2], modePlus]];
+check["composite number squared",
+  matrixrepresentationvc[pow[floquetnumber[1], 2], compositeVC],
+  KroneckerProduct[IdentityMatrix[2], modeNumber.modeNumber]];
+check["static phonon lift",
+  matrixrepresentationvc[floquetlift[phononplus[1], 0, 1], compositeVC],
+  KroneckerProduct[phononPlus, IdentityMatrix[3]]];
+check["driven phonon lift",
+  matrixrepresentationvc[floquetlift[phononplus[1], 1, 1], compositeVC],
+  KroneckerProduct[phononPlus, modePlus]];
+check["composite operator-basis matrix",
+  matrixrepresentationop[floquetid[1], compositeKets], IdentityMatrix[6]];
+mixedOperator = nc[floquetnumber[1],
+  floquetlift[phononplus[1], 1, 1]];
+mixedMatrix = KroneckerProduct[phononPlus, modeNumber.modePlus];
+check["mixed operator-basis product",
+  matrixrepresentationop[mixedOperator, compositeKets], mixedMatrix];
+check["mixed occupation-basis product",
+  matrixrepresentationvc[mixedOperator, compositeVC], mixedMatrix];
+check["mixed product adjoint",
+  matrixrepresentationop[conj[mixedOperator], compositeKets],
+  ConjugateTranspose[mixedMatrix]];
+
+threeFactorKets = Flatten[
+  Table[ket[p, q, m], {p, 0, 1}, {q, 0, 1}, {m, -1, 1}]];
+check["three-factor number matrix",
+  matrixrepresentationop[floquetnumber[1], threeFactorKets],
+  KroneckerProduct[IdentityMatrix[4], modeNumber]];
+
+snegfermionoperators[floquettestfermion];
+fermionKets = Flatten[Table[
+  If[n == 0, ket[m], nc[floquettestfermion[CR, UP], ket[m]]],
+  {n, 0, 1}, {m, -1, 1}]];
+fermionNumber = {{0, 0}, {0, 1}};
+fermionLift = floquetlift[number[floquettestfermion[]], 1, 1];
+fermionLiftMatrix = KroneckerProduct[fermionNumber, modePlus];
+check["fermionic operator-basis identity",
+  matrixrepresentationop[floquetid[1], fermionKets], IdentityMatrix[6]];
+check["fermionic operator-basis lift",
+  matrixrepresentationop[fermionLift, fermionKets], fermionLiftMatrix];
+check["fermionic lift adjoint",
+  matrixrepresentationop[conj[fermionLift], fermionKets],
+  ConjugateTranspose[fermionLiftMatrix]];
+
+zeroModeVC = vc /@ {ket[0, 0], ket[1, 0]};
+check["composite identity Ncut=0",
+  matrixrepresentationvc[floquetid[0], zeroModeVC], IdentityMatrix[2]];
+check["composite number Ncut=0",
+  matrixrepresentationvc[floquetnumber[0], zeroModeVC],
+  ConstantArray[0, {2, 2}]];
+check["composite shift Ncut=0",
+  matrixrepresentationvc[floquetplus[0], zeroModeVC],
+  ConstantArray[0, {2, 2}]];
+
+check["valid final Floquet coordinate",
+  floquetvalidatebasis[combinedBasis, 1], 2];
+makebasis[{}];
+hookVacuum = vacuum[];
+hookOperatorBasis = transformtoPH[base, {1, 0}];
+hookOccupationBasis = bzop2bzvc[hookOperatorBasis, hookVacuum];
+check["hook basis representation round trip",
+  floquetpreparebasis[hookOccupationBasis, hookVacuum], hookOperatorBasis];
+hookStates = hookOccupationBasis[[1, 2]];
+linearHookOccupationBasis = {{{7},
+  {(hookStates[[1]]+hookStates[[2]])/Sqrt[2],
+   (hookStates[[1]]-hookStates[[2]])/Sqrt[2]}}};
+checkTrue["linear hook basis round trip",
+  floquetpreparebasis[linearHookOccupationBasis, hookVacuum] =!= \$Failed];
+check["reject non-list hook basis",
+  floquetpreparebasis[invalidbasis, hookVacuum], \$Failed];
+check["reject zero hook state",
+  floquetpreparebasis[{{{7}, {0}}}, hookVacuum], \$Failed];
+check["reject unresolved hook coordinate",
+  floquetpreparebasis[{{{7}, {vc[ket[0, Null]]}}}, hookVacuum], \$Failed];
+check["reject lossy hook conversion",
+  floquetpreparebasis[{{{7}, {vc[1, ket[0, 0]]}}}, hookVacuum], \$Failed];
+hookedFloquetBasis = bzop2bzvc[
+  transformtoFL[floquetpreparebasis[hookOccupationBasis, hookVacuum], {1}],
+  hookVacuum];
+expectedHookCoordinates = Sort @ Flatten[
+  Table[{p, 0, m}, {p, 0, 1}, {m, -1, 1}], 1];
+check["hook coordinate precedes Floquet coordinate",
+  Sort @ Cases[hookedFloquetBasis, ket[a___] :> {a}, Infinity],
+  expectedHookCoordinates];
+checkTrue["hook-extended basis is resolved",
+  FreeQ[hookedFloquetBasis, _ap | _vc2ops | Null | _DirectedInfinity]];
+check["valid hook-extended Floquet basis",
+  floquetvalidatebasis[hookedFloquetBasis, 1], 3];
+
+check["single mode declaration",
+  validatefloquetmodedeclarations[{{"sm"}}], True];
+check["duplicate mode declaration",
+  validatefloquetmodedeclarations[{{"sm"}, {"pm"}}], \$Failed];
+check["wrong mode declaration type",
+  validatefloquetmodedeclarations[{{"gm"}}], \$Failed];
+
+check["parse cutoff zero", parsefloquetcutoff[{"Ncut=0"}], 0];
+check["parse cutoff", parsefloquetcutoff[{"X", "Ncut=12"}], 12];
+Scan[(check["invalid cutoff " <> #,
+    parsefloquetcutoff[{"Ncut=" <> #}], \$Failed])&,
+  {"", "-1", "1.0", "1e2", "x", "1;Quit[]"}];
+check["missing cutoff", parsefloquetcutoff[{}], \$Failed];
+check["duplicate cutoff",
+  parsefloquetcutoff[{"Ncut=1", "Ncut=2"}], \$Failed];
+check["substring is not cutoff",
+  parsefloquetcutoff[{"notNcut=1"}], \$Failed];
+
+Scan[(checkTrue["valid Omega " <> #,
+    MachineNumberQ[parsefloquetomega[#]]])&,
+  {"1", "1.", ".5", "+1e-3", "2E+2",
+   "1.7976931348623158e308", "1e-320", "4e-324",
+   "2.4703282292062328e-324"}];
+Scan[(check["invalid Omega " <> #,
+    parsefloquetomega[#], \$Failed])&,
+  {"", "0", "-0", "-1", "1x", "1 2", "NaN", "Infinity",
+   "1;Quit[]", "1e309", "1.7976931348623159e308", "2e-324",
+   "2.4703282292062327e-324",
+   "1e-999"}];
+check["Omega IEEE rounding", parsefloquetomega["1e-32"], 1.*^-32];
+
+If[failures == 0, Exit[0], Exit[1]];
+EOF

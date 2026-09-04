@@ -9,6 +9,10 @@ nav:
     - Input and configuration: input-and-configuration.md
     - nrginit workflow: nrginit-workflow.md
     - Parallelism: parallelism.md
+  - Floquet NRG:
+    - Formalism and conventions: floquet-formalism.md
+    - Model construction with nrginit: floquet-nrginit.md
+    - Quasienergy truncation: floquet-truncation.md
   - Reference:
     - Parameters: parameter-reference.md
     - Output formats: output-formats.md
@@ -27,3 +31,8 @@ theme:
   name: readthedocs
 markdown_extensions:
   - attr_list
+  - pymdownx.arithmatex:
+      generic: true
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js

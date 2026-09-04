@@ -29,7 +29,8 @@ This release summarizes changes since the `2024.12` release, with major improvem
 - Tensor-product construction of phonon bases and mode-resolved operators has been generalized.
 - Superconducting Wilson chains can be instantiated using Nambu onsite and hopping coefficients.
 - Symmetry triangle inequalities are enforced before constructing reduced operator matrix elements.
-- Experimental Floquet-NRG support introduces Floquet bases and quasienergy-aware truncation.
+- [Floquet-NRG support](docs/docs/floquet-formalism.md) introduces Floquet bases
+  and quasienergy-aware truncation.
 - Three-channel `QST` calculations received important low-energy Hamiltonian and recalculation fixes.
 - Orbital-triplet operator generation and several SNEG symbolic-algebra operations were corrected.
 

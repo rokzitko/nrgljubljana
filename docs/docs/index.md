@@ -32,6 +32,7 @@ The input side is centered around the `param` and `data` files. The runtime side
 - [Data structures](data-structures.md): the central C++ types worth understanding first
 - [State and persistence](state-and-persistence.md): what is stored on disk, what stays in memory, and how phases reuse state
 - [nrginit workflow](nrginit-workflow.md): where Mathematica-side initialization fits into the overall pipeline
+- [Floquet formalism](floquet-formalism.md): periodic-drive notation, model construction, and quasienergy truncation
 - [Developer guide](developer-guide.md): where to make changes for common tasks
 
 ## Documentation Scope

@@ -73,16 +73,17 @@ class MatrixElements : public std::map<Twoinvar, Matrix> {
    MatrixElements() = default;
    MatrixElements(std::istream &fdata, const DiagInfo<S> &diag) {
      const auto nf = read_one<size_t>(fdata); // Number of I1 x I2 combinations
-     for ([[maybe_unused]] const auto i : range0(nf)) {
-       const auto I1 = read_one<Invar>(fdata);
-       const auto I2 = read_one<Invar>(fdata);
-       if (const auto it1 = diag.find(I1), it2 = diag.find(I2); it1 != diag.end() && it2 != diag.end())
-         (*this)[{I1, I2}] = read_matrix<t_matel>(fdata, it1->second.getnrstored(), it2->second.getnrstored());
-       else
-         throw std::runtime_error("Corrupted input file.");
-     }
-     my_assert(this->size() == nf);
-   }
+      for ([[maybe_unused]] const auto i : range0(nf)) {
+        const auto I1 = read_one<Invar>(fdata);
+        const auto I2 = read_one<Invar>(fdata);
+        if (const auto it1 = diag.find(I1), it2 = diag.find(I2); it1 != diag.end() && it2 != diag.end()) {
+          auto matrix = read_matrix<t_matel>(fdata, it1->second.getnrstored(), it2->second.getnrstored());
+          if (!this->emplace(Twoinvar(I1, I2), std::move(matrix)).second)
+            throw std::runtime_error(fmt::format("Duplicate operator block ({},{}) in input file", I1.str(), I2.str()));
+        } else
+          throw std::runtime_error("Corrupted input file.");
+      }
+    }
    // We trim the matrices containing the irreducible matrix elements of the operators to the sizes that are actually
    // required in the next iterations. This saves memory and leads to better cache usage in recalc_general()
    // recalculations. Note: this is only needed for strategy=all; copying is avoided for strategy=kept.

@@ -131,6 +131,8 @@ class param : public parambase {
 class Params {
  private:
   std::list<parambase *> all; // Container for all parameters
+  std::optional<double> floquet_omega_value;
+  std::optional<std::pair<double, double>> floquet_mode_bounds_value;
 
  public:
   std::unique_ptr<Workdir> workdir;
@@ -638,6 +640,20 @@ class Params {
     return !do_recalc_kept(runtype);
   }
 
+  [[nodiscard]] double floquet_omega() const {
+    if (!floquet_omega_value) throw std::logic_error("Floquet Omega has not been validated");
+    return floquet_omega_value.value();
+  }
+  void set_floquet_mode_bounds(const std::pair<double, double> bounds) {
+    if (!std::isfinite(bounds.first) || !std::isfinite(bounds.second) || bounds.first > bounds.second)
+      throw std::invalid_argument("Invalid Floquet mode-operator bounds");
+    floquet_mode_bounds_value = bounds;
+  }
+  [[nodiscard]] std::pair<double, double> floquet_mode_bounds() const {
+    if (!floquet_mode_bounds_value) throw std::logic_error("Floquet mode-operator bounds have not been validated");
+    return floquet_mode_bounds_value.value();
+  }
+
   // What is the last iteration completed in the previous NRG runs?
   void initialize_checkpointing(const std::string &param_filename = "param", const std::string &data_filename = "data") {
     checkpoint_param_fingerprint = checkpoint_file_fingerprint(param_filename);
@@ -687,6 +703,19 @@ class Params {
   [[nodiscard]] bool remove_consumed_files() const noexcept { return removefiles && !resume; }
 
   void validate() {
+    floquet_omega_value.reset();
+    floquet_mode_bounds_value.reset();
+    if (floquet) {
+      const auto omega = extra_params.find("Omega");
+      if (omega == extra_params.end()) throw std::invalid_argument("Floquet calculations require Omega in the [extra] block.");
+      try {
+        floquet_omega_value = from_string<double>(strip_whitespace(omega->second));
+      } catch (const std::exception &) {
+        throw std::invalid_argument(fmt::format("Floquet Omega must be a finite positive number, got [{}].", omega->second));
+      }
+      if (!std::isfinite(floquet_omega_value.value()) || floquet_omega_value.value() <= 0.0)
+        throw std::invalid_argument(fmt::format("Floquet Omega must be a finite positive number, got [{}].", omega->second));
+    }
     if (T <= 0.0) throw std::invalid_argument("T must be greater than 0.");
     if (!std::isfinite(fdm_cutoff.value()) || fdm_cutoff < 0.0)
       throw std::invalid_argument("fdm_cutoff must be finite and non-negative.");

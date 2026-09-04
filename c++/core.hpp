@@ -20,6 +20,7 @@
 #include "invar.hpp"
 #include "eigen.hpp"
 #include "operators.hpp"
+#include "floquet.hpp"
 #include "subspaces.hpp"
 #include "store.hpp"
 #include "step.hpp"
@@ -151,31 +152,32 @@ template<scalar S>
 void prepare_floquet_for_truncation(const Step &step, Operators<S> &operators, Stats<S> &stats, DiagInfo<S> &diag,
                                     const SubspaceStructure &substruct, Oprecalc<S> &oprecalc, const Params &P) {
   split_in_blocks(diag, substruct, false); // false = don't discard
-  my_assert(P.extra_params.count("Omega") > 0);
   const auto scale = step.scale();
-  const auto _Omega = std::stod(P.extra_params.at("Omega"));
-  const auto Omega = _Omega / scale;
-  nrglog('0' , "Omega=" << _Omega << " rescaled=" << Omega);
-  auto mnew = oprecalc.recalculate_operator_m(operators, step, diag, substruct, P);
+  const auto physical_Omega = P.floquet_omega();
+  const auto Omega = physical_Omega / scale;
+  if (!std::isfinite(Omega) || Omega <= 0.0)
+    throw std::invalid_argument("Scaled Floquet Omega must be finite and positive");
+  nrglog('0' , "Omega=" << physical_Omega << " rescaled=" << Omega);
+  const auto mnew = oprecalc.recalculate_operator_m(operators, step, diag, substruct);
   if (P.logletter('1'))
     dump_diagonal_op("m", mnew, 0);
-  double emin = std::numeric_limits<double>::max();
+  const auto prepared = calculate_floquet_criteria(diag, mnew, Omega, P.floquet_mode_bounds());
   for (auto &[I, eig] : diag) {
     if (P.logletter('2') || P.logletter('3'))
       std::cout << "Floquet: subspace " << I << std::endl;
+    const auto &criteria = prepared.values.at(I);
     for (size_t i = 0; i < eig.values.size(); i++) {
       const auto e = eig.values.raw(i);
-      emin = std::min(emin, e);
-      const auto m = mnew[Twoinvar(I, I)](i, i);
+      const auto m = mnew.at(Twoinvar(I, I))(i, i);
       const auto mOmega = std::real(m) * Omega;
       const auto e0 = e - mOmega;
-      const auto x = e0 + std::abs(mOmega); // second term: penalize high-m states
+      const auto x = criteria[i];
       nrglog('2', "i=" << i << " e=" << e << " m=" << m << " e0=e-m*Omega=" << e0 << " x=" << x);
       nrglog('3', "rs i=" << i << " e=" << e*scale << " m=" << m << " e0=e-m*Omega=" << e0*scale << " x=" << x*scale);
       eig.values.set_crit(i, x);
     }
   }
-  stats.Egs = emin;
+  stats.Egs = prepared.minimum_energy;
   std::cout << "Egs=" << stats.Egs << std::endl;
   diag.sort_by_c();
   const auto Clw = diag.find_Clw();

@@ -6,6 +6,7 @@ foreach(test ${all_tests})
   configure_file(${test}/param ${test}/param COPYONLY)
   add_test(NAME ${test} COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/runtest ${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${test}
            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${test})
+  set_tests_properties(${test} PROPERTIES ENVIRONMENT "${TEST_BUILD_ENV}")
 endforeach()
 
 file(STRINGS inst1_inputs INST1_INPUTS)

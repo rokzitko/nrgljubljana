@@ -34,9 +34,10 @@ class Oprecalc {
        F << std::endl << "Computing the following operators:" << std::endl;
        for (const auto &[type, name]: *this) fmt::print("{} {}\n", name, type);
      }
-     // Singlet operators are always recomputed in the first NRG run, so that we can calculate the expectation values.
-     [[nodiscard]] bool do_s(const std::string &name, const Params &P_, const Step &step) {
-       if (step.nrg()) return true;                                          // for computing <O>
+      // Singlet operators are always recomputed in the first NRG run, so that we can calculate the expectation values.
+      [[nodiscard]] bool do_s(const std::string &name, const Params &P_, const Step &step) {
+        if (P_.floquet && name == "m") return true;                            // needed for Floquet truncation in both sweeps
+        if (step.nrg()) return true;                                          // for computing <O>
        if (step.dmnrg() && P_.fdmexpv && step.N() <= P_.fdmexpvn) return true; // for computing <O> using FDM algorithm
        return this->count({"s", name});
      }
@@ -105,17 +106,14 @@ class Oprecalc {
      }
 
    // Special case for Floquet problems
-   MatrixElements<S> recalculate_operator_m(Operators<S> &a, const Step &step, const DiagInfo<S> &diag, const SubspaceStructure &substruct, const Params &P_) {
-     nrglog('@', "recalculate_operator_m()");
-     const auto section_timing = mt.time_it("recalc");
-     MatrixElements<S> mnew;
-     for (auto &[name, m] : a.ops)
-       if (name == "m") {
-         std::cout << "Matched " << name << std::endl;
-         mnew = recalc_or_clear(ops.do_s(name, P_, step), name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr..., 1);  }, "s", step, diag, substruct);
-       }
-     return mnew;
-   }
+    MatrixElements<S> recalculate_operator_m(const Operators<S> &a, const Step &step, const DiagInfo<S> &diag, const SubspaceStructure &substruct) {
+      nrglog('@', "recalculate_operator_m()");
+      const auto section_timing = mt.time_it("recalc");
+      const auto found = a.ops.find("m");
+      if (found == a.ops.end()) throw std::runtime_error("Floquet operator m is unavailable during recalculation");
+      return recalc("m", found->second, [this](const auto &... pr) { return Sym->recalc_singlet(pr..., 1); },
+                    "s", step, diag, substruct);
+    }
 
    // Establish the data structures for storing spectral information [and prepare output files].
    template<typename A, typename M>

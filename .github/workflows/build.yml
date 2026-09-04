@@ -430,6 +430,7 @@ jobs:
         openmpi-bin
         openmpi-common
         openmpi-doc
+        python3-pip
         python3-sphinx
 
     - name: Build Sphinx documentation
@@ -441,4 +442,6 @@ jobs:
         cmake --build build --target docs_sphinx --parallel 2
 
     - name: Build MkDocs documentation
-      run: make -C docs
+      run: |
+        python3 -m pip install --user pymdown-extensions
+        make -C docs

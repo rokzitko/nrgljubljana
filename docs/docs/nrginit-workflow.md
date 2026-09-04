@@ -123,5 +123,6 @@ then this directory is part of the implementation, not just a frontend wrapper.
 - `c++/params.hpp`
 - [Input and configuration](input-and-configuration.md)
 - [Parameter reference](parameter-reference.md)
+- [Floquet model construction](floquet-nrginit.md)
 - [Output format reference](output-formats.md)
 - [Runtime flow](runtime-flow.md)

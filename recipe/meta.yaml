@@ -84,6 +84,7 @@ test:
     - printf '0 0\n1 1\n' | "${PREFIX}/bin/integrate" | grep -qx 0.5  # [unix]
     - test -x "${PREFIX}/nrginit/nrginit"  # [unix]
     - test -f "${PREFIX}/nrginit/nrginit.m"  # [unix]
+    - test -f "${PREFIX}/nrginit/floquet.m"  # [unix]
     - test -z "$(ldd "${PREFIX}/bin/nrg" | grep 'not found')"  # [linux]
     - test -f "${PREFIX}/lib/libnrgljubljana_c.so"  # [linux]
     - test -f "${PREFIX}/lib/libnrgljubljana_c.dylib"  # [osx]
