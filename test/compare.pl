@@ -224,10 +224,45 @@ sub directory_entries {
     return @entries;
 }
 
+sub read_tolerances {
+    my ($path) = @_;
+    open(my $input, '<', $path) or input_error("Can't read tolerance file $path: $!");
+    my @tolerances;
+    my $line_number = 0;
+    while (my $line = <$input>) {
+        $line_number++;
+        $line =~ s/\r?\n\z//;
+        $line =~ s/^\s+|\s+$//g;
+        next if $line eq '' || $line =~ /^#/;
+        for my $token (split(/\s+/, $line)) {
+            input_error("$path:$line_number: expected one or two tolerances.")
+                if @tolerances == 2;
+            my $value = finite_number($token);
+            input_error("$path:$line_number: tolerance '$token' must be a finite, representable, nonnegative number.")
+                unless defined($value) && $value >= 0;
+            push @tolerances, $token;
+        }
+    }
+    close($input) or input_error("Can't finish reading tolerance file $path: $!");
+    input_error("Tolerance file $path must contain one or two numbers.") unless @tolerances;
+    return \@tolerances;
+}
+
 my @reference_entries = directory_entries($reference_dir);
 my @reference_files;
+my %tolerance_path;
 for my $name (@reference_entries) {
     next if $name eq $VALIDATION_MANIFEST;
+    if ($name =~ /\.tol\z/) {
+        (my $target = $name) =~ s/\.tol\z//;
+        next if $excluded{$name} || $excluded{$target};
+        input_error("Tolerance file '$name' does not name a reference file.")
+            if $target eq '' || $target =~ /\.tol\z/;
+        my $path = File::Spec->catfile($reference_dir, $name);
+        -f $path or input_error("Tolerance entry $path is not a regular file.");
+        $tolerance_path{$target} = $path;
+        next;
+    }
     next if $excluded{$name};
     my $path = File::Spec->catfile($reference_dir, $name);
     -f $path or input_error("Unsupported reference entry $path; only regular files are allowed.");
@@ -263,6 +298,18 @@ if (-e $manifest_path) {
         $validated_file{$name} = $validator;
     }
     close($manifest) or input_error("Can't finish reading $manifest_path: $!");
+}
+
+my %tolerances;
+for my $target (sort keys %tolerance_path) {
+    my $path = $tolerance_path{$target};
+    input_error("Tolerance file $path cannot target semantic output '$target'.")
+        if $validated_file{$target};
+    input_error("Tolerance file $path has no matching reference file '$target'.")
+        unless $reference_file{$target};
+    input_error("Tolerance file $path cannot target binary reference '$target'.")
+        if $target =~ /\.(?:bin|h5)\z/;
+    $tolerances{$target} = read_tolerances($path);
 }
 
 (@reference_files || keys(%validated_file))
@@ -530,12 +577,20 @@ for my $name (@reference_files) {
     my @command = ($^X, "$RealBin/mycomp.pl");
     push @command, '--ignore-signs' if $ignore_signs;
     push @command, '--check-comments' if $strict && is_text_physical_output($name);
+    my ($atol, $rtol, $first_atol, $first_rtol);
     if ($strict && is_spectral_output($name)) {
-        push @command, '--atol', '1e-12', '--rtol', '2e-2',
-            '--first-atol', '1e-12', '--first-rtol', '1e-5';
+        ($atol, $rtol, $first_atol, $first_rtol) = ('1e-12', '2e-2', '1e-12', '1e-5');
     } elsif ($strict && is_physical_output($name)) {
-        push @command, '--atol', '1e-9', '--rtol', '1e-5';
+        ($atol, $rtol) = ('1e-9', '1e-5');
     }
+    if (exists $tolerances{$name}) {
+        $atol = $tolerances{$name}->[0];
+        $rtol = $tolerances{$name}->[1] if @{$tolerances{$name}} == 2;
+    }
+    push @command, '--atol', $atol if defined $atol;
+    push @command, '--rtol', $rtol if defined $rtol;
+    push @command, '--first-atol', $first_atol if defined $first_atol;
+    push @command, '--first-rtol', $first_rtol if defined $first_rtol;
     push @command, $expected, $actual;
     my $status = system(@command);
     input_error("Can't execute mycomp.pl: $!") if $status == -1;

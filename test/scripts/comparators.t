@@ -143,6 +143,147 @@ subtest 'sign relaxation is explicit and field-aware' => sub {
     is($status, 0, 'directory sign wrapper forwards comparator options');
 };
 
+subtest 'per-reference tolerance overrides' => sub {
+    my $dir = tempdir(CLEANUP => 1);
+    my $ref = "$dir/ref";
+    my $actual = "$dir/actual";
+    make_path($ref, $actual);
+    write_file("$ref/result.dat", "0\n");
+    write_file("$actual/result.dat", "5e-10\n");
+
+    my ($status) = run_command($dir, $^X, $compare, '--actual', $actual, $ref);
+    is($status, 1, 'default tolerance rejects the near-zero difference');
+    write_file("$ref/result.dat.tol", "  # Absolute tolerance\n\n1e-9\n");
+    ($status) = run_command($dir, $^X, $compare, '--actual', $actual, $ref);
+    is($status, 0, 'one tolerance overrides the absolute tolerance without an actual-side companion');
+
+    write_file("$ref/result.dat", "1000\n");
+    write_file("$actual/result.dat", "1000.009\n");
+    write_file("$ref/result.dat.tol", "0\n");
+    ($status) = run_command($dir, $^X, $compare, '--actual', $actual, $ref);
+    is($status, 0, 'one tolerance retains the active relative tolerance');
+
+    write_file("$actual/result.dat", "1015\n");
+    write_file("$ref/result.dat.tol", "# Absolute\n0\n# Relative\n2e-2\n");
+    ($status) = run_command($dir, $^X, $compare, '--actual', $actual, $ref);
+    is($status, 0, 'two tolerances override absolute and relative tolerances');
+    write_file("$ref/result.dat.tol", "0 1e-3\n");
+    ($status) = run_command($dir, $^X, $compare, '--actual', $actual, $ref);
+    is($status, 1, 'a tighter relative override rejects the same result');
+
+    write_file("$ref/result.dat", "0\n");
+    write_file("$actual/result.dat", "0\n");
+    my @invalid = (
+        ['empty', ''],
+        ['comment-only', "# no tolerances\n"],
+        ['too many values', "1 2 3\n"],
+        ['negative value', "-1\n"],
+        ['non-finite value', "nan\n"],
+        ['overflowing value', "1e9999\n"],
+        ['underflowing value', "1e-9999\n"],
+        ['inline comment', "1e-9 # comments must occupy a full line\n"],
+    );
+    for my $case (@invalid) {
+        write_file("$ref/result.dat.tol", $case->[1]);
+        ($status) = run_command($dir, $^X, $compare, '--actual', $actual, $ref);
+        is($status, 2, "$case->[0] is a tolerance-file configuration error");
+    }
+
+    unlink("$ref/result.dat.tol") or die $!;
+    write_file("$actual/result.dat", "5e-10\n");
+    write_file("$actual/result.dat.tol", "1\n");
+    ($status) = run_command($dir, $^X, $compare, '--actual', $actual, $ref);
+    is($status, 1, 'an actual-side tolerance file is ignored');
+
+    my $physical_dir = tempdir(CLEANUP => 1);
+    my $physical_ref = "$physical_dir/ref";
+    my $physical_actual = "$physical_dir/actual";
+    make_path($physical_ref, $physical_actual);
+    write_file("$physical_ref/td", "0\n");
+    write_file("$physical_actual/td", "5e-10\n");
+    ($status) = run_command($physical_dir, $^X, $compare, '--strict', '--actual', $physical_actual, $physical_ref);
+    is($status, 0, 'strict physical comparison uses its normal absolute tolerance');
+    write_file("$physical_ref/td.tol", "1e-12\n");
+    ($status) = run_command($physical_dir, $^X, $compare, '--strict', '--actual', $physical_actual, $physical_ref);
+    is($status, 1, 'a physical-output tolerance file can tighten the absolute tolerance');
+
+    my $spectral_dir = tempdir(CLEANUP => 1);
+    my $spectral_ref = "$spectral_dir/ref";
+    my $spectral_actual = "$spectral_dir/actual";
+    make_path($spectral_ref, $spectral_actual);
+    my $spectral_name = 'spec_FDM_dens_x-x.dat';
+    write_file("$spectral_ref/$spectral_name", "0 1\n");
+    write_file("$spectral_actual/$spectral_name", "0 1.015\n");
+    write_file("$spectral_ref/$spectral_name.tol", "0\n");
+    ($status) = run_command($spectral_dir, $^X, $compare, '--strict', '--actual', $spectral_actual, $spectral_ref);
+    is($status, 0, 'one spectral override retains the two-percent value tolerance');
+    write_file("$spectral_ref/$spectral_name.tol", "0 1e-1\n");
+    write_file("$spectral_actual/$spectral_name", "0 1.05\n");
+    ($status) = run_command($spectral_dir, $^X, $compare, '--strict', '--actual', $spectral_actual, $spectral_ref);
+    is($status, 0, 'a spectral override can loosen dependent-value comparison');
+    write_file("$spectral_ref/$spectral_name.tol", "1e-3 1e-1\n");
+    write_file("$spectral_actual/$spectral_name", "1e-8 1.05\n");
+    ($status) = run_command($spectral_dir, $^X, $compare, '--strict', '--actual', $spectral_actual, $spectral_ref);
+    is($status, 1, 'a spectral absolute override does not loosen the first-field grid comparison');
+    write_file("$spectral_ref/$spectral_name", "1 1\n");
+    write_file("$spectral_actual/$spectral_name", "1.5 1\n");
+    write_file("$spectral_ref/$spectral_name.tol", "0 1\n");
+    ($status) = run_command($spectral_dir, $^X, $compare, '--strict', '--actual', $spectral_actual, $spectral_ref);
+    is($status, 1, 'a spectral relative override does not loosen the first-field grid comparison');
+
+    my $association_dir = tempdir(CLEANUP => 1);
+    my $association_ref = "$association_dir/ref";
+    my $association_actual = "$association_dir/actual";
+    make_path($association_ref, $association_actual);
+    write_file("$association_ref/keep", "1\n");
+    write_file("$association_actual/keep", "1\n");
+    write_file("$association_ref/missing.tol", "1e-9\n");
+    ($status) = run_command($association_dir, $^X, $compare, '--actual', $association_actual, $association_ref);
+    is($status, 2, 'an orphan tolerance file is a configuration error');
+    unlink("$association_ref/missing.tol") or die $!;
+
+    write_file("$association_ref/.tol", "1e-9\n");
+    ($status) = run_command($association_dir, $^X, $compare, '--actual', $association_actual, $association_ref);
+    is($status, 2, 'an empty tolerance target is a configuration error');
+    unlink("$association_ref/.tol") or die $!;
+    write_file("$association_ref/keep.tol.tol", "1e-9\n");
+    ($status) = run_command($association_dir, $^X, $compare, '--actual', $association_actual, $association_ref);
+    is($status, 2, 'a recursive tolerance filename is a configuration error');
+    unlink("$association_ref/keep.tol.tol") or die $!;
+    make_path("$association_ref/keep.tol");
+    ($status) = run_command($association_dir, $^X, $compare, '--actual', $association_actual, $association_ref);
+    is($status, 2, 'a nonregular tolerance entry is a configuration error');
+    rmdir("$association_ref/keep.tol") or die $!;
+
+    write_file("$association_ref/payload.bin", "payload\n");
+    write_file("$association_actual/payload.bin", "payload\n");
+    write_file("$association_ref/payload.bin.tol", "1e-9\n");
+    ($status) = run_command($association_dir, $^X, $compare, '--actual', $association_actual, $association_ref);
+    is($status, 2, 'a tolerance file cannot target an ordinary binary reference');
+    unlink("$association_ref/payload.bin", "$association_ref/payload.bin.tol", "$association_actual/payload.bin") == 3
+        or die $!;
+
+    write_file("$association_ref/result", "0\n");
+    write_file("$association_actual/result", "5e-10\n");
+    write_file("$association_ref/result.tol", "invalid\n");
+    ($status) = run_command($association_dir, $^X, $compare, '--exclude', 'result',
+                            '--actual', $association_actual, $association_ref);
+    is($status, 0, 'excluding a reference also excludes its tolerance file');
+    ($status) = run_command($association_dir, $^X, $compare, '--exclude', 'result.tol',
+                            '--actual', $association_actual, $association_ref);
+    is($status, 1, 'excluding only a malformed tolerance file uses the normal comparison policy');
+
+    my $semantic_dir = tempdir(CLEANUP => 1);
+    my $semantic_ref = "$semantic_dir/ref";
+    my $semantic_actual = "$semantic_dir/actual";
+    make_path($semantic_ref, $semantic_actual);
+    write_file("$semantic_ref/.physical-outputs", "subspaces subspaces.dat\n");
+    write_file("$semantic_ref/subspaces.dat.tol", "1e-9\n");
+    write_file("$semantic_actual/subspaces.dat", "Iteration 0\nlen_dm=1\nI=0 kept=1 total=1\n");
+    ($status) = run_command($semantic_dir, $^X, $compare, '--actual', $semantic_actual, $semantic_ref);
+    is($status, 2, 'a tolerance file cannot target a semantically validated output');
+};
+
 subtest 'directory manifests and physical output cleanup' => sub {
     my $dir = tempdir(CLEANUP => 1);
     my $ref = "$dir/ref";
