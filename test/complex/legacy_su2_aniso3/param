@@ -4,7 +4,7 @@ Jkondo=0.1
 g=2.11
 
 Bx=!8.5*0.000172
-Bz=0
+Bz=0.0001
 
 anD=-0.0045288
 anE=0.0009176
@@ -16,7 +16,7 @@ model=aniso.m
 fixeps=1e-12
 
 Lambda=4
-Tmin=1e-16
+Tmin=1e-10
 keepmin=100
 keepenergy=8.0
 keep=6000
