@@ -203,6 +203,14 @@ ctest --test-dir build --output-on-failure -R '^(test_dmnrg_only|test_fdm_only|t
 Some tests are only enabled when Mathematica is detected during configuration.
 Long-running suites are enabled with `-DTEST_LONG=ON`.
 
+For finite-chain SIAM checks against a model-driven ED reference, follow the
+[scientific-suite setup](test/scientific/README.md) to enable
+`-DTEST_SCIENTIFIC=ON` with Python and NumPy, then run:
+
+```sh
+ctest --test-dir build -L '^scientific$' --output-on-failure --no-tests=error
+```
+
 ### Optional Core Checks
 
 Sanitizers:

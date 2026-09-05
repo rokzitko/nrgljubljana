@@ -253,6 +253,7 @@ Useful CMake options:
 - `-DCMAKE_BUILD_TYPE=Debug`
 - `-DBuild_Tests=ON|OFF` controls the test build (default: `ON` for a top-level build)
 - `-DTEST_LONG=ON`
+- `-DTEST_SCIENTIFIC=ON` enables [finite-chain SIAM validation against independent NumPy ED](test/scientific/README.md) (default: `OFF`; requires Python >=3.10 and NumPy >=1.26,<3)
 - `-DASAN=ON -DUBSAN=ON`
 - `-DANALYZE_SOURCES=ON`
 - `-DNRGLJUBLJANA_ENABLE_APP_OPENMP=ON|OFF` enables application-level OpenMP regions such as simultaneous diagonalization scheduling (default: `OFF`)

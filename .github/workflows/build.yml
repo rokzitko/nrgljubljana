@@ -47,10 +47,10 @@ jobs:
           # Ubuntu 22.04's OpenBLAS 0.3.20 can return incorrect DGEMM results with CooperLake dispatch.
           - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12, blas: openBLAS, cmake_flags: "-DBLA_VENDOR=OpenBLAS", openblas_threads: "1", mkl_threads: "1", omp_threads: "", openblas_coretype: HASWELL}
           - {os: ubuntu-22.04, cc: clang-15, cxx: clang++-15, blas: openBLAS, cmake_flags: "-DBLA_VENDOR=OpenBLAS", openblas_threads: "1", mkl_threads: "1", omp_threads: "", openblas_coretype: HASWELL}
-          - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12, blas: imkl, cmake_flags: "-DBLA_VENDOR=Intel10_64_dyn -DNRGLJUBLJANA_MKL_THREADING_LAYER=GNU", openblas_threads: "1", mkl_threads: "2", mkl_threading_layer: GNU, omp_threads: "2"}
+          - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12, blas: imkl, scientific: true, cmake_flags: "-DBLA_VENDOR=Intel10_64_dyn -DNRGLJUBLJANA_MKL_THREADING_LAYER=GNU -DTEST_SCIENTIFIC=ON", openblas_threads: "1", mkl_threads: "2", mkl_threading_layer: GNU, omp_threads: "2"}
           - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12, blas: imkl-ilp64, cmake_flags: "-DNRGLJUBLJANA_BLAS_ILP64=ON -DBLA_VENDOR=Intel10_64ilp", openblas_threads: "1", mkl_threads: "2", omp_threads: "2"}
           - {os: ubuntu-22.04-arm, cc: clang-15, cxx: clang++-15, blas: openBLAS, cmake_flags: "-DBLA_VENDOR=OpenBLAS", openblas_threads: "1", mkl_threads: "1", omp_threads: "", openblas_coretype: ARMV8}
-          - {os: ubuntu-24.04, cc: gcc-14, cxx: g++-14, blas: openBLAS, cmake_flags: "-DBLA_VENDOR=OpenBLAS", openblas_threads: "2", mkl_threads: "1", omp_threads: ""}
+          - {os: ubuntu-24.04, cc: gcc-14, cxx: g++-14, blas: openBLAS, scientific: true, cmake_flags: "-DBLA_VENDOR=OpenBLAS -DTEST_SCIENTIFIC=ON", openblas_threads: "2", mkl_threads: "1", omp_threads: ""}
           - {os: ubuntu-24.04, cc: gcc-14, cxx: g++-14, blas: openBLAS-cuda13.3, cuda: true, cmake_flags: "-DBLA_VENDOR=OpenBLAS -DNRGLJUBLJANA_ENABLE_CUDA=ON -DCUDAToolkit_ROOT=/usr/local/cuda-13.3", openblas_threads: "2", mkl_threads: "1", omp_threads: ""}
           - {os: ubuntu-24.04, cc: clang-18, cxx: clang++-18, blas: openBLAS, cmake_flags: "-DBLA_VENDOR=OpenBLAS", openblas_threads: "1", mkl_threads: "1", omp_threads: ""}
           - {os: ubuntu-24.04-arm, cc: clang-18, cxx: clang++-18, blas: openBLAS, cmake_flags: "-DBLA_VENDOR=OpenBLAS", openblas_threads: "1", mkl_threads: "1", omp_threads: "", openblas_coretype: ARMV8}
@@ -69,6 +69,18 @@ jobs:
         key: ccache-${{ env.CACHE_VERSION }}-${{ matrix.os }}-${{ matrix.cc }}-${{ matrix.blas }}-${{ github.run_id }}
         restore-keys:
           ccache-${{ env.CACHE_VERSION }}-${{ matrix.os }}-${{ matrix.cc }}-${{ matrix.blas }}-
+
+    - name: Set up Python for scientific tests
+      if: ${{ matrix.scientific == true }}
+      uses: actions/setup-python@v7
+      with:
+        python-version: "3.12"
+        cache: pip
+        cache-dependency-path: test/scientific/requirements.txt
+
+    - name: Install scientific test dependencies
+      if: ${{ matrix.scientific == true }}
+      run: python3 -m pip install -r test/scientific/requirements.txt
 
     - name: Install ubuntu dependencies (openBLAS)
       if: ${{ startsWith(matrix.os, 'ubuntu-22.04') && contains(matrix.blas, 'openBLAS') }}
@@ -212,8 +224,12 @@ jobs:
         CC: ${{ matrix.cc }}
         CXX: ${{ matrix.cxx }}
       run: |
-        mkdir build && cd build && cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/install ${{ matrix.cmake_flags }}
-        cmake --build . --parallel 2
+        cmake_args=()
+        if [ "${{ matrix.scientific }}" = "true" ]; then
+          cmake_args+=("-DPython3_EXECUTABLE=$(python3 -B -c 'import sys; print(sys.executable)')")
+        fi
+        cmake -S . -B build -DCMAKE_INSTALL_PREFIX="$HOME/install" ${{ matrix.cmake_flags }} "${cmake_args[@]}"
+        cmake --build build --parallel 2
 
     - name: Configure test runtime environment
       run: |
@@ -273,8 +289,15 @@ jobs:
         if [ -n "${{ matrix.ctest_regex }}" ]; then
           ctest_args=(-R "${{ matrix.ctest_regex }}")
         fi
+        if [ "${{ matrix.scientific }}" = "true" ]; then
+          ctest_args+=(-E '^scientific_')
+        fi
         cd build
         ctest -j2 "${ctest_args[@]}" --output-on-failure --timeout "${NRGLJUBLJANA_CTEST_TIMEOUT_SECONDS}" --no-tests=error
+
+    - name: Test scientific validation
+      if: ${{ matrix.scientific == true }}
+      run: ctest --test-dir build -j2 -R '^scientific_' --output-on-failure --no-tests=error --output-junit "$PWD/build/scientific-results.xml"
 
     - name: Upload test logs
       uses: actions/upload-artifact@v7
@@ -286,6 +309,8 @@ jobs:
           build/Testing/Temporary/LastTestsFailed.log
           build/cuda-*.txt
           build/test/**/log
+          build/test/scientific/runs/
+          build/scientific-results.xml
         if-no-files-found: ignore
 
     - name: ccache statistics

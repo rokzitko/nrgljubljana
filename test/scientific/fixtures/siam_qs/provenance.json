@@ -1,0 +1,11 @@
+{
+  "case_sha256": "680262b96447d0d10cdaff84730c598dfc1db60b0f9207ee78846480fc5a5867",
+  "data_sha256": "77804fdc7aa8cb90f4fbe5093db909fac555f42bc1347eba8ffe26127bfa9cee",
+  "source_revision": "5482753e3bf0f5bce46aeb6d06533208b15e4c01",
+  "initializer_sources_sha256": "5fb065a316f6b500d2c6a9bc465b5967c3d6edfd41680cd35814f0e6525908de",
+  "preparation_script_sha256": "e1218e1b843d8399b6fae478d13114ccb79ef6b13b5bee36b114ef34bf376ef8",
+  "kernel_version": "13.3.0 for Linux x86 (64-bit) (June 3, 2023)",
+  "mMAX": 80,
+  "prec": 1000,
+  "parameters": "[extra]\neps=-0.17\nU=0.7\nGamma=0.08\nB=0.0\n\n[param]\nmodel=SIAM\nvariant=EPS\nsymtype=QS\nband=flat\nbandrescale=1.0\ndiscretization=Z\nLambda=2.0\nz=1.0\nNinit=0\nNmax=2\ntri=old\nwilsonchain=legacy\nmMAX=80\nprec=1000\ndata_has_rescaled_energies=false\npolarized=false\nsubsteps=false\nops=I A_d n_d n_d_ud\nspecd=A_d-A_d\nkeep=256\nkeepenergy=-1\nkeepmin=0\nsafeguard=0\nfixeps=0\ndiag=dsyevd\ndiagratio=1\ndiag_mode=serial\nmult=blas\nstrategy=all\nlastall=true\nlastalloverride=false\ncalc0=true\nT=0.05\nfdmmats=true\nfdmexpv=true\nfdmexpvn=0\nfdm_cutoff=0\ncheckrho=true\nmats=64\nfinite=false\nfinitemats=false\ndmnrg=false\ndmnrgmats=false\ncfs=false\ncfsgt=false\ncfsls=false\nfdm=false\nfdmgt=false\nfdmls=false\nbroaden=false\nsavebins=false\nclip_tol_imag=0\nabsolute=false\nsilent=false\ndone=true\ndumpsubspaces=true\nreportdiagonal=256\nreportdiagonallast=false\ndumpscaled=false\ndumpabs=true\ndumpEscale=1\nprec_xy=17\nprec_custom=17\nprec_td=17\nwidth_custom=24\nwidth_td=24\n"
+}

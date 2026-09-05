@@ -69,6 +69,10 @@ add_subdirectory(tools)
 add_subdirectory(scripts)
 add_subdirectory(nrgspawn)
 
+if(TEST_SCIENTIFIC)
+  add_subdirectory(scientific)
+endif()
+
 if(Mathematica_FOUND AND SYM_ALL)
   add_subdirectory(nrginit)
   add_subdirectory(nrginit_spsu2)

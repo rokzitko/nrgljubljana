@@ -1,0 +1,13 @@
+{
+  "symmetry": "QSZ",
+  "model": {
+    "epsilon_d": -0.17,
+    "U": 0.0,
+    "Gamma": 0.08,
+    "D": 1.0,
+    "Lambda": 2.0,
+    "z": 1.0,
+    "bath_sites": 3,
+    "B": 0.0
+  }
+}

@@ -16,6 +16,25 @@ The comparison tools are intended for numerical regression testing. They do
 not perform byte-for-byte comparison unless a test runner explicitly invokes
 `cmp` or `diff` instead.
 
+## Scientific Validation
+
+The separate [`scientific/` suite](scientific/README.md) compares untruncated
+finite-chain SIAM calculations with a model-driven NumPy ED reference, rather
+than saved NRG outputs. It is opt-in with `-DTEST_SCIENTIFIC=ON` and requires
+Python >=3.10 and NumPy >=1.26,<3 in CMake's selected interpreter. Prepared
+fixtures need no Mathematica license; regeneration is a separate action.
+
+After following the suite's setup instructions, run its unit-test entry and
+12 temperature/mode comparisons with:
+
+```sh
+ctest --test-dir build -L '^scientific$' --output-on-failure --no-tests=error
+```
+
+The suite guide documents model conventions, exact test names, tolerances,
+preserved run artifacts, and validation limits. The regression policies below
+do not apply to its ED comparisons.
+
 ## Components
 
 | File | Purpose |
