@@ -1,0 +1,40 @@
+#!/bin/bash
+# Start Mathematica in batch mode and run the "NRG Ljubljana"
+# initialisation script
+# Rok Zitko, rok.zitko@ijs.si, 2009-2026
+
+if [ "$1" = "-h" ]
+then
+  echo Usage: nrginit
+  exit 0
+fi
+
+NRGDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+NRG_INITSCRIPT=${NRGDIR}/nrginit.m
+output_dir=$(mktemp -d) || exit 1
+trap 'rm -rf "$output_dir"' EXIT
+
+while true; do
+  "${1:-math}" -batchinput -batchoutput \
+    > >(tee "$output_dir/stdout") \
+    2> >(tee "$output_dir/stderr" >&2) <<EOF
+NRGDIR="${NRGDIR}";
+Get["${NRG_INITSCRIPT}"];
+EOF
+
+  status=$?
+  wait
+
+  if (( status != 0 )) &&
+     { grep -Fq 'No valid password found.' "$output_dir/stdout" ||
+       grep -Fq 'No valid password found.' "$output_dir/stderr"; }; then
+    sleep 30
+    continue
+  fi
+  break
+done
+
+if (( status == 139 )); then
+    exit 0
+fi
+exit "$status"

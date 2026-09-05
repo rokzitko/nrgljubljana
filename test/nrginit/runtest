@@ -3,5 +3,9 @@ set -euo pipefail
 # $1 = PROJECT_SOURCE_DIR
 # $2 = CMAKE_CURRENT_SOURCE_DIR/${test}
 # $3 = Mathematica kernel executable
-"$1/nrginit/nrginit" "$3"
+nrginit="$1/nrginit/nrginit"
+if [[ -e "${nrginit}.local" ]]; then
+  nrginit="${nrginit}.local"
+fi
+"$nrginit" "$3"
 "$1/test/compare-ignoresigns.pl" "$2/ref"

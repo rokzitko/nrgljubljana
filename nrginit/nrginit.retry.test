@@ -1,0 +1,130 @@
+#!/bin/bash
+set -euo pipefail
+
+NRGINIT=$(realpath "$(dirname "${BASH_SOURCE[0]}")/nrginit.retry")
+TESTDIR=$(mktemp -d)
+trap 'rm -rf "$TESTDIR"' EXIT
+
+fail() {
+  echo "FAIL: $*" >&2
+  exit 1
+}
+
+assert_file() {
+  local expected=$1
+  local file=$2
+  local description=$3
+
+  if ! diff -u <(printf '%s' "$expected") "$file"; then
+    fail "$description"
+  fi
+}
+
+cat > "$TESTDIR/math" <<'EOF'
+#!/bin/bash
+set -euo pipefail
+
+printf '%s\n' "$*" >> "$CALLS"
+cat >> "$INPUTS"
+
+attempt=0
+if [[ -f "$ATTEMPTS" ]]; then
+  read -r attempt < "$ATTEMPTS"
+fi
+((attempt += 1))
+printf '%s\n' "$attempt" > "$ATTEMPTS"
+
+case "$SCENARIO:$attempt" in
+  retry:1)
+    echo 'stdout before retry'
+    echo 'No valid password found.'
+    exit 1
+    ;;
+  retry:2)
+    echo 'No valid password found.' >&2
+    exit 139
+    ;;
+  retry:3)
+    echo 'success'
+    exit 0
+    ;;
+  successful-message:*)
+    echo 'No valid password found.'
+    exit 0
+    ;;
+  unrelated-failure:*)
+    echo 'some other failure' >&2
+    exit 7
+    ;;
+  status-139:*)
+    exit 139
+    ;;
+  *)
+    echo "unexpected scenario: $SCENARIO attempt $attempt" >&2
+    exit 99
+    ;;
+esac
+EOF
+
+cat > "$TESTDIR/sleep" <<'EOF'
+#!/bin/bash
+printf '%s\n' "$*" >> "$SLEEPS"
+EOF
+
+chmod +x "$TESTDIR/math" "$TESTDIR/sleep"
+
+run_scenario() {
+  local scenario=$1
+  local expected_status=$2
+  local stdout=$TESTDIR/$scenario.stdout
+  local stderr=$TESTDIR/$scenario.stderr
+  local status
+
+  : > "$TESTDIR/calls"
+  : > "$TESTDIR/inputs"
+  : > "$TESTDIR/sleeps"
+  rm -f "$TESTDIR/attempts"
+
+  set +e
+  PATH="$TESTDIR:$PATH" \
+    SCENARIO="$scenario" \
+    CALLS="$TESTDIR/calls" \
+    INPUTS="$TESTDIR/inputs" \
+    ATTEMPTS="$TESTDIR/attempts" \
+    SLEEPS="$TESTDIR/sleeps" \
+    timeout 5 "$NRGINIT" "$TESTDIR/math" > "$stdout" 2> "$stderr"
+  status=$?
+  set -e
+
+  [[ $status -eq $expected_status ]] ||
+    fail "$scenario exited $status instead of $expected_status"
+}
+
+run_scenario retry 0
+assert_file $'-batchinput -batchoutput\n-batchinput -batchoutput\n-batchinput -batchoutput\n' \
+  "$TESTDIR/calls" 'retry invocation count or arguments'
+assert_file $'30\n30\n' "$TESTDIR/sleeps" 'retry delay'
+assert_file $'stdout before retry\nNo valid password found.\nsuccess\n' \
+  "$TESTDIR/retry.stdout" 'retry stdout preservation'
+assert_file $'No valid password found.\n' \
+  "$TESTDIR/retry.stderr" 'retry stderr preservation'
+
+input=$'NRGDIR="'"$(dirname "$NRGINIT")"$'";\nGet["'"$(dirname "$NRGINIT")"$'/nrginit.m"];\n'
+assert_file "$input$input$input" "$TESTDIR/inputs" 'Mathematica input on retries'
+
+run_scenario successful-message 0
+assert_file $'-batchinput -batchoutput\n' "$TESTDIR/calls" \
+  'successful output must not retry'
+assert_file '' "$TESTDIR/sleeps" 'successful output retry delay'
+
+run_scenario unrelated-failure 7
+assert_file $'-batchinput -batchoutput\n' "$TESTDIR/calls" \
+  'unrelated failure must not retry'
+assert_file '' "$TESTDIR/sleeps" 'unrelated failure retry delay'
+
+run_scenario status-139 0
+assert_file $'-batchinput -batchoutput\n' "$TESTDIR/calls" \
+  'status 139 must not retry without the message'
+assert_file '' "$TESTDIR/sleeps" 'status 139 retry delay'
+
+echo 'nrginit retry tests passed'

@@ -8,7 +8,11 @@ set -euo pipefail
 # Only run nrginit if data does not yet exist. This allows to keep
 # reference and templeta-initialization runs in the same directory.
 if [ ! -e data ]; then
-  "$1/nrginit/nrginit" "$4"
+  nrginit="$1/nrginit/nrginit"
+  if [[ -e "${nrginit}.local" ]]; then
+    nrginit="${nrginit}.local"
+  fi
+  "$nrginit" "$4"
 fi
 
 "$1/test/clean-physical-output.pl"
