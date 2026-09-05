@@ -2,7 +2,6 @@ If[!ValueQ[SYMTYPE],  SYMTYPE = "QS"];
 
 (* Implemented symmetry types are:
  "QS", ==>                 U(1)_charge x SU(2)_spin
- "DBLQS", ==>              U(1)_charge1 x U(1)_charge2 x SU(2)_spin [TO DO!!]
  "QST", ==>                U(1)_charge x SU(2)_spin x SO(3)_orbital [three orbitals]
  "QSTZ", ==>               U(1)_charge x SU(2)_spin x U(1)_orbital [three orbitals]
  "QSZTZ", ==>              U(1)_charge x U(1)_spin x U(1)_orbital [three orbitals]
@@ -89,5 +88,4 @@ isQJ[] := (SYMTYPE === "QJ");
 isSPSU2T[] := (SYMTYPE === "SPSU2T");
 isQSC3[] := (SYMTYPE === "QSC3");
 isSPSU2C3[] := (SYMTYPE === "SPSU2C3");
-(* TODO: remove the above! *)
 is[sym_] := SYMTYPE === sym;

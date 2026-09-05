@@ -43,10 +43,6 @@ If[TRI == "nambu",
   defaultprec = 30; (* ?? *)
   dothelanczos = dothelanczosnambu;
 ];
-If[TRI == "manual",
-  defaultprec = 30; (* Should be enough *)
-  dothelanczos = loaddiscretizationtables;
-];
 If[TRI == "manual" || TRI == "manual_nambu" || TRI == "manual_nambu_new",
   defaultprec = 30; (* Should be enough *)
   dothelanczos = loaddiscretizationtables;
