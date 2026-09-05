@@ -10,6 +10,7 @@
 #include <iterator>
 #include <limits>
 #include <ostream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -216,7 +217,10 @@ auto do_diag(const Step &step, Operators<S> &operators, const Coef<S> &coef, Sta
     catch (NotEnough &e) {
       color_print(P.pretty_out, fmt::emphasis::bold | fg(fmt::color::yellow), "Insufficient number of states computed.\n");
       if (!(step.nrg() && P.restart)) break;
-      diagratio = std::min(diagratio * P.restartfactor, 1.0);
+      const double next_diagratio = std::min(diagratio * P.restartfactor, 1.0);
+      if (!std::isfinite(next_diagratio) || next_diagratio <= diagratio)
+        throw std::runtime_error("Partial diagonalisation retry cannot increase diagratio.");
+      diagratio = next_diagratio;
       color_print(P.pretty_out, fmt::emphasis::bold | fg(fmt::color::yellow), "\nRestarting this iteration step. diagratio={}\n\n", diagratio);
     }
   }

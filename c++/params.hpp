@@ -724,9 +724,13 @@ class Params {
     my_assert(keep > 1);
     if (keepenergy > 0.0) my_assert(keepmin <= keep);
     if (dm_flags()) dm = true;
-    my_assert(Lambda > 1.0);
-    if (diag == "dsyevr"s || diag =="zheevr"s) {
-      my_assert(0.0 < diagratio && diagratio <= 1.0);
+    if (!std::isfinite(Lambda.value()) || Lambda <= 1.0)
+      throw std::invalid_argument("Lambda must be finite and greater than 1.");
+    if (diag == "dsyevr"s || diag == "zheevr"s) {
+      if (!std::isfinite(diagratio.value()) || diagratio <= 0.0 || diagratio > 1.0)
+        throw std::invalid_argument("diagratio must be finite and in (0, 1] for partial diagonalisation.");
+      if (restart && diagratio < 1.0 && (!std::isfinite(restartfactor.value()) || restartfactor <= 1.0))
+        throw std::invalid_argument("restartfactor must be finite and greater than 1 for partial diagonalisation retries.");
       if (cfs_or_fdm_flags() && diagratio != 1.0) throw std::invalid_argument("CFS/FDM is not compatible with partial diagonalisation.");
       if (floquet && diagratio != 1.0) throw std::invalid_argument("Floquet is not compatible with partial diagonalisation.");
     }

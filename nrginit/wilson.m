@@ -82,23 +82,44 @@ If[paramexists["Nmax"],
   Nmax = ToExpression @ param["Nmax"];
 ];
 
-Tmin=0;
-
-If[paramexists["T"] && paramexists["Tmin_ratio"],
-  If[paramnum["T"] > 0 && paramnum["Tmin_ratio"] > 0,
-    Tmin = paramnum["T"] * paramnum["Tmin_ratio"];
-    MyPrint["Tmin_ratio ==> Tmin=", Tmin];
-  ];
-];
+Tmin = 0;
 
 If[paramexists["Tmin"],
   Tmin = paramnum["Tmin"];
-  MyPrint["Tmin=", Tmin];
+  If[!positiveFiniteRealNumberQ[Tmin],
+    MyError["Tmin must be finite and greater than 0."];
+  ];
+  MyPrint["Tmin=", Tmin],
+(* else *)
+  If[paramexists["T"] && paramexists["Tmin_ratio"],
+    TforTmin = paramnum["T"];
+    TminRatio = paramnum["Tmin_ratio"];
+    If[!finiteRealNumberQ[TforTmin] || !finiteRealNumberQ[TminRatio],
+      MyError["T and Tmin_ratio must be finite real numbers when supplied together."];
+    ];
+    If[TrueQ[TforTmin > 0 && TminRatio > 0],
+      Tmin = TforTmin * TminRatio;
+      If[!positiveFiniteRealNumberQ[Tmin],
+        MyError["Derived Tmin must be finite and greater than 0."];
+      ];
+      MyPrint["Tmin_ratio ==> Tmin=", Tmin];
+    ];
+  ];
 ];
 
 If[Tmin > 0,
   Nmax = 0;
-  While[SCALE[Nmax+1] >= Tmin, Nmax++];
+  While[True,
+    nextScale = SCALE[Nmax+1];
+    If[!positiveFiniteRealNumberQ[nextScale],
+      MyError["Invalid Wilson-chain scale while deriving Nmax."];
+    ];
+    If[!TrueQ[nextScale >= Tmin], Break[]];
+    If[Nmax >= 998,
+      MyError["Automatic Nmax exceeds the maximum supported value of 998."];
+    ];
+    Nmax++;
+  ];
   MyPrint["Tmin=", Tmin, " ==> Nmax=", Nmax];
 ];
 

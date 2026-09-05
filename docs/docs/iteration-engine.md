@@ -45,7 +45,9 @@ The flow is:
 7. prepare retained-state counts with `truncate_prepare(...)`
 8. catch `NotEnough` and optionally retry with a larger `diagratio`
 
-This is where the eigensolver policy and restart behavior meet.
+Retries apply to NRG partial diagonalization when `restart=true`. Each retry
+multiplies `diagratio` by `restartfactor`, caps it at `1`, and requires the new
+floating-point value to be strictly larger than the previous request.
 
 ## Hamiltonian Construction
 

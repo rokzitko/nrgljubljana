@@ -115,7 +115,7 @@ Builds made without the extended symmetry sets support only a subset. Complex
 
 | Parameter | Type | Default | Meaning |
 | --- | --- | --- | --- |
-| `Lambda` | number | `2.0` | Logarithmic discretization parameter; must be greater than `1`. |
+| `Lambda` | number | `2.0` | Logarithmic discretization parameter; must be finite and greater than `1`. |
 | `z` | number | `1.0` | Twist of the logarithmic mesh. |
 | `band` | string | `flat` | Band construction method. See the values below. |
 | `bandrescale` | number | `1` | Support and energy rescaling factor. |
@@ -125,8 +125,8 @@ Builds made without the extended symmetry sets support only a subset. Complex
 | `rungs` | boolean | `false` | Include channel-mixing terms for supported two-channel `QS` and `QSZ` calculations. |
 | `Ninit` | non-negative integer | `0` | Highest Wilson orbital included in the initial Hamiltonian. |
 | `Nmax` | positive integer | required unless derived | Requested chain length. It is mutually exclusive with an explicit `Tmin`. |
-| `Tmin` | number | unset | Derive `Nmax` from the lowest retained energy scale. |
-| `Tmin_ratio` | number | unset | If positive and `T` is also explicitly present and positive, set a provisional `Tmin=T*Tmin_ratio`; an explicit `Tmin` takes precedence. |
+| `Tmin` | number | unset | Derive `Nmax` from the lowest retained energy scale; must be finite and positive. |
+| `Tmin_ratio` | number | unset | If positive and `T` is also explicitly present, finite, and positive, set `Tmin=T*Tmin_ratio`; the product must also be finite. An explicit `Tmin` takes precedence. |
 | `tri` | string | `old` | Tridiagonalization implementation. |
 | `wilsonchain` | string | `legacy` | Coefficient-table interface. `matrix` is an experimental initializer output not consumed by a normal build. |
 | `prec` | integer | method-dependent | Mathematica precision used for tridiagonalization. |
@@ -145,6 +145,8 @@ coefficient files in the working directory. `none` intentionally emits no
 coefficient table and is only useful for an external hand-off; its direct
 `data` output is not runnable by the normal runtime. `nambu` is currently a
 zero-filled placeholder rather than a production tridiagonalization method.
+Automatic `Nmax` derivation stops with an error if the requested scale would
+require a value greater than `998`.
 
 Built-in `band` branches include `flat`, `cosine`, `dmft`, `nambu`, `manual`,
 `manual_V`, `asymode`, `adapt`, and `flat_with_bulk_field`. A value ending in
@@ -219,7 +221,7 @@ An empty string default means that the feature or list is disabled.
 | Parameter | Type | Default | Meaning |
 | --- | --- | --- | --- |
 | `symtype` | string | empty, but required | Symmetry name; it must match the header in `data`. |
-| `Lambda` | number | `2.0` | Logarithmic discretization; must be greater than `1`. |
+| `Lambda` | number | `2.0` | Logarithmic discretization; must be finite and greater than `1`. |
 | `discretization` | string | `Z` | `Y`, `C`, or `Z`; legacy names beginning with that uppercase character are accepted. |
 | `z` | number | `1.0` | Logarithmic-mesh twist. |
 | `bandrescale` | number | `1.0` | Band and energy rescaling factor. |
@@ -231,9 +233,9 @@ An empty string default means that the feature or list is disabled.
 | `diag` | string | `default` | Eigensolver. See [Eigensolvers and backends](#eigensolvers-and-backends). |
 | `saveram` | boolean | `false` | Request minimal documented LAPACK workspace sizes. |
 | `mult` | string | `blas` | Matrix multiplication backend, `blas` or `cuda`; case-insensitive. |
-| `diagratio` | number | `1.0` | Fraction of eigenpairs requested from partial eigensolvers; range `(0,1]`. |
+| `diagratio` | number | `1.0` | Fraction of eigenpairs requested from `dsyevr` and `zheevr`; must be finite and in `(0,1]`. |
 | `restart` | boolean | `true` | Retry partial diagonalization when too few states were found. |
-| `restartfactor` | number | `2.0` | Multiplier applied to `diagratio` on retry; values must exceed `1` for a failed partial solve to make progress. |
+| `restartfactor` | number | `2.0` | Multiplier applied to `diagratio` on retry; must be finite and greater than `1` when partial retries are active. |
 | `keep` | non-negative integer | `100` | Maximum retained states; must be greater than `1`. |
 | `keepenergy` | number | `-1.0` | Positive values enable a shell-rescaled energy cutoff; retention extends through the first state above the cutoff, subject to `keep`. |
 | `keepmin` | non-negative integer | `0` | Minimum retained states with energy-cutoff truncation; cannot exceed `keep`. |

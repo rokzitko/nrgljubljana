@@ -78,7 +78,17 @@ VARIANT        = paramdefault["variant", ""];
 OPTIONS        = paramdefault["options", ""];
 PERTURB        = paramdefault["perturb", ""];
 OPS            = paramdefault["ops", ""];
+finiteRealNumberQ[value_] := Module[{numeric = N[value]},
+  TrueQ[
+    NumericQ[value] && NumberQ[numeric] && Im[numeric] == 0 &&
+    Abs[numeric] =!= Overflow[] && Abs[numeric] =!= Underflow[]
+  ]
+];
+positiveFiniteRealNumberQ[value_] := finiteRealNumberQ[value] && TrueQ[value > 0];
 lambda         = N @ paramdefaultnum["Lambda", 2.0];
+If[!finiteRealNumberQ[lambda] || !TrueQ[lambda > 1],
+  MyError["Lambda must be finite and greater than 1."];
+];
 z              = N @ paramdefaultnum["z", 1.0];
 BAND           = paramdefault["band", "flat"];
 DEBUG          = paramdefaultnum["mmadebug", 1];
