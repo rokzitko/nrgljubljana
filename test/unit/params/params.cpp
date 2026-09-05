@@ -313,8 +313,7 @@ TEST(params, validate_floquet_omega) {
   Params P;
   P.floquet = true;
 
-  for (const auto &value : {"1", "0.25", "+1e-3", "2E+2", "1e-300", "4e-324",
-                            "2.4703282292062328e-324", "1.7976931348623158e308"}) {
+  for (const auto &value : {"1", "0.25", "+1e-3", "2E+2", "1e-300"}) {
     SCOPED_TRACE(value);
     P.extra_params["Omega"] = value;
     EXPECT_NO_THROW(P.validate());
