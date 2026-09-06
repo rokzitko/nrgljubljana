@@ -95,7 +95,7 @@ $z$-averaging.
 
 [Lesson 5](https://github.com/rokzitko/NRG_SIAM/tree/main/05_z_averaging)
 calculates the per-spin local impurity spectral function
-$A(\omega)=-\mathrm{Im}\,G_{d\sigma}^R(\omega)/\pi$ with FDM-NRG. The
+$A(\omega)=-\mathrm{Im}\ G_{d\sigma}^R(\omega)/\pi$ with FDM-NRG. The
 unbroadened, frequency-binned weights from four shifted logarithmic grids,
 $z=0.25, 0.50, 0.75, 1.00$, are averaged before a common broadening is applied.
 The figure shows $\pi\Gamma A(\omega)$: the narrow Kondo resonance is centered
@@ -108,17 +108,15 @@ No rescaling is used to impose the $T=0$ Friedel-sum-rule limit
 $\pi\Gamma A(0)=1$. At $T=10^{-5}D$ and the smallest nonzero mesh frequency,
 the four-grid average is $0.9986$. For each $z$, the unbroadened weights satisfy
 the zeroth-moment sum rule and the odd moments vanish by particle-hole symmetry;
-the averaged second moment is checked against the exact flat-band result. The
-lesson notes that $z$-averaging does not replace convergence checks in
-$\Lambda$, retained-state truncation, temperature, or broadening width.
+the averaged second moment is close to the exact flat-band result.
 
 ## Applications
 
 NRG Ljubljana is used for research on:
 
-- quantum dots, nanostructures, Kondo screening, and quantum phase transitions
-- superconducting impurities and Yu-Shiba-Rusinov states
-- molecular magnets, surface impurities, and multiorbital impurity models
+- quantum dots, nanostructures, Kondo screening, and impurity quantum phase transitions
+- magnetic impurities in superconductors and Yu-Shiba-Rusinov states
+- molecular magnets, multiorbital impurity models, and magnetic anisotropy physics
 - impurities in Dirac, Weyl, altermagnetic, and other structured hosts
 - dynamical mean-field theory (DMFT) and correlated materials
 - equilibrium reference calculations and benchmarks for other many-body methods
@@ -130,7 +128,7 @@ implementation in which NRG is the DMFT impurity solver. It uses the improved
 logarithmic discretization and self-energy estimator, accepts a user-specified
 tabulated noninteracting density of states, adjusts the chemical potential to
 the desired filling, and calculates single-particle spectra and transport
-coefficients.
+coefficients. It is a robust production-quality code.
 
 ## Publications Using NRG Ljubljana
 
