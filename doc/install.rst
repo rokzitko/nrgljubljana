@@ -40,7 +40,7 @@ them in descending version order::
 
 Select one of the listed tags in detached mode. For example::
 
-     $ git switch --detach 2026.06.1
+     $ git switch --detach 2026.09
 
 Then follow steps 2 to 4 above to compile the code. The current set of
 published versions is also available on the `GitHub releases page

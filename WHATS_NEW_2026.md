@@ -29,7 +29,7 @@ This release summarizes changes since the `2024.12` release, with major improvem
 - Tensor-product construction of phonon bases and mode-resolved operators has been generalized.
 - Superconducting Wilson chains can be instantiated using Nambu onsite and hopping coefficients.
 - Symmetry triangle inequalities are enforced before constructing reduced operator matrix elements.
-- [Floquet-NRG support](docs/docs/floquet-formalism.md) introduces Floquet bases
+- Floquet-NRG support introduces Floquet bases
   and quasienergy-aware truncation.
 - Three-channel `QST` calculations received important low-energy Hamiltonian and recalculation fixes.
 - Orbital-triplet operator generation and several SNEG symbolic-algebra operations were corrected.
@@ -40,7 +40,7 @@ This release summarizes changes since the `2024.12` release, with major improvem
 - `broaden` accepts arbitrary user-provided output-frequency meshes.
 - `adapt --flat Gamma` directly supports constant hybridization functions.
 - `hilb`, `kk`, `integ`, and `resample` can select GSL's monotonicity-preserving Steffen interpolation.
-- `integ` is now a unified integrator
+- `integ` is now a unified integrator.
 - Thermal Fermi and Bose kernels are stable at extreme energies and near the Bose pole.
 - FDM partition-function accumulators consistently retain high numerical precision.
 - Level-flow energies can be reported in user-selected or physical energy units.
@@ -66,6 +66,6 @@ nonstandard numerical-library configurations are required.
 ## Requirements And Compatibility
 
 - The C++ runtime requires a C++20 compiler.
-- CPU diagonalization now defaults to the divide-and-conquer LAPACK routines dsyevd and zheevd Numerical results should remain equivalent within floating-point tolerances.
+- CPU diagonalization now defaults to the divide-and-conquer LAPACK routines `dsyevd` and `zheevd`. Numerical results should remain equivalent within floating-point tolerances.
 - BLAS/LAPACK and OpenMP runtime selection is handled more explicitly. Users combining MPI with threaded numerical libraries should review their rank and thread settings to avoid oversubscription.
 - CUDA support is optional and must be enabled explicitly in source builds. It is not currently included in the standard conda-forge packages.
