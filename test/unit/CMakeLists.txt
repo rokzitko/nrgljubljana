@@ -42,7 +42,7 @@ foreach(test ${all_tests})
   nrgljubljana_apply_strict_floating_point(${test_name})
   set_property(TARGET ${test_name} PROPERTY RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${test_dir})
   set_property(TARGET ${test_name} PROPERTY BUILD_RPATH "${PROJECT_BINARY_DIR}/c++")
-  target_link_libraries(${test_name} nrgljubljana_c gtest_main project_warnings gsl)
+  target_link_libraries(${test_name} nrgljubljana_c gtest_main project_warnings gsl Threads::Threads)
   target_link_options(${test_name} PRIVATE  $<$<BOOL:${GCOV}>:--coverage>)
   target_include_directories(${test_name} PUBLIC
     ${CMAKE_CURRENT_BINARY_DIR}/include

@@ -204,6 +204,10 @@ install(TARGETS mpi EXPORT nrgljubljana-targets)
 # ############
 # Dependencies
 
+# Threaded tools and their tests must not rely on BLAS for thread linkage.
+set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+find_package(Threads REQUIRED)
+
 # HDF5
 find_package(HDF5 MODULE REQUIRED COMPONENTS C HL)
 add_library(hdf5 INTERFACE)
