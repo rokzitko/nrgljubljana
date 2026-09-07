@@ -162,10 +162,10 @@ Older scientific notes remain available under `doc/`.
 ## Citation
 
 If you use results produced with NRG Ljubljana, please cite the method paper
-and the archived software release:
+and the software release:
 
-- R. Zitko and T. Pruschke, "Energy resolution and discretization artifacts in the numerical renormalization group," *Physical Review B* **79**, 085106 (2009), [doi:10.1103/PhysRevB.79.085106](https://doi.org/10.1103/PhysRevB.79.085106).
-- R. Zitko, "NRG Ljubljana" (version 8f90ac4), Zenodo (2021), [doi:10.5281/zenodo.4841076](https://doi.org/10.5281/zenodo.4841076).
+- R. &#381;itko and T. Pruschke, "Energy resolution and discretization artifacts in the numerical renormalization group," *Physical Review B* **79**, 085106 (2009), [doi:10.1103/PhysRevB.79.085106](https://doi.org/10.1103/PhysRevB.79.085106).
+- R. &#381;itko, "NRG Ljubljana" (version 2026.09), Zenodo (6 September 2026), [doi:10.5281/zenodo.22547803](https://doi.org/10.5281/zenodo.22547803).
 
 [`CITATION.cff`](CITATION.cff) gives the software citation in a standard
 citation format.
@@ -180,7 +180,7 @@ citation format.
   application, example, model, benchmark, documentation improvement, or code
   change.
 - Visit the [project home page](http://nrgljubljana.ijs.si/) for additional background and examples.
-- Contact Rok Zitko at [rok.zitko@ijs.si](mailto:rok.zitko@ijs.si) for project and research inquiries.
+- Contact Rok &#381;itko at [rok.zitko@ijs.si](mailto:rok.zitko@ijs.si) for project and research inquiries.
 
 ## Advanced: Compilation from Source
 
@@ -311,7 +311,7 @@ NRG Ljubljana is distributed under the GNU General Public License. See `COPYING`
 
 ## Acknowledgements
 
-NRG Ljubljana started during Rok Zitko's PhD work at the University of
-Ljubljana and the "Jozef Stefan" Institute. The implementation reflects
+NRG Ljubljana started during Rok &#381;itko's PhD work at the University of
+Ljubljana and the Jo&#382;ef Stefan Institute. The implementation reflects
 collaboration and discussions with researchers in the NRG community and
 contributions from collaborators over many years.
