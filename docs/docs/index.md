@@ -47,6 +47,4 @@ codebase as it exists in the repository:
 - main data structures
 - testing and maintenance workflow
 
-It is not a full introduction to NRG theory. The older `doc/` tree remains
-available for legacy scientific material that has not yet moved into this
-site.
+It is not a full introduction to NRG theory.

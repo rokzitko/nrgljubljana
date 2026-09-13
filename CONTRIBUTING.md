@@ -62,10 +62,9 @@ Corrections to physical conventions, parameter definitions, equations, units,
 and explanations are especially valuable. Typographical fixes and reports of
 unclear passages are also welcome.
 
-Current documentation is under [`docs/docs/`](docs/docs/). The older `doc/`
-tree remains available while material is being moved. For a small correction,
-you may use the **Edit** link on a documentation page and let GitHub create the
-proposed change; a local source build is not required.
+Current documentation is under [`docs/docs/`](docs/docs/). For a small
+correction, you may use the **Edit** link on a documentation page and let
+GitHub create the proposed change; a local source build is not required.
 
 For a larger documentation change, build the current documentation from the
 repository root with:
@@ -226,13 +225,6 @@ Static analysis:
 ```sh
 cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$HOME/nrgljubljana/ -DANALYZE_SOURCES=ON
 cmake --build build --target nrgljubljana_c --parallel
-```
-
-Legacy Sphinx documentation, only when changing `doc/`:
-
-```sh
-cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$HOME/nrgljubljana/ -DBuild_Documentation=ON -DSphinx_Only=ON
-cmake --build build --target docs_sphinx --parallel
 ```
 
 Tests and tools are configured to prefer the freshly built `nrgljubljana_c`

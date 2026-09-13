@@ -15,17 +15,6 @@ The project covers:
 
 The framework started during Rok Zitko's PhD work at the University of Ljubljana and the "Jozef Stefan" Institute. Over time it accumulated a broad set of symmetry implementations, workflows, tests, and supporting tools.
 
-## Documentation Migration
-
-This MkDocs tree is being introduced to provide clearer contributor-facing documentation about:
-
-- code structure
-- runtime flow
-- main data structures
-- development workflow
-
-The legacy Sphinx material remains in `doc/` during the migration.
-
 ## Contact
 
 - home page: https://nrgljubljana.ijs.si/

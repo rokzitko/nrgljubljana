@@ -9,8 +9,7 @@
 - `test/`: unit tests, regression tests, tool tests, and Mathematica-driven integration suites
 - `share/`: installed package metadata and auxiliary CMake modules used by the build and downstream consumers
 - `scripts/`: helper scripts for inspecting or aggregating output files
-- `doc/`: legacy Sphinx documentation tree
-- `docs/`: new MkDocs documentation tree
+- `docs/`: documentation tree
 
 ## Core Native Code In `c++/`
 
@@ -68,12 +67,3 @@ The test tree is organized by style rather than by component:
 - `test/nrgspawn/`: prepared template-instantiation workflow tests
 - `test/nrginit*`, `test/models*`, `test/templates/`: Mathematica-dependent end-to-end workflows
 - `test/complex/`, `test/test_long/`: specialized or long-running suites
-
-## Documentation During Migration
-
-For now there are two documentation trees:
-
-- `doc/` is the existing Sphinx content
-- `docs/` is the new MkDocs content
-
-The intent is to move contributor-oriented documentation into `docs/` first, while keeping the existing material available during the transition.

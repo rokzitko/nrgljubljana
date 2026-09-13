@@ -109,9 +109,3 @@ For user-visible changes, verify all of the following before merging:
 - output triggers and layouts match their implementation
 - `python3 -m mkdocs build --strict -f docs/mkdocs.yml` succeeds from the
   repository root
-
-## Legacy And New Docs
-
-The `doc/` tree is still present during migration. New user and contributor
-documentation should go into `docs/` unless there is a strong reason to extend
-the legacy Sphinx content instead.

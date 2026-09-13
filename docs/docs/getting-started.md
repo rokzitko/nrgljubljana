@@ -107,7 +107,6 @@ Useful configure options:
 - `-DTEST_LONG=ON` enables long-running tests
 - `-DASAN=ON -DUBSAN=ON` enables sanitizer builds
 - `-DANALYZE_SOURCES=ON` turns on static analysis hooks
-- `-DBuild_Documentation=ON -DSphinx_Only=ON` builds the legacy Sphinx docs
 - `-DNRGLJUBLJANA_ENABLE_APP_OPENMP=ON|OFF` enables application-level OpenMP regions (default: `OFF`)
 - `-DNRGLJUBLJANA_ENABLE_CUDA=ON|OFF` requests CUDA/cuSOLVER support (default: `OFF`)
 - `-DNRGLJUBLJANA_ENABLE_MATHEMATICA=ON|OFF` controls `FindMathematica` (default: `OFF` on `aarch64`, `ON` otherwise)
@@ -229,9 +228,3 @@ It is normal for `nrg` to report initializer-only keys such as `model`, `U`,
 `Gamma`, `band`, and `Nmax` under `Unused settings`. Review the list because a
 misspelled runtime key appears in the same place. The complete ownership and
 syntax rules are in the [parameter reference](parameter-reference.md).
-
-## Legacy Documentation
-
-The older Sphinx documentation remains in `doc/` while this MkDocs tree is
-being expanded. Use this MkDocs site for the current build, workflow, parameter,
-and output references as well as contributor-facing code orientation.

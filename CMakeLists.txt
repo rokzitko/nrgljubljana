@@ -719,13 +719,6 @@ if(NRGLJUBLJANA_BUILD_TESTS_ENABLED)
   add_subdirectory(test)
 endif()
 
-# Build the documentation
-option(Build_Documentation "Build documentation" OFF)
-if(Build_Documentation AND NOT IS_SUBPROJECT)
-  message(STATUS "Documentation Build enabled")
-  add_subdirectory(doc)
-endif()
-
 # Additional configuration files
 add_subdirectory(share)
 

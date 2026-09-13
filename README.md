@@ -157,8 +157,6 @@ starting points are:
 - [compilation from source](docs/docs/getting-started.md)
 - [parallel execution and numerical-library threading](docs/docs/parallelism.md)
 
-Older scientific notes remain available under `doc/`.
-
 ## Citation
 
 If you use results produced with NRG Ljubljana, please cite the method paper
@@ -297,7 +295,6 @@ For MKL builds that use the `mkl_rt` dispatcher, set `-DNRGLJUBLJANA_MKL_THREADI
 - `test/`: numerical checks, reference calculations, and tests involving Mathematica
 - `share/`: CMake and environment files installed with NRG Ljubljana
 - `scripts/`: utilities for inspecting and combining numerical results
-- `doc/`: older scientific documentation
 - `docs/`: current documentation
 
 ## Contributing
