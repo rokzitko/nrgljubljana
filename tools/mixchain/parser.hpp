@@ -1,0 +1,46 @@
+// Channel-mixing discretization for NRG
+// ** Parsing of the parameter file
+
+#ifndef _mixchain_parser_hpp_
+#define _mixchain_parser_hpp_
+
+#include <fstream>
+#include <map>
+#include <string>
+
+#include <parse_bool.hpp>
+
+#include "../common/io.hpp"
+#include "../common/parser.hpp"
+
+namespace NRG::MixChain {
+
+class Params : public std::map<std::string, std::string> {
+ public:
+  explicit Params(const std::string &filename) {
+    std::ifstream F;
+    NRG::Tools::open_input(F, filename);
+    if (NRG::Tools::find_block(F, "param")) { NRG::Tools::parse_key_value_block(F, *this); }
+  }
+
+  auto P(const std::string &keyword, const double def) const {
+    return NRG::Tools::get_or_default(*this, keyword, def, [&keyword](const auto &value) {
+      return NRG::Tools::parse_parameter_double(value, keyword);
+    });
+  }
+  auto Pint(const std::string &keyword, const int def) const {
+    return NRG::Tools::get_or_default(*this, keyword, def, [&keyword](const auto &value) {
+      return NRG::Tools::parse_parameter_int(value, keyword);
+    });
+  }
+  auto Pstr(const std::string &keyword, const std::string &def) const {
+    return NRG::Tools::get_or_default(*this, keyword, def, [](const auto &value) { return value; });
+  }
+  auto Pbool(const std::string &keyword, const bool def) const {
+    return NRG::Tools::get_or_default(*this, keyword, def, [](const auto &value) { return NRG::parse_bool(value); });
+  }
+};
+
+} // namespace NRG::MixChain
+
+#endif
