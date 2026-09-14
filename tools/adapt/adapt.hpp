@@ -23,6 +23,9 @@
 
 #include "../common/gsl_config.hpp"
 #include "../common/tabulated_density.hpp"
+#include "../common/log_mesh.hpp"
+#include "../common/cumulative_weight.hpp"
+#include "../common/representative_energy.hpp"
 
 using namespace std;
 using namespace std::string_literals;
@@ -37,16 +40,11 @@ namespace NRG::Adapt {
 
 enum class FMethod { ODE, INTEGRAL };
 
-struct CquadOptions {
-  std::optional<double> epsabs;
-  std::optional<double> epsrel;
-  std::optional<std::size_t> workspace_limit;
-  std::optional<NRG::Tools::GslErrorPolicy> gsl_error_policy;
-};
+using CquadOptions = NRG::Tools::CquadOptions;
+using GslWorkspaceDeleter = NRG::Tools::GslWorkspaceDeleter;
 
-struct GslWorkspaceDeleter {
-  void operator()(gsl_integration_cquad_workspace *workspace) const { gsl_integration_cquad_workspace_free(workspace); }
-};
+using Mesh = NRG::Tools::LogMesh<LinInt>;
+using RepresentativeEnergy = NRG::Tools::IntegralRepresentativeEnergy<Mesh>;
 
 inline void add_zero_point(Vec &v, const double small = 1e-99)
 {
@@ -60,10 +58,9 @@ class Adapt {
  public:
    Params P;
    Sign sign;     // positive or negative frequencies
-   LAMBDA Lambda; // discretization parameter
+   Mesh mesh;     // eps(x): Lambda, g(x), hardgap/boundary
    Vec vecrho;    // Density of states (rho) in tabulated form
    NRG::Tools::TabulatedDensity rho;
-   LinInt g;
    double x;                                          // running x
    double y;                                          // running y(x)
    double max_error;                                  // maximum error in Delta(y)
@@ -79,15 +76,14 @@ class Adapt {
    NRG::Tools::InterpolationMethod density_interpolation = NRG::Tools::InterpolationMethod::linear;
    FMethod f_method = FMethod::ODE;                   // Method for calculating representative energies.
    CquadOptions cquad_options;                        // Optional controls for the integral method.
-   bool adapt; // If adapt=false --> g(x)=1.
-   bool hardgap;
-   double boundary;
+   NRG::Tools::CumulativeWeight cumulative;           // normalized W(omega) and its generalized inverse
+   RepresentativeEnergy representative_energy;        // integral method, built in the constructor
     double intA; // intA=int_0^1 rho(w) dw.
    double A;    // parameter in the shooting method. Initially A=intA. Equal to intA if adapt=false.
    // Right-hand-side of the differential equation. y=g !
    auto rhs_G(const double x_, const double y_) {
-     const auto powL = Lambda.power(2.0 - x_);
-     return Lambda.logL() * (y_ - A / rho(y_ * powL));
+     const auto powL = mesh.Lambda.power(2.0 - x_);
+     return mesh.Lambda.logL() * (y_ - A / rho(y_ * powL));
    }
    void save(std::ostream &OUT) { OUT << x << " " << y << std::endl; }
    void advance_output_target(double &target) const {
@@ -159,11 +155,11 @@ class Adapt {
      }
      if (check_f) {
        // Sanity checks
-       const double dEdx      = dy/dx - y*Lambda.logL();
+       const double dEdx      = dy/dx - y*mesh.Lambda.logL();
        const double tolerance = 1e-5;
        if (dEdx >= 0.0) { // E(x) must be monotonously decreasing!
          std::cerr << "WARNING: dE/dx is not negative." << std::endl;
-         std::cerr << " x=" << x << " y=" << y << " dEdx=" << dEdx << " dy/dx=" << dy/dx << " y*log(Lambda)=" << y*Lambda.logL() << std::endl;
+         std::cerr << " x=" << x << " y=" << y << " dEdx=" << dEdx << " dy/dx=" << dy/dx << " y*log(Lambda)=" << y*mesh.Lambda.logL() << std::endl;
        }
        if (dEdx > tolerance)
          throw std::runtime_error("Tolerance criterium not satisfied.");
@@ -211,7 +207,7 @@ class Adapt {
      const auto factor = A / rho(0);
      const auto ratio  = y / factor;
      std::cout << "#  x_last=" << x << " " << "g_last/factor=" << ratio << std::endl;
-     std::cout << "#  eps_last=" << y * Lambda.power(2 - x) << " max_error=" << max_error << std::endl;
+     std::cout << "#  eps_last=" << y * mesh.Lambda.power(2 - x) << " max_error=" << max_error << std::endl;
      return std::make_pair(ratio, vecg);
    }
     void init_A() {
@@ -253,130 +249,26 @@ class Adapt {
      } while (iter < max_iter);
      throw std::runtime_error("Secant method failed to converge in " + std::to_string(max_iter) + " steps.");
    }
-   // Rescaling of omega for excluding finite intervals around omega=0. The new accumulation point is determined by
-   // the variable 'boundary'.
-   auto rescale(const double omega) { return (1.0 - boundary) * omega + boundary; }
-   // eps(x) = D g(x) Lambda^(2-x) for x>2.
-   auto eps(const double x_) {
-     const auto gx = adapt ? g(x_) : 1.0;
-     double epsilon  = x_ <= 2.0 ? 1.0 : gx * Lambda.power(2.0-x_);
-     if (hardgap) { epsilon = rescale(epsilon); }
-     return epsilon;
-   }
-   // Eps(x) = D f(x) Lambda^(2-x)
-   inline auto Eps(const double x_, const double f) {
-     assert(x_ >= 1 && f > 0);
-     return f * Lambda.power(2.0-x_);
-   }
-    double cumulative_total{};
-    Vec cumulative_plateaus;
-    void init_cumulative() {
-      cumulative_total  = rho.integral(0.0, 1.0);
-     if (!(std::isfinite(cumulative_total) && cumulative_total > 0.0)) {
-       throw std::runtime_error("Integral method requires positive spectral weight in [0,1].");
-     }
-     cumulative_plateaus.clear();
-     for (std::size_t i = 0; i + 1 < vecrho.size();) {
-       if (vecrho[i].second == 0.0 && vecrho[i + 1].second == 0.0) {
-         std::size_t last = i + 1;
-         while (last + 1 < vecrho.size() && vecrho[last + 1].second == 0.0) { last++; }
-         const double lower = std::max(0.0, vecrho[i].first);
-         double upper = std::min(1.0, vecrho[last].first);
-         if (last + 1 == vecrho.size() && upper < 1.0) upper = 1.0;
-         if (lower < upper) {
-           const double midpoint = lower + (upper - lower) / 2.0;
-           cumulative_plateaus.emplace_back(normalized_cumulative(midpoint), upper);
-         }
-         i = last;
-       } else {
-         i++;
-       }
-     }
-    }
-    double normalized_cumulative(const double omega) {
-      return rho.integral(0.0, omega) / cumulative_total;
-   }
-   // Generalized inverse of W. For a zero-density plateau, return its upper edge.
-    auto inverse_normalized_cumulative(const double weight) {
-     for (const auto &[plateau_weight, upper_edge] : cumulative_plateaus) {
-       if (weight == plateau_weight) return upper_edge;
-     }
-     double lower = 0.0;
-     double upper = 1.0;
-     while (true) {
-       const double midpoint = lower + (upper - lower) / 2.0;
-       if (midpoint == lower || midpoint == upper) break;
-       if (normalized_cumulative(midpoint) <= weight) {
-         lower = midpoint;
-       } else {
-         upper = midpoint;
-       }
-     }
-      return lower + (upper - lower) / 2.0;
-    }
-    void handle_cquad_result(const int status, const double result, const double error, const double lower) const {
-      if (!NRG::Tools::gsl_integration_failed(status, result, error)) return;
-      const auto message = status != GSL_SUCCESS
-                             ? "Integral method failed at x=" + std::to_string(lower) + ": " + gsl_strerror(status)
-                             : "Integral method produced a non-finite CQUAD result or error estimate at x="
-                                 + std::to_string(lower);
-      switch (cquad_options.gsl_error_policy.value_or(NRG::Tools::GslErrorPolicy::fail)) {
-        case NRG::Tools::GslErrorPolicy::ignore: break;
-        case NRG::Tools::GslErrorPolicy::warn: std::cerr << "adapt: warning: " << message << std::endl; break;
-        case NRG::Tools::GslErrorPolicy::fail: throw std::runtime_error(message);
-      }
-    }
-    auto integrate_cumulative(const double lower,
-                             const double upper,
-                             gsl_integration_cquad_workspace *workspace) {
-     const NRG::Tools::GslErrorHandlerGuard error_handler;
-     gsl_function integrand;
-     integrand.function = [](const double value, void *context) {
-       auto *self = static_cast<Adapt *>(context);
-       return self->normalized_cumulative(self->eps(value));
-     };
-     integrand.params = this;
-
-     double result = 0.0;
-     double error  = 0.0;
-     std::size_t evaluations = 0;
-     const double epsabs = cquad_options.epsabs.value_or(0.0);
-     const double epsrel = cquad_options.epsrel.value_or(allowed_error);
-     NRG::Tools::validate_cquad_tolerances(epsabs, epsrel);
-     const int status = gsl_integration_cquad(&integrand, lower, upper, epsabs, epsrel, workspace,
-                                              &result, &error, &evaluations);
-     handle_cquad_result(status, result, error, lower);
-     max_error = std::max(max_error, error);
-     return result;
+   // The mesh eps(x), the cumulative weight W and the integral method now live in tools/common; what follows are
+   // forwarders that keep the interface of this class unchanged.
+   auto eps(const double x_) { return mesh.eps(x_); }
+   void init_cumulative() { cumulative = NRG::Tools::CumulativeWeight(rho, vecrho); }
+   double normalized_cumulative(const double omega) { return cumulative.normalized(omega); }
+   auto inverse_normalized_cumulative(const double weight) { return cumulative.inverse(weight); }
+   void handle_cquad_result(const int status, const double result, const double error, const double lower) const {
+     representative_energy.handle_cquad_result(status, result, error, lower);
    }
    // Evaluate the representative energy from the integrated cumulative weight.
    auto Eps_integral(const double x_, gsl_integration_cquad_workspace *workspace) {
-     assert(x_ >= 1.0);
-     if (x_ == 1.0) return 1.0;
-
-     double weight;
-     if (x_ < 2.0) {
-       weight = 2.0 - x_;
-       weight += integrate_cumulative(2.0, x_ + 1.0, workspace);
-     } else {
-       weight = integrate_cumulative(x_, x_ + 1.0, workspace);
-     }
-
-     constexpr double tolerance = 100.0 * DBL_EPSILON;
-     if (!std::isfinite(weight) || weight < -tolerance || weight > 1.0 + tolerance) {
-       throw std::runtime_error("Integral method produced a cumulative weight outside [0,1] at x="
-                                + std::to_string(x_));
-     }
-     weight = std::clamp(weight, 0.0, 1.0);
-     return inverse_normalized_cumulative(weight);
+     return representative_energy.Eps(x_, workspace);
    }
    // Right-hand-side of the differential equation. y=f !
    auto rhs_F(const double x_, const double y_) {
       assert(std::isfinite(x_));
       assert(std::isfinite(y_));
-      const double term1 = Lambda.logL() * y_;
+      const double term1 = mesh.Lambda.logL() * y_;
       const double integral = rho.integral(eps(x_ + 1), eps(x_));
-     const double powL     = Lambda.power(2.0 - x_);
+     const double powL     = mesh.Lambda.power(2.0 - x_);
      const double denom    = powL * rho(y_ * powL);
      double term2 = integral / denom;
      if (denom == 0.0) {
@@ -401,8 +293,8 @@ class Adapt {
       std::cout << "# rho(0)=" << rho(0) << " rho(1)=" << rho(1) << std::endl;
     }
    void report_parameters() {
-     std::cout << "# ++ " << (adapt ? "ADAPTIVE" : "FIXED-GRID") << std::endl;
-     std::cout << "# Lambda=" << Lambda;
+     std::cout << "# ++ " << (mesh.adapt ? "ADAPTIVE" : "FIXED-GRID") << std::endl;
+     std::cout << "# Lambda=" << mesh.Lambda;
      std::cout << " bandrescale=" << bandrescale;
      std::cout << " xmax=" << xmax;
      std::cout << " xfine=" << xfine;
@@ -417,12 +309,12 @@ class Adapt {
    }
    void set_parameters(const int PREC = 16) {
      std::cout << std::setprecision(PREC);
-     Lambda = LAMBDA(P.P("Lambda", 2.0));
-     if (!(Lambda > 1.0)) throw std::invalid_argument("Lambda must be greater than 1.");
-      adapt = P.Pbool("adapt", false); // Enable adaptable g(x)? Default is false!!
-      hardgap  = P.Pbool("hardgap", false); // Exclude an interval around omega=0 ?
-      boundary = P.P("boundary", 0.0);      // The boundary of the exclusion interval.
-      if (hardgap && !(boundary >= 0.0 && boundary < 1.0))
+     mesh.Lambda = LAMBDA(P.P("Lambda", 2.0));
+     if (!(mesh.Lambda > 1.0)) throw std::invalid_argument("Lambda must be greater than 1.");
+      mesh.adapt = P.Pbool("adapt", false); // Enable adaptable g(x)? Default is false!!
+      mesh.hardgap  = P.Pbool("hardgap", false); // Exclude an interval around omega=0 ?
+      mesh.boundary = P.P("boundary", 0.0);      // The boundary of the exclusion interval.
+      if (mesh.hardgap && !(mesh.boundary >= 0.0 && mesh.boundary < 1.0))
         throw std::invalid_argument("boundary must be in [0,1) when hardgap=true.");
       bandrescale = P.P("bandrescale", 1.0); // band rescaling parameter
       if (!(std::isfinite(bandrescale) && bandrescale > 0.0))
@@ -465,6 +357,8 @@ class Adapt {
          const CquadOptions &cquad_options_ = {})
      : P(P_), sign(sign_), flat_gamma(flat_gamma_), cquad_options(cquad_options_) {
      set_parameters();
+     representative_energy = RepresentativeEnergy(mesh, cumulative, cquad_options, allowed_error, max_error,
+                                                 NRG::Tools::WarnToCerr{"adapt: warning: "});
      if (force_integral) {
        f_method = FMethod::INTEGRAL;
      } else {
@@ -484,14 +378,14 @@ class Adapt {
    void load_or_calc_g() {
      const auto vecg = P.Pbool("loadg", false) ? load_g(g_fn(sign)) : calc_g();
      minmaxvec(vecg, "g");
-     g = LinInt(vecg);
+     mesh.g = LinInt(vecg);
    }
    void report() {
-     const double factor = Lambda.factor() * A / rho(0);
+     const double factor = mesh.Lambda.factor() * A / rho(0);
      std::cout << "# x_last=" << x << std::endl;
      std::cout << "# f_last=" << y << " [f_last/factor=" << y / factor << "]" << std::endl;
      std::cout << "# eps_last=" << eps(x) << " (smallest energy point considered [input])" << std::endl;
-     std::cout << "# Eps_last=" << y * Lambda.power(2 - x) << " (smallest energy scale obtained [output])" << std::endl;
+     std::cout << "# Eps_last=" << y * mesh.Lambda.power(2 - x) << " (smallest energy scale obtained [output])" << std::endl;
      std::cout << "# max_error=" << max_error << " (maximum integration error)" << std::endl;
    }
    void calc_f() {
@@ -501,7 +395,7 @@ class Adapt {
      double dx = dx_fine; // initial step size
      // Initial conditions
      x         = 1.0;
-     y         = 1.0 / Lambda; // y=f here!
+     y         = 1.0 / mesh.Lambda; // y=f here!
      max_error = 0.0;
      save(OUTF); // save x=1 data point
      double x_st = x; // Target x for next output line
@@ -533,7 +427,7 @@ class Adapt {
      safe_open(OUTF, f_fn(sign));
      rho(1); // NECESSARY!
      x         = 1.0;
-     y         = 1.0 / Lambda;
+     y         = 1.0 / mesh.Lambda;
      max_error = 0.0;
      save(OUTF);
      double x_st = x;
@@ -541,7 +435,7 @@ class Adapt {
        advance_output_target(x_st);
        x = x_st;
        const double energy = Eps_integral(x, workspace.get());
-       y = energy / Lambda.power(2.0 - x);
+       y = energy / mesh.Lambda.power(2.0 - x);
        if (!(std::isfinite(y) && y > 0.0)) {
          throw std::runtime_error("Integral method produced a non-positive or non-finite f(x) at x=" + std::to_string(x));
        }
@@ -555,7 +449,7 @@ class Adapt {
    void run() {
      load_init_rho();
      init_A();
-     if (adapt) { load_or_calc_g(); }
+     if (mesh.adapt) { load_or_calc_g(); }
      if (f_method == FMethod::ODE) {
        calc_f();
      } else {

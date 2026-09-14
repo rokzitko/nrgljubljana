@@ -220,10 +220,10 @@ void report_configuration(const CommandLineOptions &options, const Adapt &calc) 
   report.value("density_integration", "exact interpolant primitive");
   report.value("frequency_min", 0.0);
   report.value("frequency_max", 1.0);
-  report.value("Lambda", static_cast<double>(calc.Lambda));
-  report.value("adaptive_mesh", calc.adapt);
-  report.value("hardgap", calc.hardgap);
-  report.value("boundary", calc.boundary);
+  report.value("Lambda", static_cast<double>(calc.mesh.Lambda));
+  report.value("adaptive_mesh", calc.mesh.adapt);
+  report.value("hardgap", calc.mesh.hardgap);
+  report.value("boundary", calc.mesh.boundary);
   report.value("bandrescale", calc.bandrescale);
   report.value("x_min", 1.0);
   report.value("xmax", calc.xmax);
@@ -237,7 +237,7 @@ void report_configuration(const CommandLineOptions &options, const Adapt &calc) 
   report.value("secant_eps", calc.convergence_eps);
   report.value("secant_factor", calc.P.P("secant_factor", 1e-7));
   report.value("secant_max_iter", calc.max_iter);
-  if (!calc.adapt) {
+  if (!calc.mesh.adapt) {
     report.resolved("load_g", "inactive", "adaptive_mesh=false");
     report.resolved("g_file", "inactive", "adaptive_mesh=false");
   } else {
