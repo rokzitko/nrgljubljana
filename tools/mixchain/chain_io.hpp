@@ -34,7 +34,7 @@ namespace NRG::MixChain {
 //   channels     the dimension N of every block
 //   Nmax         the last site; the chain has the sites 0..Nmax
 //   z, Lambda    the discretization the star was built with
-//   bandrescale  the band rescaling applied to Gamma; the coefficients are in the rescaled band, whose edge is 1
+//   bandrescale  the band rescaling that was applied to Gamma when it was read
 //   complex      1 if the coefficients are complex, 0 if real. It fixes the number of columns.
 //   digits       the decimal digits of the arithmetic the recursion ran in
 //
@@ -51,12 +51,19 @@ namespace NRG::MixChain {
 // V_ij multiplies d_i^dag f_{0j}, (E_n)_ij multiplies f_{ni}^dag f_{nj}, and (T_n)_ij multiplies f_{n+1,i}^dag f_{nj}.
 // In the polar gauge V and every T_n are Hermitian positive semidefinite and every E_n is Hermitian.
 //
+// Units: the discretization runs in the band rescaled to the edge 1, but E_n and T_n are written multiplied by
+// bandrescale, in the units of the input. That is what nrgchain writes into xi.dat and zeta.dat, which apply the
+// same factor, and what nrg expects, since its SCALE(N) carries bandrescale as well. V needs no factor: rescaling
+// omega and Gamma leaves the integral of Gamma, hence Theta and V, unchanged.
+//
 // The recursion runs in multiprecision because the late coefficients fall off as Lambda^(-n/2), but the result is
 // written as double with 18 significant digits, as nrgchain writes xi.dat: the extra digits are needed to get the
 // recursion right, not to use its result.
 //
-// V is in the normalization of the input, V^2 = Theta = pi sum_k V_k V_k^dag for the physical couplings V_k. A
-// writer for a particular symmetry type of nrg applies the factor sqrt(1/pi) where it needs the physical amplitude.
+// V is in the normalization of the input: V^2 = Theta = int Gamma domega, whatever Gamma was given. With the
+// convention of the dos file of adapt, where Gamma is pi times the spectral function, that is pi sum_k V_k V_k^dag
+// for the physical couplings V_k, and a writer for a symmetry type of nrg applies the factor sqrt(1/pi) where it
+// needs the physical amplitude.
 
 inline constexpr auto chain_default_filename = "chain.dat";
 
@@ -78,11 +85,12 @@ template<typename S> void write_element(std::ostream &out, const S &x) {
 }
 
 template<typename S>
-void write_block(std::ostream &out, const char *name, const unsigned int site, const Matrix<S> &block) {
+void write_block(std::ostream &out, const char *name, const unsigned int site, const Matrix<S> &block,
+                 const double factor = 1.0) {
   for (Eigen::Index i = 0; i < block.rows(); i++) {
     for (Eigen::Index j = 0; j < block.cols(); j++) {
       out << name << " " << site << " " << i + 1 << " " << j + 1;
-      write_element(out, block(i, j));
+      write_element(out, make_scalar<S>(static_cast<real_type<S>>(factor), 0) * block(i, j));
       out << "\n";
     }
   }
@@ -106,9 +114,11 @@ template<typename S> void save_chain(const Chain<S> &chain, const ChainFileHeade
       << " min_residual_condition=" << d.min_residual_condition << std::endl;
   out << (is_complex_v<S> ? "# block n i j Re Im" : "# block n i j value") << std::endl;
 
+  // The recursion runs in the rescaled band; E_n and T_n are written in the units of the input. V is invariant under
+  // the rescaling and is written as it is.
   detail::write_block(out, "V", 0, chain.V);
-  for (unsigned int n = 0; n < chain.E.size(); n++) detail::write_block(out, "E", n, chain.E[n]);
-  for (unsigned int n = 0; n < chain.T.size(); n++) detail::write_block(out, "T", n, chain.T[n]);
+  for (unsigned int n = 0; n < chain.E.size(); n++) detail::write_block(out, "E", n, chain.E[n], header.bandrescale);
+  for (unsigned int n = 0; n < chain.T.size(); n++) detail::write_block(out, "T", n, chain.T[n], header.bandrescale);
   out.flush();
 }
 

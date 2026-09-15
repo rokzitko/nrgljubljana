@@ -48,24 +48,37 @@ as `Delta.dat` does for the scalar tools.
 - Every file must be tabulated on one and the same frequency grid; the input is never reinterpolated.
 - $\Gamma_{ji}$ is checked against $\Gamma_{ij}^*$ relative to the largest element of $\Gamma$, with tolerance `hermiticity_tolerance`, and $\Gamma$ is then symmetrized to $(\Gamma+\Gamma^\dagger)/2$. Positive semidefiniteness is checked at every node.
 
-**Normalization.** As for the `dos` file of `adapt` and `nrgchain`, the input is $\pi$ times the spectral function
-of the hybridization function. With
+**Normalization.** `mixchain` fixes none: it discretizes the $\Gamma$ it is given. An overall factor leaves every
+$E_n$ and $T_n$ unchanged and scales only the hybridization weight
+
+$$
+\Theta = \int\Gamma\,d\omega, \qquad V = \Theta^{1/2},
+$$
+
+so $V$ comes out in the normalization of the input and the convention is a question of what the consumer of the
+chain expects. With
 
 $$
 \Delta(z) = \sum_k \frac{V_k V_k^\dagger}{z-\epsilon_k}, \qquad
-\Gamma(\omega) = -\frac{1}{2\pi i}\left[\Delta(\omega+i0^+) - \Delta(\omega+i0^+)^\dagger\right]
+\rho(\omega) = -\frac{1}{2\pi i}\left[\Delta(\omega+i0^+) - \Delta(\omega+i0^+)^\dagger\right]
 = \sum_k V_k V_k^\dagger\,\delta(\omega-\epsilon_k),
 $$
 
-the files hold $\Gamma_{\rm in}(\omega) = \pi\,\Gamma(\omega)$, which for $N=1$ is $-{\rm Im}\,\Delta(\omega+i0^+)$.
-An overall factor in $\Gamma$ leaves every chain coefficient unchanged and scales only the hybridization weight
-$\Theta = \int\Gamma_{\rm in}\,d\omega = \pi\sum_k V_kV_k^\dagger$, so the convention matters only for the impurity
-coupling.
+feeding $\pi\rho$, which for $N=1$ is $-{\rm Im}\,\Delta(\omega+i0^+)$, is the convention of the `dos` file of
+`adapt` and `nrgchain`: then $\Theta = \pi\sum_k V_kV_k^\dagger$ and the physical coupling is $V/\sqrt{\pi}$, the
+factor `nrginit` applies as ${\rm hybV} = \sqrt{1/\pi}\,V$. Feeding $\rho$ itself makes $V$ the physical coupling
+directly.
 
 **Band.** `bandrescale` maps the band edge to 1: $\omega\to\omega/$`bandrescale` and $\Gamma\to\Gamma\cdot$`bandrescale`,
-which leaves $\int\Gamma\,d\omega$ unchanged. The mesh reaches only $|\omega|\le1$, so weight tabulated beyond the band
-edge is discarded, and where the input stops short of the edge the density is continued at its last tabulated value.
-Both are reported per diagonal element when they occur.
+which leaves $\int\Gamma\,d\omega$ unchanged. The discretization runs in the rescaled band, and so do the level
+energies of `star.dat`, which belong to its mesh. `chain.dat` is written in the units of the input instead: $E_n$ and
+$T_n$ carry the factor `bandrescale` back, as `nrgchain` applies it to `xi.dat` and `zeta.dat`, and as `nrg` expects,
+since its ${\rm SCALE}(N)$ carries `bandrescale` too. $\Theta$ and $V$ need no factor, since the rescaling leaves
+$\int\Gamma\,d\omega$ alone. Both files record `bandrescale` in their header.
+
+The mesh reaches only $|\omega|\le1$, so weight tabulated beyond the band edge is discarded, and where the input
+stops short of the edge the density is continued at its last tabulated value. Both are reported per diagonal element
+when they occur.
 
 ## Parameters
 
@@ -253,7 +266,7 @@ One row per matrix element. The second line is the header. With several blocks i
 | --- | --- |
 | `channels` | Dimension of every block. |
 | `Nmax` | Last site. |
-| `z`, `Lambda`, `bandrescale` | As in `star.dat`. |
+| `z`, `Lambda`, `bandrescale` | As in `star.dat`; $E_n$ and $T_n$ are written multiplied by `bandrescale`. |
 | `complex` | `1` if the coefficients are complex, `0` if real. |
 | `digits` | Decimal digits of the arithmetic the recursion ran in. |
 
@@ -265,8 +278,10 @@ One row per matrix element. The second line is the header. With several blocks i
 | `value` | The element; for `complex=1` a pair `Re Im`. |
 
 $V_{ij}$ multiplies $d_i^\dagger f_{0j}$, $(E_n)_{ij}$ multiplies $f_{ni}^\dagger f_{nj}$, and $(T_n)_{ij}$
-multiplies $f_{n+1,i}^\dagger f_{nj}$. $V$ is in the normalization of the input, $V^2 = \Theta$; the physical
-coupling is $V/\sqrt{\pi}$.
+multiplies $f_{n+1,i}^\dagger f_{nj}$. $E_n$ and $T_n$ are in the units of the input, carrying the factor
+`bandrescale` back as the Band paragraph above describes. $V$ is in the normalization of the input,
+$V^2 = \Theta = \int\Gamma\,d\omega$; with the $\pi\rho$ convention of `adapt` the physical coupling is
+$V/\sqrt{\pi}$.
 
 ## Log
 
