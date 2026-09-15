@@ -168,6 +168,15 @@ class Mesh {
 
   [[nodiscard]] auto adaptive() const { return adaptive_; }
 
+  // The point the intervals accumulate at, the limit of eps(x) for x -> infinity: zero for the plain fixed mesh,
+  // boundary with hardgap, and for the adaptive mesh the edge of a region where the weight vanishes, if the band
+  // starts with one.
+  auto accumulation_point() {
+    auto point = adaptive_ ? invert(0.0) : 0.0;
+    if (log_mesh_.hardgap) point = log_mesh_.rescale(point);
+    return point;
+  }
+
   // Not const: evaluating the weight density updates its caches.
   auto eps(const double x_) {
     if (!adaptive_) return log_mesh_.eps(x_);

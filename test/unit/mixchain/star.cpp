@@ -3,6 +3,7 @@
 #include <cmath>
 #include <complex>
 #include <functional>
+#include <limits>
 #include <stdexcept>
 #include <vector>
 
@@ -291,6 +292,36 @@ TEST(MixChainStar, reports_intervals_that_hold_no_node_of_the_input) { // NOLINT
   }
   fine.neg = fine.pos;
   EXPECT_EQ(build_star(fine, base_options()).diagnostics.coverage_pos.unresolved_intervals, 0);
+}
+
+TEST(MixChainStar, counts_levels_that_collapse_onto_the_accumulation_point) { // NOLINT
+  // With hardgap the levels approach boundary=0.5 as 0.5 (1-1/Lambda)/ln(Lambda) Lambda^(-m); doubles near 0.5 are
+  // 1.1e-16 apart, so beyond m of about 52 the energies can no longer be told apart from 0.5.
+  const auto input = make_input<double>([](const double) { return scalar<double>(0.3); });
+  auto options     = base_options();
+  options.mMAX     = 80;
+  options.hardgap  = true;
+  options.boundary = 0.5;
+  const auto star  = build_star(input, options);
+
+  const auto &coverage = star.diagnostics.coverage_pos;
+  EXPECT_DOUBLE_EQ(coverage.accumulation_point, 0.5);
+  EXPECT_GT(coverage.collapsed_levels, 20);
+  EXPECT_LT(coverage.collapsed_levels, 35);
+
+  // The collapsed levels are exactly the inert ones, with no weight, and they sit on the accumulation point or on a
+  // neighbouring double: here the density does not vanish below it, so they land just above rather than on it.
+  int inert = 0;
+  for (const auto &level : select(star, Sign::POS, 0)) {
+    if (level.coupling.norm() != 0.0) continue;
+    inert++;
+    EXPECT_LE(std::abs(level.energy - 0.5), 4.0 * std::numeric_limits<double>::epsilon() * 0.5);
+  }
+  EXPECT_EQ(inert, coverage.collapsed_levels); // one channel, so one level per collapsed interval
+
+  // Accumulating at zero, the energies keep their relative precision and nothing collapses.
+  options.hardgap = false;
+  EXPECT_EQ(build_star(input, options).diagnostics.coverage_pos.collapsed_levels, 0);
 }
 
 TEST(MixChainStar, rejects_invalid_options) { // NOLINT

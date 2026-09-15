@@ -4,11 +4,16 @@
 // J.-G. Liu, D. Wang and Q.-H. Wang, PRB 93, 035102 (2016). See README.md.
 
 #include <algorithm>
+#include <chrono>
+#include <cmath>
+#include <complex>
 #include <cstdlib>
 #include <ctime>
+#include <iomanip>
 #include <iostream>
 #include <limits>
 #include <ostream>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 
@@ -18,9 +23,12 @@
 #include "../common/gsl_config.hpp"
 #include "../common/tabulated_density.hpp"
 #include "branches.hpp"
+#include "chain.hpp"
+#include "chain_io.hpp"
 #include "load.hpp"
 #include "mesh.hpp"
 #include "parser.hpp"
+#include "precision.hpp"
 #include "star.hpp"
 #include "star_io.hpp"
 #include "types.hpp"
@@ -49,8 +57,9 @@ void usage(std::ostream &F = std::cout) {
   F << " --epsrel VALUE -- relative tolerance of the integral method" << std::endl;
   F << " --workspace-limit VALUE -- size of the integration workspace" << std::endl;
   F << " --gsl-error-policy fail|warn|ignore -- how to report integration failures" << std::endl;
-  F << " s -- discretize and save the star" << std::endl;
-  F << " l -- load the star and tridiagonalize" << std::endl;
+  F << " s -- discretize Gamma and write the star to star.dat" << std::endl;
+  F << " l -- read the star from star.dat, tridiagonalize, and write the chain to chain.dat" << std::endl;
+  F << " (no mode) -- both, one after the other" << std::endl;
 }
 
 struct CommandLineOptions {
@@ -141,11 +150,14 @@ struct Configuration {
   GammaOptions gamma;
   StarOptions star;
   bool mmax_from_nmax{};
+  ChainOptions chain;
+  unsigned int preccpp{};
 };
 
-Configuration read_configuration(const Params &P, const CommandLineOptions &command_line) {
-  Configuration configuration;
+auto builds_star(const Mode mode) { return mode != Mode::Chain; }
+auto builds_chain(const Mode mode) { return mode != Mode::Star; }
 
+void read_star_configuration(const Params &P, const CommandLineOptions &command_line, Configuration &configuration) {
   configuration.gamma.prefix                = P.Pstr("dos_prefix", "Gamma");
   configuration.gamma.channels              = P.Pint("channels", 1);
   configuration.gamma.bandrescale           = P.P("bandrescale", 1.0);
@@ -179,6 +191,29 @@ Configuration read_configuration(const Params &P, const CommandLineOptions &comm
   } else {
     throw std::invalid_argument("Either mMAX or Nmax must be given.");
   }
+}
+
+void read_chain_configuration(const Params &P, Configuration &configuration) {
+  if (!P.contains("Nmax")) throw std::invalid_argument("Nmax must be given to build the chain.");
+  const auto nmax = P.Pint("Nmax", 0);
+  if (nmax <= 0) throw std::invalid_argument("Nmax must be greater than 0.");
+  configuration.chain.Nmax = static_cast<unsigned int>(nmax);
+
+  configuration.chain.breakdown_tolerance = P.P("breakdown_tolerance", 1e-20);
+  if (!(std::isfinite(configuration.chain.breakdown_tolerance) && configuration.chain.breakdown_tolerance > 0.0))
+    throw std::invalid_argument("breakdown_tolerance must be a positive finite number.");
+
+  // As in nrgchain, in bits. It is rounded up to the precision ladder of precision.hpp.
+  const auto preccpp = P.Pint("preccpp", 2000);
+  if (preccpp <= 10) throw std::invalid_argument("preccpp must be greater than 10.");
+  configuration.preccpp = static_cast<unsigned int>(preccpp);
+  resolve_precision(configuration.preccpp); // fail before the star stage runs, not after it
+}
+
+Configuration read_configuration(const Params &P, const CommandLineOptions &command_line) {
+  Configuration configuration;
+  if (builds_star(command_line.mode)) read_star_configuration(P, command_line, configuration);
+  if (builds_chain(command_line.mode)) read_chain_configuration(P, configuration);
   return configuration;
 }
 
@@ -191,13 +226,26 @@ const char *mode_name(const Mode mode) {
   return "unknown";
 }
 
+void report_star_configuration(const Configuration &configuration, NRG::Tools::ConfigurationReport &report);
+
 void report_configuration(const Configuration &configuration, const CommandLineOptions &command_line) {
   if (command_line.verbosity == 0) return;
-  const auto &star = configuration.star;
   NRG::Tools::ConfigurationReport report("mixchain");
   report.value("verbosity", command_line.verbosity);
   report.value("parameter_file", command_line.param_filename);
   report.value("mode", mode_name(command_line.mode));
+  if (builds_star(command_line.mode)) report_star_configuration(configuration, report);
+  if (builds_chain(command_line.mode)) {
+    report.value("Nmax", configuration.chain.Nmax);
+    report.value("preccpp", configuration.preccpp);
+    report.resolved("digits", resolve_precision(configuration.preccpp), "smallest precision rung covering preccpp");
+    report.value("breakdown_tolerance", configuration.chain.breakdown_tolerance);
+  }
+  report.write(std::cerr);
+}
+
+void report_star_configuration(const Configuration &configuration, NRG::Tools::ConfigurationReport &report) {
+  const auto &star = configuration.star;
   report.value("channels", configuration.gamma.channels);
   report.value("dos_prefix", configuration.gamma.prefix);
   report.value("Lambda", static_cast<double>(star.Lambda));
@@ -218,7 +266,6 @@ void report_configuration(const Configuration &configuration, const CommandLineO
   report.value("branch_ordering", branch_ordering_name(star.branches.ordering));
   report.value("allowed_error", star.allowed_error);
   report.value("hermiticity_tolerance", configuration.gamma.hermiticity_tolerance);
-  report.write(std::cerr);
 }
 
 template<typename S> void report_star(const Star<S> &star, std::ostream &out) {
@@ -237,6 +284,10 @@ template<typename S> void report_star(const Star<S> &star, std::ostream &out) {
   const auto precision = out.precision(std::numeric_limits<double>::max_digits10);
   for (const auto &[name, coverage] : {std::pair{"POS", &diagnostics.coverage_pos},
                                        std::pair{"NEG", &diagnostics.coverage_neg}}) {
+    if (coverage->collapsed_levels > 0)
+      out << "# " << name << ": " << coverage->collapsed_levels
+          << " representative energy levels are indistinguishable from the accumulation point "
+          << coverage->accumulation_point << " in double precision" << std::endl;
     if (coverage->unresolved_intervals == 0) continue;
     out << "# " << name << ": " << coverage->unresolved_intervals << " of " << star.mMAX + 1
         << " intervals contain no tabulated point of the input, the outermost being [" << coverage->unresolved_to
@@ -268,18 +319,73 @@ template<typename S> void run_star(const Configuration &configuration) {
   std::cout << "# star written to " << star_default_filename << std::endl;
 }
 
-void run(const CommandLineOptions &command_line) {
-  if (command_line.mode != Mode::Star)
-    throw std::runtime_error("The chain stage is not implemented yet; use 's' to compute the star.");
+// The star is self-contained: the chain is built with the Lambda, z and bandrescale it records. A parameter file that
+// sets any of them to something else was meant for a different star, so that is an error rather than a silent choice.
+template<typename S> void check_star_against_parameters(const Star<S> &star, const Params &P) {
+  const auto check = [&P](const std::string &name, const double recorded) {
+    if (!P.contains(name)) return;
+    const auto requested = P.P(name, recorded);
+    if (std::abs(requested - recorded) <= 1e-12 * std::max(1.0, std::abs(recorded))) return;
+    std::ostringstream message;
+    message << std::setprecision(17) << "The star in " << star_default_filename << " was built with " << name << "="
+            << recorded << ", but the parameter file gives " << name << "=" << requested << ".";
+    throw std::invalid_argument(message.str());
+  };
+  check("Lambda", star.Lambda);
+  check("z", star.z);
+  check("bandrescale", star.bandrescale);
+}
 
+template<typename S> void report_chain(const Chain<S> &chain, const unsigned digits, std::ostream &out) {
+  const auto &d = chain.diagnostics;
+  out << "# chain: sites=" << chain.Nmax + 1 << " channels=" << chain.channels << " digits=" << digits << std::endl;
+  out << "# theta_condition=" << d.theta_condition << " min_residual_condition=" << d.min_residual_condition
+      << std::endl;
+  out << "# max_antihermitian=" << d.max_antihermitian << " max_reorthogonalization=" << d.max_reorthogonalization
+      << std::endl;
+}
+
+// The chain is built from star.dat also in the default mode, right after the star stage has written it, so that the
+// default mode and 's' followed by 'l' produce the same chain by construction.
+template<typename S0> void run_chain(const Configuration &configuration, const Params &P) {
+  const auto star = load_star<S0>(star_default_filename);
+  check_star_against_parameters(star, P);
+  const auto digits = resolve_precision(configuration.preccpp);
+  with_precision_like<S0>(configuration.preccpp, [&]<typename S>() {
+    const auto chain = build_chain<S>(star, configuration.chain);
+    report_chain(chain, digits, std::cout);
+    save_chain(chain, ChainFileHeader{star.z, star.Lambda, star.bandrescale, digits}, chain_default_filename);
+  });
+  std::cout << "# chain written to " << chain_default_filename << std::endl;
+}
+
+// Wall-clock time of one stage, for comparing the cost of the two.
+template<typename F> void timed(const char *stage, F &&f) {
+  const auto start = std::chrono::steady_clock::now();
+  f();
+  const auto seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+  std::cout << "# " << stage << " stage: " << seconds << " s" << std::endl;
+}
+
+void run(const CommandLineOptions &command_line) {
   const Params P(command_line.param_filename);
   const auto configuration = read_configuration(P, command_line);
   report_configuration(configuration, command_line);
 
-  if (gamma_is_complex(configuration.gamma))
-    run_star<std::complex<double>>(configuration);
-  else
-    run_star<double>(configuration);
+  if (builds_star(command_line.mode))
+    timed("star", [&] {
+      if (gamma_is_complex(configuration.gamma))
+        run_star<std::complex<double>>(configuration);
+      else
+        run_star<double>(configuration);
+    });
+  if (builds_chain(command_line.mode))
+    timed("chain", [&] {
+      if (star_is_complex(star_default_filename))
+        run_chain<std::complex<double>>(configuration, P);
+      else
+        run_chain<double>(configuration, P);
+    });
 }
 
 } // namespace

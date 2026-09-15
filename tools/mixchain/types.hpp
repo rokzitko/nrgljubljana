@@ -17,18 +17,10 @@ namespace NRG::MixChain {
 template<typename S> using Matrix = Eigen::Matrix<S, -1, -1, Eigen::RowMajor>;
 template<typename S> using Vector = Eigen::Matrix<S, -1, 1>;
 
-template<typename T> struct scalar_traits {
-  using real_type                   = T;
-  static constexpr bool is_complex = false;
-};
-
-template<typename T> struct scalar_traits<std::complex<T>> {
-  using real_type                   = T;
-  static constexpr bool is_complex = true;
-};
-
-template<typename S> using real_type = typename scalar_traits<S>::real_type;
-template<typename S> inline constexpr bool is_complex_v = scalar_traits<S>::is_complex;
+// Through Eigen's traits rather than by naming std::complex, so that the multiprecision scalars of the block
+// Lanczos stage are covered by the same definitions.
+template<typename S> using real_type = typename Eigen::NumTraits<S>::Real;
+template<typename S> inline constexpr bool is_complex_v = Eigen::NumTraits<S>::IsComplex != 0;
 
 // Assemble a scalar from its real and imaginary parts. For a real S the imaginary part is dropped, and the caller is
 // responsible for having checked that it vanishes.

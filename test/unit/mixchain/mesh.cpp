@@ -129,6 +129,24 @@ TEST(MixChainMesh, adaptive_mesh_accumulates_at_the_edge_of_a_gap) { // NOLINT
   EXPECT_NEAR(mesh.eps(30.0), expected_eps(30.0), 1e-12);
 }
 
+TEST(MixChainMesh, knows_its_accumulation_point) { // NOLINT
+  Mesh fixed(lambda, false, 0.0);
+  EXPECT_EQ(fixed.accumulation_point(), 0.0);
+
+  Mesh gapped(lambda, true, 0.1);
+  EXPECT_DOUBLE_EQ(gapped.accumulation_point(), 0.1); // the boundary
+
+  // The adaptive mesh finds the edge of a region where the weight vanishes, and zero when there is none.
+  auto adaptive_gap = adaptive_mesh(weight_table({0.0, 0.2, 1.0}, {0.0, 0.0, 1.0}));
+  EXPECT_DOUBLE_EQ(adaptive_gap.accumulation_point(), 0.2);
+  auto adaptive_flat = adaptive_mesh(flat_weight());
+  EXPECT_EQ(adaptive_flat.accumulation_point(), 0.0);
+
+  // Both limits are what eps(x) actually approaches.
+  EXPECT_NEAR(gapped.eps(60.0), gapped.accumulation_point(), 1e-15);
+  EXPECT_NEAR(adaptive_gap.eps(60.0), adaptive_gap.accumulation_point(), 1e-8);
+}
+
 TEST(MixChainMesh, weight_table_offers_the_frobenius_norm_and_the_trace) { // NOLINT
   const auto branch = diagonal_branch<double>(0.3, 0.4);
   const auto frobenius = mesh_weight_table(branch, MeshWeight::frobenius);

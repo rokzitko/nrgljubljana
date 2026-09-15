@@ -136,6 +136,12 @@ Example, for `channels=2` with real data:
 - The frequencies at which the tracked and the sorted branch orderings diverge.
 - Whether the mesh reaches below the innermost tabulated frequency, in which case the density there is the constant
   continuation of the input — exact for a flat band, an approximation for anything with structure at low frequency.
+- How many representative energy levels are indistinguishable from the accumulation point of the mesh in double
+  precision. Near an accumulation point away from zero — set by `hardgap`, or found by the adaptive mesh at a gap
+  edge — the distance to it eventually drops below the spacing of doubles there, and the levels collapse onto it.
+  The bounds of their intervals collapse with them, so these levels carry no weight: they are inert, the star is in
+  effect truncated at that point, and the last levels before it lose relative accuracy in their weights.
+  Accumulating at zero, the energies keep their relative precision and this does not happen.
 - How many intervals hold no node of the input tabulation, and from which frequency downwards. There the star
   follows the interpolant between two tabulated points rather than the data. It happens wherever the mesh resolves
   more finely than the input: at the bottom of the band, and around an accumulation point set by `hardgap` or found

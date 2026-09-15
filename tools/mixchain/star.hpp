@@ -71,6 +71,18 @@ struct BranchCoverage {
   int unresolved_intervals{};
   double unresolved_from{}; // the upper edge of the outermost such interval
   double unresolved_to{};   // and its lower edge
+  // Levels lost to double precision near the accumulation point of the mesh. Near an accumulation point away from
+  // zero, set by hardgap or found by the adaptive mesh at a gap edge, the distance to it falls below the spacing of
+  // doubles there: the two bounds of an interval become the same number, the interval has no width, and its levels
+  // carry no weight. They are inert, the star is in effect truncated there, and the last levels before it lose
+  // relative accuracy in their weights, which are differences of nearly equal numbers. Near zero the bounds keep their
+  // relative precision and this does not happen.
+  //
+  // The count is of levels in intervals whose bounds coincide, which is what makes them inert. It is not a comparison
+  // of the energies with the accumulation point: those land on it or on a neighbouring double, depending on whether
+  // the density vanishes below it.
+  double accumulation_point{};
+  int collapsed_levels{};
   [[nodiscard]] auto continued() const { return innermost_input > 0.0 && lowest_mesh < innermost_input; }
 };
 
@@ -157,6 +169,7 @@ void discretize_sign(const GammaBranch<S> &branch, const Sign sign, const StarOp
   }
 
   BranchCoverage coverage;
+  coverage.accumulation_point = mesh.accumulation_point();
   for (unsigned int m = 0; m <= options.mMAX; m++) {
     const auto x     = options.z + m + 1.0;
     const auto upper = mesh.eps(x);
@@ -171,6 +184,8 @@ void discretize_sign(const GammaBranch<S> &branch, const Sign sign, const StarOp
         coverage.unresolved_to   = lower;
       }
     }
+    // Bounds that are the same double: the interval has no width, and every level in it no weight.
+    if (lower == upper) coverage.collapsed_levels += static_cast<int>(channels);
 
     std::vector<double> weights(channels), energies(channels);
     for (std::size_t a = 0; a < channels; a++) {
