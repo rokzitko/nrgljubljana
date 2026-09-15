@@ -93,7 +93,9 @@ template<typename S> void save_chain(const Chain<S> &chain, const ChainFileHeade
   out << "# channels=" << chain.channels << " Nmax=" << chain.Nmax << " z=" << header.z << " Lambda=" << header.Lambda
       << " bandrescale=" << header.bandrescale << " complex=" << (is_complex_v<S> ? 1 : 0)
       << " digits=" << header.digits << std::endl;
-  out << "# theta_condition=" << d.theta_condition << " max_antihermitian=" << d.max_antihermitian
+  out << "# theta_rank=" << d.theta_rank << " min_rank=" << d.min_rank << " rank_drop_site="
+      << (d.rank_drop_site ? std::to_string(*d.rank_drop_site) : std::string("none"))
+      << " theta_condition=" << d.theta_condition << " max_antihermitian=" << d.max_antihermitian
       << " max_reorthogonalization=" << d.max_reorthogonalization
       << " min_residual_condition=" << d.min_residual_condition << std::endl;
   out << (is_complex_v<S> ? "# block n i j Re Im" : "# block n i j value") << std::endl;

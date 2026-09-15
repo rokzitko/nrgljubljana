@@ -213,9 +213,9 @@ void read_chain_configuration(const Params &P, Configuration &configuration) {
   if (nmax <= 0) throw std::invalid_argument("Nmax must be greater than 0.");
   configuration.chain.Nmax = static_cast<unsigned int>(nmax);
 
-  configuration.chain.breakdown_tolerance = P.P("breakdown_tolerance", 1e-20);
-  if (!(std::isfinite(configuration.chain.breakdown_tolerance) && configuration.chain.breakdown_tolerance > 0.0))
-    throw std::invalid_argument("breakdown_tolerance must be a positive finite number.");
+  configuration.chain.rank_tolerance = P.P("rank_tolerance", 1e-20);
+  if (!(std::isfinite(configuration.chain.rank_tolerance) && configuration.chain.rank_tolerance > 0.0))
+    throw std::invalid_argument("rank_tolerance must be a positive finite number.");
 
   // As in nrgchain, in bits. It is rounded up to the precision ladder of precision.hpp.
   const auto preccpp = P.Pint("preccpp", 2000);
@@ -255,7 +255,7 @@ void report_configuration(const Configuration &configuration, const CommandLineO
     report.value("Nmax", configuration.chain.Nmax);
     report.value("preccpp", configuration.preccpp);
     report.resolved("digits", resolve_precision(configuration.preccpp), "smallest precision rung covering preccpp");
-    report.value("breakdown_tolerance", configuration.chain.breakdown_tolerance);
+    report.value("rank_tolerance", configuration.chain.rank_tolerance);
   }
   report.write(std::cerr);
 }
@@ -398,10 +398,23 @@ void check_star_against_parameters(const Star<S> &star, const Params &P, const T
 template<typename S> void report_chain(const Chain<S> &chain, const unsigned digits, std::ostream &out) {
   const auto &d = chain.diagnostics;
   out << "# chain: sites=" << chain.Nmax + 1 << " channels=" << chain.channels << " digits=" << digits << std::endl;
-  out << "# theta_condition=" << d.theta_condition << " min_residual_condition=" << d.min_residual_condition
-      << std::endl;
+  out << "# theta_rank=" << d.theta_rank << " theta_condition=" << d.theta_condition
+      << " min_residual_condition=" << d.min_residual_condition << std::endl;
   out << "# max_antihermitian=" << d.max_antihermitian << " max_reorthogonalization=" << d.max_reorthogonalization
       << std::endl;
+  // A Theta of lower rank is a property of Gamma, and the chain is exact for it; a drop further down is not.
+  if (d.theta_rank < chain.channels) {
+    const auto decoupled = chain.channels - d.theta_rank;
+    out << "# Theta has rank " << d.theta_rank << " of " << chain.channels << ": " << decoupled << " combination"
+        << (decoupled == 1 ? "" : "s") << " of the impurity orbitals do" << (decoupled == 1 ? "es" : "")
+        << " not couple to the bath, and its part of the chain is zero" << std::endl;
+  }
+  if (d.rank_drop_site)
+    std::cerr << "mixchain: warning: the rank of the hopping drops below " << d.theta_rank << " at site "
+              << *d.rank_drop_site << " (smallest rank " << d.min_rank
+              << "): the Krylov space of the star is exhausted in some direction, and the chain is zero in it from "
+                 "there on. The star probably has too few levels with nonzero coupling; increase mMAX or decrease "
+                 "Nmax." << std::endl;
 }
 
 // The chain is built from star.dat also in the default mode, right after the star stage has written it, so that the

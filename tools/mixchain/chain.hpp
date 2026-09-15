@@ -6,10 +6,8 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <iomanip>
 #include <limits>
 #include <optional>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -43,19 +41,21 @@ namespace NRG::MixChain {
 
 struct ChainOptions {
   unsigned int Nmax{0}; // the chain has the sites 0..Nmax
-  // A matrix that is inverted on the way, Theta or the Gram matrix of a residual block, counts as singular when its
-  // smallest eigenvalue is below this fraction of its largest. Relative, so that it means the same at every
-  // precision.
-  double breakdown_tolerance{1e-20};
+  // An eigenvalue of a Gram matrix, of Theta or of R^dag R for a residual block, counts as zero when it is below this
+  // fraction of the largest one. Relative, so that it means the same at every precision.
+  double rank_tolerance{1e-20};
 };
 
 struct ChainDiagnostics {
-  double theta_condition{};         // the smallest eigenvalue of Theta over its largest
+  int theta_rank{};                 // the number of combinations of the impurity orbitals that couple to the bath
+  double theta_condition{};         // the smallest nonzero eigenvalue of Theta over its largest; 0 if Theta is zero
   double max_antihermitian{};       // the largest anti-Hermitian part removed from an on-site block, relative to it
   double max_reorthogonalization{}; // the largest component along the earlier blocks removed from a residual, relative
-  // The smallest lambda_min/lambda_max of the Gram matrix R^dag R of a residual over the whole chain. A breakdown is
-  // raised only below the tolerance; this says how close a run that did not break down came to it.
+  // The smallest lambda_min/lambda_max over the nonzero eigenvalues of the Gram matrices R^dag R along the chain. It
+  // says how close a direction came to being counted as zero.
   double min_residual_condition{1.0};
+  int min_rank{};                            // the smallest rank of a hopping T_n
+  std::optional<unsigned int> rank_drop_site; // the first n at which the rank of T_n is below theta_rank
 };
 
 template<typename S> struct Chain {
@@ -107,51 +107,39 @@ template<typename S, typename StarScalar> auto to_wide(const Star<StarScalar> &s
   return wide;
 }
 
-// Raised when a matrix that the recursion has to invert is singular: Theta itself, when Gamma is rank deficient over
-// the whole band, or the Gram matrix of a residual block part-way down the chain, when the Krylov space has run out.
-class ChainBreakdown : public std::runtime_error {
- private:
-  std::optional<unsigned int> site_; // empty for Theta, before the first site
-  int rank_{};
-  int channels_{};
-  double condition_{};
-
- public:
-  ChainBreakdown(const std::string &message, const std::optional<unsigned int> site, const int rank,
-                 const int channels, const double condition)
-    : std::runtime_error(message), site_(site), rank_(rank), channels_(channels), condition_(condition) {}
-
-  [[nodiscard]] auto site() const { return site_; }
-  [[nodiscard]] auto rank() const { return rank_; }
-  [[nodiscard]] auto channels() const { return channels_; }
-  [[nodiscard]] auto condition() const { return condition_; }
-};
-
 namespace detail {
 
-// The square root of a Hermitian positive semidefinite matrix, the inverse of that root, and the ratio of its
-// smallest to its largest eigenvalue.
+// The square root of a Hermitian positive semidefinite matrix and its pseudo-inverse, with the number of eigenvalues
+// kept as nonzero and the ratio of the smallest kept one to the largest.
 template<typename S> struct HermitianRoot {
   Matrix<S> root;
   Matrix<S> inverse;
+  int rank{};
   double condition{};
 };
 
-// The breakdown tolerance actually applied: the requested one, but never below what rounding alone produces in this
+// The rank tolerance actually applied: the requested one, but never below what rounding alone produces in this
 // arithmetic. In double precision an exactly singular matrix still shows a smallest eigenvalue of about 1e-16 of the
-// largest, which a fixed tolerance of 1e-20 would take for a regular one; at 800 digits the requested tolerance
+// largest, which a fixed tolerance of 1e-20 would take for a nonzero one; at 800 digits the requested tolerance
 // governs.
 template<typename S> double effective_tolerance(const double tolerance) {
   const auto epsilon = static_cast<double>(std::numeric_limits<real_type<S>>::epsilon());
   return std::max(tolerance, 1000.0 * epsilon);
 }
 
-// G^(1/2) and G^(-1/2) from a single eigendecomposition, for the Gram matrix G of a block: Theta at the start, where
-// the root is the impurity coupling V and the inverse turns A into the first Lanczos block, and R^dag R at every
-// step, where the root is the hopping T_n and the inverse normalizes the residual R into the next block. 'site'
-// names where this happens for the breakdown message, and is empty for Theta.
-template<typename S>
-auto hermitian_root(const Matrix<S> &gram, const double tolerance, const std::optional<unsigned int> site) {
+// G^(1/2) and the pseudo-inverse G^(+1/2) from a single eigendecomposition, for the Gram matrix G of a block: Theta at
+// the start, where the root is the impurity coupling V and the inverse turns A into the first Lanczos block, and
+// R^dag R at every step, where the root is the hopping T_n and the inverse normalizes the residual R into the next
+// block.
+//
+// Eigenvalues below the tolerance times the largest are set to zero in both, so the directions they belong to drop
+// out of the next block and their part of the chain is zero from there on. A relative test cannot tell when every
+// direction is rounding, as when the Krylov space of a single channel runs out; so the largest eigenvalue is also
+// compared with 'scale', the squared norm of the block before its projection, H Q_n for a residual. Rounding makes
+// the residual of order epsilon times that norm, and a hopping that is really there is far above it. For Theta the
+// scale is zero: Theta is formed directly from the star, and is zero only when every coupling is.
+template<typename S> auto hermitian_root(const Matrix<S> &gram, const real_type<S> &scale, const double tolerance) {
+  using std::sqrt; // for double; the wide types are found by argument-dependent lookup
   const auto n = gram.rows();
   // G is Hermitian mathematically, but its (i,j) and (j,i) elements are different sums.
   const ColumnMajor<S> symmetric = (make_scalar<S>(0.5, 0) * (gram + gram.adjoint())).eval();
@@ -159,38 +147,30 @@ auto hermitian_root(const Matrix<S> &gram, const double tolerance, const std::op
   if (solver.info() != Eigen::Success)
     throw std::runtime_error("Diagonalization of a Gram matrix failed in the block Lanczos recursion.");
 
-  const auto &lambda   = solver.eigenvalues(); // real and ascending
-  const auto largest   = lambda(n - 1);
-  const auto condition = largest > 0 ? static_cast<double>(lambda(0) / largest) : 0.0;
-  const auto threshold = effective_tolerance<S>(tolerance);
+  const auto &lambda      = solver.eigenvalues(); // real and ascending
+  const auto largest      = lambda(n - 1);
+  const auto epsilon      = std::numeric_limits<real_type<S>>::epsilon();
+  const auto rounding     = real_type<S>(1000) * epsilon;
+  const bool all_rounding = !(largest > 0) || largest <= rounding * rounding * scale;
+  const auto threshold    = real_type<S>(effective_tolerance<S>(tolerance)) * largest;
 
-  if (!(largest > 0) || condition < threshold) {
-    int rank = 0;
-    for (Eigen::Index i = 0; i < n; i++)
-      if (largest > 0 && static_cast<double>(lambda(i) / largest) >= threshold) rank++;
-    const auto channels = static_cast<int>(n);
-    std::ostringstream ratio; // std::to_string would print a ratio of 1e-17 as 0.000000
-    ratio << std::setprecision(3) << condition;
-    const auto figures = "rank " + std::to_string(rank) + " of " + std::to_string(channels) + ", smallest eigenvalue "
-                         + ratio.str() + " times the largest";
-    if (!site)
-      throw ChainBreakdown("Theta is singular (" + figures + "): Gamma is rank deficient over the whole band, so the "
-                           "bath couples to fewer combinations of the impurity orbitals than there are channels.",
-                           site, rank, channels, condition);
-    throw ChainBreakdown("The block Lanczos recursion broke down at site " + std::to_string(*site) + " (" + figures
-                           + "): the Krylov space of the star is exhausted. The star needs at least channels*(Nmax+1) "
-                             "levels with nonzero coupling.",
-                         site, rank, channels, condition);
-  }
-
-  const auto roots = lambda.cwiseSqrt().eval();
+  Vector<real_type<S>> roots          = Vector<real_type<S>>::Zero(n);
+  Vector<real_type<S>> inverse_roots  = Vector<real_type<S>>::Zero(n);
   HermitianRoot<S> result;
+  if (!all_rounding) {
+    for (Eigen::Index i = 0; i < n; i++) {
+      if (lambda(i) < threshold) continue;
+      if (result.rank == 0) result.condition = static_cast<double>(lambda(i) / largest); // the smallest one kept
+      roots(i)         = sqrt(lambda(i));
+      inverse_roots(i) = 1 / roots(i);
+      result.rank++;
+    }
+  }
+  const auto &U = solver.eigenvectors();
   // The root becomes V or T_n, which are Hermitian; the product U diag U^dag is so only up to rounding.
-  const Matrix<S> root = solver.eigenvectors() * roots.template cast<S>().asDiagonal() * solver.eigenvectors().adjoint();
+  const Matrix<S> root = U * roots.template cast<S>().asDiagonal() * U.adjoint();
   result.root          = make_scalar<S>(0.5, 0) * (root + root.adjoint());
-  result.inverse   = solver.eigenvectors() * roots.cwiseInverse().template cast<S>().asDiagonal()
-                   * solver.eigenvectors().adjoint();
-  result.condition = condition;
+  result.inverse       = U * inverse_roots.template cast<S>().asDiagonal() * U.adjoint();
   return result;
 }
 
@@ -222,8 +202,8 @@ auto build_chain(const WideStar<S> &star, const ChainOptions &options,
   if (channels < 1) throw std::invalid_argument("The star has no channels.");
   if (options.Nmax < 1) throw std::invalid_argument("Nmax must be greater than 0.");
   // A chain of Nmax+1 sites spans a Krylov space of dimension channels*(Nmax+1), which the star must be able to hold.
-  // Levels with vanishing coupling can make the space that is actually reached smaller still; that shows up as a
-  // breakdown at a definite site.
+  // Levels with vanishing coupling can make the space that is actually reached smaller still; that shows up as a drop
+  // in the rank of a hopping, rank_drop_site in the diagnostics.
   const auto needed = channels * static_cast<Eigen::Index>(options.Nmax + 1);
   if (levels < needed)
     throw std::invalid_argument("The star has " + std::to_string(levels) + " levels, but a chain of "
@@ -243,9 +223,11 @@ auto build_chain(const WideStar<S> &star, const ChainOptions &options,
   for (Eigen::Index k = 0; k < levels; k++) energies(k) = make_scalar<S>(star.energies[static_cast<std::size_t>(k)], 0);
 
   const Matrix<S> theta = star.start.adjoint() * star.start;
-  const auto start      = detail::hermitian_root<S>(theta, options.breakdown_tolerance, std::nullopt);
+  const auto start      = detail::hermitian_root<S>(theta, real_type<S>(0), options.rank_tolerance);
   chain.V                     = start.root;
+  diagnostics.theta_rank      = start.rank;
   diagnostics.theta_condition = start.condition;
+  diagnostics.min_rank        = start.rank;
 
   std::vector<Matrix<S>> blocks;
   blocks.reserve(options.Nmax + 1);
@@ -282,8 +264,10 @@ auto build_chain(const WideStar<S> &star, const ChainOptions &options,
     if (residual.squaredNorm() < before / 2) residual -= detail::component_along(residual, blocks);
 
     const Matrix<S> gram = residual.adjoint() * residual;
-    const auto step      = detail::hermitian_root<S>(gram, options.breakdown_tolerance, n);
-    diagnostics.min_residual_condition = std::min(diagnostics.min_residual_condition, step.condition);
+    const auto step      = detail::hermitian_root<S>(gram, hq.squaredNorm(), options.rank_tolerance);
+    if (step.rank > 0) diagnostics.min_residual_condition = std::min(diagnostics.min_residual_condition, step.condition);
+    diagnostics.min_rank = std::min(diagnostics.min_rank, step.rank);
+    if (step.rank < diagnostics.theta_rank && !diagnostics.rank_drop_site) diagnostics.rank_drop_site = n;
     chain.T.push_back(step.root);
     blocks.push_back(residual * step.inverse);
   }

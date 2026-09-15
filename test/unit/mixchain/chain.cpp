@@ -228,27 +228,98 @@ TEST(MixChainChain, real_data_in_complex_arithmetic_stays_real) { // NOLINT
   for (const auto &block : chain.T) EXPECT_LT(imaginary(block), 1e-45);
 }
 
-TEST(MixChainChain, a_singular_theta_is_a_breakdown_before_the_first_site) { // NOLINT
-  // Every coupling proportional to (1, i): the chiral case, where Theta has rank 1 of 2.
+TEST(MixChainChain, a_singular_theta_gives_a_zero_chain_for_the_decoupled_combination) { // NOLINT
+  // Every coupling is c_k (1, i) = sqrt(2) c_k u with u = (1, i)/sqrt(2): the chiral case, where Theta has rank 1 of 2.
+  // The combination orthogonal to u does not couple to the bath. Along u the chain is that of the scalar star with
+  // couplings c_k, with V scaled by sqrt(2): every block is the scalar one times the projector u u^dag.
+  const auto scalar = arbitrary_star<double>(1, 12);
   Star<std::complex<double>> star;
   star.channels = 2;
-  for (int k = 0; k < 12; k++) {
+  for (const auto &scalar_level : scalar.levels) {
     StarLevel<std::complex<double>> level;
-    level.energy   = (k % 2 ? -1.0 : 1.0) * std::pow(2.0, -k);
+    level.energy   = scalar_level.energy;
     level.coupling = Vector<std::complex<double>>(2);
-    level.coupling << std::complex<double>(0.2, 0.0), std::complex<double>(0.0, 0.2);
+    level.coupling << std::complex<double>(scalar_level.coupling(0), 0.0), std::complex<double>(0.0, scalar_level.coupling(0));
     star.levels.push_back(level);
   }
-  try {
-    build_chain<Complex>(star, chain_options(3));
-    FAIL() << "no breakdown";
-  } catch (const ChainBreakdown &breakdown) {
-    EXPECT_FALSE(breakdown.site().has_value());
-    EXPECT_EQ(breakdown.rank(), 1);
-    EXPECT_EQ(breakdown.channels(), 2);
+  Matrix<std::complex<double>> projector(2, 2);
+  projector << 0.5, std::complex<double>(0.0, -0.5), std::complex<double>(0.0, 0.5), 0.5;
+
+  const auto reference = build_chain<Real>(scalar, chain_options(4));
+  const auto check     = [&]<typename S>(const double tolerance) {
+    const auto chain       = build_chain<S>(star, chain_options(4));
+    const Matrix<S> u      = projector.cast<S>();
+    const auto scalar_of   = [](const Real &x) { return make_scalar<S>(static_cast<real_type<S>>(x), 0); };
+    EXPECT_EQ(chain.diagnostics.theta_rank, 1);
+    EXPECT_EQ(chain.diagnostics.min_rank, 1);
+    EXPECT_FALSE(chain.diagnostics.rank_drop_site.has_value());
+    EXPECT_LT(largest<S>(chain.V - scalar_of(sqrt(Real(2)) * reference.V(0, 0)) * u), tolerance);
+    for (unsigned int n = 0; n <= chain.Nmax; n++)
+      EXPECT_LT(largest<S>(chain.E[n] - scalar_of(reference.E[n](0, 0)) * u), tolerance) << "site " << n;
+    for (unsigned int n = 0; n < chain.Nmax; n++)
+      EXPECT_LT(largest<S>(chain.T[n] - scalar_of(reference.T[n](0, 0)) * u), tolerance) << "site " << n;
+  };
+  check.template operator()<Complex>(1e-40);
+  // In double precision rounding leaves a small but nonzero eigenvalue of Theta; the tolerance floor still catches it.
+  check.template operator()<std::complex<double>>(1e-13);
+}
+
+TEST(MixChainChain, a_rank_drop_mid_chain_continues_with_zeros) { // NOLINT
+  // A diagonal star: channel 0 has 12 levels, channel 1 only 2, so the Krylov space of channel 1 runs out after two
+  // sites. The hopping T_1 has rank 1, and the chain of channel 1 is zero from site 2 on.
+  const auto first  = arbitrary_star<double>(1, 12);
+  const auto second = arbitrary_star<double>(1, 2);
+  Star<double> star;
+  star.channels = 2;
+  for (const auto &[part, channel] : {std::pair{&first, 0}, std::pair{&second, 1}})
+    for (const auto &scalar_level : part->levels) {
+      StarLevel<double> level;
+      level.energy            = scalar_level.energy;
+      level.coupling          = Vector<double>::Zero(2);
+      level.coupling(channel) = scalar_level.coupling(0);
+      star.levels.push_back(level);
+    }
+
+  const auto chain = build_chain<Real>(star, chain_options(4));
+  EXPECT_EQ(chain.diagnostics.theta_rank, 2);
+  EXPECT_EQ(chain.diagnostics.min_rank, 1);
+  ASSERT_TRUE(chain.diagnostics.rank_drop_site.has_value());
+  EXPECT_EQ(*chain.diagnostics.rank_drop_site, 1U);
+
+  const auto alone_first  = build_chain<Real>(first, chain_options(4));
+  const auto alone_second = build_chain<Real>(second, chain_options(1));
+  const auto near         = [](const Real &a, const Real &b) { return static_cast<double>(abs(a - b)); };
+  for (unsigned int n = 0; n <= chain.Nmax; n++) {
+    EXPECT_LT(near(chain.E[n](0, 0), alone_first.E[n](0, 0)), 1e-40) << "site " << n;
+    EXPECT_LT(near(chain.E[n](1, 1), n <= 1 ? alone_second.E[n](0, 0) : Real(0)), 1e-40) << "site " << n;
+    EXPECT_LT(static_cast<double>(abs(chain.E[n](0, 1))), 1e-40) << "site " << n;
   }
-  // In double precision rounding leaves a small but nonzero eigenvalue; the tolerance floor still catches it.
-  EXPECT_THROW(build_chain<std::complex<double>>(star, chain_options(3)), ChainBreakdown);
+  for (unsigned int n = 0; n < chain.Nmax; n++) {
+    EXPECT_LT(near(chain.T[n](0, 0), alone_first.T[n](0, 0)), 1e-40) << "site " << n;
+    EXPECT_LT(near(chain.T[n](1, 1), n == 0 ? alone_second.T[0](0, 0) : Real(0)), 1e-40) << "site " << n;
+    EXPECT_LT(static_cast<double>(abs(chain.T[n](0, 1))), 1e-40) << "site " << n;
+  }
+}
+
+TEST(MixChainChain, an_exhausted_single_channel_gives_rank_zero) { // NOLINT
+  // Only 3 of the 6 levels couple, so a scalar chain ends after 3 sites. Every direction of the residual at site 2 is
+  // rounding, which the relative test alone would not see.
+  auto star = arbitrary_star<double>(1, 6);
+  for (std::size_t k = 3; k < 6; k++) star.levels[k].coupling(0) = 0.0;
+  auto coupled = star;
+  coupled.levels.resize(3);
+
+  const auto chain = build_chain<Real>(star, chain_options(4));
+  EXPECT_EQ(chain.diagnostics.theta_rank, 1);
+  EXPECT_EQ(chain.diagnostics.min_rank, 0);
+  ASSERT_TRUE(chain.diagnostics.rank_drop_site.has_value());
+  EXPECT_EQ(*chain.diagnostics.rank_drop_site, 2U);
+
+  const auto alone = build_chain<Real>(coupled, chain_options(2));
+  for (unsigned int n = 0; n <= chain.Nmax; n++)
+    EXPECT_LT(static_cast<double>(abs(chain.E[n](0, 0) - (n <= 2 ? alone.E[n](0, 0) : Real(0)))), 1e-40) << "site " << n;
+  for (unsigned int n = 0; n < chain.Nmax; n++)
+    EXPECT_LT(static_cast<double>(abs(chain.T[n](0, 0) - (n <= 1 ? alone.T[n](0, 0) : Real(0)))), 1e-40) << "site " << n;
 }
 
 TEST(MixChainChain, rejects_a_star_too_small_for_the_chain) { // NOLINT

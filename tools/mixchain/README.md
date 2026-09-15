@@ -89,7 +89,7 @@ is the same.
 | `hermiticity_tolerance` | `1e-8` | star | Allowed deviation of the input from a Hermitian matrix. |
 | `Nmax` | required | chain | Last site of the chain, which has the sites `0..Nmax`. |
 | `preccpp` | `2000` | chain | Precision of the chain stage in bits, as for `nrgchain`. |
-| `breakdown_tolerance` | `1e-20` | chain | Relative size below which a matrix to be inverted counts as singular. |
+| `rank_tolerance` | `1e-20` | chain | Eigenvalue of a Gram matrix, relative to its largest, below which it counts as zero. |
 
 `boundary` is a fraction of the rescaled band edge, as in `adapt`: a gap $\Delta$ in the units of the input with
 `bandrescale`$=D$ is `boundary`$=\Delta/D$. The `-v` report prints both values.
@@ -183,10 +183,14 @@ decimal digits: `preccpp` bits select the smallest rung that covers them, and th
 default of 2000 bits resolves to 800 digits; requests beyond 800 digits are rejected. The result is written with 18
 significant digits, as `nrgchain` writes `xi.dat`.
 
-**Breakdown.** Inverting $\Theta$ fails when $\Gamma$ is rank deficient over the whole band, so that the bath couples
-to fewer combinations of the impurity orbitals than there are channels. Inverting $R^\dagger R$ fails part-way down
-the chain when the Krylov space of the star is exhausted, for instance when too few levels carry weight. Both stop the
-stage with the site and the rank. The star must have at least `channels*(Nmax+1)` levels.
+**Rank deficiency.** The inverses above are pseudo-inverses: an eigenvalue of $\Theta$ or of $R^\dagger R$ below
+`rank_tolerance` times the largest is set to zero, and so is a residual that is rounding altogether. When $\Gamma$ is
+rank deficient over the whole band, some combinations of the impurity orbitals do not couple to the bath; the stage
+reports the rank of $\Theta$, and the part of the chain along those combinations is zero, which is exact. When the
+rank of $T_n$ drops part-way down the chain, the Krylov space of the star is exhausted in some direction, for
+instance because too few levels carry weight; the chain is again zero in that direction from there on, but this is
+an artifact of the star, and a warning names the site. Both are recorded in the header of `chain.dat`. The star must
+have at least `channels*(Nmax+1)` levels.
 
 ## Outputs
 
@@ -253,9 +257,10 @@ The star stage reports:
 - levels lost to double precision near an accumulation point away from zero. Where the distance to that point drops below the spacing of doubles, the bounds of an interval coincide and its levels carry no weight, which in effect truncates the star there;
 - the largest CQUAD error estimate of the integral method.
 
-The chain stage reports the ratio of the smallest to the largest eigenvalue of $\Theta$ and, over the chain, of
-$R^\dagger R$, together with the largest anti-Hermitian part removed from an on-site block and the largest component
-removed by reorthogonalization. The last two measure rounding and loss of orthogonality at the working precision.
+The chain stage reports the rank of $\Theta$, the smallest rank of a hopping and the site where it first drops below
+the rank of $\Theta$ (`none` if it does not), and the ratio of the smallest nonzero to the largest eigenvalue of
+$\Theta$ and, over the chain, of $R^\dagger R$. It also reports the largest anti-Hermitian part removed from an
+on-site block and the largest component removed by reorthogonalization. The last two measure rounding and loss of orthogonality at the working precision.
 
 ## Flat-band benchmark
 
