@@ -268,29 +268,72 @@ $V_{ij}$ multiplies $d_i^\dagger f_{0j}$, $(E_n)_{ij}$ multiplies $f_{ni}^\dagge
 multiplies $f_{n+1,i}^\dagger f_{nj}$. $V$ is in the normalization of the input, $V^2 = \Theta$; the physical
 coupling is $V/\sqrt{\pi}$.
 
-## Diagnostics
+## Log
 
-The star stage reports:
+Standard output carries the progress and the diagnostics, as `#` lines in the order below; warnings and errors go to
+standard error. With several blocks, a star diagnostic that belongs to one block starts with it, as in
+`# block {1,3}: max_cquad_error=...`. With `--Nz`, the lines of each $z$ follow a heading `# --- z=0.25 in 1/`.
 
-- per interval, the matrix sum rule $\lVert\sum_a w_a u_a u_a^\dagger - \int\Gamma\rVert / \lVert\int\Gamma\rVert$, with the largest value and where it occurred. It detects a mislabelled branch as well as eigenvectors that rotate too fast for the interval to resolve;
-- $\Theta = \sum_k v_k v_k^\dagger$ against $\int\Gamma$ over the covered range. The trace agrees by construction, the off-diagonal elements only approximately;
-- the frequencies at which the tracked and the sorted branch orderings diverge;
-- weight beyond the band edge that is discarded, and weight added by continuing the input to the edge, per diagonal element;
-- intervals that contain no tabulated point of the input, and whether the input ends there or is merely too coarse. In such intervals the star follows the interpolant rather than the data;
-- levels lost to double precision near an accumulation point away from zero. Where the distance to that point drops below the spacing of doubles, the bounds of an interval coincide and its levels carry no weight, which in effect truncates the star there;
-- the largest CQUAD error estimate of the integral method.
+### Configuration (`-v`, standard error)
 
-The chain stage reports the number of levels of the star and of those with nonzero coupling, the rank of $\Theta$, the smallest rank of a hopping and the site where it first drops below
-the rank of $\Theta$ (`none` if it does not), and the ratio of the smallest nonzero to the largest eigenvalue of
-$\Theta$ and, over the chain, of $R^\dagger R$. It also reports the largest anti-Hermitian part removed from an
-on-site block and the largest component removed by reorthogonalization. The last two measure rounding and loss of
-orthogonality at the working precision. With several blocks these are merged: ranks add up site by site, the ratios
-of eigenvalues are taken within each block and the smallest is reported, and a warning about a rank drop names the
-blocks where it happens. A drop means that the levels with nonzero coupling in a block run out before the chain
-ends: a block of size $s$ spans at most their number divided by $s$ full sites. Levels without coupling lie where
-$\Gamma$ vanishes on the mesh, as inside a gap that a fixed or shared mesh does not follow, or collapsed onto an
-accumulation point; increasing `mMAX` adds more of them, so the remedies are a mesh that follows the block
-(`adapt=true`, `split_blocks=true`) or a smaller `Nmax`.
+`mixchain: configuration` is followed by every parameter as it is used. A derived value is shown as
+`auto -> value (reason)`: `mMAX` from `Nmax`, `digits` from `preccpp`, and `z` from `--Nz`. `boundary_in_input_units`
+is `boundary` times `bandrescale`, and `mesh_weight` is `inactive` without `adapt`.
+
+### Input
+
+| Line | Meaning |
+| --- | --- |
+| `# Gamma: channels= complex= nodes= interval [ a : b ]` | The input as read, after `bandrescale`. `complex=1` if the off-diagonal imaginary parts are tabulated. |
+| `# Gamma_ii: X of Y (p%) of the weight lies beyond the band edge and is discarded` | Weight of a diagonal element at $\lvert\omega\rvert>1$, which no mesh reaches. |
+| `# Gamma_ii: X of Y (p%) of the weight is added by extrapolation to the band edge` | Weight added where the input stops short of $\lvert\omega\rvert=1$ and is continued at its last value. |
+| `# Gamma - POS - n nodes - interval [ lo : hi ]` | One frequency branch, in $\lvert\omega\rvert$, including the node added at $\omega=10^{-99}$. |
+| `# star setup: t s` | Wall time of everything that does not depend on $z$: branches, meshes, cumulative weights. |
+| `# blocks: {1,3} {2}` | The blocks found; `none (Gamma does not split)` if there is one. Absent with `split_blocks=false`. |
+
+### Star, for each $z$
+
+| Line | Meaning |
+| --- | --- |
+| `# levels= complex=` | Number of bath levels, `2*channels*(mMAX+1)`. |
+| `# max_interval_deviation= at omega=` | Largest $\lVert\sum_a w_a u_a u_a^\dagger - \int\Gamma\rVert / \lVert\int\Gamma\rVert$ over the intervals, and the upper edge of that interval. Near rounding when the branches are labelled right; large for a mislabelled branch or eigenvectors that rotate too fast for the interval. |
+| `# max_cquad_error=` | Largest CQUAD error estimate of the integral method. |
+| `# crossings: p positive, n negative` | Nodes where the tracked branches change their order by eigenvalue, per frequency branch. |
+| `# POS: Gamma vanishes on this branch; fixed mesh used` | With `adapt=true`, a branch without weight to build the adaptive mesh from. Its levels have zero coupling. |
+| `# POS: k representative energy levels are indistinguishable from the accumulation point b in double precision` | Levels in intervals whose bounds are the same double, near an accumulation point away from zero. They carry no weight, which truncates the star there. |
+| `# POS: k of M intervals contain no tabulated point of the input, the outermost being [lo, hi]; ...` | Intervals where the star follows the interpolant rather than data. The ending says whether the input ends above them (constant continuation) or is merely coarser than the mesh. |
+| `# tr(theta)= tr(int Gamma)= difference=` | Trace of $\Theta=\sum_k v_k v_k^\dagger$ against the integral of $\Gamma$ over the range the mesh covers; equal by construction. |
+| `# ||theta - int Gamma||/||int Gamma||=` | The same for the whole matrix. The off-diagonal elements agree only approximately, since one level per interval and branch cannot follow a rotating eigenvector. |
+| `# star written to`, `# star z=: t s`, `# star stage: t s` | The file, the wall time of this $z$, and of the whole stage. |
+
+### Chain, for each $z$
+
+| Line | Meaning |
+| --- | --- |
+| `# chain: sites= channels= digits=` | Chain length `Nmax+1`, block dimension, and decimal digits of the arithmetic. |
+| `# blocks: {1,3} {2}` | The blocks of the star, each mapped onto its own chain. Only with several blocks. |
+| `# levels= coupled_levels=` | Levels of the star, and those with nonzero coupling. Only the latter enter the chain: a block of size $s$ spans at most `coupled_levels/s` full sites. |
+| `theta_rank=` | Rank of $\Theta$: the number of combinations of the impurity orbitals that couple to the bath. |
+| `theta_condition=` | Smallest nonzero eigenvalue of $\Theta$ over its largest, the smallest over the blocks. |
+| `min_residual_condition=` | Smallest ratio of the nonzero eigenvalues of $R^\dagger R$ along the chain: how close a direction came to being counted as zero by `rank_tolerance`. |
+| `# max_antihermitian=` | Largest anti-Hermitian part removed from an on-site block $E_n$, relative to it: rounding at the working precision. |
+| `max_reorthogonalization=` | Largest component along earlier Lanczos blocks removed from a residual, relative to it: the loss of orthogonality that full reorthogonalization repairs. |
+| `# Theta has rank r of N: ...` | $\Gamma$ is rank deficient over the whole band. The chain along the decoupled combinations is zero, which is exact. |
+| `# chain written to`, `# chain z=: t s`, `# chain stage: t s` | The file, the wall time of this $z$, and of the whole stage. |
+
+`chain.dat` records the same quantities, plus `min_rank`, the smallest rank of a hopping, and `rank_drop_site`, the
+first site where it falls below `theta_rank`. With several blocks they are merged over the blocks: ranks and levels
+add up site by site, and the ratios of eigenvalues are taken within each block.
+
+`# Elapsed t s (CPU c s)` closes the log: the wall time, which the stage times add up to, and the CPU time.
+
+### Warnings and errors (standard error)
+
+| Line | Meaning |
+| --- | --- |
+| `mixchain: warning: the rank of the hopping drops below r at site n ..., in block {..}` | The levels with nonzero coupling of that block run out before the chain ends, and the chain is zero in the lost direction from site `n+1` on. The others lie where $\Gamma$ vanishes on the mesh (a gap that a fixed or shared mesh does not follow) or collapsed onto an accumulation point, so more `mMAX` does not help; a mesh that follows the block (`adapt=true`, `split_blocks=true`) or a smaller `Nmax` does. |
+| `mixchain: warning: Integral method failed at x=...` | A CQUAD failure, reported instead of stopping with `--gsl-error-policy warn`. |
+| `mixchain: error: ...` | The run stops with a nonzero exit status; files of the stages completed before it remain. |
 
 ## Flat-band benchmark
 
