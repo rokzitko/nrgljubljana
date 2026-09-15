@@ -9,8 +9,10 @@
 #include <cstddef>
 #include <iterator>
 #include <memory>
+#include <numeric>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -19,6 +21,7 @@
 #include "../common/lambda.hpp"
 #include "../common/representative_energy.hpp"
 #include "../common/tabulated_density.hpp"
+#include "blocks.hpp"
 #include "branches.hpp"
 #include "gamma_interp.hpp"
 #include "linint.hpp"
@@ -47,6 +50,8 @@ struct StarOptions {
   // Branches whose representative energies coincide within this relative tolerance take their eigenvectors from a
   // single diagonalization, so that exactly degenerate branches give an orthonormal set of coupling vectors.
   double coincidence_tolerance{1e-10};
+  // Discretize the blocks of Gamma (see blocks.hpp) as independent problems, each on a mesh of its own.
+  bool split_blocks{true};
 };
 
 // One bath level of the star: energy E and coupling vector v = sqrt(w) u, in the normalization of the input.
@@ -83,6 +88,9 @@ struct BranchCoverage {
   // the density vanishes below it.
   double accumulation_point{};
   int collapsed_levels{};
+  // With adapt, a branch on which Gamma vanishes has no weight to build the adaptive mesh from. It is discretized on
+  // the fixed mesh instead; all its levels have zero coupling, so the choice has no effect on the chain.
+  bool fixed_mesh_fallback{};
   [[nodiscard]] auto continued() const { return innermost_input > 0.0 && lowest_mesh < innermost_input; }
 };
 
@@ -100,13 +108,33 @@ template<typename S> struct Star {
   double z{};
   double Lambda{};
   double bandrescale{1.0};
+  Blocks blocks; // the blocks that were discretized independently; a single one of all channels if none were
   std::vector<StarLevel<S>> levels;
   Matrix<S> theta;       // sum_k v_k v_k^dagger over the star that was built
   Matrix<S> theta_exact; // the integral of Gamma over the range the mesh covers
-  StarDiagnostics diagnostics;
+  std::vector<StarDiagnostics> diagnostics; // one per block, in the order of 'blocks'
 };
 
 namespace detail {
+
+// The star of one block, in the channels of that block alone.
+template<typename S> struct BlockStar {
+  std::vector<StarLevel<S>> levels;
+  Matrix<S> theta;
+  Matrix<S> theta_exact;
+  StarDiagnostics diagnostics;
+};
+
+// The mesh of one frequency branch: adaptive if requested and if Gamma carries weight on the branch to build it
+// from, fixed otherwise.
+template<typename S> Mesh make_mesh(const GammaBranch<S> &branch, const StarOptions &options) {
+  if (options.adapt) {
+    auto weight = mesh_weight_table(branch, options.mesh_weight);
+    if (NRG::Tools::TabulatedDensity(weight, options.interpolation).integral(0.0, 1.0) > 0.0)
+      return Mesh(options.Lambda, options.hardgap, options.boundary, weight, options.interpolation);
+  }
+  return Mesh(options.Lambda, options.hardgap, options.boundary);
+}
 
 inline auto make_cquad_workspace(const NRG::Tools::CquadOptions &options) {
   const std::size_t limit = options.workspace_limit.value_or(1000);
@@ -153,14 +181,13 @@ template<typename S> class SignDiscretizer {
   std::vector<Representative> representatives_;
   double accumulation_point_{};
   double innermost_input_{};
+  bool fixed_mesh_fallback_{};
 
  public:
   SignDiscretizer(const GammaBranch<S> &branch, const Sign sign, const StarOptions &options)
     : sign_(sign), options_(options), decomposition_(decompose_branch(branch, options.branches)),
       channels_(static_cast<std::size_t>(decomposition_.channels)),
-      mesh_(options.adapt ? Mesh(options.Lambda, options.hardgap, options.boundary,
-                                 mesh_weight_table(branch, options.mesh_weight), options.interpolation)
-                          : Mesh(options.Lambda, options.hardgap, options.boundary)),
+      mesh_(make_mesh(branch, options)),
       interpolation_(branch, options.interpolation), workspace_(make_cquad_workspace(options.cquad)),
       innermost_input_(branch.innermost) {
     densities_.reserve(channels_);
@@ -185,6 +212,7 @@ template<typename S> class SignDiscretizer {
                                                  max_error_, NRG::Tools::WarnToCerr{"mixchain: warning: "});
     }
     accumulation_point_ = mesh_.accumulation_point();
+    fixed_mesh_fallback_ = options.adapt && !mesh_.adaptive();
   }
 
   SignDiscretizer(const SignDiscretizer &)            = delete;
@@ -192,17 +220,18 @@ template<typename S> class SignDiscretizer {
   SignDiscretizer(SignDiscretizer &&)                 = delete;
   SignDiscretizer &operator=(SignDiscretizer &&)      = delete;
 
-  // Append the levels of this frequency branch for one value of z to the star, with their diagnostics. Not const:
-  // evaluating the densities updates their caches.
-  void evaluate(const double z, Star<S> &star);
+  // Append the levels of this frequency branch for one value of z to the star of its block, with their diagnostics.
+  // Not const: evaluating the densities updates their caches.
+  void evaluate(const double z, BlockStar<S> &star);
 };
 
-template<typename S> void SignDiscretizer<S>::evaluate(const double z, Star<S> &star) {
+template<typename S> void SignDiscretizer<S>::evaluate(const double z, BlockStar<S> &star) {
   const auto dimension = static_cast<Eigen::Index>(channels_);
   max_error_           = 0.0; // the error estimate belongs to this z alone
 
   BranchCoverage coverage;
-  coverage.accumulation_point = accumulation_point_;
+  coverage.accumulation_point  = accumulation_point_;
+  coverage.fixed_mesh_fallback = fixed_mesh_fallback_;
   for (unsigned int m = 0; m <= options_.mMAX; m++) {
     const auto x     = z + m + 1.0;
     const auto upper = mesh_.eps(x);
@@ -293,12 +322,25 @@ template<typename S> void SignDiscretizer<S>::evaluate(const double z, Star<S> &
 // The discretization of Gamma, set up once and evaluated for any number of values of z. The setup covers everything
 // that does not depend on z; star(z) runs the interval loop for one z and returns a complete star, with its own
 // diagnostics.
+//
+// With split_blocks, each block of Gamma is discretized as an independent problem, with its own branches, its own
+// mesh and its own cumulative weights, and the results are merged into one star over all channels: the couplings of a
+// block are placed in its channels, and its branch labels follow those of the blocks before it. A block of a single
+// channel is then exactly the scalar problem. With a single block the merge is the identity, and the star is the one
+// the whole matrix gives.
 template<typename S> class StarDiscretizer {
  private:
+  struct BlockDiscretizer {
+    Block block;
+    int offset{}; // the number of branches in the blocks before this one
+    std::unique_ptr<detail::SignDiscretizer<S>> positive;
+    std::unique_ptr<detail::SignDiscretizer<S>> negative;
+  };
+
   int channels_{};
   StarOptions options_;
-  std::unique_ptr<detail::SignDiscretizer<S>> positive_;
-  std::unique_ptr<detail::SignDiscretizer<S>> negative_;
+  Blocks blocks_;
+  std::vector<BlockDiscretizer> discretizers_;
 
  public:
   StarDiscretizer(const GammaInput<S> &input, const StarOptions &options) : channels_(input.channels), options_(options) {
@@ -306,9 +348,28 @@ template<typename S> class StarDiscretizer {
     if (options.mMAX < 1) throw std::invalid_argument("mMAX must be greater than 0.");
     if (!(std::isfinite(options.allowed_error) && options.allowed_error > 0.0))
       throw std::invalid_argument("allowed_error must be a positive finite number.");
-    positive_ = std::make_unique<detail::SignDiscretizer<S>>(input.pos, Sign::POS, options);
-    negative_ = std::make_unique<detail::SignDiscretizer<S>>(input.neg, Sign::NEG, options);
+
+    if (options.split_blocks) {
+      blocks_ = gamma_blocks(input);
+    } else {
+      blocks_.emplace_back(static_cast<std::size_t>(channels_));
+      std::iota(blocks_.front().begin(), blocks_.front().end(), 0);
+    }
+    // SignDiscretizer copies what it keeps from the input, so the restricted input need not outlive it.
+    int offset = 0;
+    for (const auto &block : blocks_) {
+      const auto part = restrict_input(input, block);
+      BlockDiscretizer discretizer;
+      discretizer.block    = block;
+      discretizer.offset   = offset;
+      discretizer.positive = std::make_unique<detail::SignDiscretizer<S>>(part.pos, Sign::POS, options);
+      discretizer.negative = std::make_unique<detail::SignDiscretizer<S>>(part.neg, Sign::NEG, options);
+      discretizers_.push_back(std::move(discretizer));
+      offset += static_cast<int>(block.size());
+    }
   }
+
+  [[nodiscard]] const Blocks &blocks() const { return blocks_; }
 
   // For every interval, every frequency branch and every eigenvalue branch, one bath level at the representative
   // energy with coupling vector sqrt(w) u. The z of the options is not used here.
@@ -321,11 +382,43 @@ template<typename S> class StarDiscretizer {
     result.z           = z;
     result.Lambda      = options_.Lambda;
     result.bandrescale = options_.bandrescale;
+    result.blocks      = blocks_;
     result.theta       = Matrix<S>::Zero(dimension, dimension);
     result.theta_exact = Matrix<S>::Zero(dimension, dimension);
     result.levels.reserve(2 * static_cast<std::size_t>(channels_) * (options_.mMAX + 1));
-    positive_->evaluate(z, result);
-    negative_->evaluate(z, result);
+
+    for (auto &discretizer : discretizers_) {
+      const auto &block = discretizer.block;
+      const auto size   = static_cast<Eigen::Index>(block.size());
+      detail::BlockStar<S> part;
+      part.theta       = Matrix<S>::Zero(size, size);
+      part.theta_exact = Matrix<S>::Zero(size, size);
+      discretizer.positive->evaluate(z, part);
+      discretizer.negative->evaluate(z, part);
+
+      const auto channel = [&block](const Eigen::Index i) { return block[static_cast<std::size_t>(i)]; };
+      for (auto &level : part.levels) {
+        Vector<S> coupling = Vector<S>::Zero(dimension);
+        for (Eigen::Index i = 0; i < size; i++) coupling(channel(i)) = level.coupling(i);
+        level.coupling = std::move(coupling);
+        level.branch += discretizer.offset;
+        result.levels.push_back(std::move(level));
+      }
+      for (Eigen::Index i = 0; i < size; i++)
+        for (Eigen::Index j = 0; j < size; j++) {
+          result.theta(channel(i), channel(j))       = part.theta(i, j);
+          result.theta_exact(channel(i), channel(j)) = part.theta_exact(i, j);
+        }
+      result.diagnostics.push_back(std::move(part.diagnostics));
+    }
+
+    // The order of a single block: by frequency branch, then interval, then branch.
+    std::stable_sort(result.levels.begin(), result.levels.end(), [](const StarLevel<S> &a, const StarLevel<S> &b) {
+      const auto key = [](const StarLevel<S> &level) {
+        return std::tuple(level.sign != Sign::POS, level.m, level.branch);
+      };
+      return key(a) < key(b);
+    });
     return result;
   }
 };

@@ -85,6 +85,7 @@ is the same.
 | `hardgap`, `boundary` | `false`, `0` | star | Accumulation point of the mesh, as a fraction of the rescaled band edge. |
 | `density_interpolation` | `linear` | star | `linear` or `steffen`, as for `adapt` and `nrgchain`. |
 | `branch_ordering` | `tracked` | star | `tracked` or `sorted`. |
+| `split_blocks` | `true` | star | Discretize the blocks of $\Gamma$ independently, each on a mesh of its own. |
 | `allowed_error` | `1e-10` | star | Default relative tolerance of the integral method. |
 | `hermiticity_tolerance` | `1e-8` | star | Allowed deviation of the input from a Hermitian matrix. |
 | `Nmax` | required | chain | Last site of the chain, which has the sites `0..Nmax`. |
@@ -99,6 +100,21 @@ The chain stage takes $\Lambda$, $z$ and `bandrescale` from `star.dat`. If the p
 `--Nz` it must be $i/N$ for the star in `i/`, and otherwise it must match a `z` given in the parameter file.
 
 ## Star stage
+
+### Blocks
+
+Channels $i$ and $j$ belong to the same block if $\Gamma_{ij}$ is nonzero at some tabulated frequency, or if a chain
+of such elements connects them. Only exact zeros separate blocks: a small but nonzero element is part of the input.
+With `split_blocks=true`, each block is discretized as an independent problem, with its own branches, its own mesh
+(adaptive per block with `adapt=true`) and its own cumulative weights. A block of a single channel is then exactly the
+scalar problem, and a diagonal $\Gamma$ gives for every channel the star it would give alone. The chain stage maps
+each block onto a chain of its own and assembles the blocks, with exact zeros between channels of different blocks;
+`rank_tolerance` compares eigenvalues only within a block. With `split_blocks=false` the whole matrix is
+discretized, and with `adapt=true` all channels share one mesh.
+
+With `adapt=true`, a frequency branch on which the $\Gamma$ of a block vanishes has no weight to build the adaptive
+mesh from, for instance a channel that does not hybridize. That branch uses the fixed mesh, which is reported; its
+levels have zero coupling, so the choice does not affect the chain.
 
 ### Mesh
 
@@ -218,13 +234,20 @@ by the chain stage as whitespace-separated `key=value` pairs.
 | `v1 ... vN` | Coupling vector in the channel basis; for `complex=1` each component is a pair `Re_vi Im_vi`. |
 
 `a` is a label from the branch tracking, not a channel: a branch is an eigenvector direction of $\Gamma$, which in
-general points across several channels and rotates with $\omega$. `m`, `sign` and `a` are not used by the chain
-stage, which sees only the pairs $(E, v)$; they are written so that the file can be read and checked. The star
-diagnostics are written as comments and are not read back.
+general points across several channels and rotates with $\omega$. With several blocks, the branches of the first
+block are numbered first, then those of the next. `m` and `sign` are not used by the chain stage, and `a` only to
+assign each level to its block; they are written so that the file can be read and checked. The star diagnostics are
+written as comments and are not read back; with several blocks each diagnostic line starts with its block, as in
+`# block {1,3}: max_cquad_error=...`.
+
+When $\Gamma$ was split into more than one block, the header is followed by the line `# blocks= {1,3} {2}`, with the
+channels numbered from 1. Without it the star is a single block. On loading, every level must couple only to the
+channels of the block its branch belongs to.
 
 ### `chain.dat`
 
-One row per matrix element. The second line is the header; the third holds the diagnostics of the recursion.
+One row per matrix element. The second line is the header. With several blocks it is followed by the same
+`# blocks=` line as in `star.dat`; the next line holds the diagnostics of the recursion over the whole chain.
 
 | Header key | Meaning |
 | --- | --- |
@@ -257,10 +280,17 @@ The star stage reports:
 - levels lost to double precision near an accumulation point away from zero. Where the distance to that point drops below the spacing of doubles, the bounds of an interval coincide and its levels carry no weight, which in effect truncates the star there;
 - the largest CQUAD error estimate of the integral method.
 
-The chain stage reports the rank of $\Theta$, the smallest rank of a hopping and the site where it first drops below
+The chain stage reports the number of levels of the star and of those with nonzero coupling, the rank of $\Theta$, the smallest rank of a hopping and the site where it first drops below
 the rank of $\Theta$ (`none` if it does not), and the ratio of the smallest nonzero to the largest eigenvalue of
 $\Theta$ and, over the chain, of $R^\dagger R$. It also reports the largest anti-Hermitian part removed from an
-on-site block and the largest component removed by reorthogonalization. The last two measure rounding and loss of orthogonality at the working precision.
+on-site block and the largest component removed by reorthogonalization. The last two measure rounding and loss of
+orthogonality at the working precision. With several blocks these are merged: ranks add up site by site, the ratios
+of eigenvalues are taken within each block and the smallest is reported, and a warning about a rank drop names the
+blocks where it happens. A drop means that the levels with nonzero coupling in a block run out before the chain
+ends: a block of size $s$ spans at most their number divided by $s$ full sites. Levels without coupling lie where
+$\Gamma$ vanishes on the mesh, as inside a gap that a fixed or shared mesh does not follow, or collapsed onto an
+accumulation point; increasing `mMAX` adds more of them, so the remedies are a mesh that follows the block
+(`adapt=true`, `split_blocks=true`) or a smaller `Nmax`.
 
 ## Flat-band benchmark
 

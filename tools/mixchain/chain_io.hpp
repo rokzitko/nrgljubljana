@@ -13,6 +13,7 @@
 #include <Eigen/Dense>
 
 #include "../common/io.hpp"
+#include "blocks.hpp"
 #include "chain.hpp"
 #include "types.hpp"
 
@@ -37,7 +38,10 @@ namespace NRG::MixChain {
 //   complex      1 if the coefficients are complex, 0 if real. It fixes the number of columns.
 //   digits       the decimal digits of the arithmetic the recursion ran in
 //
-// The third line holds the diagnostics of the recursion. Columns of a data row:
+// When the star has more than one block, the header is followed by the blocks line of the star file, as in
+// "# blocks= {1,3} {2}": each block was mapped onto a chain of its own, and every element between channels of
+// different blocks is exactly zero. The next line holds the diagnostics of the recursion over the whole chain.
+// Columns of a data row:
 //
 //   block  V, E or T
 //   n      the site: 0 for V, 0..Nmax for E, 0..Nmax-1 for T
@@ -93,7 +97,9 @@ template<typename S> void save_chain(const Chain<S> &chain, const ChainFileHeade
   out << "# channels=" << chain.channels << " Nmax=" << chain.Nmax << " z=" << header.z << " Lambda=" << header.Lambda
       << " bandrescale=" << header.bandrescale << " complex=" << (is_complex_v<S> ? 1 : 0)
       << " digits=" << header.digits << std::endl;
-  out << "# theta_rank=" << d.theta_rank << " min_rank=" << d.min_rank << " rank_drop_site="
+  if (chain.blocks.size() > 1) out << "# blocks= " << blocks_name(chain.blocks) << std::endl;
+  out << "# levels=" << d.levels << " coupled_levels=" << d.coupled_levels << " theta_rank=" << d.theta_rank
+      << " min_rank=" << d.min_rank << " rank_drop_site="
       << (d.rank_drop_site ? std::to_string(*d.rank_drop_site) : std::string("none"))
       << " theta_condition=" << d.theta_condition << " max_antihermitian=" << d.max_antihermitian
       << " max_reorthogonalization=" << d.max_reorthogonalization

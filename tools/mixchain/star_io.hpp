@@ -4,11 +4,14 @@
 #ifndef _mixchain_star_io_hpp_
 #define _mixchain_star_io_hpp_
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <fstream>
 #include <iomanip>
+#include <numeric>
 #include <ios>
+#include <optional>
 #include <ostream>
 #include <stdexcept>
 #include <string>
@@ -16,6 +19,7 @@
 
 #include "../common/io.hpp"
 #include "../common/tabulated.hpp"
+#include "blocks.hpp"
 #include "star.hpp"
 #include "types.hpp"
 
@@ -44,6 +48,15 @@ namespace NRG::MixChain {
 //                rescaled band, whose edge is 1
 //   complex      1 if the coupling vectors are complex, 0 if they are real. It fixes the number of columns.
 //
+// Blocks line, written right after the header when Gamma was discretized in more than one block (see blocks.hpp):
+//
+//   # blocks= {1,3} {2}
+//
+// Each group is one block, with the channels numbered from 1 as in the input file names. Without the line the star is
+// a single block of all channels, which is what a Gamma that does not split, or split_blocks=false, gives. The chain
+// stage maps each block onto a chain of its own. On loading, every level must couple only to channels of the block
+// its branch label belongs to.
+//
 // Columns of a data row:
 //
 //   m      the interval index, 0..mMAX. The interval is [eps(z+m+2), eps(z+m+1)] on that branch's mesh, so a larger
@@ -51,7 +64,8 @@ namespace NRG::MixChain {
 //   sign   the frequency branch the level came from: '+' for omega>0 and '-' for omega<0
 //   a      the eigenvalue branch of Gamma the level came from, 0..channels-1. This is a label from the branch
 //          tracking, not a channel: a branch is an eigenvector direction of Gamma, which in general points across
-//          several channels and rotates with omega
+//          several channels and rotates with omega. With blocks, the branches of the first block are numbered first,
+//          then those of the next, so the first block owns the labels 0..size-1
 //   E      the representative energy of that interval and branch, carrying the sign of its frequency branch
 //   v_i    the coupling vector in the channel basis: component i is the amplitude between impurity orbital i and
 //          this bath level. For complex=1 each component is written as a pair, Re_v_i Im_v_i.
@@ -65,7 +79,8 @@ namespace NRG::MixChain {
 // sign column with the sign of E.
 //
 // The diagnostics of the star stage are written as comments and are not read back: they are properties of Gamma
-// rather than of the star, so a star loaded from a file has them empty.
+// rather than of the star, so a star loaded from a file has them empty. With several blocks, each diagnostic line
+// starts with the block it belongs to, as in "# block {1,3}: max_cquad_error=...".
 
 inline constexpr auto star_default_filename = "star.dat";
 
@@ -76,6 +91,7 @@ struct StarHeader {
   double Lambda{};
   double bandrescale{1.0};
   bool complex_data{};
+  Blocks blocks; // empty if the file has no blocks line
 };
 
 namespace detail {
@@ -142,16 +158,43 @@ inline void parse_header_line(const std::string &line, StarHeader &header, const
 
 } // namespace detail
 
-// The header alone. Call this first: 'complex' decides the scalar type the star must be loaded with.
+namespace detail {
+
+inline constexpr auto blocks_key = "blocks=";
+
+// The text after "blocks=" if the line is the blocks line, which is recognised by that key as its first field.
+inline std::optional<std::string> blocks_value(const std::string &line) {
+  const auto start = line.find_first_not_of(" \t", line.find('#') + 1);
+  if (start == std::string::npos || line.compare(start, std::string(blocks_key).size(), blocks_key) != 0)
+    return std::nullopt;
+  return line.substr(start + std::string(blocks_key).size());
+}
+
+} // namespace detail
+
+// The header alone, with the blocks line if there is one. Call this first: 'complex' decides the scalar type the star
+// must be loaded with.
 inline auto read_star_header(const std::string &filename) {
-  StarHeader header;
+  std::optional<std::string> header_line, blocks_line;
   for (const auto &line : detail::read_lines(filename)) {
     if (!detail::is_comment(line)) continue;
-    if (line.find("channels=") == std::string::npos) continue;
-    detail::parse_header_line(line, header, filename);
-    return header;
+    if (const auto value = detail::blocks_value(line)) {
+      if (blocks_line) throw std::runtime_error(filename + ": more than one blocks line.");
+      blocks_line = value;
+    } else if (!header_line && line.find("channels=") != std::string::npos) {
+      header_line = line;
+    }
   }
-  throw std::runtime_error(filename + ": no star header found.");
+  if (!header_line) throw std::runtime_error(filename + ": no star header found.");
+
+  StarHeader header;
+  detail::parse_header_line(*header_line, header, filename);
+  if (blocks_line) {
+    try {
+      header.blocks = parse_blocks(*blocks_line, header.channels);
+    } catch (const std::invalid_argument &error) { throw std::runtime_error(filename + ": " + error.what()); }
+  }
+  return header;
 }
 
 inline auto star_is_complex(const std::string &filename) { return read_star_header(filename).complex_data; }
@@ -161,14 +204,20 @@ template<typename S> void save_star(const Star<S> &star, std::ostream &out) {
   out << "# mixchain star" << std::endl;
   out << "# channels=" << star.channels << " mMAX=" << star.mMAX << " z=" << star.z << " Lambda=" << star.Lambda
       << " bandrescale=" << star.bandrescale << " complex=" << (is_complex_v<S> ? 1 : 0) << std::endl;
-  out << "# max_interval_deviation=" << star.diagnostics.max_interval_deviation
-      << " at_omega=" << star.diagnostics.max_interval_omega << std::endl;
-  out << "# max_cquad_error=" << star.diagnostics.max_cquad_error << std::endl;
-  for (const auto &[name, crossings] :
-       {std::pair{"crossings_pos", &star.diagnostics.crossings_pos}, std::pair{"crossings_neg", &star.diagnostics.crossings_neg}}) {
-    out << "# " << name << "=" << crossings->size();
-    for (const auto omega : *crossings) out << " " << omega;
-    out << std::endl;
+  if (star.blocks.size() > 1) out << "# " << detail::blocks_key << " " << blocks_name(star.blocks) << std::endl;
+  for (std::size_t b = 0; b < star.diagnostics.size(); b++) {
+    const auto &diagnostics = star.diagnostics[b];
+    // With a single block the lines carry no prefix.
+    const auto block = star.blocks.size() > 1 ? "block " + blocks_name({star.blocks[b]}) + ": " : std::string();
+    out << "# " << block << "max_interval_deviation=" << diagnostics.max_interval_deviation
+        << " at_omega=" << diagnostics.max_interval_omega << std::endl;
+    out << "# " << block << "max_cquad_error=" << diagnostics.max_cquad_error << std::endl;
+    for (const auto &[name, crossings] : {std::pair{"crossings_pos", &diagnostics.crossings_pos},
+                                          std::pair{"crossings_neg", &diagnostics.crossings_neg}}) {
+      out << "# " << block << name << "=" << crossings->size();
+      for (const auto omega : *crossings) out << " " << omega;
+      out << std::endl;
+    }
   }
   out << "# m sign a E";
   for (int i = 1; i <= star.channels; i++) {
@@ -215,6 +264,15 @@ template<typename S> auto load_star(const std::string &filename) {
   star.z           = header.z;
   star.Lambda      = header.Lambda;
   star.bandrescale = header.bandrescale;
+  star.blocks      = header.blocks;
+  if (star.blocks.empty()) {
+    star.blocks.emplace_back(static_cast<std::size_t>(header.channels));
+    std::iota(star.blocks.front().begin(), star.blocks.front().end(), 0);
+  }
+  // The block that owns each branch label: the first block has the labels 0..size-1, the next one the following.
+  std::vector<std::size_t> block_of_branch;
+  for (std::size_t b = 0; b < star.blocks.size(); b++)
+    block_of_branch.insert(block_of_branch.end(), star.blocks[b].size(), b);
   star.theta       = Matrix<S>::Zero(dimension, dimension);
   star.theta_exact = Matrix<S>::Zero(dimension, dimension);
 
@@ -260,6 +318,13 @@ template<typename S> auto load_star(const std::string &filename) {
       const auto imaginary_part =
         header.complex_data ? NRG::Tools::parse_tabulated_double(fields[first + 1]) : 0.0;
       level.coupling(i) = make_scalar<S>(real_part, imaginary_part);
+    }
+    const auto &block = star.blocks[block_of_branch[static_cast<std::size_t>(level.branch)]];
+    for (int i = 0; i < header.channels; i++) {
+      if (level.coupling(i) == S(0) || std::find(block.begin(), block.end(), i) != block.end()) continue;
+      throw std::runtime_error(filename + ": row " + std::to_string(number) + " (branch " + std::to_string(level.branch)
+                               + ", block " + blocks_name({block}) + ") couples to channel " + std::to_string(i + 1)
+                               + ", which is outside its block.");
     }
     star.theta += level.coupling * level.coupling.adjoint();
     star.levels.push_back(std::move(level));

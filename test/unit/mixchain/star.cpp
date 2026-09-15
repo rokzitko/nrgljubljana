@@ -4,6 +4,7 @@
 #include <complex>
 #include <functional>
 #include <limits>
+#include <utility>
 #include <stdexcept>
 #include <vector>
 
@@ -97,12 +98,15 @@ TEST(MixChainStar, flat_band_reproduces_the_analytic_star) { // NOLINT
   const auto covered = rho * (1.0 - std::pow(lambda_value, -static_cast<double>(mmax) - 1.0));
   EXPECT_NEAR(star.theta(0, 0), 2.0 * covered, 1e-13);
   EXPECT_NEAR(star.theta(0, 0), star.theta_exact(0, 0), 1e-13);
-  EXPECT_LT(star.diagnostics.max_interval_deviation, 1e-13);
+  EXPECT_LT(star.diagnostics[0].max_interval_deviation, 1e-13);
 }
 
 TEST(MixChainStar, is_covariant_under_a_constant_rotation) { // NOLINT
   const auto densities = [](const double omega) { return diagonal<double>(0.5 + 0.1 * omega, 0.2 + 0.05 * omega); };
-  const auto plain     = build_star(make_input<double>(densities), base_options());
+  // The rotated Gamma is a single block; the plain one is kept whole too, so that both go through the same path.
+  auto options         = base_options();
+  options.split_blocks = false;
+  const auto plain     = build_star(make_input<double>(densities), options);
 
   Matrix<double> u = Matrix<double>::Zero(2, 2);
   const auto angle = 0.7;
@@ -129,7 +133,9 @@ TEST(MixChainStar, is_covariant_under_a_constant_rotation) { // NOLINT
 
 TEST(MixChainStar, is_covariant_under_a_complex_rotation) { // NOLINT
   const auto densities = [](const double omega) { return diagonal<Complex>(0.5 + 0.1 * omega, 0.2 + 0.05 * omega); };
-  const auto plain     = build_star(make_input<Complex>(densities), base_options());
+  auto options         = base_options();
+  options.split_blocks = false;
+  const auto plain     = build_star(make_input<Complex>(densities), options);
 
   Matrix<Complex> u = Matrix<Complex>::Zero(2, 2);
   u(0, 0)           = Complex(0.6, 0.0);
@@ -170,7 +176,9 @@ TEST(MixChainStar, degenerate_branches_give_orthogonal_couplings) { // NOLINT
     const auto rho = 0.4 + 0.2 * omega;
     return diagonal<double>(rho, rho);
   });
-  const auto star = build_star(input, base_options());
+  auto options         = base_options();
+  options.split_blocks = false; // the whole matrix, whose eigenvalues are degenerate
+  const auto star      = build_star(input, options);
 
   const auto first  = select(star, Sign::POS, 0);
   const auto second = select(star, Sign::POS, 1);
@@ -183,7 +191,7 @@ TEST(MixChainStar, degenerate_branches_give_orthogonal_couplings) { // NOLINT
     const Matrix<double> identity = Matrix<double>::Identity(2, 2);
     EXPECT_LT((sum - first[m].coupling.squaredNorm() * identity).cwiseAbs().maxCoeff(), 1e-14);
   }
-  EXPECT_LT(star.diagnostics.max_interval_deviation, 1e-12);
+  EXPECT_LT(star.diagnostics[0].max_interval_deviation, 1e-12);
 }
 
 TEST(MixChainStar, a_diagonal_gamma_matches_independent_scalar_runs) { // NOLINT
@@ -192,10 +200,12 @@ TEST(MixChainStar, a_diagonal_gamma_matches_independent_scalar_runs) { // NOLINT
   const auto first_density  = [](const double omega) { return 0.8 - 0.1 * omega; };
   const auto second_density = [](const double omega) { return 0.3 + 0.1 * omega; };
 
-  const auto joint = build_star(make_input<double>([&](const double omega) {
+  auto options         = base_options();
+  options.split_blocks = false; // the whole matrix; split_blocks is covered by the tests below
+  const auto joint     = build_star(make_input<double>([&](const double omega) {
                                   return diagonal<double>(first_density(omega), second_density(omega));
                                 }),
-                                base_options());
+                                options);
 
   const auto compare = [&joint](const std::function<double(double)> &density, const int branch) {
     const auto alone = build_star(
@@ -215,7 +225,7 @@ TEST(MixChainStar, a_diagonal_gamma_matches_independent_scalar_runs) { // NOLINT
   compare(second_density, 1);
 
   EXPECT_NEAR(joint.theta(0, 1), 0.0, 1e-14); // the channels stay decoupled
-  EXPECT_TRUE(joint.diagnostics.crossings_pos.empty());
+  EXPECT_TRUE(joint.diagnostics[0].crossings_pos.empty());
 }
 
 TEST(MixChainStar, tracking_preserves_the_interval_sum_rule_at_a_crossing) { // NOLINT
@@ -223,18 +233,19 @@ TEST(MixChainStar, tracking_preserves_the_interval_sum_rule_at_a_crossing) { // 
   const auto input = make_input<double>(
     [](const double omega) { return diagonal<double>(0.5 + 0.25 * omega, 0.8 - 0.5 * omega); });
 
-  auto options    = base_options();
-  const auto tracked = build_star(input, options);
+  auto options         = base_options();
+  options.split_blocks = false; // split, each channel is its own branch and there is nothing to order
+  const auto tracked   = build_star(input, options);
   options.branches.ordering = BranchOrdering::sorted;
   const auto sorted         = build_star(input, options);
 
   // With the branches tracked, the star reproduces the integral of Gamma over every interval exactly.
-  EXPECT_LT(tracked.diagnostics.max_interval_deviation, 1e-13);
+  EXPECT_LT(tracked.diagnostics[0].max_interval_deviation, 1e-13);
   // With the branches sorted, the interval containing the crossing receives the weight of the wrong channel. The
   // deviation there is of order a few percent for these densities.
-  EXPECT_GT(sorted.diagnostics.max_interval_deviation, 1e-3);
-  EXPECT_NEAR(sorted.diagnostics.max_interval_omega, 0.5, 1e-12);
-  EXPECT_FALSE(tracked.diagnostics.crossings_pos.empty());
+  EXPECT_GT(sorted.diagnostics[0].max_interval_deviation, 1e-3);
+  EXPECT_NEAR(sorted.diagnostics[0].max_interval_omega, 0.5, 1e-12);
+  EXPECT_FALSE(tracked.diagnostics[0].crossings_pos.empty());
 }
 
 TEST(MixChainStar, an_empty_branch_gives_vanishing_couplings) { // NOLINT
@@ -260,22 +271,22 @@ TEST(MixChainStar, reports_a_mesh_that_reaches_below_the_input) { // NOLINT
   input.neg.innermost = 0.01;
   const auto star     = build_star(input, base_options());
 
-  EXPECT_TRUE(star.diagnostics.coverage_pos.continued());
-  EXPECT_TRUE(star.diagnostics.coverage_neg.continued());
-  EXPECT_DOUBLE_EQ(star.diagnostics.coverage_pos.innermost_input, 0.01);
-  EXPECT_NEAR(star.diagnostics.coverage_pos.lowest_mesh, std::pow(lambda_value, -11.0), 1e-15);
+  EXPECT_TRUE(star.diagnostics[0].coverage_pos.continued());
+  EXPECT_TRUE(star.diagnostics[0].coverage_neg.continued());
+  EXPECT_DOUBLE_EQ(star.diagnostics[0].coverage_pos.innermost_input, 0.01);
+  EXPECT_NEAR(star.diagnostics[0].coverage_pos.lowest_mesh, std::pow(lambda_value, -11.0), 1e-15);
 
   // An input that is tabulated below everything the mesh reaches says nothing.
   input.pos.innermost = 1e-30;
   input.neg.innermost = 1e-30;
-  EXPECT_FALSE(build_star(input, base_options()).diagnostics.coverage_pos.continued());
+  EXPECT_FALSE(build_star(input, base_options()).diagnostics[0].coverage_pos.continued());
 }
 
 TEST(MixChainStar, reports_intervals_that_hold_no_node_of_the_input) { // NOLINT
   // The input grid of make_input() runs from 0 to 1 in steps of 0.01, so every interval below 0.01 falls inside a
   // single tabulated interval: for Lambda=2 and z=1 those are m >= 7, since Lambda^(-7) = 0.0078.
   const auto star = build_star(make_input<double>([](const double) { return scalar<double>(0.3); }), base_options());
-  const auto &coverage = star.diagnostics.coverage_pos;
+  const auto &coverage = star.diagnostics[0].coverage_pos;
   EXPECT_EQ(coverage.unresolved_intervals, static_cast<int>(mmax) + 1 - 7);
   EXPECT_NEAR(coverage.unresolved_from, std::pow(lambda_value, -7.0), 1e-15);
 
@@ -291,7 +302,7 @@ TEST(MixChainStar, reports_intervals_that_hold_no_node_of_the_input) { // NOLINT
     }
   }
   fine.neg = fine.pos;
-  EXPECT_EQ(build_star(fine, base_options()).diagnostics.coverage_pos.unresolved_intervals, 0);
+  EXPECT_EQ(build_star(fine, base_options()).diagnostics[0].coverage_pos.unresolved_intervals, 0);
 }
 
 TEST(MixChainStar, counts_levels_that_collapse_onto_the_accumulation_point) { // NOLINT
@@ -304,7 +315,7 @@ TEST(MixChainStar, counts_levels_that_collapse_onto_the_accumulation_point) { //
   options.boundary = 0.5;
   const auto star  = build_star(input, options);
 
-  const auto &coverage = star.diagnostics.coverage_pos;
+  const auto &coverage = star.diagnostics[0].coverage_pos;
   EXPECT_DOUBLE_EQ(coverage.accumulation_point, 0.5);
   EXPECT_GT(coverage.collapsed_levels, 20);
   EXPECT_LT(coverage.collapsed_levels, 35);
@@ -321,7 +332,7 @@ TEST(MixChainStar, counts_levels_that_collapse_onto_the_accumulation_point) { //
 
   // Accumulating at zero, the energies keep their relative precision and nothing collapses.
   options.hardgap = false;
-  EXPECT_EQ(build_star(input, options).diagnostics.coverage_pos.collapsed_levels, 0);
+  EXPECT_EQ(build_star(input, options).diagnostics[0].coverage_pos.collapsed_levels, 0);
 }
 
 TEST(MixChainStar, one_setup_serves_every_z) { // NOLINT
@@ -331,7 +342,8 @@ TEST(MixChainStar, one_setup_serves_every_z) { // NOLINT
   // tracking and every diagnostic are exercised.
   const auto input = make_input<double>(
     [](const double omega) { return diagonal<double>(0.5 + 0.25 * omega, 0.8 - 0.5 * omega); });
-  auto options = base_options();
+  auto options         = base_options();
+  options.split_blocks = false;
   StarDiscretizer<double> shared(input, options);
 
   for (const double z : {0.25, 0.5, 0.75, 1.0}) {
@@ -352,14 +364,157 @@ TEST(MixChainStar, one_setup_serves_every_z) { // NOLINT
     }
     EXPECT_TRUE((from_shared.theta.array() == fresh.theta.array()).all());
     EXPECT_TRUE((from_shared.theta_exact.array() == fresh.theta_exact.array()).all());
-    EXPECT_EQ(from_shared.diagnostics.max_interval_deviation, fresh.diagnostics.max_interval_deviation);
-    EXPECT_EQ(from_shared.diagnostics.max_cquad_error, fresh.diagnostics.max_cquad_error);
-    EXPECT_EQ(from_shared.diagnostics.crossings_pos, fresh.diagnostics.crossings_pos);
-    EXPECT_EQ(from_shared.diagnostics.coverage_pos.unresolved_intervals,
-              fresh.diagnostics.coverage_pos.unresolved_intervals);
+    EXPECT_EQ(from_shared.diagnostics[0].max_interval_deviation, fresh.diagnostics[0].max_interval_deviation);
+    EXPECT_EQ(from_shared.diagnostics[0].max_cquad_error, fresh.diagnostics[0].max_cquad_error);
+    EXPECT_EQ(from_shared.diagnostics[0].crossings_pos, fresh.diagnostics[0].crossings_pos);
+    EXPECT_EQ(from_shared.diagnostics[0].coverage_pos.unresolved_intervals,
+              fresh.diagnostics[0].coverage_pos.unresolved_intervals);
   }
   EXPECT_THROW(shared.star(0.0), std::invalid_argument);
   EXPECT_THROW(shared.star(1.5), std::invalid_argument);
+}
+
+TEST(MixChainStar, a_split_diagonal_gamma_is_exactly_the_scalar_problem_per_channel) { // NOLINT
+  // Densities with different structure, so that the adaptive meshes of the two channels differ.
+  const auto first_density  = [](const double omega) { return 0.8 * omega * omega + 0.01; };
+  const auto second_density = [](const double omega) { return omega < 0.3 ? 0.0 : 0.5; };
+  const auto input          = make_input<double>(
+    [&](const double omega) { return diagonal<double>(first_density(omega), second_density(omega)); });
+
+  for (const bool adapt : {false, true}) {
+    auto options  = base_options();
+    options.adapt = adapt;
+    const auto joint = build_star(input, options);
+    EXPECT_EQ(joint.blocks, (Blocks{{0}, {1}})) << "adapt=" << adapt;
+    ASSERT_EQ(joint.diagnostics.size(), 2U);
+
+    for (const auto &[density, channel] : {std::pair{std::function<double(double)>(first_density), 0},
+                                           std::pair{std::function<double(double)>(second_density), 1}}) {
+      const auto alone =
+        build_star(make_input<double>([&](const double omega) { return scalar<double>(density(omega)); }), options);
+      for (const auto sign : {Sign::POS, Sign::NEG}) {
+        const auto joint_levels = select(joint, sign, channel);
+        const auto alone_levels = select(alone, sign, 0);
+        ASSERT_EQ(joint_levels.size(), alone_levels.size());
+        for (std::size_t m = 0; m < joint_levels.size(); m++) {
+          EXPECT_EQ(joint_levels[m].energy, alone_levels[m].energy) << "adapt=" << adapt << " m=" << m;
+          EXPECT_EQ(joint_levels[m].coupling(channel), alone_levels[m].coupling(0)) << "adapt=" << adapt << " m=" << m;
+          EXPECT_EQ(joint_levels[m].coupling(1 - channel), 0.0);
+        }
+      }
+      EXPECT_EQ(joint.theta(channel, channel), alone.theta(0, 0));
+    }
+    EXPECT_EQ(joint.theta(0, 1), 0.0);
+  }
+
+  // Kept whole, the adaptive mesh is shared by both channels, and the energies are not those of the scalar runs.
+  auto options         = base_options();
+  options.adapt        = true;
+  options.split_blocks = false;
+  const auto whole     = build_star(input, options);
+  const auto alone =
+    build_star(make_input<double>([&](const double omega) { return scalar<double>(first_density(omega)); }), options);
+  EXPECT_EQ(whole.blocks.size(), 1U);
+  EXPECT_EQ(whole.diagnostics.size(), 1U);
+  EXPECT_GT(std::abs(select(whole, Sign::POS, 0)[3].energy - select(alone, Sign::POS, 0)[3].energy), 1e-6);
+}
+
+TEST(MixChainStar, blocks_are_embedded_in_their_channels) { // NOLINT
+  // Channels 1 and 3 are coupled, channel 2 is on its own.
+  const auto gamma = [](const double omega) {
+    Matrix<Complex> m = Matrix<Complex>::Zero(3, 3);
+    m(0, 0)           = 0.5 + 0.2 * omega;
+    m(2, 2)           = 0.4 - 0.1 * omega;
+    m(0, 2)           = Complex(0.1 * omega, 0.05);
+    m(2, 0)           = std::conj(m(0, 2));
+    m(1, 1)           = 0.3 + omega * omega;
+    return m;
+  };
+  const auto input   = make_input<Complex>(gamma);
+  auto options       = base_options();
+  options.adapt      = true;
+  const auto star    = build_star(input, options);
+  ASSERT_EQ(star.blocks, (Blocks{{0, 2}, {1}}));
+  ASSERT_EQ(star.levels.size(), 2 * 3 * (mmax + 1));
+
+  // The same blocks discretized on their own, and placed in their channels by hand.
+  const auto outer = build_star(restrict_input(input, Block{0, 2}), options);
+  const auto inner = build_star(restrict_input(input, Block{1}), options);
+  for (const auto sign : {Sign::POS, Sign::NEG}) {
+    for (int branch = 0; branch < 3; branch++) {
+      const auto levels = select(star, sign, branch);
+      const auto part   = branch < 2 ? select(outer, sign, branch) : select(inner, sign, 0);
+      ASSERT_EQ(levels.size(), part.size());
+      for (std::size_t m = 0; m < levels.size(); m++) {
+        EXPECT_EQ(levels[m].m, static_cast<int>(m));
+        EXPECT_EQ(levels[m].energy, part[m].energy);
+        if (branch < 2) {
+          EXPECT_EQ(levels[m].coupling(0), part[m].coupling(0));
+          EXPECT_EQ(levels[m].coupling(1), Complex(0.0));
+          EXPECT_EQ(levels[m].coupling(2), part[m].coupling(1));
+        } else {
+          EXPECT_EQ(levels[m].coupling(0), Complex(0.0));
+          EXPECT_EQ(levels[m].coupling(1), part[m].coupling(0));
+          EXPECT_EQ(levels[m].coupling(2), Complex(0.0));
+        }
+      }
+    }
+  }
+  // The levels come in the order of a single block: by sign, then interval, then branch.
+  const auto half = star.levels.size() / 2;
+  for (std::size_t k = 0; k < star.levels.size(); k++) {
+    EXPECT_TRUE(star.levels[k].sign == (k < half ? Sign::POS : Sign::NEG));
+    EXPECT_EQ(star.levels[k].m, static_cast<int>((k % half) / 3));
+    EXPECT_EQ(star.levels[k].branch, static_cast<int>((k % half) % 3));
+  }
+  EXPECT_EQ(star.theta(0, 2), outer.theta(0, 1));
+  EXPECT_EQ(star.theta(1, 1), inner.theta(0, 0));
+  EXPECT_EQ(star.theta(0, 1), Complex(0.0));
+  EXPECT_EQ(star.theta_exact(2, 0), outer.theta_exact(1, 0));
+  EXPECT_EQ(star.diagnostics.size(), 2U);
+}
+
+TEST(MixChainStar, adapt_falls_back_to_the_fixed_mesh_where_gamma_vanishes) { // NOLINT
+  // Split, the second channel is a block with no weight at all.
+  auto options  = base_options();
+  options.adapt = true;
+  const auto star =
+    build_star(make_input<double>([](const double omega) { return diagonal<double>(0.4 + omega, 0.0); }), options);
+  ASSERT_EQ(star.diagnostics.size(), 2U);
+  EXPECT_FALSE(star.diagnostics[0].coverage_pos.fixed_mesh_fallback);
+  EXPECT_TRUE(star.diagnostics[1].coverage_pos.fixed_mesh_fallback);
+  EXPECT_TRUE(star.diagnostics[1].coverage_neg.fixed_mesh_fallback);
+  for (const auto sign : {Sign::POS, Sign::NEG}) {
+    const auto levels = select(star, sign, 1);
+    for (unsigned int m = 0; m <= mmax; m++) {
+      EXPECT_EQ(levels[m].coupling.norm(), 0.0);
+      // At the centre of the interval of the fixed mesh, on the logarithmic scale.
+      const auto centre = std::pow(lambda_value, -static_cast<double>(m) - 0.5);
+      EXPECT_NEAR(std::abs(levels[m].energy), centre, 1e-14);
+    }
+  }
+
+  // A scalar Gamma that vanishes at negative frequencies only.
+  auto input = make_input<double>([](const double) { return scalar<double>(0.3); });
+  for (auto &gamma : input.neg.gamma) gamma = scalar<double>(0.0);
+  const auto one_sided = build_star(input, options);
+  EXPECT_FALSE(one_sided.diagnostics[0].coverage_pos.fixed_mesh_fallback);
+  EXPECT_TRUE(one_sided.diagnostics[0].coverage_neg.fixed_mesh_fallback);
+  for (const auto &level : select(one_sided, Sign::NEG, 0)) EXPECT_EQ(level.coupling(0), 0.0);
+  EXPECT_GT(one_sided.theta(0, 0), 0.0);
+
+  // Without adapt nothing falls back.
+  options.adapt = false;
+  EXPECT_FALSE(build_star(input, options).diagnostics[0].coverage_neg.fixed_mesh_fallback);
+}
+
+TEST(MixChainStar, without_split_blocks_a_diagonal_gamma_is_one_block) { // NOLINT
+  const auto input     = make_input<double>([](const double omega) { return diagonal<double>(0.4 + omega, 0.2); });
+  auto options         = base_options();
+  options.split_blocks = false;
+  const auto star      = build_star(input, options);
+  EXPECT_EQ(star.blocks, (Blocks{{0, 1}}));
+  EXPECT_EQ(star.diagnostics.size(), 1U);
 }
 
 TEST(MixChainStar, rejects_invalid_options) { // NOLINT

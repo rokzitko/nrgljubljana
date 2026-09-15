@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <limits>
+#include <numeric>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -15,6 +16,7 @@
 
 #include <Eigen/Dense>
 
+#include "blocks.hpp"
 #include "star.hpp"
 #include "types.hpp"
 
@@ -54,8 +56,13 @@ struct ChainDiagnostics {
   // The smallest lambda_min/lambda_max over the nonzero eigenvalues of the Gram matrices R^dag R along the chain. It
   // says how close a direction came to being counted as zero.
   double min_residual_condition{1.0};
-  int min_rank{};                            // the smallest rank of a hopping T_n
+  int min_rank{};                            // the smallest rank of a hopping T_n, and never above theta_rank
   std::optional<unsigned int> rank_drop_site; // the first n at which the rank of T_n is below theta_rank
+  std::vector<int> hopping_ranks;             // the rank of every T_n
+  // The levels of the star, and those with a nonzero coupling. Only the latter enter the Krylov space, so a block of
+  // size s spans at most coupled_levels/s full sites.
+  int levels{};
+  int coupled_levels{};
 };
 
 template<typename S> struct Chain {
@@ -64,7 +71,9 @@ template<typename S> struct Chain {
   Matrix<S> V;              // the impurity coupling, Theta^(1/2) in the polar gauge
   std::vector<Matrix<S>> E; // the on-site blocks E_0..E_Nmax
   std::vector<Matrix<S>> T; // the hoppings T_0..T_{Nmax-1}
-  ChainDiagnostics diagnostics;
+  Blocks blocks;            // the blocks of the star, each mapped onto a chain of its own
+  ChainDiagnostics diagnostics;                    // of the whole chain
+  std::vector<ChainDiagnostics> block_diagnostics; // one per block, in the order of 'blocks'
 };
 
 // A scalar of type To from one of type From, through its real and imaginary parts: between double and the wide
@@ -84,10 +93,13 @@ template<typename To, typename From> Matrix<To> convert_matrix(const Matrix<From
   return m.template cast<To>();
 }
 
-// The star in the arithmetic of the recursion: the level energies, which are real, and the starting block A.
+// The star in the arithmetic of the recursion: the level energies, which are real, and the starting block A, with the
+// blocks and the branch label of every level, which says which block the level belongs to.
 template<typename S> struct WideStar {
   std::vector<real_type<S>> energies; // E_k
   Matrix<S> start;                    // A[k,i] = conj(v_{k,i})
+  Blocks blocks;                      // empty for a single block of all channels
+  std::vector<int> branches;          // the branch label of every level
 };
 
 template<typename S, typename StarScalar> auto to_wide(const Star<StarScalar> &star) {
@@ -96,11 +108,14 @@ template<typename S, typename StarScalar> auto to_wide(const Star<StarScalar> &s
   const auto channels = static_cast<Eigen::Index>(star.channels);
 
   WideStar<S> wide;
+  wide.blocks = star.blocks;
   wide.energies.reserve(levels);
+  wide.branches.reserve(levels);
   wide.start = Matrix<S>::Zero(static_cast<Eigen::Index>(levels), channels);
   for (std::size_t k = 0; k < levels; k++) {
     const auto &level = star.levels[k];
     wide.energies.push_back(static_cast<real_type<S>>(level.energy));
+    wide.branches.push_back(level.branch);
     for (Eigen::Index i = 0; i < channels; i++)
       wide.start(static_cast<Eigen::Index>(k), i) = convert_scalar<S>(Eigen::numext::conj(level.coupling(i)));
   }
@@ -183,6 +198,8 @@ template<typename S> Matrix<S> component_along(const Matrix<S> &residual, const 
 
 } // namespace detail
 
+namespace detail {
+
 // Block Lanczos from the star to the chain, in the polar gauge:
 //
 //   start:   Theta = A^dag A,   V = Theta^(1/2),   Q_0 = A Theta^(-1/2),
@@ -193,9 +210,10 @@ template<typename S> Matrix<S> component_along(const Matrix<S> &residual, const 
 // H is the bath Hamiltonian, diagonal in the star levels. Every block is kept, because the reorthogonalization needs
 // them all. 'lanczos_blocks', if given, receives Q_0..Q_Nmax, which only a test has a use for: stacked side by side
 // they are the unitary that maps the star onto the chain.
+//
+// The star is taken as a single block; build_chain() splits it first.
 template<typename S>
-auto build_chain(const WideStar<S> &star, const ChainOptions &options,
-                 std::vector<Matrix<S>> *lanczos_blocks = nullptr) {
+Chain<S> block_lanczos(const WideStar<S> &star, const ChainOptions &options, std::vector<Matrix<S>> *lanczos_blocks) {
   using std::sqrt; // for double; the wide types are found by argument-dependent lookup
   const auto levels   = star.start.rows();
   const auto channels = star.start.cols();
@@ -216,7 +234,10 @@ auto build_chain(const WideStar<S> &star, const ChainOptions &options,
   chain.Nmax     = options.Nmax;
   chain.E.reserve(options.Nmax + 1);
   chain.T.reserve(options.Nmax);
-  auto &diagnostics = chain.diagnostics;
+  auto &diagnostics  = chain.diagnostics;
+  diagnostics.levels = static_cast<int>(levels);
+  for (Eigen::Index k = 0; k < levels; k++)
+    if ((star.start.row(k).array() != S(0)).any()) diagnostics.coupled_levels++;
 
   // The energies are real, but a same-type product with the blocks needs them in S.
   Vector<S> energies(levels);
@@ -265,13 +286,124 @@ auto build_chain(const WideStar<S> &star, const ChainOptions &options,
 
     const Matrix<S> gram = residual.adjoint() * residual;
     const auto step      = detail::hermitian_root<S>(gram, hq.squaredNorm(), options.rank_tolerance);
-    if (step.rank > 0) diagnostics.min_residual_condition = std::min(diagnostics.min_residual_condition, step.condition);
+    if (step.rank > 0)
+      diagnostics.min_residual_condition = std::min(diagnostics.min_residual_condition, step.condition);
     diagnostics.min_rank = std::min(diagnostics.min_rank, step.rank);
+    diagnostics.hopping_ranks.push_back(step.rank);
     if (step.rank < diagnostics.theta_rank && !diagnostics.rank_drop_site) diagnostics.rank_drop_site = n;
     chain.T.push_back(step.root);
     blocks.push_back(residual * step.inverse);
   }
   if (lanczos_blocks) *lanczos_blocks = std::move(blocks);
+  return chain;
+}
+
+// The diagnostics of the whole chain from those of its blocks. Ranks add up site by site; the ratios of eigenvalues
+// are taken within each block, since comparing eigenvalues across independent blocks means nothing.
+inline ChainDiagnostics merge_diagnostics(const std::vector<ChainDiagnostics> &parts, const unsigned int Nmax) {
+  ChainDiagnostics merged;
+  merged.hopping_ranks.assign(Nmax, 0);
+  bool any_rank = false;
+  for (const auto &part : parts) {
+    merged.theta_rank += part.theta_rank;
+    merged.levels += part.levels;
+    merged.coupled_levels += part.coupled_levels;
+    for (unsigned int n = 0; n < Nmax; n++) merged.hopping_ranks[n] += part.hopping_ranks[n];
+    if (part.theta_rank > 0) {
+      merged.theta_condition = any_rank ? std::min(merged.theta_condition, part.theta_condition) : part.theta_condition;
+      any_rank               = true;
+    }
+    merged.min_residual_condition  = std::min(merged.min_residual_condition, part.min_residual_condition);
+    merged.max_antihermitian       = std::max(merged.max_antihermitian, part.max_antihermitian);
+    merged.max_reorthogonalization = std::max(merged.max_reorthogonalization, part.max_reorthogonalization);
+  }
+  merged.min_rank = merged.theta_rank;
+  for (unsigned int n = 0; n < Nmax; n++) {
+    merged.min_rank = std::min(merged.min_rank, merged.hopping_ranks[n]);
+    if (merged.hopping_ranks[n] < merged.theta_rank && !merged.rank_drop_site) merged.rank_drop_site = n;
+  }
+  return merged;
+}
+
+} // namespace detail
+
+// The chain of a star: block Lanczos for each of its blocks, assembled into N x N blocks with exact zeros between
+// channels of different blocks. With a single block this is block_lanczos() itself.
+//
+// The levels are given to the blocks by their branch labels, not by where their couplings are nonzero, so that every
+// block receives its levels with vanishing coupling as well and has 2*size*(mMAX+1) levels, in proportion to its size
+// exactly as the whole star. Within a block the levels keep their order in the star.
+//
+// 'lanczos_blocks', if given, receives Q_0..Q_Nmax of the whole star: the blocks of the parts, placed at the rows of
+// their levels and the columns of their channels.
+template<typename S>
+auto build_chain(const WideStar<S> &star, const ChainOptions &options,
+                 std::vector<Matrix<S>> *lanczos_blocks = nullptr) {
+  const auto levels   = star.start.rows();
+  const auto channels = static_cast<int>(star.start.cols());
+  if (star.blocks.size() <= 1) {
+    auto chain = detail::block_lanczos(star, options, lanczos_blocks);
+    if (star.blocks.empty()) {
+      chain.blocks.emplace_back(static_cast<std::size_t>(channels));
+      std::iota(chain.blocks.front().begin(), chain.blocks.front().end(), 0);
+    } else {
+      chain.blocks = star.blocks;
+    }
+    chain.block_diagnostics = {chain.diagnostics};
+    return chain;
+  }
+  if (star.branches.size() != static_cast<std::size_t>(levels))
+    throw std::invalid_argument("A star with blocks needs the branch label of every level.");
+
+  Chain<S> chain;
+  chain.channels = channels;
+  chain.Nmax     = options.Nmax;
+  chain.blocks   = star.blocks;
+  chain.V        = Matrix<S>::Zero(channels, channels);
+  chain.E.assign(options.Nmax + 1, Matrix<S>::Zero(channels, channels));
+  chain.T.assign(options.Nmax, Matrix<S>::Zero(channels, channels));
+  if (lanczos_blocks) lanczos_blocks->assign(options.Nmax + 1, Matrix<S>::Zero(levels, channels));
+
+  int offset = 0; // the first branch label of the current block
+  for (const auto &block : star.blocks) {
+    const auto size = static_cast<Eigen::Index>(block.size());
+    std::vector<Eigen::Index> rows; // the levels of this block, in their order in the star
+    for (Eigen::Index k = 0; k < levels; k++) {
+      const auto branch = star.branches[static_cast<std::size_t>(k)];
+      if (branch >= offset && branch < offset + size) rows.push_back(k);
+    }
+
+    WideStar<S> part;
+    part.start = Matrix<S>(static_cast<Eigen::Index>(rows.size()), size);
+    part.energies.reserve(rows.size());
+    for (std::size_t r = 0; r < rows.size(); r++) {
+      part.energies.push_back(star.energies[static_cast<std::size_t>(rows[r])]);
+      for (Eigen::Index i = 0; i < size; i++)
+        part.start(static_cast<Eigen::Index>(r), i) = star.start(rows[r], block[static_cast<std::size_t>(i)]);
+    }
+
+    std::vector<Matrix<S>> part_blocks;
+    const auto piece = detail::block_lanczos(part, options, lanczos_blocks ? &part_blocks : nullptr);
+
+    const auto place = [&block, size](Matrix<S> &target, const Matrix<S> &source) {
+      for (Eigen::Index i = 0; i < size; i++)
+        for (Eigen::Index j = 0; j < size; j++)
+          target(block[static_cast<std::size_t>(i)], block[static_cast<std::size_t>(j)]) = source(i, j);
+    };
+    place(chain.V, piece.V);
+    for (unsigned int n = 0; n <= options.Nmax; n++) place(chain.E[n], piece.E[n]);
+    for (unsigned int n = 0; n < options.Nmax; n++) place(chain.T[n], piece.T[n]);
+    if (lanczos_blocks)
+      for (unsigned int n = 0; n <= options.Nmax; n++)
+        for (std::size_t r = 0; r < rows.size(); r++)
+          for (Eigen::Index i = 0; i < size; i++)
+            (*lanczos_blocks)[n](rows[r], block[static_cast<std::size_t>(i)]) =
+              part_blocks[n](static_cast<Eigen::Index>(r), i);
+
+    chain.block_diagnostics.push_back(piece.diagnostics);
+    offset += static_cast<int>(size);
+  }
+  chain.diagnostics = detail::merge_diagnostics(chain.block_diagnostics, options.Nmax);
   return chain;
 }
 
@@ -287,7 +419,9 @@ template<typename To, typename From> auto convert_chain(const Chain<From> &chain
   result.channels    = chain.channels;
   result.Nmax        = chain.Nmax;
   result.V           = convert_matrix<To>(chain.V);
+  result.blocks      = chain.blocks;
   result.diagnostics = chain.diagnostics;
+  result.block_diagnostics = chain.block_diagnostics;
   result.E.reserve(chain.E.size());
   result.T.reserve(chain.T.size());
   for (const auto &block : chain.E) result.E.push_back(convert_matrix<To>(block));

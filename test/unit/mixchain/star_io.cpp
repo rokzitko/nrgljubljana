@@ -228,6 +228,95 @@ TEST(MixChainStarIO, rejects_an_invalid_header) { // NOLINT
   std::remove(filename);
 }
 
+TEST(MixChainStarIO, round_trip_preserves_the_blocks) { // NOLINT
+  const auto filename = "star_io_blocks.dat";
+  // A diagonal Gamma splits into one block per channel.
+  const auto diagonal = [](const double omega) {
+    Matrix<double> m = Matrix<double>::Zero(2, 2);
+    m(0, 0)          = 0.8 - 0.1 * omega;
+    m(1, 1)          = 0.3 + 0.1 * omega;
+    return m;
+  };
+  const auto star = build_star(make_input<double>(diagonal), options_for());
+  ASSERT_EQ(star.blocks, (Blocks{{0}, {1}}));
+  std::ostringstream out;
+  save_star(star, out);
+  EXPECT_NE(out.str().find("\n# blocks= {1} {2}\n"), std::string::npos);
+  save_star(star, filename);
+  const auto loaded = load_star<double>(filename);
+  expect_same_star(star, loaded);
+  EXPECT_EQ(loaded.blocks, star.blocks);
+
+  // Blocks that are not contiguous: channels 1 and 3 are coupled.
+  const auto three = [](const double omega) {
+    Matrix<Complex> m = Matrix<Complex>::Zero(3, 3);
+    m(0, 0)           = 0.5 + 0.2 * omega;
+    m(1, 1)           = 0.3 + omega * omega;
+    m(2, 2)           = 0.4 - 0.1 * omega;
+    m(0, 2)           = Complex(0.1 * omega, 0.05);
+    m(2, 0)           = std::conj(m(0, 2));
+    return m;
+  };
+  const auto split = build_star(make_input<Complex>(three), options_for());
+  ASSERT_EQ(split.blocks, (Blocks{{0, 2}, {1}}));
+  save_star(split, filename);
+  const auto loaded_split = load_star<Complex>(filename);
+  expect_same_star(split, loaded_split);
+  EXPECT_EQ(loaded_split.blocks, split.blocks);
+  std::remove(filename);
+}
+
+TEST(MixChainStarIO, a_single_block_writes_no_blocks_line) { // NOLINT
+  auto options         = options_for();
+  const auto whole     = build_star(make_input<double>(real_gamma), options);
+  options.split_blocks = false;
+  const auto unsplit   = build_star(make_input<double>([](const double omega) {
+                                    Matrix<double> m = Matrix<double>::Identity(2, 2);
+                                    m(0, 0)          = 0.5 + omega;
+                                    return m;
+                                  }),
+                                  options);
+  const auto filename  = "star_io_single_block.dat";
+  for (const auto *star : {&whole, &unsplit}) {
+    ASSERT_EQ(star->blocks, (Blocks{{0, 1}}));
+    std::ostringstream out;
+    save_star(*star, out);
+    EXPECT_EQ(out.str().find("blocks="), std::string::npos);
+    save_star(*star, filename);
+    EXPECT_EQ(load_star<double>(filename).blocks, (Blocks{{0, 1}}));
+  }
+
+  // A file written before blocks existed is a single block.
+  write_file(filename, minimal_star);
+  EXPECT_EQ(load_star<double>(filename).blocks, (Blocks{{0}}));
+  std::remove(filename);
+}
+
+TEST(MixChainStarIO, rejects_inconsistent_blocks) { // NOLINT
+  const auto filename = "star_io_bad_blocks.dat";
+  const auto header   = std::string("# channels=2 mMAX=0 z=1 Lambda=2 bandrescale=1 complex=0\n");
+  // Two blocks of one channel each: branch 0 belongs to channel 1, branch 1 to channel 2.
+  const auto rows = [](const std::string &first) {
+    return first + "0 + 1 0.7 0 0.4\n0 - 0 -0.7 0.5 0\n0 - 1 -0.7 0 0.4\n";
+  };
+
+  write_file(filename, header + "# blocks= {1} {2}\n" + rows("0 + 0 0.7 0.5 0\n"));
+  EXPECT_EQ(load_star<double>(filename).blocks, (Blocks{{0}, {1}}));
+  write_file(filename, header + "# blocks= {1} {2}\n" + rows("0 + 0 0.7 0 0\n")); // a level with no coupling
+  EXPECT_NO_THROW(load_star<double>(filename));
+
+  write_file(filename, header + "# blocks= {1} {2}\n" + rows("0 + 0 0.7 0 0.5\n")); // in the other block
+  EXPECT_THROW(load_star<double>(filename), std::runtime_error);
+  write_file(filename, header + "# blocks= {1} {2}\n" + rows("0 + 0 0.7 0.5 0.5\n")); // across both blocks
+  EXPECT_THROW(load_star<double>(filename), std::runtime_error);
+
+  for (const auto *line : {"# blocks= {1,1}\n", "# blocks= {1}\n", "# blocks= {1} {2}\n# blocks= {1} {2}\n"}) {
+    write_file(filename, header + line + rows("0 + 0 0.7 0.5 0\n"));
+    EXPECT_THROW(read_star_header(filename), std::runtime_error) << line;
+  }
+  std::remove(filename);
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS(); // NOLINT

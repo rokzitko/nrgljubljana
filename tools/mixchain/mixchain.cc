@@ -25,6 +25,7 @@
 #include "../common/diagnostics.hpp"
 #include "../common/gsl_config.hpp"
 #include "../common/tabulated_density.hpp"
+#include "blocks.hpp"
 #include "branches.hpp"
 #include "chain.hpp"
 #include "chain_io.hpp"
@@ -188,6 +189,7 @@ void read_star_configuration(const Params &P, const CommandLineOptions &command_
   star.interpolation =
     NRG::Tools::parse_density_interpolation_method(P.Pstr("density_interpolation", "linear"));
   star.branches.ordering = branch_ordering_from_string(P.Pstr("branch_ordering", "tracked"));
+  star.split_blocks      = P.Pbool("split_blocks", true);
   star.allowed_error     = P.P("allowed_error", 1e-10);
   star.cquad             = command_line.cquad;
 
@@ -285,41 +287,49 @@ void report_star_configuration(const Configuration &configuration, const Command
   report.value("mesh_weight", star.adapt ? mesh_weight_name(star.mesh_weight) : std::string("inactive"));
   report.value("density_interpolation", NRG::Tools::interpolation_method_name(star.interpolation));
   report.value("branch_ordering", branch_ordering_name(star.branches.ordering));
+  report.value("split_blocks", star.split_blocks ? std::string("true") : std::string("false"));
   report.value("allowed_error", star.allowed_error);
   report.value("hermiticity_tolerance", configuration.gamma.hermiticity_tolerance);
 }
 
 template<typename S> void report_star(const Star<S> &star, std::ostream &out) {
-  const auto &diagnostics = star.diagnostics;
   out << "# levels=" << star.levels.size() << " complex=" << (is_complex_v<S> ? 1 : 0) << std::endl;
-  out << "# max_interval_deviation=" << diagnostics.max_interval_deviation
-      << " at omega=" << diagnostics.max_interval_omega << std::endl;
-  out << "# max_cquad_error=" << diagnostics.max_cquad_error << std::endl;
-  out << "# crossings: " << diagnostics.crossings_pos.size() << " positive, " << diagnostics.crossings_neg.size()
-      << " negative" << std::endl;
+  for (std::size_t b = 0; b < star.diagnostics.size(); b++) {
+    const auto &diagnostics = star.diagnostics[b];
+    // With a single block the lines carry no prefix, as they did before blocks existed.
+    const auto block = star.blocks.size() > 1 ? "block " + blocks_name({star.blocks[b]}) + ": " : std::string();
+    out << "# " << block << "max_interval_deviation=" << diagnostics.max_interval_deviation
+        << " at omega=" << diagnostics.max_interval_omega << std::endl;
+    out << "# " << block << "max_cquad_error=" << diagnostics.max_cquad_error << std::endl;
+    out << "# " << block << "crossings: " << diagnostics.crossings_pos.size() << " positive, "
+        << diagnostics.crossings_neg.size() << " negative" << std::endl;
 
-  // Where the mesh reaches below the innermost tabulated frequency, the density is the constant continuation of the
-  // input: exact for a flat band, an approximation for anything with structure at low frequency.
-  // These frequencies are compared with the input grid and can sit very close to an accumulation point, so they are
-  // printed with every digit that distinguishes them.
-  const auto precision = out.precision(std::numeric_limits<double>::max_digits10);
-  for (const auto &[name, coverage] : {std::pair{"POS", &diagnostics.coverage_pos},
-                                       std::pair{"NEG", &diagnostics.coverage_neg}}) {
-    if (coverage->collapsed_levels > 0)
-      out << "# " << name << ": " << coverage->collapsed_levels
-          << " representative energy levels are indistinguishable from the accumulation point "
-          << coverage->accumulation_point << " in double precision" << std::endl;
-    if (coverage->unresolved_intervals == 0) continue;
-    out << "# " << name << ": " << coverage->unresolved_intervals << " of " << star.mMAX + 1
-        << " intervals contain no tabulated point of the input, the outermost being [" << coverage->unresolved_to
-        << ", " << coverage->unresolved_from << "]; ";
-    if (coverage->continued())
-      out << "the input ends at omega=" << coverage->innermost_input
-          << " and below that the density is its constant continuation" << std::endl;
-    else
-      out << "there the star follows the interpolant between neighbouring points" << std::endl;
+    // Where the mesh reaches below the innermost tabulated frequency, the density is the constant continuation of
+    // the input: exact for a flat band, an approximation for anything with structure at low frequency.
+    // These frequencies are compared with the input grid and can sit very close to an accumulation point, so they
+    // are printed with every digit that distinguishes them.
+    const auto precision = out.precision(std::numeric_limits<double>::max_digits10);
+    for (const auto &[name, coverage] : {std::pair{"POS", &diagnostics.coverage_pos},
+                                         std::pair{"NEG", &diagnostics.coverage_neg}}) {
+      const auto prefix = "# " + block + name + ": ";
+      if (coverage->fixed_mesh_fallback)
+        out << prefix << "Gamma vanishes on this branch; fixed mesh used" << std::endl;
+      if (coverage->collapsed_levels > 0)
+        out << prefix << coverage->collapsed_levels
+            << " representative energy levels are indistinguishable from the accumulation point "
+            << coverage->accumulation_point << " in double precision" << std::endl;
+      if (coverage->unresolved_intervals == 0) continue;
+      out << prefix << coverage->unresolved_intervals << " of " << star.mMAX + 1
+          << " intervals contain no tabulated point of the input, the outermost being [" << coverage->unresolved_to
+          << ", " << coverage->unresolved_from << "]; ";
+      if (coverage->continued())
+        out << "the input ends at omega=" << coverage->innermost_input
+            << " and below that the density is its constant continuation" << std::endl;
+      else
+        out << "there the star follows the interpolant between neighbouring points" << std::endl;
+    }
+    out.precision(precision);
   }
-  out.precision(precision);
 
   // The trace of Theta agrees with that of the integral of Gamma by construction; the off-diagonal elements only
   // approximately, because a single level per interval and branch cannot follow a rotating eigenvector.
@@ -359,6 +369,13 @@ template<typename S> void run_star(const Configuration &configuration, const std
   const auto input       = load_gamma<S>(configuration.gamma);
   StarDiscretizer<S> discretizer(input, configuration.star);
   std::cout << "# star setup: " << seconds_since(setup_start) << " s" << std::endl;
+  // The blocks do not depend on z, so they are reported once.
+  if (configuration.star.split_blocks) {
+    if (discretizer.blocks().size() > 1)
+      std::cout << "# blocks: " << blocks_name(discretizer.blocks()) << std::endl;
+    else
+      std::cout << "# blocks: none (Gamma does not split)" << std::endl;
+  }
 
   for (const auto &target : list) {
     const auto start = std::chrono::steady_clock::now();
@@ -398,7 +415,9 @@ void check_star_against_parameters(const Star<S> &star, const Params &P, const T
 template<typename S> void report_chain(const Chain<S> &chain, const unsigned digits, std::ostream &out) {
   const auto &d = chain.diagnostics;
   out << "# chain: sites=" << chain.Nmax + 1 << " channels=" << chain.channels << " digits=" << digits << std::endl;
-  out << "# theta_rank=" << d.theta_rank << " theta_condition=" << d.theta_condition
+  if (chain.blocks.size() > 1) out << "# blocks: " << blocks_name(chain.blocks) << std::endl;
+  out << "# levels=" << d.levels << " coupled_levels=" << d.coupled_levels << " theta_rank=" << d.theta_rank
+      << " theta_condition=" << d.theta_condition
       << " min_residual_condition=" << d.min_residual_condition << std::endl;
   out << "# max_antihermitian=" << d.max_antihermitian << " max_reorthogonalization=" << d.max_reorthogonalization
       << std::endl;
@@ -409,12 +428,18 @@ template<typename S> void report_chain(const Chain<S> &chain, const unsigned dig
         << (decoupled == 1 ? "" : "s") << " of the impurity orbitals do" << (decoupled == 1 ? "es" : "")
         << " not couple to the bath, and its part of the chain is zero" << std::endl;
   }
-  if (d.rank_drop_site)
-    std::cerr << "mixchain: warning: the rank of the hopping drops below " << d.theta_rank << " at site "
-              << *d.rank_drop_site << " (smallest rank " << d.min_rank
-              << "): the Krylov space of the star is exhausted in some direction, and the chain is zero in it from "
-                 "there on. The star probably has too few levels with nonzero coupling; increase mMAX or decrease "
-                 "Nmax." << std::endl;
+  // A drop is reported for each block where it happens: what limits the chain is a property of that block's star.
+  for (std::size_t b = 0; b < chain.blocks.size(); b++) {
+    const auto &part = chain.block_diagnostics[b];
+    if (!part.rank_drop_site) continue;
+    std::cerr << "mixchain: warning: the rank of the hopping drops below " << part.theta_rank << " at site "
+              << *part.rank_drop_site << " (smallest rank " << part.min_rank << "), in block "
+              << blocks_name({chain.blocks[b]}) << ": the Krylov space of the star is exhausted in some direction, "
+              << "and the chain is zero in it from there on. The block has " << part.coupled_levels << " of "
+              << part.levels << " levels with nonzero coupling; the others lie where Gamma vanishes on the mesh or "
+              << "collapsed onto an accumulation point. A mesh that follows this block (adapt=true, split_blocks=true) "
+              << "or a smaller Nmax avoids it." << std::endl;
+  }
 }
 
 // The chain is built from star.dat also in the default mode, right after the star stage has written it, so that the
