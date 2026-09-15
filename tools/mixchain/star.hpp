@@ -125,59 +125,92 @@ inline auto bracketing_node(const std::vector<double> &omega, const double energ
   return static_cast<std::size_t>(std::distance(omega.begin(), upper) - 1);
 }
 
-// Discretize one frequency branch and append its levels to the star.
+// One frequency branch of the discretization, set up once and evaluated for any number of values of z.
 //
-// Everything here is a local variable on purpose: CumulativeWeight keeps a pointer to its density and
-// IntegralRepresentativeEnergy keeps pointers to the mesh and to its cumulative weight, so each vector is reserved
-// to its final size before the next one is built on top of it, and the mesh is never moved once it is wired up.
-template<typename S>
-void discretize_sign(const GammaBranch<S> &branch, const Sign sign, const StarOptions &options, Star<S> &star) {
-  const auto decomposition = decompose_branch(branch, options.branches);
-  const auto channels      = static_cast<std::size_t>(decomposition.channels);
-  const auto dimension     = static_cast<Eigen::Index>(channels);
-
-  Mesh mesh = options.adapt ? Mesh(options.Lambda, options.hardgap, options.boundary,
-                                   mesh_weight_table(branch, options.mesh_weight), options.interpolation)
-                            : Mesh(options.Lambda, options.hardgap, options.boundary);
-  GammaInterpolation<S> interpolation(branch, options.interpolation);
-
-  std::vector<NRG::Tools::TabulatedDensity> densities;
-  densities.reserve(channels);
-  for (std::size_t a = 0; a < channels; a++) densities.emplace_back(decomposition.density[a], options.interpolation);
-
-  // A branch whose density vanishes over the whole band carries no weight anywhere: Gamma is rank deficient, which
-  // is a legitimate input. Its levels are kept, with vanishing coupling, but it has no cumulative weight.
-  std::vector<bool> empty(channels, false);
-  std::vector<NRG::Tools::CumulativeWeight> cumulatives;
-  cumulatives.reserve(channels);
-  for (std::size_t a = 0; a < channels; a++) {
-    empty[a] = !(densities[a].integral(0.0, 1.0) > 0.0);
-    cumulatives.emplace_back();
-    if (!empty[a]) cumulatives.back() = NRG::Tools::CumulativeWeight(densities[a], decomposition.density[a]);
-  }
-
-  auto workspace   = detail::make_cquad_workspace(options.cquad);
-  double max_error = 0.0;
+// Everything that does not depend on z is built by the constructor: the branch decomposition, the mesh, the
+// interpolation of Gamma, the branch densities with their cumulative weights, and the evaluators of the
+// representative energies. evaluate() then runs the interval loop for one z.
+//
+// The members point into each other: a CumulativeWeight keeps a pointer to its density, and an
+// IntegralRepresentativeEnergy keeps pointers to the mesh, to its cumulative weight and to max_error_. Each vector
+// is therefore reserved to its final size before the next one is built on top of it, and the object can be neither
+// copied nor moved.
+template<typename S> class SignDiscretizer {
+ private:
   using Representative = NRG::Tools::IntegralRepresentativeEnergy<Mesh>;
-  std::vector<Representative> representatives;
-  representatives.reserve(channels);
-  for (std::size_t a = 0; a < channels; a++) {
-    representatives.emplace_back();
-    if (!empty[a])
-      representatives.back() = Representative(mesh, cumulatives[a], options.cquad, options.allowed_error, max_error,
-                                              NRG::Tools::WarnToCerr{"mixchain: warning: "});
+
+  Sign sign_;
+  StarOptions options_;
+  BranchDecomposition<S> decomposition_;
+  std::size_t channels_;
+  Mesh mesh_;
+  GammaInterpolation<S> interpolation_;
+  std::vector<NRG::Tools::TabulatedDensity> densities_;
+  std::vector<bool> empty_;
+  std::vector<NRG::Tools::CumulativeWeight> cumulatives_;
+  std::unique_ptr<gsl_integration_cquad_workspace, NRG::Tools::GslWorkspaceDeleter> workspace_;
+  double max_error_{};
+  std::vector<Representative> representatives_;
+  double accumulation_point_{};
+  double innermost_input_{};
+
+ public:
+  SignDiscretizer(const GammaBranch<S> &branch, const Sign sign, const StarOptions &options)
+    : sign_(sign), options_(options), decomposition_(decompose_branch(branch, options.branches)),
+      channels_(static_cast<std::size_t>(decomposition_.channels)),
+      mesh_(options.adapt ? Mesh(options.Lambda, options.hardgap, options.boundary,
+                                 mesh_weight_table(branch, options.mesh_weight), options.interpolation)
+                          : Mesh(options.Lambda, options.hardgap, options.boundary)),
+      interpolation_(branch, options.interpolation), workspace_(make_cquad_workspace(options.cquad)),
+      innermost_input_(branch.innermost) {
+    densities_.reserve(channels_);
+    for (std::size_t a = 0; a < channels_; a++)
+      densities_.emplace_back(decomposition_.density[a], options.interpolation);
+
+    // A branch whose density vanishes over the whole band carries no weight anywhere: Gamma is rank deficient, which
+    // is a legitimate input. Its levels are kept, with vanishing coupling, but it has no cumulative weight.
+    empty_.assign(channels_, false);
+    cumulatives_.reserve(channels_);
+    for (std::size_t a = 0; a < channels_; a++) {
+      empty_[a] = !(densities_[a].integral(0.0, 1.0) > 0.0);
+      cumulatives_.emplace_back();
+      if (!empty_[a]) cumulatives_.back() = NRG::Tools::CumulativeWeight(densities_[a], decomposition_.density[a]);
+    }
+
+    representatives_.reserve(channels_);
+    for (std::size_t a = 0; a < channels_; a++) {
+      representatives_.emplace_back();
+      if (!empty_[a])
+        representatives_.back() = Representative(mesh_, cumulatives_[a], options.cquad, options.allowed_error,
+                                                 max_error_, NRG::Tools::WarnToCerr{"mixchain: warning: "});
+    }
+    accumulation_point_ = mesh_.accumulation_point();
   }
+
+  SignDiscretizer(const SignDiscretizer &)            = delete;
+  SignDiscretizer &operator=(const SignDiscretizer &) = delete;
+  SignDiscretizer(SignDiscretizer &&)                 = delete;
+  SignDiscretizer &operator=(SignDiscretizer &&)      = delete;
+
+  // Append the levels of this frequency branch for one value of z to the star, with their diagnostics. Not const:
+  // evaluating the densities updates their caches.
+  void evaluate(const double z, Star<S> &star);
+};
+
+template<typename S> void SignDiscretizer<S>::evaluate(const double z, Star<S> &star) {
+  const auto dimension = static_cast<Eigen::Index>(channels_);
+  max_error_           = 0.0; // the error estimate belongs to this z alone
 
   BranchCoverage coverage;
-  coverage.accumulation_point = mesh.accumulation_point();
-  for (unsigned int m = 0; m <= options.mMAX; m++) {
-    const auto x     = options.z + m + 1.0;
-    const auto upper = mesh.eps(x);
-    const auto lower = mesh.eps(x + 1.0);
+  coverage.accumulation_point = accumulation_point_;
+  for (unsigned int m = 0; m <= options_.mMAX; m++) {
+    const auto x     = z + m + 1.0;
+    const auto upper = mesh_.eps(x);
+    const auto lower = mesh_.eps(x + 1.0);
 
     // An interval that holds no node of the input follows the interpolant alone.
-    const auto first_inside = std::upper_bound(decomposition.omega.begin(), decomposition.omega.end(), lower);
-    if (first_inside == decomposition.omega.end() || *first_inside >= upper) {
+    const auto first_inside = std::upper_bound(decomposition_.omega.begin(), decomposition_.omega.end(), lower);
+    if (first_inside == decomposition_.omega.end() || *first_inside >= upper) {
       coverage.unresolved_intervals++;
       if (upper > coverage.unresolved_from) {
         coverage.unresolved_from = upper;
@@ -185,14 +218,14 @@ void discretize_sign(const GammaBranch<S> &branch, const Sign sign, const StarOp
       }
     }
     // Bounds that are the same double: the interval has no width, and every level in it no weight.
-    if (lower == upper) coverage.collapsed_levels += static_cast<int>(channels);
+    if (lower == upper) coverage.collapsed_levels += static_cast<int>(channels_);
 
-    std::vector<double> weights(channels), energies(channels);
-    for (std::size_t a = 0; a < channels; a++) {
-      weights[a] = densities[a].integral(lower, upper);
+    std::vector<double> weights(channels_), energies(channels_);
+    for (std::size_t a = 0; a < channels_; a++) {
+      weights[a] = densities_[a].integral(lower, upper);
       // An empty branch has no cumulative weight to invert. Its levels are placed at the centre of the interval on
       // the logarithmic mesh; the value is inert, because the coupling vanishes.
-      energies[a] = empty[a] ? std::sqrt(lower * upper) : representatives[a].Eps(x, workspace.get());
+      energies[a] = empty_[a] ? std::sqrt(lower * upper) : representatives_[a].Eps(x, workspace_.get());
       if (!(std::isfinite(energies[a]) && energies[a] > 0.0))
         throw std::runtime_error("The representative energy of branch " + std::to_string(a + 1) + " at x="
                                  + std::to_string(x) + " is not positive and finite.");
@@ -200,12 +233,12 @@ void discretize_sign(const GammaBranch<S> &branch, const Sign sign, const StarOp
 
     // The eigenvectors at the representative energies. Branches whose energies coincide share one diagonalization,
     // so that degenerate branches give a mutually orthonormal set of coupling vectors.
-    std::vector<Matrix<S>> vectors(channels);
-    for (std::size_t a = 0; a < channels; a++) {
+    std::vector<Matrix<S>> vectors(channels_);
+    for (std::size_t a = 0; a < channels_; a++) {
       std::size_t source = a;
       for (std::size_t b = 0; b < a; b++) {
         if (std::abs(energies[a] - energies[b])
-            <= options.coincidence_tolerance * std::max(energies[a], energies[b])) {
+            <= options_.coincidence_tolerance * std::max(energies[a], energies[b])) {
           source = b;
           break;
         }
@@ -214,19 +247,19 @@ void discretize_sign(const GammaBranch<S> &branch, const Sign sign, const StarOp
         vectors[a] = vectors[source];
         continue;
       }
-      const auto node      = bracketing_node(decomposition.omega, energies[a]);
-      const auto reference = decomposition.vectors[node];
-      vectors[a] = labelled_vectors<S>(interpolation(energies[a]), energies[a], reference, options.branches).second;
+      const auto node      = bracketing_node(decomposition_.omega, energies[a]);
+      const auto reference = decomposition_.vectors[node];
+      vectors[a] = labelled_vectors<S>(interpolation_(energies[a]), energies[a], reference, options_.branches).second;
     }
 
     Matrix<S> reconstructed = Matrix<S>::Zero(dimension, dimension);
-    for (std::size_t a = 0; a < channels; a++) {
+    for (std::size_t a = 0; a < channels_; a++) {
       const Vector<S> u = vectors[a].col(static_cast<Eigen::Index>(a));
       StarLevel<S> level;
       level.m        = static_cast<int>(m);
-      level.sign     = sign;
+      level.sign     = sign_;
       level.branch   = static_cast<int>(a);
-      level.energy   = sign_value(sign) * energies[a];
+      level.energy   = sign_value(sign_) * energies[a];
       level.coupling = std::sqrt(weights[a]) * u;
       reconstructed += weights[a] * (u * u.adjoint());
       star.theta += level.coupling * level.coupling.adjoint();
@@ -235,7 +268,7 @@ void discretize_sign(const GammaBranch<S> &branch, const Sign sign, const StarOp
 
     // The per-interval sum rule: the star must reproduce the integral of Gamma over the interval. It fails where the
     // branches are mislabelled, or where the eigenvectors rotate too fast for the interval to resolve.
-    const Matrix<S> exact = interpolation.integral(lower, upper);
+    const Matrix<S> exact = interpolation_.integral(lower, upper);
     const auto scale      = exact.norm();
     if (scale > 0.0) {
       const auto deviation = (reconstructed - exact).norm() / scale;
@@ -246,40 +279,61 @@ void discretize_sign(const GammaBranch<S> &branch, const Sign sign, const StarOp
     }
   }
 
-  const auto lowest_mesh = mesh.eps(options.z + options.mMAX + 2.0);
-  star.theta_exact += interpolation.integral(lowest_mesh, mesh.eps(options.z + 1.0));
-  star.diagnostics.max_cquad_error = std::max(star.diagnostics.max_cquad_error, max_error);
-  (sign == Sign::POS ? star.diagnostics.crossings_pos : star.diagnostics.crossings_neg) = decomposition.crossings;
+  const auto lowest_mesh = mesh_.eps(z + options_.mMAX + 2.0);
+  star.theta_exact += interpolation_.integral(lowest_mesh, mesh_.eps(z + 1.0));
+  star.diagnostics.max_cquad_error = std::max(star.diagnostics.max_cquad_error, max_error_);
+  (sign_ == Sign::POS ? star.diagnostics.crossings_pos : star.diagnostics.crossings_neg) = decomposition_.crossings;
   coverage.lowest_mesh     = lowest_mesh;
-  coverage.innermost_input = branch.innermost;
-  (sign == Sign::POS ? star.diagnostics.coverage_pos : star.diagnostics.coverage_neg) = coverage;
+  coverage.innermost_input = innermost_input_;
+  (sign_ == Sign::POS ? star.diagnostics.coverage_pos : star.diagnostics.coverage_neg) = coverage;
 }
 
 } // namespace detail
 
-// Discretize Gamma into a star Hamiltonian: for every interval, every frequency branch and every eigenvalue branch,
-// one bath level at the representative energy with coupling vector sqrt(w) u.
+// The discretization of Gamma, set up once and evaluated for any number of values of z. The setup covers everything
+// that does not depend on z; star(z) runs the interval loop for one z and returns a complete star, with its own
+// diagnostics.
+template<typename S> class StarDiscretizer {
+ private:
+  int channels_{};
+  StarOptions options_;
+  std::unique_ptr<detail::SignDiscretizer<S>> positive_;
+  std::unique_ptr<detail::SignDiscretizer<S>> negative_;
+
+ public:
+  StarDiscretizer(const GammaInput<S> &input, const StarOptions &options) : channels_(input.channels), options_(options) {
+    if (!(static_cast<double>(options.Lambda) > 1.0)) throw std::invalid_argument("Lambda must be greater than 1.");
+    if (options.mMAX < 1) throw std::invalid_argument("mMAX must be greater than 0.");
+    if (!(std::isfinite(options.allowed_error) && options.allowed_error > 0.0))
+      throw std::invalid_argument("allowed_error must be a positive finite number.");
+    positive_ = std::make_unique<detail::SignDiscretizer<S>>(input.pos, Sign::POS, options);
+    negative_ = std::make_unique<detail::SignDiscretizer<S>>(input.neg, Sign::NEG, options);
+  }
+
+  // For every interval, every frequency branch and every eigenvalue branch, one bath level at the representative
+  // energy with coupling vector sqrt(w) u. The z of the options is not used here.
+  Star<S> star(const double z) {
+    if (!(z > 0.0 && z <= 1.0)) throw std::invalid_argument("z must be in (0,1].");
+    const auto dimension = static_cast<Eigen::Index>(channels_);
+    Star<S> result;
+    result.channels    = channels_;
+    result.mMAX        = options_.mMAX;
+    result.z           = z;
+    result.Lambda      = options_.Lambda;
+    result.bandrescale = options_.bandrescale;
+    result.theta       = Matrix<S>::Zero(dimension, dimension);
+    result.theta_exact = Matrix<S>::Zero(dimension, dimension);
+    result.levels.reserve(2 * static_cast<std::size_t>(channels_) * (options_.mMAX + 1));
+    positive_->evaluate(z, result);
+    negative_->evaluate(z, result);
+    return result;
+  }
+};
+
+// A single star, for the z of the options.
 template<typename S> auto build_star(const GammaInput<S> &input, const StarOptions &options) {
-  if (!(static_cast<double>(options.Lambda) > 1.0)) throw std::invalid_argument("Lambda must be greater than 1.");
   if (!(options.z > 0.0 && options.z <= 1.0)) throw std::invalid_argument("z must be in (0,1].");
-  if (options.mMAX < 1) throw std::invalid_argument("mMAX must be greater than 0.");
-  if (!(std::isfinite(options.allowed_error) && options.allowed_error > 0.0))
-    throw std::invalid_argument("allowed_error must be a positive finite number.");
-
-  const auto dimension = static_cast<Eigen::Index>(input.channels);
-  Star<S> star;
-  star.channels    = input.channels;
-  star.mMAX        = options.mMAX;
-  star.z           = options.z;
-  star.Lambda      = options.Lambda;
-  star.bandrescale = options.bandrescale;
-  star.theta       = Matrix<S>::Zero(dimension, dimension);
-  star.theta_exact = Matrix<S>::Zero(dimension, dimension);
-  star.levels.reserve(2 * static_cast<std::size_t>(input.channels) * (options.mMAX + 1));
-
-  detail::discretize_sign(input.pos, Sign::POS, options, star);
-  detail::discretize_sign(input.neg, Sign::NEG, options, star);
-  return star;
+  return StarDiscretizer<S>(input, options).star(options.z);
 }
 
 } // namespace NRG::MixChain

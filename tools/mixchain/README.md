@@ -19,6 +19,7 @@ mixchain [options] [s|l] [parameter_file]
 - `s` runs the star stage: it reads $\Gamma$ and writes `star.dat`.
 - `l` runs the chain stage: it reads `star.dat` and writes `chain.dat`.
 - With neither, both stages run in turn. The chain is built from `star.dat` in this case too, so the default mode and `s` followed by `l` give the same chain.
+- `--Nz N` runs for $z_i = i/N$, $i = 1,\ldots,N$, with the files for $z_i$ in the directory `i/`. A `z` in the parameter file is then ignored. The star stage does everything that does not depend on $z$ once and shares it between the values of $z$; `l` reads `i/star.dat` and writes `i/chain.dat`, and checks that each star was built for $z_i$.
 - `--epsabs VALUE`, `--epsrel VALUE`, `--workspace-limit N` and `--gsl-error-policy ignore|warn|fail` control the CQUAD integration of the representative energies, with the names, defaults and meaning they have for `adapt --integral`.
 - `-v` writes the resolved configuration to standard error.
 - `-vv` is accepted for uniformity with the other tools and currently reports the same as `-v`.
@@ -26,12 +27,14 @@ mixchain [options] [s|l] [parameter_file]
 - `-h` or `--help` prints the command synopsis.
 
 Options and positional arguments may be given in either order. Each stage prints its diagnostics and its wall-clock
-time to standard output. Input and output paths are relative to the working directory.
+time to standard output, with the shared setup of the star stage and each value of $z$ timed separately. Input and
+output paths are relative to the working directory.
 
 ```sh
 mixchain                 # star and chain
 mixchain s custom.param  # the star only
 mixchain -v l            # the chain from an existing star.dat
+mixchain --Nz 4          # stars and chains for z = 1/4, 1/2, 3/4, 1 in 1/ .. 4/
 ```
 
 ## Input
@@ -91,8 +94,9 @@ is the same.
 `boundary` is a fraction of the rescaled band edge, as in `adapt`: a gap $\Delta$ in the units of the input with
 `bandrescale`$=D$ is `boundary`$=\Delta/D$. The `-v` report prints both values.
 
-The chain stage takes $\Lambda$, $z$ and `bandrescale` from `star.dat`. If the parameter file sets any of them to a
-different value, the stage stops rather than choose between the two.
+The chain stage takes $\Lambda$, $z$ and `bandrescale` from `star.dat`. If the parameter file sets $\Lambda$ or
+`bandrescale` to a different value, the stage stops rather than choose between the two. The same holds for $z$: with
+`--Nz` it must be $i/N$ for the star in `i/`, and otherwise it must match a `z` given in the parameter file.
 
 ## Star stage
 
@@ -185,6 +189,8 @@ the chain when the Krylov space of the star is exhausted, for instance when too 
 stage with the site and the rank. The star must have at least `channels*(Nmax+1)` levels.
 
 ## Outputs
+
+Both files are written to the working directory, or to `i/` for $z_i$ with `--Nz`.
 
 ### `star.dat`
 

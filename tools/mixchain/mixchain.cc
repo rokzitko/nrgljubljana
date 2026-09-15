@@ -9,13 +9,16 @@
 #include <complex>
 #include <cstdlib>
 #include <ctime>
+#include <filesystem>
 #include <iomanip>
 #include <iostream>
 #include <limits>
+#include <optional>
 #include <ostream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include <common/version.hpp>
 
@@ -57,6 +60,8 @@ void usage(std::ostream &F = std::cout) {
   F << " --epsrel VALUE -- relative tolerance of the integral method" << std::endl;
   F << " --workspace-limit VALUE -- size of the integration workspace" << std::endl;
   F << " --gsl-error-policy fail|warn|ignore -- how to report integration failures" << std::endl;
+  F << " --Nz N -- discretize for z = i/N, i = 1..N, into the directories 1/ .. N/; z in the parameter file is ignored"
+    << std::endl;
   F << " s -- discretize Gamma and write the star to star.dat" << std::endl;
   F << " l -- read the star from star.dat, tridiagonalize, and write the chain to chain.dat" << std::endl;
   F << " (no mode) -- both, one after the other" << std::endl;
@@ -67,6 +72,7 @@ struct CommandLineOptions {
   Mode mode                  = Mode::Full;
   int verbosity              = 0;
   NRG::Tools::CquadOptions cquad;
+  std::optional<unsigned int> Nz; // several values of z, each in its own directory
 };
 
 bool matches_value_option(const std::string &arg, const std::string &option) {
@@ -122,6 +128,14 @@ CommandLineOptions cmd_line(int argc, char *argv[]) {
         throw std::invalid_argument("--gsl-error-policy specified more than once.\n" + std::string(usage_text));
       options.cquad.gsl_error_policy =
         NRG::Tools::parse_gsl_error_policy(value_for_option(arg, "--gsl-error-policy", i, argc, argv));
+      continue;
+    }
+    if (matches_value_option(arg, "--Nz")) {
+      if (options.Nz) throw std::invalid_argument("--Nz specified more than once.\n" + std::string(usage_text));
+      const auto value = value_for_option(arg, "--Nz", i, argc, argv);
+      const auto count = NRG::Tools::parse_parameter_int(value, "--Nz");
+      if (count <= 0) throw std::invalid_argument("--Nz must be a positive integer: " + value);
+      options.Nz = static_cast<unsigned int>(count);
       continue;
     }
     if (arg == "s" || arg == "l") {
@@ -226,7 +240,8 @@ const char *mode_name(const Mode mode) {
   return "unknown";
 }
 
-void report_star_configuration(const Configuration &configuration, NRG::Tools::ConfigurationReport &report);
+void report_star_configuration(const Configuration &configuration, const CommandLineOptions &command_line,
+                               NRG::Tools::ConfigurationReport &report);
 
 void report_configuration(const Configuration &configuration, const CommandLineOptions &command_line) {
   if (command_line.verbosity == 0) return;
@@ -234,7 +249,8 @@ void report_configuration(const Configuration &configuration, const CommandLineO
   report.value("verbosity", command_line.verbosity);
   report.value("parameter_file", command_line.param_filename);
   report.value("mode", mode_name(command_line.mode));
-  if (builds_star(command_line.mode)) report_star_configuration(configuration, report);
+  if (command_line.Nz) report.value("Nz", *command_line.Nz);
+  if (builds_star(command_line.mode)) report_star_configuration(configuration, command_line, report);
   if (builds_chain(command_line.mode)) {
     report.value("Nmax", configuration.chain.Nmax);
     report.value("preccpp", configuration.preccpp);
@@ -244,12 +260,17 @@ void report_configuration(const Configuration &configuration, const CommandLineO
   report.write(std::cerr);
 }
 
-void report_star_configuration(const Configuration &configuration, NRG::Tools::ConfigurationReport &report) {
+void report_star_configuration(const Configuration &configuration, const CommandLineOptions &command_line,
+                               NRG::Tools::ConfigurationReport &report) {
   const auto &star = configuration.star;
   report.value("channels", configuration.gamma.channels);
   report.value("dos_prefix", configuration.gamma.prefix);
   report.value("Lambda", static_cast<double>(star.Lambda));
-  report.value("z", star.z);
+  if (command_line.Nz)
+    report.resolved("z", "i/" + std::to_string(*command_line.Nz) + " for i=1.." + std::to_string(*command_line.Nz),
+                    "--Nz; the z of the parameter file is ignored");
+  else
+    report.value("z", star.z);
   if (configuration.mmax_from_nmax)
     report.resolved("mMAX", star.mMAX, "2*Nmax");
   else
@@ -311,29 +332,67 @@ template<typename S> void report_star(const Star<S> &star, std::ostream &out) {
     out << "# ||theta - int Gamma||/||int Gamma||=" << (star.theta - star.theta_exact).norm() / scale << std::endl;
 }
 
-template<typename S> void run_star(const Configuration &configuration) {
-  const auto input = load_gamma<S>(configuration.gamma);
-  const auto star  = build_star(input, configuration.star);
-  report_star(star, std::cout);
-  save_star(star, star_default_filename);
-  std::cout << "# star written to " << star_default_filename << std::endl;
+// One value of z and the directory its files go to: the working directory for a single z, and i/ for z = i/Nz.
+struct Target {
+  // The z to discretize for. In the chain stage of a single-z run it is empty, since the star records its own z.
+  std::optional<double> z;
+  std::filesystem::path directory;
+
+  [[nodiscard]] auto file(const char *name) const { return (directory / name).string(); }
+};
+
+std::vector<Target> targets(const CommandLineOptions &command_line, const std::optional<double> single_z) {
+  if (!command_line.Nz) return {Target{single_z, {}}};
+  std::vector<Target> list;
+  for (unsigned int i = 1; i <= *command_line.Nz; i++)
+    list.push_back(Target{static_cast<double>(i) / *command_line.Nz, std::to_string(i)});
+  return list;
+}
+
+auto seconds_since(const std::chrono::steady_clock::time_point start) {
+  return std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+}
+
+// The z-independent part of the star stage is done once; the stars for the individual values of z share it.
+template<typename S> void run_star(const Configuration &configuration, const std::vector<Target> &list) {
+  const auto setup_start = std::chrono::steady_clock::now();
+  const auto input       = load_gamma<S>(configuration.gamma);
+  StarDiscretizer<S> discretizer(input, configuration.star);
+  std::cout << "# star setup: " << seconds_since(setup_start) << " s" << std::endl;
+
+  for (const auto &target : list) {
+    const auto start = std::chrono::steady_clock::now();
+    if (!target.directory.empty()) std::cout << "# --- z=" << *target.z << " in " << target.directory.string() << "/" << std::endl;
+    const auto star = discretizer.star(*target.z);
+    report_star(star, std::cout);
+    if (!target.directory.empty()) std::filesystem::create_directories(target.directory);
+    const auto filename = target.file(star_default_filename);
+    save_star(star, filename);
+    std::cout << "# star written to " << filename << std::endl;
+    std::cout << "# star z=" << star.z << ": " << seconds_since(start) << " s" << std::endl;
+  }
 }
 
 // The star is self-contained: the chain is built with the Lambda, z and bandrescale it records. A parameter file that
-// sets any of them to something else was meant for a different star, so that is an error rather than a silent choice.
-template<typename S> void check_star_against_parameters(const Star<S> &star, const Params &P) {
-  const auto check = [&P](const std::string &name, const double recorded) {
-    if (!P.contains(name)) return;
-    const auto requested = P.P(name, recorded);
+// sets Lambda or bandrescale to something else was meant for a different star, so that is an error rather than a
+// silent choice. The z must be the one asked for: i/Nz with --Nz, otherwise the z of the parameter file if it gives one.
+template<typename S>
+void check_star_against_parameters(const Star<S> &star, const Params &P, const Target &target,
+                                   const std::string &filename) {
+  const auto check = [&](const std::string &name, const double recorded, const double requested, const char *source) {
     if (std::abs(requested - recorded) <= 1e-12 * std::max(1.0, std::abs(recorded))) return;
     std::ostringstream message;
-    message << std::setprecision(17) << "The star in " << star_default_filename << " was built with " << name << "="
-            << recorded << ", but the parameter file gives " << name << "=" << requested << ".";
+    message << std::setprecision(17) << "The star in " << filename << " was built with " << name << "=" << recorded
+            << ", but " << source << " gives " << name << "=" << requested << ".";
     throw std::invalid_argument(message.str());
   };
-  check("Lambda", star.Lambda);
-  check("z", star.z);
-  check("bandrescale", star.bandrescale);
+  if (P.contains("Lambda")) check("Lambda", star.Lambda, P.P("Lambda", star.Lambda), "the parameter file");
+  if (P.contains("bandrescale"))
+    check("bandrescale", star.bandrescale, P.P("bandrescale", star.bandrescale), "the parameter file");
+  if (target.z)
+    check("z", star.z, *target.z, "--Nz");
+  else if (P.contains("z"))
+    check("z", star.z, P.P("z", star.z), "the parameter file");
 }
 
 template<typename S> void report_chain(const Chain<S> &chain, const unsigned digits, std::ostream &out) {
@@ -347,24 +406,28 @@ template<typename S> void report_chain(const Chain<S> &chain, const unsigned dig
 
 // The chain is built from star.dat also in the default mode, right after the star stage has written it, so that the
 // default mode and 's' followed by 'l' produce the same chain by construction.
-template<typename S0> void run_chain(const Configuration &configuration, const Params &P) {
-  const auto star = load_star<S0>(star_default_filename);
-  check_star_against_parameters(star, P);
-  const auto digits = resolve_precision(configuration.preccpp);
+template<typename S0> void run_chain(const Configuration &configuration, const Params &P, const Target &target) {
+  const auto start     = std::chrono::steady_clock::now();
+  const auto star_file = target.file(star_default_filename);
+  if (!target.directory.empty()) std::cout << "# --- z=" << *target.z << " in " << target.directory.string() << "/" << std::endl;
+  const auto star = load_star<S0>(star_file);
+  check_star_against_parameters(star, P, target, star_file);
+  const auto digits     = resolve_precision(configuration.preccpp);
+  const auto chain_file = target.file(chain_default_filename);
   with_precision_like<S0>(configuration.preccpp, [&]<typename S>() {
     const auto chain = build_chain<S>(star, configuration.chain);
     report_chain(chain, digits, std::cout);
-    save_chain(chain, ChainFileHeader{star.z, star.Lambda, star.bandrescale, digits}, chain_default_filename);
+    save_chain(chain, ChainFileHeader{star.z, star.Lambda, star.bandrescale, digits}, chain_file);
   });
-  std::cout << "# chain written to " << chain_default_filename << std::endl;
+  std::cout << "# chain written to " << chain_file << std::endl;
+  std::cout << "# chain z=" << star.z << ": " << seconds_since(start) << " s" << std::endl;
 }
 
 // Wall-clock time of one stage, for comparing the cost of the two.
 template<typename F> void timed(const char *stage, F &&f) {
   const auto start = std::chrono::steady_clock::now();
   f();
-  const auto seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
-  std::cout << "# " << stage << " stage: " << seconds << " s" << std::endl;
+  std::cout << "# " << stage << " stage: " << seconds_since(start) << " s" << std::endl;
 }
 
 void run(const CommandLineOptions &command_line) {
@@ -374,17 +437,20 @@ void run(const CommandLineOptions &command_line) {
 
   if (builds_star(command_line.mode))
     timed("star", [&] {
+      const auto list = targets(command_line, configuration.star.z);
       if (gamma_is_complex(configuration.gamma))
-        run_star<std::complex<double>>(configuration);
+        run_star<std::complex<double>>(configuration, list);
       else
-        run_star<double>(configuration);
+        run_star<double>(configuration, list);
     });
   if (builds_chain(command_line.mode))
     timed("chain", [&] {
-      if (star_is_complex(star_default_filename))
-        run_chain<std::complex<double>>(configuration, P);
-      else
-        run_chain<double>(configuration, P);
+      for (const auto &target : targets(command_line, std::nullopt)) {
+        if (star_is_complex(target.file(star_default_filename)))
+          run_chain<std::complex<double>>(configuration, P, target);
+        else
+          run_chain<double>(configuration, P, target);
+      }
     });
 }
 
@@ -393,11 +459,14 @@ void run(const CommandLineOptions &command_line) {
 int main(int argc, char *argv[]) {
   if (NRG::Tools::report_version_if_requested(argc, argv, "mixchain")) return EXIT_SUCCESS;
   try {
-    const clock_t start_clock = clock();
+    // Wall-clock time, like the stage timings, which then add up to it; the CPU time is shown alongside, since the
+    // difference is time spent waiting, typically on the filesystem.
+    const auto wall_start     = std::chrono::steady_clock::now();
+    const clock_t cpu_start   = clock();
     about();
     run(cmd_line(argc, argv));
-    const clock_t end_clock = clock();
-    std::cout << "# Elapsed " << double(end_clock - start_clock) / CLOCKS_PER_SEC << " s" << std::endl;
+    const auto cpu_seconds = double(clock() - cpu_start) / CLOCKS_PER_SEC;
+    std::cout << "# Elapsed " << seconds_since(wall_start) << " s (CPU " << cpu_seconds << " s)" << std::endl;
   } catch (const std::exception &e) {
     std::cerr << "mixchain: error: " << e.what() << std::endl;
     return EXIT_FAILURE;

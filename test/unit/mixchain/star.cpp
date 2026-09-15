@@ -324,6 +324,44 @@ TEST(MixChainStar, counts_levels_that_collapse_onto_the_accumulation_point) { //
   EXPECT_EQ(build_star(input, options).diagnostics.coverage_pos.collapsed_levels, 0);
 }
 
+TEST(MixChainStar, one_setup_serves_every_z) { // NOLINT
+  // The setup that does not depend on z is shared across evaluations. Every star must be exactly the star a fresh
+  // setup gives for that z: the arithmetic is the same and in the same order, and what is shared (the caches of the
+  // densities and the integration workspace) affects only the speed. The densities cross, so that the branch
+  // tracking and every diagnostic are exercised.
+  const auto input = make_input<double>(
+    [](const double omega) { return diagonal<double>(0.5 + 0.25 * omega, 0.8 - 0.5 * omega); });
+  auto options = base_options();
+  StarDiscretizer<double> shared(input, options);
+
+  for (const double z : {0.25, 0.5, 0.75, 1.0}) {
+    const auto from_shared = shared.star(z);
+    options.z              = z;
+    const auto fresh       = build_star(input, options);
+
+    EXPECT_EQ(from_shared.z, z);
+    ASSERT_EQ(from_shared.levels.size(), fresh.levels.size());
+    for (std::size_t k = 0; k < fresh.levels.size(); k++) {
+      const auto &a = from_shared.levels[k];
+      const auto &b = fresh.levels[k];
+      EXPECT_EQ(a.m, b.m);
+      EXPECT_EQ(a.branch, b.branch);
+      EXPECT_TRUE(a.sign == b.sign);
+      EXPECT_EQ(a.energy, b.energy) << "z=" << z << " level " << k;
+      EXPECT_TRUE((a.coupling.array() == b.coupling.array()).all()) << "z=" << z << " level " << k;
+    }
+    EXPECT_TRUE((from_shared.theta.array() == fresh.theta.array()).all());
+    EXPECT_TRUE((from_shared.theta_exact.array() == fresh.theta_exact.array()).all());
+    EXPECT_EQ(from_shared.diagnostics.max_interval_deviation, fresh.diagnostics.max_interval_deviation);
+    EXPECT_EQ(from_shared.diagnostics.max_cquad_error, fresh.diagnostics.max_cquad_error);
+    EXPECT_EQ(from_shared.diagnostics.crossings_pos, fresh.diagnostics.crossings_pos);
+    EXPECT_EQ(from_shared.diagnostics.coverage_pos.unresolved_intervals,
+              fresh.diagnostics.coverage_pos.unresolved_intervals);
+  }
+  EXPECT_THROW(shared.star(0.0), std::invalid_argument);
+  EXPECT_THROW(shared.star(1.5), std::invalid_argument);
+}
+
 TEST(MixChainStar, rejects_invalid_options) { // NOLINT
   const auto input = make_input<double>([](const double) { return scalar<double>(0.3); });
 
