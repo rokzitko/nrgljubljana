@@ -41,6 +41,30 @@ namespace NRG::MixChain {
 // block is the M x N matrix A with A[k,i] = conj(v_{k,i}), whose Gram matrix A^dag A = sum_k v_k v_k^dag is Theta.
 // Without the conjugation it would be the transpose of Theta, which for a complex Gamma is a different model.
 
+// The gauge the chain is written in. Lanczos fixes each site only up to a unitary rotation of its N orbitals, and the
+// blocks of V, E_n and T_n transform together, so every gauge describes the same bath.
+//
+//   polar: V and every T_n Hermitian positive semidefinite, the matrix analogue of choosing xi_n > 0. Nothing is
+//          assumed about what the channels mean, and every element is written, so a consumer that reads the whole
+//          matrix (a pol2x2 template of nrg, or one coefficient set per channel) can use this as it is.
+//   nambu: for blocks of two channels read as (particle, hole). The consumer of a superconducting chain stores only
+//          xi = T(1,1), sckappa = T(1,2), zeta = E(1,1), scdelta = E(1,2) and reconstructs the rest from the Nambu
+//          structure, so the chain must be in the gauge where that structure holds: E(2,2) = -E(1,1) and
+//          T(2,2) = -conj(T(1,1)). The polar gauge is not: it absorbs the sign of the hole component into the Lanczos
+//          block, which turns a constant gap into one alternating along the chain. Flipping the hole component of
+//          every second site, U_n = diag(1, (-1)^n), puts it back.
+enum class ChainGauge { polar, nambu };
+
+inline auto chain_gauge_from_string(const std::string &value) {
+  if (value == "polar") return ChainGauge::polar;
+  if (value == "nambu") return ChainGauge::nambu;
+  throw std::invalid_argument("chain_gauge must be either 'polar' or 'nambu'.");
+}
+
+inline auto chain_gauge_name(const ChainGauge gauge) {
+  return gauge == ChainGauge::polar ? std::string("polar") : std::string("nambu");
+}
+
 struct ChainOptions {
   // The chain has the sites 0..Nmax, and one hopping per site, T_0..T_Nmax: the last leads out of the chain and is
   // there because the coefficient tables of nrg are indexed 0..Nmax, as nrgchain writes xi.dat and zeta.dat.
@@ -48,6 +72,10 @@ struct ChainOptions {
   // An eigenvalue of a Gram matrix, of Theta or of R^dag R for a residual block, counts as zero when it is below this
   // fraction of the largest one. Relative, so that it means the same at every precision.
   double rank_tolerance{1e-20};
+  ChainGauge gauge{ChainGauge::polar};
+  // How far a block may depart from the Nambu structure before the nambu gauge refuses the chain, relative to the
+  // largest element of that block.
+  double nambu_tolerance{1e-8};
 };
 
 struct ChainDiagnostics {
@@ -65,6 +93,8 @@ struct ChainDiagnostics {
   // size s spans at most coupled_levels/s full sites.
   int levels{};
   int coupled_levels{};
+  // In the nambu gauge, the largest departure from the Nambu structure of a block, relative to its largest element.
+  double max_nambu_deviation{};
 };
 
 template<typename S> struct Chain {
@@ -74,6 +104,7 @@ template<typename S> struct Chain {
   std::vector<Matrix<S>> E; // the on-site blocks E_0..E_Nmax
   std::vector<Matrix<S>> T; // the hoppings T_0..T_Nmax, the last one out of the chain
   Blocks blocks;            // the blocks of the star, each mapped onto a chain of its own
+  ChainGauge gauge{ChainGauge::polar};
   ChainDiagnostics diagnostics;                    // of the whole chain
   std::vector<ChainDiagnostics> block_diagnostics; // one per block, in the order of 'blocks'
 };
@@ -330,6 +361,60 @@ inline ChainDiagnostics merge_diagnostics(const std::vector<ChainDiagnostics> &p
   return merged;
 }
 
+// Move the chain into the nambu gauge: flip the hole component of every second site, U_n = diag(1, (-1)^(n+1)), so
+// that V -> V U_0 with U_0 = diag(1, -1), E_n -> U_n E_n U_n and T_n -> U_{n+1} T_n U_n. The blocks must be pairs of
+// channels read as (particle, hole).
+//
+// U_0 is not the identity, and it must not be: only the chain orbitals are free, while the impurity index of V is
+// physical, and in Nambu space a normal hybridization v enters as V = diag(v, -conj(v)), since the hole row is
+// written with the creation operator. The polar gauge gives V = Theta^(1/2), positive in both slots, which satisfies
+// Theta but has the hole coupling of the wrong sign; flipping the hole at the even sites fixes V and leaves the
+// relative signs along the chain, which is where the Nambu structure of E_n and T_n lives, untouched.
+//
+// What comes out is checked against that structure, since the consumer of such a chain stores only the (1,1) and
+// (1,2) elements of each block and reconstructs the rest from it.
+template<typename S> void apply_nambu_gauge(Chain<S> &chain, const double tolerance) {
+  using std::abs;
+  for (const auto &block : chain.blocks) {
+    if (block.size() != 2)
+      throw std::invalid_argument("The nambu gauge needs blocks of two channels, read as particle and hole, but "
+                                  + blocks_name({block}) + " has " + std::to_string(block.size()) + ".");
+    const auto particle = block[0];
+    const auto hole     = block[1];
+    const auto flip     = [&](Matrix<S> &m, const int row_sign, const int column_sign) {
+      if (column_sign < 0) m(particle, hole) = -m(particle, hole);
+      if (row_sign < 0) m(hole, particle) = -m(hole, particle);
+      if (row_sign * column_sign < 0) m(hole, hole) = -m(hole, hole);
+    };
+    const auto column_sign = [](const unsigned int n) { return n % 2 == 0 ? -1 : 1; }; // U_n
+    flip(chain.V, 1, column_sign(0));                                                  // V U_0, the impurity index stays
+    for (unsigned int n = 0; n <= chain.Nmax; n++) {
+      flip(chain.E[n], column_sign(n), column_sign(n));      // U_n E_n U_n
+      flip(chain.T[n], column_sign(n + 1), column_sign(n));  // U_{n+1} T_n U_n
+    }
+
+    // V(2,2) = -conj(V(1,1)), E(2,2) = -E(1,1) and T(2,2) = -conj(T(1,1)) are what the stored numbers rely on.
+    auto &worst  = chain.diagnostics.max_nambu_deviation;
+    const auto check = [&worst](const Matrix<S> &m, const S &deviation) {
+      const auto scale = static_cast<double>(m.cwiseAbs().maxCoeff());
+      if (scale > 0) worst = std::max(worst, static_cast<double>(abs(deviation)) / scale);
+    };
+    check(chain.V, chain.V(hole, hole) + Eigen::numext::conj(chain.V(particle, particle)));
+    check(chain.V, chain.V(hole, particle) + Eigen::numext::conj(chain.V(particle, hole)));
+    for (unsigned int n = 0; n <= chain.Nmax; n++) {
+      check(chain.E[n], chain.E[n](hole, hole) + chain.E[n](particle, particle));
+      check(chain.T[n], chain.T[n](hole, hole) + Eigen::numext::conj(chain.T[n](particle, particle)));
+    }
+    if (chain.diagnostics.max_nambu_deviation > tolerance)
+      throw std::runtime_error("The chain of block " + blocks_name({block})
+                               + " does not have the Nambu structure in the nambu gauge: one of V(2,2) + conj(V(1,1)), "
+                                 "E(2,2) + E(1,1) and T(2,2) + conj(T(1,1)) reaches "
+                               + std::to_string(chain.diagnostics.max_nambu_deviation)
+                               + " of the largest element of its block. Is this a superconducting chain?");
+  }
+  chain.gauge = ChainGauge::nambu;
+}
+
 } // namespace detail
 
 // The chain of a star: block Lanczos for each of its blocks, assembled into N x N blocks with exact zeros between
@@ -355,6 +440,7 @@ auto build_chain(const WideStar<S> &star, const ChainOptions &options,
       chain.blocks = star.blocks;
     }
     chain.block_diagnostics = {chain.diagnostics};
+    if (options.gauge == ChainGauge::nambu) detail::apply_nambu_gauge(chain, options.nambu_tolerance);
     return chain;
   }
   if (star.branches.size() != static_cast<std::size_t>(levels))
@@ -409,6 +495,7 @@ auto build_chain(const WideStar<S> &star, const ChainOptions &options,
     offset += static_cast<int>(size);
   }
   chain.diagnostics = detail::merge_diagnostics(chain.block_diagnostics, options.Nmax + 1);
+  if (options.gauge == ChainGauge::nambu) detail::apply_nambu_gauge(chain, options.nambu_tolerance);
   return chain;
 }
 
@@ -436,6 +523,7 @@ template<typename To, typename From> auto convert_chain(const Chain<From> &chain
   result.Nmax        = chain.Nmax;
   result.V           = convert_matrix<To>(chain.V);
   result.blocks      = chain.blocks;
+  result.gauge       = chain.gauge;
   result.diagnostics = chain.diagnostics;
   result.block_diagnostics = chain.block_diagnostics;
   result.E.reserve(chain.E.size());

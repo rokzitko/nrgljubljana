@@ -37,7 +37,8 @@ using WideReal = boost::multiprecision::number<boost::multiprecision::backends::
 template<unsigned Digits> using WideComplex = boost::multiprecision::cpp_complex<Digits>;
 
 // Decimal digits. Each rung instantiates the whole recursion twice, once real and once complex, so they are few and
-// far apart. The last one covers the default preccpp of 2000 bits, which is 603 digits.
+// far apart. The middle one is the default, since preccpp defaults to 664 bits; the last covers a request of 2000
+// bits, which is 603 digits.
 inline constexpr unsigned precision_ladder[] = {50, 200, 800};
 
 // The decimal digits needed to carry 'bits' binary digits: rounded up, since a partial digit does not cover them.

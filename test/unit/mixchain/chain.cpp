@@ -531,6 +531,70 @@ TEST(MixChainChain, ranks_of_blocks_add_up_site_by_site) { // NOLINT
   }
 }
 
+TEST(MixChainChain, the_nambu_gauge_puts_the_blocks_into_the_nambu_structure) { // NOLINT
+  // A Nambu-symmetric bath: the normal part is flat and equal for the particle and the hole, and the anomalous part
+  // is odd in omega, as it is for a superconductor. The chain then has the structure that a consumer of xi, zeta,
+  // scdelta and sckappa relies on, but only in the nambu gauge: the polar gauge, which makes every T_n positive
+  // semidefinite, hides the sign of the hole component in the Lanczos blocks instead.
+  const double rho = 0.3, anomalous = 0.1;
+  const auto block = [](const double diagonal, const double offdiagonal) {
+    Matrix<double> m = Matrix<double>::Zero(2, 2);
+    m(0, 0)          = diagonal;
+    m(1, 1)          = diagonal;
+    m(0, 1)          = offdiagonal;
+    m(1, 0)          = offdiagonal;
+    return m;
+  };
+  GammaInput<double> input;
+  input.channels = 2;
+  for (int k = 0; k <= 100; k++) {
+    input.pos.omega.push_back(0.01 * k);
+    input.pos.gamma.push_back(block(rho, anomalous));
+    input.neg.omega.push_back(0.01 * k);
+    input.neg.gamma.push_back(block(rho, -anomalous)); // odd in omega
+  }
+  const auto star = star_from(input, 40);
+  ASSERT_EQ(star.blocks.size(), 1U); // particle and hole are coupled, hence one block
+
+  auto options     = chain_options(8);
+  const auto polar = build_chain<Real>(star, options);
+  options.gauge    = ChainGauge::nambu;
+  const auto nambu = build_chain<Real>(star, options);
+  EXPECT_EQ(polar.gauge, ChainGauge::polar);
+  EXPECT_EQ(nambu.gauge, ChainGauge::nambu);
+  EXPECT_LT(nambu.diagnostics.max_nambu_deviation, 1e-30);
+
+  // V(2,2) = -V(1,1): the impurity index of V is physical, so the hole row must carry the Nambu sign, which is why
+  // U_0 = diag(1,-1) rather than the identity.
+  EXPECT_LT(static_cast<double>(abs(nambu.V(1, 1) + nambu.V(0, 0))), 1e-30);
+  EXPECT_EQ(nambu.V(0, 0), polar.V(0, 0));
+  EXPECT_EQ(nambu.V(1, 1), -polar.V(1, 1));
+  EXPECT_EQ(nambu.V(0, 1), -polar.V(0, 1));
+
+  for (unsigned int n = 0; n <= nambu.Nmax; n++) {
+    // E(2,2) = -E(1,1) and T(2,2) = -T(1,1), which is what the four stored numbers per site rely on.
+    EXPECT_LT(static_cast<double>(abs(nambu.E[n](1, 1) + nambu.E[n](0, 0))), 1e-30) << "site " << n;
+    EXPECT_LT(static_cast<double>(abs(nambu.T[n](1, 1) + nambu.T[n](0, 0))), 1e-30) << "site " << n;
+    // The gauge only flips signs: the hole component of the even sites.
+    const auto sign = Real(n % 2 == 0 ? -1 : 1);
+    EXPECT_EQ(nambu.E[n](0, 1), sign * polar.E[n](0, 1)) << "site " << n;
+    EXPECT_EQ(nambu.E[n](0, 0), polar.E[n](0, 0)) << "site " << n;
+    EXPECT_EQ(nambu.T[n](1, 1), -polar.T[n](1, 1)) << "site " << n;
+    EXPECT_EQ(nambu.T[n](0, 0), polar.T[n](0, 0)) << "site " << n;
+  }
+}
+
+TEST(MixChainChain, the_nambu_gauge_refuses_a_chain_without_the_structure) { // NOLINT
+  auto options  = chain_options(3);
+  options.gauge = ChainGauge::nambu;
+  // Two independent channels: every block has one channel, so there is no particle-hole pair to flip.
+  EXPECT_THROW(build_chain<Real>(star_of<double>([](const double omega) { return diagonal_of(0.4 + omega, 0.2); }, 40),
+                                 options),
+               std::invalid_argument);
+  // A generic 2x2 star is one block, but its chain has no Nambu structure.
+  EXPECT_THROW(build_chain<Real>(arbitrary_star<double>(2, 12), options), std::runtime_error);
+}
+
 TEST(MixChainChain, rejects_a_star_too_small_for_the_chain) { // NOLINT
   // A chain of 4 sites with 2 channels needs 2*(4+1) = 10 levels: one block per site and one for the hopping out of
   // the last one.

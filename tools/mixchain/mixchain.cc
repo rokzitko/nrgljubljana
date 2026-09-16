@@ -222,8 +222,15 @@ void read_chain_configuration(const Params &P, Configuration &configuration) {
 
   configuration.discretization_files = P.Pbool("discretization_files", false);
 
-  // As in nrgchain, in bits. It is rounded up to the precision ladder of precision.hpp.
-  const auto preccpp = P.Pint("preccpp", 2000);
+  configuration.chain.gauge = chain_gauge_from_string(P.Pstr("chain_gauge", "polar"));
+  configuration.chain.nambu_tolerance = P.P("nambu_tolerance", 1e-8);
+  if (!(std::isfinite(configuration.chain.nambu_tolerance) && configuration.chain.nambu_tolerance > 0.0))
+    throw std::invalid_argument("nambu_tolerance must be a positive finite number.");
+
+  // As in nrgchain, in bits. It is rounded up to the precision ladder of precision.hpp. The default is the 200-digit
+  // rung: the recursion loses about Nmax*log10(Lambda) digits to cancellation, on top of the 16 of the star, and 200
+  // covers that far beyond any chain in use, while 800 costs a factor of twenty in the chain stage for nothing.
+  const auto preccpp = P.Pint("preccpp", 664);
   if (preccpp <= 10) throw std::invalid_argument("preccpp must be greater than 10.");
   configuration.preccpp = static_cast<unsigned int>(preccpp);
   resolve_precision(configuration.preccpp); // fail before the star stage runs, not after it
@@ -262,6 +269,9 @@ void report_configuration(const Configuration &configuration, const CommandLineO
     report.resolved("digits", resolve_precision(configuration.preccpp), "smallest precision rung covering preccpp");
     report.value("rank_tolerance", configuration.chain.rank_tolerance);
     report.value("discretization_files", configuration.discretization_files);
+    report.value("chain_gauge", chain_gauge_name(configuration.chain.gauge));
+    if (configuration.chain.gauge == ChainGauge::nambu)
+      report.value("nambu_tolerance", configuration.chain.nambu_tolerance);
   }
   report.write(std::cerr);
 }
@@ -420,7 +430,11 @@ void check_star_against_parameters(const Star<S> &star, const Params &P, const T
 template<typename S>
 void report_chain(const Chain<S> &chain, const unsigned digits, const ChainFileHeader &header, std::ostream &out) {
   const auto &d = chain.diagnostics;
-  out << "# chain: sites=" << chain.Nmax + 1 << " channels=" << chain.channels << " digits=" << digits << std::endl;
+  out << "# chain: sites=" << chain.Nmax + 1 << " channels=" << chain.channels << " digits=" << digits
+      << " gauge=" << chain_gauge_name(chain.gauge) << std::endl;
+  if (chain.gauge == ChainGauge::nambu)
+    out << "# the Nambu structure of the blocks holds to " << d.max_nambu_deviation
+        << " of their largest element" << std::endl;
   if (chain.blocks.size() > 1) out << "# blocks: " << blocks_name(chain.blocks) << std::endl;
   out << "# levels=" << d.levels << " coupled_levels=" << d.coupled_levels << " theta_rank=" << d.theta_rank
       << " theta_condition=" << d.theta_condition

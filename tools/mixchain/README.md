@@ -6,8 +6,10 @@ case, in which the channels mix. Each eigenvalue branch of $\Gamma(\omega)$ is d
 Hamiltonian, and block Lanczos maps the star onto a chain. The method follows Liu et al. (2016).
 
 It works in two stages with a file between them: the star stage reads the components of $\Gamma$ and writes
-`star.dat`; the chain stage reads `star.dat` and writes `chain.dat`. The chain is written in its general matrix form;
-writers for the input files of particular symmetry types of `nrg` are not yet provided.
+`star.dat`; the chain stage reads `star.dat` and writes `chain.dat`. The chain is written in its general matrix form,
+optionally also as one file per matrix element; renaming those into the coefficient sets of a particular symmetry
+type of `nrg` is left to whoever stages them, and `chain_gauge` provides the one representative that such a consumer
+cannot choose for itself.
 
 ## Usage
 
@@ -102,8 +104,10 @@ is the same.
 | `allowed_error` | `1e-10` | star | Default relative tolerance of the integral method. |
 | `hermiticity_tolerance` | `1e-8` | star | Allowed deviation of the input from a Hermitian matrix. |
 | `Nmax` | required | chain | Last site of the chain, which has the sites `0..Nmax` and the hoppings `T_0..T_Nmax`. |
-| `preccpp` | `2000` | chain | Precision of the chain stage in bits, as for `nrgchain`. |
+| `preccpp` | `664` | chain | Precision of the chain stage in bits, as for `nrgchain`; rounded up to the ladder below. |
 | `discretization_files` | `false` | chain | Also write the chain as one file per matrix element, beside `chain.dat`. |
+| `chain_gauge` | `polar` | chain | `polar` or `nambu`; see Gauge below. |
+| `nambu_tolerance` | `1e-8` | chain | How far a block may depart from the Nambu structure before `chain_gauge=nambu` refuses it. |
 | `rank_tolerance` | `1e-20` | chain | Eigenvalue of a Gram matrix, relative to its largest, below which it counts as zero. |
 
 `boundary` is a fraction of the rescaled band edge, as in `adapt`: a gap $\Delta$ in the units of the input with
@@ -188,10 +192,10 @@ H = \sum_{ij}\left(V_{ij}\,d_i^\dagger f_{0j} + {\rm h.c.}\right)
 + \sum_n\sum_{ij}\left((T_n)_{ij}\,f_{n+1,i}^\dagger f_{nj} + {\rm h.c.}\right),
 $$
 
-with $N\times N$ blocks, in the polar gauge. Lanczos fixes each site only up to a unitary rotation of its $N$
-orbitals; the polar gauge removes that freedom by taking $V$ and every $T_n$ Hermitian positive semidefinite, the
-matrix analogue of choosing $\xi_n>0$. Writing $H_{\rm bath}$ for the diagonal of the star energies and $A$ for
-the matrix with $A_{ki} = v_{k,i}^*$, so that $A^\dagger A = \Theta$,
+with $N\times N$ blocks, in the polar gauge: $V$ and every $T_n$ Hermitian positive semidefinite, the matrix
+analogue of choosing $\xi_n>0$, and no preferred basis, so that a rotation of the channels rotates every block in the
+same way. Writing $H_{\rm bath}$ for the diagonal of the star energies and $A$ for the matrix with
+$A_{ki} = v_{k,i}^*$, so that $A^\dagger A = \Theta$,
 
 $$
 V = \Theta^{1/2}, \qquad Q_0 = A\,\Theta^{-1/2},
@@ -203,15 +207,43 @@ R = H_{\rm bath}Q_n - Q_nE_n - Q_{n-1}T_{n-1}^\dagger, \qquad
 T_n = (R^\dagger R)^{1/2}, \qquad Q_{n+1} = R\,(R^\dagger R)^{-1/2}.
 $$
 
-The residual is reorthogonalized against every earlier block. In the polar gauge $V$ and every $T_n$ are Hermitian
-positive semidefinite, the gauge involves no preferred basis, and a rotation of the channels rotates every block in
-the same way.
+The residual is reorthogonalized against every earlier block.
+
+**Gauge.** Lanczos fixes each site only up to a unitary rotation $U_n$ of its $N$ orbitals; $V\to VU_0^\dagger$,
+$E_n\to U_n^\dagger E_nU_n$ and $T_n\to U_{n+1}^\dagger T_nU_n$ describe the same bath. `chain_gauge` chooses the
+representative.
+
+`polar`, the default, is the one above: $V$ and every $T_n$ Hermitian positive semidefinite. Every element is written
+of the matrix is written. The files need to be properly renamed for futher use with NRG Ljubljana.
+
+`nambu` is for blocks of two channels read as particle and hole. A superconducting chain is stored in NRG Ljubljana
+as four numbers per site, $\xi = T(1,1)$, $\kappa = T(1,2)$, $\zeta = E(1,1)$ and $\Delta = E(1,2)$, and the rest is reconstructed
+from the Nambu structure $E(2,2) = -E(1,1)$, $T(2,2) = -T(1,1)^*$. The polar gauge does not have it: making $T_n$
+positive semidefinite absorbs the sign of the hole component into the Lanczos block, which turns a constant gap into
+one that alternates along the chain. Flipping the hole component at the even sites,
+$U_n = {\rm diag}(1,(-1)^{n+1})$, restores it.
+
+$U_0$ is deliberately not the identity. Only the chain orbitals are free; the impurity index of $V$ is physical, and
+in Nambu space a normal hybridization $v$ enters as $V = {\rm diag}(v,-v^*)$, since the hole row is written with the
+creation operator. The polar gauge gives $V = \Theta^{1/2}$, positive in both slots, which reproduces $\Theta$ but
+has the hole coupling of the wrong sign; $U_0 = {\rm diag}(1,-1)$ fixes it, and the relative signs along the chain,
+where the structure of $E_n$ and $T_n$ lives, are unaffected. The overall sign of the pair $(V,\Delta)$ is then fixed
+by this convention rather than left free.
+
+$V(2,2) = -V(1,1)^*$ and the two relations above are checked against `nambu_tolerance`, the worst deviation is
+reported, and a chain that is not of this form is refused. The gauge is recorded in the header of `chain.dat`.
 
 **Precision.** The late coefficients fall off as $\Lambda^{-n/2}$, below the resolution of double precision, so the
-recursion runs in multiprecision arithmetic. Its precision is chosen at compile time from a ladder of 50, 200 and 800
-decimal digits: `preccpp` bits select the smallest rung that covers them, and the `-v` report shows the result. The
-default of 2000 bits resolves to 800 digits; requests beyond 800 digits are rejected. The result is written with 18
-significant digits, as `nrgchain` writes `xi.dat`.
+recursion runs in multiprecision arithmetic. The scalar type carries its digit count as a template parameter, so the
+precision is fixed at compile time, and the stage is instantiated on a ladder of 50, 200 and 800 decimal digits:
+`preccpp` bits select the smallest rung that covers them, and the `-v` report shows the result. Requests beyond 800
+digits are rejected. The result is written with 18 significant digits, as `nrgchain` writes `xi.dat`.
+
+The default of 664 bits is the 200-digit rung. What the rung has to cover is the cancellation in the recursion, which
+costs about $N_{\rm max}\log_{10}\Lambda$ digits, on top of the 16 the star brings from double precision, so 200
+digits is far beyond any chain in use: measured on a superconducting bath at $\Lambda=2$, `Nmax=60`, and on a DMFT
+hybridization at $\Lambda=2.5$, `Nmax=33`, even the 50-digit rung reproduces all 18 written digits of every
+coefficient, while 800 digits costs a factor of twenty in the chain stage.
 
 **Rank deficiency.** The inverses above are pseudo-inverses: an eigenvalue of $\Theta$ or of $R^\dagger R$ below
 `rank_tolerance` times the largest is set to zero, and so is a residual that is rounding altogether. When $\Gamma$ is
@@ -338,7 +370,8 @@ is `boundary` times `bandrescale`, and `mesh_weight` is `inactive` without `adap
 
 | Line | Meaning |
 | --- | --- |
-| `# chain: sites= channels= digits=` | Chain length `Nmax+1`, block dimension, and decimal digits of the arithmetic. |
+| `# chain: sites= channels= digits= gauge=` | Chain length `Nmax+1`, block dimension, decimal digits of the arithmetic, and the gauge the chain is written in. |
+| `# the Nambu structure of the blocks holds to d of their largest element` | With `chain_gauge=nambu`, how far the chain departs from $E(2,2)=-E(1,1)$ and $T(2,2)=-T(1,1)^*$. |
 | `# blocks: {1,3} {2}` | The blocks of the star, each mapped onto its own chain. Only with several blocks. |
 | `# levels= coupled_levels=` | Levels of the star, and those with nonzero coupling. Only the latter enter the chain: a block of size $s$ spans at most `coupled_levels/s` full sites. |
 | `theta_rank=` | Rank of $\Theta$: the number of combinations of the impurity orbitals that couple to the bath. |

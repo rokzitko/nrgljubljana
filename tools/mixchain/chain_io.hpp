@@ -41,6 +41,8 @@ namespace NRG::MixChain {
 //   bandrescale  the band rescaling that was applied to Gamma when it was read
 //   complex      1 if the coefficients are complex, 0 if real. It fixes the number of columns.
 //   digits       the decimal digits of the arithmetic the recursion ran in
+//   gauge        'polar', where V and every T_n are Hermitian positive semidefinite, or 'nambu', where the hole
+//                component of every second site is flipped so that each block has the Nambu structure
 //
 // When the star has more than one block, the header is followed by the blocks line of the star file, as in
 // "# blocks= {1,3} {2}": each block was mapped onto a chain of its own, and every element between channels of
@@ -110,7 +112,7 @@ template<typename S> void save_chain(const Chain<S> &chain, const ChainFileHeade
   out << "# mixchain Wilson chain" << std::endl;
   out << "# channels=" << chain.channels << " Nmax=" << chain.Nmax << " z=" << header.z << " Lambda=" << header.Lambda
       << " bandrescale=" << header.bandrescale << " complex=" << (is_complex_v<S> ? 1 : 0)
-      << " digits=" << header.digits << std::endl;
+      << " digits=" << header.digits << " gauge=" << chain_gauge_name(chain.gauge) << std::endl;
   if (chain.blocks.size() > 1) out << "# blocks= " << blocks_name(chain.blocks) << std::endl;
   out << "# levels=" << d.levels << " coupled_levels=" << d.coupled_levels << " theta_rank=" << d.theta_rank
       << " min_rank=" << d.min_rank << " rank_drop_site="
