@@ -88,6 +88,15 @@ The fields have these conventions:
 | `F` | `F/(k_B*T)`, equal to `-ln(Z)`. |
 | `S` | Entropy in units of `k_B`. |
 
+`H` in `<E>`/`<E^2>` is the rescaled shell-`N` Wilson-chain Hamiltonian, not
+an absolute energy: `beta` is with respect to the row's own `T`
+(`= energyscale(N)/betabar`), so `<E>` and `<E^2>` are not directly
+comparable in absolute terms across rows/shells without first undoing that
+rescaling (`dumpenergiesunscaled`/`dumpabsenergies` control the analogous
+convention for the diagnostic energy dumps below). `C`, `F`, and `S`, by
+contrast, are already the physical dimensionless thermodynamic quantities at
+that row's `T` and can be compared and plotted directly across shells.
+
 Symmetry fields are inserted immediately after `T` in this order:
 
 | Symmetry | Fields |
@@ -110,6 +119,24 @@ Symmetry fields are inserted immediately after `T` in this order:
 | `DBLSU2` | `<Q1^2>`, `<Q2^2>` |
 | `DBLISOSZ` | `<Sz^2>`, `<Sz>`, `<Q1^2>`, `<Q2^2>` |
 | `DBLQSZ` | `<Sz^2>`, `<Sz>`, `<Q1>`, `<Q1^2>`, `<Q2>`, `<Q2^2>` |
+
+**Convention.** Thermal moments of conserved quantum numbers (`<Sz>`,
+`<Sz^2>`, `<Q>`, `<Q^2>`, ...) are raw moments of the bare quantum-number
+operators, in units where `hbar=1` and with no g-factor or Bohr-magneton
+factor applied — for a spin multiplet of total spin `S`, `<Sz^2>` averages to
+`S(S+1)/3`. Converting to a measurable susceptibility (e.g. in emu/mol or SI
+units) requires supplying `g` and `mu_B` externally; see Krishna-murthy,
+Wilkins & Wilson (1980), the paper that introduced the shell-averaged
+susceptibility calculation these moments implement (full citation under
+[References](parameter-reference.md#references) in the parameter reference).
+As a cross-check, for a conserved quantum number (a good symmetry label,
+e.g. `Sz` for `QS`/`QSZ`), the static susceptibility equals the
+inverse-temperature-weighted variance of the operator, `chi = beta*<Sz^2>`;
+since `chit = chi/beta` by definition (see
+[Temperature-dependent `.dat`](#temperature-dependent-dat) below), `chit`
+evaluated for that same operator pair (e.g. `specchit=Sz-Sz`) and `<Sz^2>`
+from this table are two independently computed routes to the same quantity
+and should agree within the run's discretization and truncation accuracy.
 
 With the default `calc0=true`, the first row describes the seed problem and is
 followed by the iterative-shell rows. Do not infer a shell index from the line
@@ -142,6 +169,25 @@ significant digits.
 available. In that case it contains the header and temperature column only.
 
 ## FDM Tables
+
+**Why FDM gives one temperature, not a curve.** `td` is filled in
+incrementally: each shell contributes one row evaluated at that shell's own
+effective temperature `Teff(N) = energyscale(N)/betabar`, which is how a
+single NRG run produces a full curve spanning many decades of `T`. Full
+density-matrix NRG (`fdm=true`; Weichselbaum & von Delft 2007; Costi & Zlatic
+2010; Zhang, Xie & Sun 2010 — full citations in the
+[parameter reference](parameter-reference.md#references)) instead builds one
+density matrix, from the complete basis of discarded states over the whole
+chain (the complete-Fock-space construction of `cfs`; Anders & Schiller 2005,
+2006; Peters, Pruschke & Anders 2006), for one chosen *physical* temperature
+`T`. This is what makes `fdm`/`fdmexpv` results (`tdfdm`, `customfdm`)
+rigorously sum-rule-conserving and free of the single-shell approximation
+that `finite` (Costi, Hewson & Zlatic 1994) and plain `dmnrg`
+(Hofstetter 2000) make — but it also means a single FDM run only ever
+produces a value at that one `T`, set by the runtime `T` parameter (and, for
+`customfdm`, the shell `fdmexpvn`). To get an FDM-quality thermodynamic
+*curve*, rerun at each temperature of interest, or use `finite`/`dmnrg`/`td`
+where a single-run curve is sufficient.
 
 ### `tdfdm`
 
@@ -237,6 +283,15 @@ With `reim=true`, an imaginary-value column is appended.
 For the `chit` prefix, `value` is `k_B*T*chi(T)` (`chi/beta`), not `chi(T)`.
 Recovering `chi(T)` therefore requires division by `k_B*T` in the units used by
 the calculation.
+
+`gt`, `i1t`, and `i2t` implement the linear-response conductance and
+transport-moment formula of Yoshida, Seridonio & Oliveira (2009), Eq. (8)
+(full citation in the [parameter reference](parameter-reference.md#references));
+`value` inherits whatever units convention the tunneling/hybridization matrix
+elements in `data` use, so whether `gt=1` corresponds to the unitary
+conductance limit `2e^2/h` depends on how those matrix elements (and hence
+`Gamma`) were normalized when the model was constructed — it is not asserted
+by the output format itself.
 
 In every text format with an imaginary column, `clip_tol_imag` replaces the
 imaginary value with zero when `|imag| <= |real| * clip_tol_imag`. Consequently,
@@ -431,6 +486,21 @@ used when output is a terminal and disabled when output is redirected.
 
 Console text is diagnostic and can change. Even familiar lines such as `Total
 energy:` should not be treated as a general structured-output interface.
+
+**Sum-rule self-checks.** Every computed spectral function prints a summary
+line to standard output with its total positive weight (`pos=`), negative
+weight (`neg=`), overall weight `sum=pos+neg`, and the first four moments
+(`mu1`-`mu4`) of the unbroadened binned data. For a single-particle spectral
+function normalized to the standard convention `A(omega) = -Im G^R(omega)/pi`,
+`sum` is the zeroth-moment sum rule and should converge to `1` (up to
+discretization and truncation error, see Žitko 2011 under
+[References](parameter-reference.md#references)); a `sum` far from the
+expected sum rule for the operator in question is a strong, immediate sign of
+a truncation, normalization, or model-setup problem, and is worth checking
+before trusting a broadened spectrum. With `checksumrules=true`, `nrg`
+additionally prints one `norm[name]=...` line per requested operator, giving
+the same sum-rule diagnostic referenced to a spin-1/2 operator by convention
+(see `c++/core.hpp`, `operator_sumrules()`).
 
 `nrg` does not create a file named `log`. Repository test wrappers do so by
 combining standard output and standard error through `tee`. Users who want the

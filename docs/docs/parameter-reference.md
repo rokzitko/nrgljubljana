@@ -164,6 +164,33 @@ use `[dmft] discchecksum=<value>`. Normal DMFT chains require
 
 `polarized=true` and `pol2x2=true` are mutually exclusive.
 
+**Physical background.** Logarithmic discretization of the continuum
+conduction band into a semi-infinite tight-binding (Wilson) chain, with
+hopping matrix elements decaying geometrically along the chain, is the
+foundation of the NRG method (Wilson 1975; Krishna-murthy, Wilkins & Wilson
+1980a,b — see [References](#references)). `discretization` selects how the
+continuous hybridization function is converted into a discrete mesh and then
+into Wilson-chain coefficients:
+
+- `Y` — the original Yoshida, Whitaker & Oliveira nonuniform-bath scheme
+  (1990).
+- `C` — the Campo & Oliveira scheme (2005), which improves the accuracy of
+  dynamical quantities obtained for a given `Lambda`.
+- `Z` (default) — the Žitko & Pruschke scheme (2009), which removes
+  systematic artifacts that otherwise survive z-averaging, especially as
+  `Lambda` approaches `1`. This is the scheme used in the calculations of the
+  project's method paper (see the `README.md` Citation section) and is
+  recommended for production runs.
+
+`z` sets the twist of the logarithmic mesh (Yoshida, Whitaker & Oliveira
+1990). A single calculation at `z=1` recovers the conventional discretization;
+running several `z` values spread over `(0,1]` and averaging the results
+("z-averaging") cancels the pseudo-periodic oscillations of period
+`log(Lambda)` that any single discretization mesh introduces into
+thermodynamic and spectral quantities — see [Parallelism](parallelism.md) for
+running a `z`-averaged batch. The `adapt` tool (see [Tools](tools.md))
+implements an alternative, self-adapting discretization mesh (Žitko 2009).
+
 ### Advanced Initializer Hooks
 
 These settings expose implementation and Mathematica extension points rather
@@ -247,6 +274,34 @@ An empty string default means that the feature or list is disabled.
 | `T` | number | `0.001` | Physical temperature; must be positive. |
 | `betabar` | number | `1.0` | Effective inverse-temperature factor for shell thermodynamics. |
 
+`Lambda`, `discretization`, and `z` reprise the discretization physics
+described under [Discretization and Wilson chain](#discretization-and-wilson-chain)
+above; they must match the values used to generate `data`.
+
+**Truncation.** After each Wilson-chain site is diagonalized, the spectrum is
+truncated to the `keep` (or `keepenergy`-selected) lowest-energy states. This
+is the approximation that makes the exponentially growing many-body Hilbert
+space tractable, and its validity rests on the energy-scale separation
+between successive NRG shells (Wilson 1975). `safeguard`/`safeguardmax` avoid
+truncating in the middle of a near-degenerate multiplet — cutting through one
+would break the symmetry of the discarded spectrum and can produce
+unphysically asymmetric spectral functions or level flows. Žitko (2011)
+quantifies how `keep`, `Lambda`, and the broadening width jointly set the
+discretization and truncation error bars of a computed spectral function, and
+describes a practical procedure for estimating them by varying `keep`; see
+also `discard_trim`/`discard_immediately` under
+[Spectral binning, patching, and formatting](#spectral-binning-patching-and-formatting)
+below.
+
+**Effective temperature for thermodynamics.** Thermodynamic averages at shell
+`N` are evaluated at `Teff = scale(N)/betabar`, where `scale(N)` is the
+current shell's energy unit; `Teff` is exactly the value printed in the `T`
+column of `td` (see [Output formats](output-formats.md)). `betabar` is
+discussed by Krishna-murthy, Wilkins & Wilson (1980a), p. 1009: the value
+`0.46` used there is closer to a single shell's own temperature, but it
+requires a correspondingly larger `keep`/`keepenergy` to converge, which is
+why this project defaults to the more conservative `betabar=1.0`.
+
 ### Operators And Algorithms
 
 | Parameter | Type | Default | Meaning |
@@ -286,6 +341,42 @@ Spectrum lists contain whitespace-separated operator pairs. The usual token is
 `operator1-operator2`; polarized variants can add `-u` or `-d`. Every named
 operator must have been included in the generated `data` file.
 
+**`gtp`/`chitp`.** `specgt`/`speci1t`/`speci2t` and `specchit` are evaluated
+shell by shell at an absolute temperature `T_eff = gtp * scale(N)` (for
+`gt`/`i1t`/`i2t`) or `T_eff = chitp * scale(N)` (for `chit`) — note that,
+unlike `betabar`, these parameters *multiply* the shell scale rather than
+divide it. `gtp` and the linear-response conductance formula implemented by
+`gt`/`i1t`/`i2t` follow Yoshida, Seridonio & Oliveira (2009); the
+effective-temperature construction for `chit`/`chitp` follows the same
+shell-by-shell logic used for `T`/`betabar`
+above. `chitp_ratio` lets `chitp` track `betabar` directly instead of being
+tuned independently.
+
+**`finite`/`dmnrg`/`cfs`/`fdm`.** These select among the available methods for
+computing finite-temperature dynamical (spectral, correlation) quantities,
+which differ in how the density matrix used to weight matrix elements is
+constructed:
+
+- `finite` — the original finite-temperature Lehmann-sum approach of Costi,
+  Hewson & Zlatic (1994), evaluated at a single shell's own effective
+  temperature.
+- `dmnrg` — density-matrix NRG (Hofstetter 2000), which propagates a reduced
+  density matrix down the chain from the final shell so that spectra are
+  evaluated at the physical temperature `T` rather than a shell-dependent one.
+- `cfs`/`cfsgt`/`cfsls` — the complete-Fock-space construction (Anders &
+  Schiller 2005, 2006; Peters, Pruschke & Anders 2006), which supplies the
+  complete basis of discarded states used by both DM-NRG and FDM-NRG.
+- `fdm`/`fdmgt`/`fdmls`/`fdmexpv` — full-density-matrix NRG (Weichselbaum & von
+  Delft 2007; Costi & Zlatic 2010; Zhang, Xie & Sun 2010), which builds the
+  density matrix from the complete Fock space at a single, fixed physical
+  temperature `T` and thereby avoids both the overcounting and single-shell
+  approximations of the earlier approaches while rigorously conserving
+  spectral sum rules. `fdm_cutoff` discards shells whose Boltzmann weight is
+  negligible at that temperature.
+
+See [Output formats](output-formats.md) for how these methods differ in
+what they write to `td`/`tdfdm` and the `spec_*`/`corr_*` families.
+
 ### Broadening And Execution Control
 
 | Parameter | Type | Default | Meaning |
@@ -307,6 +398,23 @@ operator must have been included in the generated `data` file.
 `substeps` requires the ordinary coefficient structure and is not compatible
 with every polarized, rung, or custom-chain configuration. Unsupported
 symmetry/backend combinations abort when interleaved recalculation is selected.
+
+**Broadening kernel.** The raw NRG output is a set of weighted delta peaks at
+discrete, `Lambda`-dependent energies. `alpha` and `omega0` parametrize the
+smooth kernel — logarithmic-Gaussian at higher frequencies, crossing over to
+an ordinary Gaussian of width `omega0` near zero frequency — used by
+Weichselbaum & von Delft (2007) to broaden this discrete spectrum into a
+continuous curve while conserving spectral sum rules. `alpha` sets the
+logarithmic-Gaussian width; the discretization parameter `Lambda` itself
+limits how small `alpha` can usefully be. Too small an `alpha` leaves
+discretization oscillations and individual delta peaks visible; too large an
+`alpha` over-broadens genuine spectral features (such as the Kondo
+resonance). Žitko (2011) gives a quantitative procedure, based on varying
+`keep`, for estimating the discretization and truncation error bars of a
+broadened spectral function and choosing `alpha` accordingly; see also
+`keep`/`safeguard` under
+[Chain, iteration, truncation, and temperature](#chain-iteration-truncation-and-temperature)
+above.
 
 ### Spectral Binning, Patching, And Formatting
 
@@ -346,6 +454,31 @@ symmetry/backend combinations abort when interleaved recalculation is selected.
 `dumpabs=true` and `dumpscaled=true` are mutually incompatible. Widths are
 minimum padding widths, not fixed field boundaries; parse output as
 whitespace-separated text.
+
+**Accumulation and linear mesh.** `accumulation` shifts the logarithmic
+binning mesh's accumulation point away from `omega=0`; combined with a
+nonzero `linstep`, a linear mesh is used instead in the shifted window. This
+is intended for resolving sharp sub-gap features — such as Andreev or Shiba
+bound-state peaks in superconducting calculations — that a purely
+logarithmic mesh centered on zero would otherwise under-resolve (Hecht,
+Weichselbaum, von Delft & Bulla 2008).
+
+**Peak trimming.** `discard_trim` and `discard_immediately` clip spectral
+bins whose weight falls below a threshold set relative to the bin width or
+peak energy, respectively. Because spectral density is weight *per interval*,
+overly aggressive trimming silently discards spectral weight and can violate
+the sum rules checked by `checksumrules` (see
+[Output formats](output-formats.md)); the discretization/truncation error
+analysis of Žitko (2011) is the relevant reference for choosing these
+thresholds together with `keep` and `alpha`.
+
+**Patching.** `goodE`, `NN1`, `NN2even`, `NN2avg`, and `NNtanh` control how
+spectral contributions from consecutive NRG shells are stitched ("patched")
+together into one continuous curve, since each shell only resolves energies
+near its own scale reliably; see Bulla, Costi & Pruschke (2008), Sec. IV, for
+the general patching/broadening procedure. `NN1` (N/N+1 patching) uses a
+narrower, `Lambda`-times smaller patching window around each shell boundary
+than the default N/N+2 scheme, which can be preferable at larger `Lambda`.
 
 To make a run resumable, set `resume=true` before its first invocation and use
 the same exact checkpoint directory each time:
@@ -441,3 +574,82 @@ one of its parameters.
 See [Output format reference](output-formats.md) for the files controlled by
 the output parameters and [Getting started](getting-started.md) for a complete
 minimal calculation.
+
+## References
+
+The parameters above implement specific numerical schemes from the NRG
+literature. This list collects the papers cited by name above; it is not a
+general NRG bibliography (see [Research using NRG Ljubljana](publications.md)
+for applications).
+
+- K. G. Wilson, "The renormalization group: Critical phenomena and the Kondo
+  problem," *Rev. Mod. Phys.* **47**, 773 (1975),
+  [doi:10.1103/RevModPhys.47.773](https://doi.org/10.1103/RevModPhys.47.773).
+- H. R. Krishna-murthy, J. W. Wilkins, K. G. Wilson, "Renormalization-group
+  approach to the Anderson model of dilute magnetic alloys. I. Static
+  properties for the symmetric case," *Phys. Rev. B* **21**, 1003 (1980),
+  [doi:10.1103/PhysRevB.21.1003](https://doi.org/10.1103/PhysRevB.21.1003).
+- H. R. Krishna-murthy, J. W. Wilkins, K. G. Wilson, "...II. Static
+  properties for the asymmetric case," *Phys. Rev. B* **21**, 1044 (1980),
+  [doi:10.1103/PhysRevB.21.1044](https://doi.org/10.1103/PhysRevB.21.1044).
+- M. Yoshida, M. Whitaker, L. N. Oliveira, "Renormalization-group calculation
+  of excitation properties for impurity models," *Phys. Rev. B* **41**, 9403
+  (1990),
+  [doi:10.1103/PhysRevB.41.9403](https://doi.org/10.1103/PhysRevB.41.9403).
+- V. L. Campo Jr., L. N. Oliveira, "Alternative discretization in the
+  numerical renormalization-group method," *Phys. Rev. B* **72**, 104432
+  (2005),
+  [doi:10.1103/PhysRevB.72.104432](https://doi.org/10.1103/PhysRevB.72.104432).
+- R. Žitko, T. Pruschke, "Energy resolution and discretization artifacts in
+  the numerical renormalization group," *Phys. Rev. B* **79**, 085106
+  (2009),
+  [doi:10.1103/PhysRevB.79.085106](https://doi.org/10.1103/PhysRevB.79.085106).
+- R. Žitko, "Adaptive logarithmic discretization for numerical
+  renormalization group methods," *Comput. Phys. Commun.* **180**, 1271
+  (2009),
+  [doi:10.1016/j.cpc.2009.02.007](https://doi.org/10.1016/j.cpc.2009.02.007).
+- R. Žitko, "Quantitative determination of the discretization and truncation
+  errors in numerical renormalization-group calculations of spectral
+  functions," *Phys. Rev. B* **84**, 085142 (2011),
+  [doi:10.1103/PhysRevB.84.085142](https://doi.org/10.1103/PhysRevB.84.085142).
+- R. Bulla, T. A. Costi, T. Pruschke, "Numerical renormalization group method
+  for quantum impurity systems," *Rev. Mod. Phys.* **80**, 395 (2008),
+  [doi:10.1103/RevModPhys.80.395](https://doi.org/10.1103/RevModPhys.80.395).
+- T. A. Costi, A. C. Hewson, V. Zlatic, "Transport coefficients of the
+  Anderson model via the numerical renormalization group," *J. Phys.:
+  Condens. Matter* **6**, 2519 (1994),
+  [doi:10.1088/0953-8984/6/13/013](https://doi.org/10.1088/0953-8984/6/13/013).
+- W. Hofstetter, "Generalized numerical renormalization group for dynamical
+  quantities," *Phys. Rev. Lett.* **85**, 1508 (2000),
+  [doi:10.1103/PhysRevLett.85.1508](https://doi.org/10.1103/PhysRevLett.85.1508).
+- F. B. Anders, A. Schiller, "Real-time dynamics in quantum-impurity systems:
+  A time-dependent numerical renormalization-group approach," *Phys. Rev.
+  Lett.* **95**, 196801 (2005),
+  [doi:10.1103/PhysRevLett.95.196801](https://doi.org/10.1103/PhysRevLett.95.196801);
+  "Spin precession and real-time dynamics in the Kondo model: Time-dependent
+  numerical renormalization-group study," *Phys. Rev. B* **74**, 245113
+  (2006),
+  [doi:10.1103/PhysRevB.74.245113](https://doi.org/10.1103/PhysRevB.74.245113).
+- R. Peters, T. Pruschke, F. B. Anders, "Numerical renormalization group
+  approach to Green's functions for quantum impurity models," *Phys. Rev. B*
+  **74**, 245114 (2006),
+  [doi:10.1103/PhysRevB.74.245114](https://doi.org/10.1103/PhysRevB.74.245114).
+- A. Weichselbaum, J. von Delft, "Sum-rule conserving spectral functions from
+  the numerical renormalization group," *Phys. Rev. Lett.* **99**, 076402
+  (2007),
+  [doi:10.1103/PhysRevLett.99.076402](https://doi.org/10.1103/PhysRevLett.99.076402).
+- T. A. Costi, V. Zlatic, "Thermoelectric transport through strongly
+  correlated quantum dots," *Phys. Rev. B* **81**, 235127 (2010),
+  [doi:10.1103/PhysRevB.81.235127](https://doi.org/10.1103/PhysRevB.81.235127).
+- H. Zhang, X.-C. Xie, Q. Sun, "Scaling feature of magnetic field induced
+  Kondo-peak splittings," *Phys. Rev. B* **82**, 075111 (2010),
+  [doi:10.1103/PhysRevB.82.075111](https://doi.org/10.1103/PhysRevB.82.075111).
+- T. Hecht, A. Weichselbaum, J. von Delft, R. Bulla, "Numerical
+  renormalization group calculation of near-gap peaks in spectral functions
+  of the Anderson model with superconducting leads," *J. Phys.: Condens.
+  Matter* **20**, 275213 (2008),
+  [doi:10.1088/0953-8984/20/27/275213](https://doi.org/10.1088/0953-8984/20/27/275213).
+- M. Yoshida, A. C. Seridonio, L. N. Oliveira, "Universal zero-bias
+  conductance for the single electron transistor. II: Comparison with
+  numerical results," *Phys. Rev. B* **80**, 235317 (2009),
+  [doi:10.1103/PhysRevB.80.235317](https://doi.org/10.1103/PhysRevB.80.235317).

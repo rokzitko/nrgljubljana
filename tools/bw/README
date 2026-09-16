@@ -1,14 +1,83 @@
 bw - Adaptive broadening tool for NRG Ljubljana
 
 The algorithm used is described in the following paper:
-A. Freyn, S. Florens, PRB 79, 121102(R) (2009).
+A. Freyn, S. Florens, "Optimal broadening of finite energy spectra in the
+numerical renormalization group: Application to dissipative dynamics in
+two-level systems," Phys. Rev. B 79, 121102(R) (2009),
+doi:10.1103/PhysRevB.79.121102.
 
-NOTES: 
+## Physical idea
+
+Ordinary broadening (see `tools/broaden`) convolves the raw NRG delta-peak
+spectrum with a kernel of fixed logarithmic width. That is a poor compromise
+when a spectrum has both very sharp features (e.g. a narrow Kondo resonance
+or an in-gap Andreev/Shiba peak) and broad, smooth structures (e.g. Hubbard
+satellites) at other frequencies: a kernel narrow enough to resolve the sharp
+feature leaves noisy, unconverged results elsewhere, while a kernel wide
+enough to smooth the broad structures over-broadens the sharp one.
+
+`bw` instead determines a frequency-dependent broadening width `b(omega)`
+self-consistently from the local logarithmic derivative of the (partially
+broadened) integrated spectral function:
+
+```
+b(omega) = b0 * q * [ 1/(q + |d1(omega)|) + 1/(q + |d2(omega)|) ] / 2
+```
+
+where `d1`, `d2` are one-sided estimates of `d(log A_int)/d(log omega)` and
+`b0` is the asymptotic broadening width used where the spectrum is smooth
+(`d1`, `d2` small). Where the spectral function varies rapidly on a
+logarithmic scale (sharp peaks, edges, gap boundaries), the derivative is
+large and `b(omega)` shrinks accordingly, giving locally sharper resolution
+without introducing noise elsewhere. The regularization parameter `q`
+prevents `b(omega)` from vanishing (and destabilizing the procedure) where
+the derivative diverges. Since `b(omega)` depends on the very spectrum it
+broadens, the procedure is applied iteratively (`-n`, default 10 rounds):
+each round re-broadens with the current estimate of `b(omega)`, then
+recomputes the derivative and refines `b(omega)` for the next round.
+
+## Command line
+
+```
+bw [-h] [-v|-vv] [-psSo] [-m min] [-M max] [-r ratio] [-n nr_iter]
+   [-t trim] [-q q] [-x bmin] [-d dyn_mesh] <name> <b0> <Nz>
+```
+
+Positional arguments:
+
+| Argument | Meaning |
+| --- | --- |
+| `name` | Basename of the `name_dens_z*.bin` unbroadened spectral files produced by `nrg` (`savebins=true`). |
+| `b0` | Asymptotic broadening width used away from sharp features; must be positive. |
+| `Nz` | Number of `z` values to combine (`z`-averaging), 1 or more. |
+
+Options:
+
+| Option | Meaning |
+| --- | --- |
+| `-v`, `-vv` | Print resolved configuration and (very) verbose diagnostics. |
+| `-V`, `--version` | Print the NRG Ljubljana version and exit. |
+| `-m MIN`, `-M MAX` | Frequency mesh bounds (defaults `1e-7`, `2.0`); analogous to `broaden_min`/`broaden_max`. |
+| `-r RATIO` | Common ratio of the geometric frequency mesh (default `1.01`); analogous to `broaden_ratio`. |
+| `-n NR_ITER` | Number of self-consistency iterations refining `b(omega)` (default `10`). |
+| `-t TRIM` | Smallest `\|omega\|` to include in the output; below it results are unreliable/unused. |
+| `-p` | Clip the broadened spectral function to be non-negative. |
+| `-q Q` | Regularization parameter `q` in the `b(omega)` formula above (default `1.0`). |
+| `-x BMIN` | Smallest `b(omega)` allowed at any frequency (see trade-off note below). |
+| `-s` | Save intermediate `a(omega)` and `b(omega)` from every iteration, not just the last. |
+| `-S` | Save additional intermediate quantities (integrated spectral weight, etc.). |
+| `-d DYN_MESH` | If positive, dynamically refine the frequency mesh near sharp features rather than using a fixed geometric mesh. |
+| `-o` | Single-`z` mode: read `name_dens.bin` directly with no per-`z` subdirectory. |
+
+## Notes
 
 1. For very sharp features in the spectral function, there is a compromise
-between the lowest b(w) allowed, 'bmin', and the fineness of the
-discretization mesh, as controlled by 'broaden_ratio':
+   between the lowest `b(omega)` allowed, `bmin` (`-x`), and the fineness of
+   the discretization mesh, as controlled by `broaden_ratio` (`-r`):
 
-broaden_ratio - 1 << bmin.
+   ```
+   broaden_ratio - 1 << bmin
+   ```
 
-In practice, bmin = broaden_ratio-1 is an adequate choice (order 10^-4 error).
+   In practice, `bmin = broaden_ratio - 1` is an adequate choice (order
+   `1e-4` error).
