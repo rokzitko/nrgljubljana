@@ -17,9 +17,8 @@
 
 namespace NRG::MixChain {
 
-// The chain coefficients fall off as Lambda^(-n/2), far below what double precision can represent at the end of a
-// long chain, so the tridiagonalization is done in multiprecision, as nrgchain does.
-//
+// Multiple precision for Lanczos tridiagonalization
+
 // The scalar types come from Boost.Multiprecision, which tools/common/piecewise_polynomial.hpp already uses, rather
 // than from GMP: the block Lanczos needs complex arithmetic and a Hermitian square root, and Boost's complex wrapper
 // around the GMP backend does not compile (it wants eval_signbit, which that backend does not provide), while the

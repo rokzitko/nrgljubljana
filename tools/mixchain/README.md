@@ -101,8 +101,9 @@ is the same.
 | `split_blocks` | `true` | star | Discretize the blocks of $\Gamma$ independently, each on a mesh of its own. |
 | `allowed_error` | `1e-10` | star | Default relative tolerance of the integral method. |
 | `hermiticity_tolerance` | `1e-8` | star | Allowed deviation of the input from a Hermitian matrix. |
-| `Nmax` | required | chain | Last site of the chain, which has the sites `0..Nmax`. |
+| `Nmax` | required | chain | Last site of the chain, which has the sites `0..Nmax` and the hoppings `T_0..T_Nmax`. |
 | `preccpp` | `2000` | chain | Precision of the chain stage in bits, as for `nrgchain`. |
+| `discretization_files` | `false` | chain | Also write the chain as one file per matrix element, beside `chain.dat`. |
 | `rank_tolerance` | `1e-20` | chain | Eigenvalue of a Gram matrix, relative to its largest, below which it counts as zero. |
 
 `boundary` is a fraction of the rescaled band edge, as in `adapt`: a gap $\Delta$ in the units of the input with
@@ -237,6 +238,7 @@ by the chain stage as whitespace-separated `key=value` pairs.
 | `z`, `Lambda` | The discretization. |
 | `bandrescale` | The rescaling applied to $\Gamma$; energies are in the rescaled band. |
 | `complex` | `1` if the couplings are complex, `0` if real. It fixes the number of columns. |
+| `innermost` | Optional: the smallest $\|\omega\|$ tabulated in the input, in the rescaled band, the larger of the two frequency branches. Below it the density is the constant continuation of the input; the chain stage uses it to say where the chain sinks below the data. |
 
 | Column | Meaning |
 | --- | --- |
@@ -273,7 +275,7 @@ One row per matrix element. The second line is the header. With several blocks i
 | Column | Meaning |
 | --- | --- |
 | `block` | `V`, `E` or `T`. |
-| `n` | Site: `0` for `V`, `0..Nmax` for `E`, `0..Nmax-1` for `T`. |
+| `n` | Site: `0` for `V`, `0..Nmax` for `E` and for `T`. |
 | `i`, `j` | Matrix indices, `1..channels`, as in `Gamma_ij`. |
 | `value` | The element; for `complex=1` a pair `Re Im`. |
 
@@ -282,6 +284,17 @@ multiplies $f_{n+1,i}^\dagger f_{nj}$. $E_n$ and $T_n$ are in the units of the i
 `bandrescale` back as the Band paragraph above describes. $V$ is in the normalization of the input,
 $V^2 = \Theta = \int\Gamma\,d\omega$; with the $\pi\rho$ convention of `adapt` the physical coupling is
 $V/\sqrt{\pi}$.
+
+### `V11.dat`, `E11.dat`, `T11.dat`, …
+
+With `discretization_files`, the same chain is written once more as one file per matrix element, in the directory of
+`chain.dat`. `V`$ij$`.dat` holds one row, `E`$ij$`.dat` and `T`$ij$`.dat` the sites $0\ldots$`Nmax`, one row per site. The rows are plain numbers with no header: a single column for a real chain,
+and the pair `Re Im` for a complex one, as `complex` in the header of `chain.dat` says. The values are those of
+`chain.dat`, in the units of the input. All $N^2$ files of each block are written, including elements that are
+exactly zero between blocks, so the set is always complete.
+
+This is the form the coefficient readers of `nrg` take. Which element belongs to which coefficient set of a given
+symmetry type is up to whatever stages them.
 
 ## Log
 
@@ -316,7 +329,7 @@ is `boundary` times `bandrescale`, and `mesh_weight` is `inactive` without `adap
 | `# crossings: p positive, n negative` | Nodes where the tracked branches change their order by eigenvalue, per frequency branch. |
 | `# POS: Gamma vanishes on this branch; fixed mesh used` | With `adapt=true`, a branch without weight to build the adaptive mesh from. Its levels have zero coupling. |
 | `# POS: k representative energy levels are indistinguishable from the accumulation point b in double precision` | Levels in intervals whose bounds are the same double, near an accumulation point away from zero. They carry no weight, which truncates the star there. |
-| `# POS: k of M intervals contain no tabulated point of the input, the outermost being [lo, hi]; ...` | Intervals where the star follows the interpolant rather than data. The ending says whether the input ends above them (constant continuation) or is merely coarser than the mesh. |
+| `# POS: k of M intervals contain no tabulated point of the input, carrying f of the weight of this branch, the outermost being [lo, hi]; ...` | Intervals where the star follows the interpolant rather than data, and the share $f$ of the branch's weight that sits in them, which is what says whether the count matters: a mesh reaching far below the input has many such intervals and almost no weight in them. The ending says whether the input ends above them (constant continuation) or is merely coarser than the mesh. |
 | `# tr(theta)= tr(int Gamma)= difference=` | Trace of $\Theta=\sum_k v_k v_k^\dagger$ against the integral of $\Gamma$ over the range the mesh covers; equal by construction. |
 | `# ||theta - int Gamma||/||int Gamma||=` | The same for the whole matrix. The off-diagonal elements agree only approximately, since one level per interval and branch cannot follow a rotating eigenvector. |
 | `# star written to`, `# star z=: t s`, `# star stage: t s` | The file, the wall time of this $z$, and of the whole stage. |
@@ -333,11 +346,14 @@ is `boundary` times `bandrescale`, and `mesh_weight` is `inactive` without `adap
 | `min_residual_condition=` | Smallest ratio of the nonzero eigenvalues of $R^\dagger R$ along the chain: how close a direction came to being counted as zero by `rank_tolerance`. |
 | `# max_antihermitian=` | Largest anti-Hermitian part removed from an on-site block $E_n$, relative to it: rounding at the working precision. |
 | `max_reorthogonalization=` | Largest component along earlier Lanczos blocks removed from a residual, relative to it: the loss of orthogonality that full reorthogonalization repairs. |
+| `# the chain falls below the innermost tabulated frequency w at site n of Nmax: ...` | From that site on the coefficients are built on the constant continuation of the input rather than on data. The frequency comes from the star (`innermost` in its header), and both it and the site are printed only when the star records it. |
 | `# Theta has rank r of N: ...` | $\Gamma$ is rank deficient over the whole band. The chain along the decoupled combinations is zero, which is exact. |
+| `# matrix files written to d` | With `discretization_files`, the directory the per-element files went to. |
 | `# chain written to`, `# chain z=: t s`, `# chain stage: t s` | The file, the wall time of this $z$, and of the whole stage. |
 
-`chain.dat` records the same quantities, plus `min_rank`, the smallest rank of a hopping, and `rank_drop_site`, the
-first site where it falls below `theta_rank`. With several blocks they are merged over the blocks: ranks and levels
+`chain.dat` records the same quantities, plus `min_rank`, the smallest rank of a hopping, `rank_drop_site`, the first
+site where it falls below `theta_rank`, and `continued_from_site`, the first site below the innermost tabulated
+frequency (both `none` when they do not happen). With several blocks they are merged over the blocks: ranks and levels
 add up site by site, and the ratios of eigenvalues are taken within each block.
 
 `# Elapsed t s (CPU c s)` closes the log: the wall time, which the stage times add up to, and the CPU time.

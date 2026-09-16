@@ -47,6 +47,9 @@ namespace NRG::MixChain {
 //   bandrescale  the band rescaling that was applied to Gamma when it was read; the energies below are in the
 //                rescaled band, whose edge is 1
 //   complex      1 if the coupling vectors are complex, 0 if they are real. It fixes the number of columns.
+//   innermost    optional: the smallest |omega| tabulated in the input, in the rescaled band, the larger of the two
+//                frequency branches. Below it the density is the constant continuation of the input, and the chain
+//                stage reports where the chain sinks below it. Absent means unknown.
 //
 // Blocks line, written right after the header when Gamma was discretized in more than one block (see blocks.hpp):
 //
@@ -91,7 +94,8 @@ struct StarHeader {
   double Lambda{};
   double bandrescale{1.0};
   bool complex_data{};
-  Blocks blocks; // empty if the file has no blocks line
+  double innermost_input{}; // 0 if the file does not record it
+  Blocks blocks;            // empty if the file has no blocks line
 };
 
 namespace detail {
@@ -139,6 +143,8 @@ inline void parse_header_line(const std::string &line, StarHeader &header, const
       have_lambda   = true;
     } else if (key == "bandrescale") {
       header.bandrescale = number();
+    } else if (key == "innermost") {
+      header.innermost_input = number();
     } else if (key == "complex") {
       header.complex_data = number() != 0.0;
       have_complex        = true;
@@ -203,7 +209,9 @@ template<typename S> void save_star(const Star<S> &star, std::ostream &out) {
   out << std::setprecision(18);
   out << "# mixchain star" << std::endl;
   out << "# channels=" << star.channels << " mMAX=" << star.mMAX << " z=" << star.z << " Lambda=" << star.Lambda
-      << " bandrescale=" << star.bandrescale << " complex=" << (is_complex_v<S> ? 1 : 0) << std::endl;
+      << " bandrescale=" << star.bandrescale << " complex=" << (is_complex_v<S> ? 1 : 0);
+  if (star.innermost_input > 0.0) out << " innermost=" << star.innermost_input;
+  out << std::endl;
   if (star.blocks.size() > 1) out << "# " << detail::blocks_key << " " << blocks_name(star.blocks) << std::endl;
   for (std::size_t b = 0; b < star.diagnostics.size(); b++) {
     const auto &diagnostics = star.diagnostics[b];
@@ -263,8 +271,9 @@ template<typename S> auto load_star(const std::string &filename) {
   star.mMAX        = header.mMAX;
   star.z           = header.z;
   star.Lambda      = header.Lambda;
-  star.bandrescale = header.bandrescale;
-  star.blocks      = header.blocks;
+  star.bandrescale     = header.bandrescale;
+  star.innermost_input = header.innermost_input;
+  star.blocks          = header.blocks;
   if (star.blocks.empty()) {
     star.blocks.emplace_back(static_cast<std::size_t>(header.channels));
     std::iota(star.blocks.front().begin(), star.blocks.front().end(), 0);

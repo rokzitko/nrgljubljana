@@ -4,11 +4,14 @@
 #ifndef _mixchain_chain_io_hpp_
 #define _mixchain_chain_io_hpp_
 
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <ostream>
 #include <stdexcept>
 #include <string>
+#include <tuple>
+#include <vector>
 
 #include <Eigen/Dense>
 
@@ -32,7 +35,8 @@ namespace NRG::MixChain {
 // Lines beginning with '#' are comments. The second line is the header, as whitespace-separated key=value pairs:
 //
 //   channels     the dimension N of every block
-//   Nmax         the last site; the chain has the sites 0..Nmax
+//   Nmax         the last site; the chain has the sites 0..Nmax, and one hopping per site, T_0..T_Nmax, the last one
+//                leading out of the chain, as the coefficient tables of nrg are indexed 0..Nmax
 //   z, Lambda    the discretization the star was built with
 //   bandrescale  the band rescaling that was applied to Gamma when it was read
 //   complex      1 if the coefficients are complex, 0 if real. It fixes the number of columns.
@@ -44,7 +48,7 @@ namespace NRG::MixChain {
 // Columns of a data row:
 //
 //   block  V, E or T
-//   n      the site: 0 for V, 0..Nmax for E, 0..Nmax-1 for T
+//   n      the site: 0 for V, 0..Nmax for E and for T
 //   i, j   the matrix indices, 1..channels, as in Gamma_ij
 //   value  the element; for complex=1 a pair Re Im
 //
@@ -73,6 +77,7 @@ struct ChainFileHeader {
   double Lambda{};
   double bandrescale{1.0};
   unsigned digits{};
+  double innermost_input{}; // as recorded by the star, in the rescaled band; 0 if unknown
 };
 
 namespace detail {
@@ -99,7 +104,8 @@ void write_block(std::ostream &out, const char *name, const unsigned int site, c
 } // namespace detail
 
 template<typename S> void save_chain(const Chain<S> &chain, const ChainFileHeader &header, std::ostream &out) {
-  const auto &d = chain.diagnostics;
+  const auto &d        = chain.diagnostics;
+  const auto continued = first_continued_site(chain, header.innermost_input);
   out << std::setprecision(18);
   out << "# mixchain Wilson chain" << std::endl;
   out << "# channels=" << chain.channels << " Nmax=" << chain.Nmax << " z=" << header.z << " Lambda=" << header.Lambda
@@ -109,6 +115,8 @@ template<typename S> void save_chain(const Chain<S> &chain, const ChainFileHeade
   out << "# levels=" << d.levels << " coupled_levels=" << d.coupled_levels << " theta_rank=" << d.theta_rank
       << " min_rank=" << d.min_rank << " rank_drop_site="
       << (d.rank_drop_site ? std::to_string(*d.rank_drop_site) : std::string("none"))
+      << " continued_from_site="
+      << (continued ? std::to_string(*continued) : std::string("none"))
       << " theta_condition=" << d.theta_condition << " max_antihermitian=" << d.max_antihermitian
       << " max_reorthogonalization=" << d.max_reorthogonalization
       << " min_residual_condition=" << d.min_residual_condition << std::endl;
@@ -120,6 +128,41 @@ template<typename S> void save_chain(const Chain<S> &chain, const ChainFileHeade
   for (unsigned int n = 0; n < chain.E.size(); n++) detail::write_block(out, "E", n, chain.E[n], header.bandrescale);
   for (unsigned int n = 0; n < chain.T.size(); n++) detail::write_block(out, "T", n, chain.T[n], header.bandrescale);
   out.flush();
+}
+
+// THE MATRIX FILES
+//
+// The same chain, one file per matrix element: V11.dat, V12.dat, ..., E11.dat, ..., T11.dat, ..., in the directory of
+// chain.dat. V holds one row, E and T the sites 0..Nmax, one row each. The rows are plain
+// numbers with no header, a single column for a real chain and the pair "Re Im" for a complex one, in the units of
+// chain.dat: E and T carry bandrescale, V does not. Every element is written, including those that are exactly zero
+// between blocks, so the set of N*N files is always complete.
+//
+// This is the form the coefficient readers of nrg take. Which element belongs to which coefficient set of a given
+// symmetry type is up to the writer that stages them.
+template<typename S>
+void save_chain_matrix_files(const Chain<S> &chain, const ChainFileHeader &header,
+                             const std::filesystem::path &directory) {
+  const auto element = [](std::ostream &out, const S &x, const double factor) {
+    const S scaled = make_scalar<S>(static_cast<real_type<S>>(factor), 0) * x;
+    out << static_cast<double>(Eigen::numext::real(scaled));
+    if constexpr (is_complex_v<S>) out << " " << static_cast<double>(Eigen::numext::imag(scaled));
+    out << std::endl;
+  };
+  for (Eigen::Index i = 0; i < chain.V.rows(); i++)
+    for (Eigen::Index j = 0; j < chain.V.cols(); j++) {
+      const auto indices = std::to_string(i + 1) + std::to_string(j + 1);
+      for (const auto &[name, blocks, factor] :
+           {std::tuple{"V", std::vector<Matrix<S>>{chain.V}, 1.0}, std::tuple{"E", chain.E, header.bandrescale},
+            std::tuple{"T", chain.T, header.bandrescale}}) {
+        const auto filename = (directory / (name + indices + ".dat")).string();
+        std::ofstream F;
+        NRG::Tools::open_output(F, filename, 18);
+        for (const auto &block : blocks) element(F, block(i, j), factor);
+        F.close();
+        if (!F) throw std::runtime_error("Error writing " + filename + ".");
+      }
+    }
 }
 
 template<typename S>

@@ -111,7 +111,7 @@ TEST(MixChainChain, flat_band_gives_the_closed_form_chain) { // NOLINT
   const auto star  = star_of<double>([](const double) { return Matrix<double>::Constant(1, 1, 0.3); }, 80);
   const auto chain = build_chain<Real>(star, chain_options(20));
 
-  for (unsigned int n = 0; n < chain.Nmax; n++) {
+  for (unsigned int n = 0; n <= chain.Nmax; n++) { // one hopping per site, the last one out of the chain
     const auto xi = flat_band_xi(static_cast<int>(n));
     EXPECT_NEAR(static_cast<double>(chain.T[n](0, 0)), xi, 1e-14 * xi) << "site " << n;
   }
@@ -124,7 +124,7 @@ TEST(MixChainChain, degenerate_flat_band_gives_the_scalar_chain_times_the_identi
   const auto star  = star_of<double>([](const double) { return Matrix<double>(0.3 * Matrix<double>::Identity(2, 2)); }, 80);
   const auto chain = build_chain<Real>(star, chain_options(12));
 
-  for (unsigned int n = 0; n < chain.Nmax; n++) {
+  for (unsigned int n = 0; n <= chain.Nmax; n++) {
     const auto xi = flat_band_xi(static_cast<int>(n));
     const Matrix<Real> expected = Matrix<Real>::Identity(2, 2) * Real(xi);
     EXPECT_LT(largest<Real>(chain.T[n] - expected), 1e-14 * xi) << "site " << n;
@@ -162,22 +162,37 @@ TEST(MixChainChain, moments_of_the_star_are_reproduced) { // NOLINT
   }
 }
 
-TEST(MixChainChain, full_length_lanczos_is_a_unitary_map_of_the_star) { // NOLINT
-  // With exactly channels*(Nmax+1) levels the blocks span the whole space: stacked side by side they form a unitary Q
-  // with Q H_chain Q^dag = H_star. This catches what equality of spectra would not, such as a transposed coupling.
-  const auto star = arbitrary_star<std::complex<double>>(2, 8);
+TEST(MixChainChain, the_lanczos_blocks_span_the_star_and_obey_the_recursion) { // NOLINT
+  // With exactly channels*(Nmax+2) levels the blocks Q_0..Q_{Nmax+1} span the whole space, so stacked side by side
+  // they are unitary. They must also satisfy the recursion they came from,
+  //
+  //   H_star Q_n = Q_{n-1} T_{n-1}^dag + Q_n E_n + Q_{n+1} T_n,
+  //
+  // which is what fixes the coefficients: it checks every block including the last hopping T_Nmax, and it catches what
+  // equality of spectra would not, such as a transposed coupling.
+  const auto star = arbitrary_star<std::complex<double>>(2, 10);
   std::vector<Matrix<Complex>> blocks;
   const auto chain = build_chain(to_wide<Complex>(star), chain_options(3), &blocks);
+  ASSERT_EQ(blocks.size(), chain.Nmax + 2);
+  ASSERT_EQ(chain.T.size(), chain.Nmax + 1);
 
-  Matrix<Complex> q(8, 8);
-  for (std::size_t s = 0; s < blocks.size(); s++) q.block(0, static_cast<Eigen::Index>(2 * s), 8, 2) = blocks[s];
-  EXPECT_LT(largest<Complex>(q.adjoint() * q - Matrix<Complex>::Identity(8, 8)), 1e-45);
+  Matrix<Complex> q(10, 10);
+  for (std::size_t s = 0; s < blocks.size(); s++) q.block(0, static_cast<Eigen::Index>(2 * s), 10, 2) = blocks[s];
+  EXPECT_LT(largest<Complex>(q.adjoint() * q - Matrix<Complex>::Identity(10, 10)), 1e-45);
 
-  Matrix<Complex> star_hamiltonian = Matrix<Complex>::Zero(8, 8);
+  Matrix<Complex> star_hamiltonian = Matrix<Complex>::Zero(10, 10);
   for (std::size_t k = 0; k < star.levels.size(); k++)
     star_hamiltonian(static_cast<Eigen::Index>(k), static_cast<Eigen::Index>(k)) =
       make_scalar<Complex>(star.levels[k].energy, 0);
-  EXPECT_LT(largest<Complex>(q * chain_hamiltonian(chain) * q.adjoint() - star_hamiltonian), 1e-45);
+
+  for (unsigned int n = 0; n <= chain.Nmax; n++) {
+    Matrix<Complex> recursion = blocks[n] * chain.E[n] + blocks[n + 1] * chain.T[n];
+    if (n > 0) recursion += blocks[n - 1] * chain.T[n - 1].adjoint();
+    EXPECT_LT(largest<Complex>(star_hamiltonian * blocks[n] - recursion), 1e-45) << "site " << n;
+  }
+  // The first Nmax+1 blocks carry the chain itself: Q^dag H_star Q is its block tridiagonal Hamiltonian.
+  const Matrix<Complex> spanned = q.leftCols(8);
+  EXPECT_LT(largest<Complex>(spanned.adjoint() * star_hamiltonian * spanned - chain_hamiltonian(chain)), 1e-45);
 }
 
 TEST(MixChainChain, is_covariant_under_a_constant_rotation) { // NOLINT
@@ -203,7 +218,7 @@ TEST(MixChainChain, is_covariant_under_a_constant_rotation) { // NOLINT
   EXPECT_LT(largest<Real>(rotated.V - U * plain.V * U.transpose()), 1e-11);
   for (unsigned int n = 0; n <= plain.Nmax; n++)
     EXPECT_LT(largest<Real>(rotated.E[n] - U * plain.E[n] * U.transpose()), 1e-11) << "site " << n;
-  for (unsigned int n = 0; n < plain.Nmax; n++)
+  for (unsigned int n = 0; n <= plain.Nmax; n++)
     EXPECT_LT(largest<Real>(rotated.T[n] - U * plain.T[n] * U.transpose()), 1e-11) << "site " << n;
 }
 
@@ -220,7 +235,7 @@ TEST(MixChainChain, a_diagonal_gamma_gives_independent_scalar_chains) { // NOLIN
     const auto alone = build_chain<Real>(
       star_of<double>([&](const double omega) { return Matrix<double>::Constant(1, 1, density(omega)); }, 40),
       chain_options(8));
-    for (unsigned int n = 0; n < joint.Nmax; n++) {
+    for (unsigned int n = 0; n <= joint.Nmax; n++) {
       EXPECT_NEAR(static_cast<double>(joint.T[n](channel, channel)), static_cast<double>(alone.T[n](0, 0)),
                   1e-12 * static_cast<double>(alone.T[n](0, 0)));
       EXPECT_LT(static_cast<double>(abs(joint.T[n](0, 1))), 1e-40); // the channels stay decoupled
@@ -271,7 +286,7 @@ TEST(MixChainChain, a_singular_theta_gives_a_zero_chain_for_the_decoupled_combin
     EXPECT_LT(largest<S>(chain.V - scalar_of(sqrt(Real(2)) * reference.V(0, 0)) * u), tolerance);
     for (unsigned int n = 0; n <= chain.Nmax; n++)
       EXPECT_LT(largest<S>(chain.E[n] - scalar_of(reference.E[n](0, 0)) * u), tolerance) << "site " << n;
-    for (unsigned int n = 0; n < chain.Nmax; n++)
+    for (unsigned int n = 0; n <= chain.Nmax; n++)
       EXPECT_LT(largest<S>(chain.T[n] - scalar_of(reference.T[n](0, 0)) * u), tolerance) << "site " << n;
   };
   check.template operator()<Complex>(1e-40);
@@ -302,14 +317,23 @@ TEST(MixChainChain, a_rank_drop_mid_chain_continues_with_zeros) { // NOLINT
   EXPECT_EQ(*chain.diagnostics.rank_drop_site, 1U);
 
   const auto alone_first  = build_chain<Real>(first, chain_options(4));
-  const auto alone_second = build_chain<Real>(second, chain_options(1));
+  // The two levels of channel 2 alone, padded with levels without coupling so that the star is large enough to ask
+  // for a chain at all; they add nothing to the Krylov space.
+  auto second_padded = second;
+  for (int k = 0; k < 2; k++) {
+    StarLevel<double> level;
+    level.energy   = 0.9 * std::pow(3.0, -k);
+    level.coupling = Vector<double>::Zero(1);
+    second_padded.levels.push_back(level);
+  }
+  const auto alone_second = build_chain<Real>(second_padded, chain_options(1));
   const auto near         = [](const Real &a, const Real &b) { return static_cast<double>(abs(a - b)); };
   for (unsigned int n = 0; n <= chain.Nmax; n++) {
     EXPECT_LT(near(chain.E[n](0, 0), alone_first.E[n](0, 0)), 1e-40) << "site " << n;
     EXPECT_LT(near(chain.E[n](1, 1), n <= 1 ? alone_second.E[n](0, 0) : Real(0)), 1e-40) << "site " << n;
     EXPECT_LT(static_cast<double>(abs(chain.E[n](0, 1))), 1e-40) << "site " << n;
   }
-  for (unsigned int n = 0; n < chain.Nmax; n++) {
+  for (unsigned int n = 0; n <= chain.Nmax; n++) {
     EXPECT_LT(near(chain.T[n](0, 0), alone_first.T[n](0, 0)), 1e-40) << "site " << n;
     EXPECT_LT(near(chain.T[n](1, 1), n == 0 ? alone_second.T[0](0, 0) : Real(0)), 1e-40) << "site " << n;
     EXPECT_LT(static_cast<double>(abs(chain.T[n](0, 1))), 1e-40) << "site " << n;
@@ -322,7 +346,7 @@ TEST(MixChainChain, an_exhausted_single_channel_gives_rank_zero) { // NOLINT
   auto star = arbitrary_star<double>(1, 6);
   for (std::size_t k = 3; k < 6; k++) star.levels[k].coupling(0) = 0.0;
   auto coupled = star;
-  coupled.levels.resize(3);
+  coupled.levels.resize(4); // the 3 that couple, and one that does not, so that a chain can be asked for at all
 
   const auto chain = build_chain<Real>(star, chain_options(4));
   EXPECT_EQ(chain.diagnostics.theta_rank, 1);
@@ -333,8 +357,8 @@ TEST(MixChainChain, an_exhausted_single_channel_gives_rank_zero) { // NOLINT
   const auto alone = build_chain<Real>(coupled, chain_options(2));
   for (unsigned int n = 0; n <= chain.Nmax; n++)
     EXPECT_LT(static_cast<double>(abs(chain.E[n](0, 0) - (n <= 2 ? alone.E[n](0, 0) : Real(0)))), 1e-40) << "site " << n;
-  for (unsigned int n = 0; n < chain.Nmax; n++)
-    EXPECT_LT(static_cast<double>(abs(chain.T[n](0, 0) - (n <= 1 ? alone.T[n](0, 0) : Real(0)))), 1e-40) << "site " << n;
+  for (unsigned int n = 0; n <= chain.Nmax; n++)
+    EXPECT_LT(static_cast<double>(abs(chain.T[n](0, 0) - (n <= 2 ? alone.T[n](0, 0) : Real(0)))), 1e-40) << "site " << n;
 }
 
 TEST(MixChainChain, a_split_diagonal_gamma_gives_exactly_the_scalar_chains) { // NOLINT
@@ -357,7 +381,7 @@ TEST(MixChainChain, a_split_diagonal_gamma_gives_exactly_the_scalar_chains) { //
       EXPECT_EQ(joint.E[n](channel, channel), alone.E[n](0, 0)) << "site " << n;
       EXPECT_EQ(joint.E[n](channel, 1 - channel), Real(0));
     }
-    for (unsigned int n = 0; n < joint.Nmax; n++) {
+    for (unsigned int n = 0; n <= joint.Nmax; n++) {
       EXPECT_EQ(joint.T[n](channel, channel), alone.T[n](0, 0)) << "site " << n;
       EXPECT_EQ(joint.T[n](channel, 1 - channel), Real(0));
     }
@@ -372,7 +396,7 @@ TEST(MixChainChain, blocks_are_compared_only_within_themselves) { // NOLINT
   EXPECT_EQ(split.diagnostics.theta_rank, 2);
   EXPECT_FALSE(split.diagnostics.rank_drop_site.has_value());
   EXPECT_NEAR(static_cast<double>(split.V(1, 1) / split.V(0, 0)), std::sqrt(1e-25), 1e-14 * std::sqrt(1e-25));
-  for (unsigned int n = 0; n < split.Nmax; n++) // the hoppings do not depend on the normalization of Gamma
+  for (unsigned int n = 0; n <= split.Nmax; n++) // the hoppings do not depend on the normalization of Gamma
     EXPECT_NEAR(static_cast<double>(split.T[n](1, 1)), static_cast<double>(split.T[n](0, 0)),
                 1e-14 * static_cast<double>(split.T[n](0, 0)));
 
@@ -380,7 +404,7 @@ TEST(MixChainChain, blocks_are_compared_only_within_themselves) { // NOLINT
   const auto whole = build_chain<Real>(star_of<double>(gamma, 40, false), chain_options(8));
   EXPECT_EQ(whole.diagnostics.theta_rank, 1);
   EXPECT_EQ(whole.V(1, 1), Real(0));
-  for (unsigned int n = 0; n < whole.Nmax; n++) EXPECT_LT(static_cast<double>(abs(whole.T[n](1, 1))), 1e-40);
+  for (unsigned int n = 0; n <= whole.Nmax; n++) EXPECT_LT(static_cast<double>(abs(whole.T[n](1, 1))), 1e-40);
 }
 
 TEST(MixChainChain, blocks_are_placed_in_their_channels_and_the_map_stays_unitary) { // NOLINT
@@ -399,11 +423,11 @@ TEST(MixChainChain, blocks_are_placed_in_their_channels_and_the_map_stays_unitar
   const auto star  = star_from(input, 3);
   ASSERT_EQ(star.blocks, (Blocks{{0, 2}, {1}}));
   std::vector<Matrix<Complex>> lanczos;
-  const auto chain = build_chain(to_wide<Complex>(star), chain_options(7), &lanczos);
+  const auto chain = build_chain(to_wide<Complex>(star), chain_options(6), &lanczos);
   EXPECT_EQ(chain.blocks, star.blocks);
 
-  const auto outer = build_chain<Complex>(star_from(restrict_input(input, Block{0, 2}), 3), chain_options(7));
-  const auto inner = build_chain<Complex>(star_from(restrict_input(input, Block{1}), 3), chain_options(7));
+  const auto outer = build_chain<Complex>(star_from(restrict_input(input, Block{0, 2}), 3), chain_options(6));
+  const auto inner = build_chain<Complex>(star_from(restrict_input(input, Block{1}), 3), chain_options(6));
   const auto check = [](const Matrix<Complex> &whole, const Matrix<Complex> &outer_part,
                         const Matrix<Complex> &inner_part) {
     const int outer_channel[] = {0, 2};
@@ -417,17 +441,23 @@ TEST(MixChainChain, blocks_are_placed_in_their_channels_and_the_map_stays_unitar
   };
   check(chain.V, outer.V, inner.V);
   for (unsigned int n = 0; n <= chain.Nmax; n++) check(chain.E[n], outer.E[n], inner.E[n]);
-  for (unsigned int n = 0; n < chain.Nmax; n++) check(chain.T[n], outer.T[n], inner.T[n]);
+  for (unsigned int n = 0; n <= chain.Nmax; n++) check(chain.T[n], outer.T[n], inner.T[n]);
 
-  // Stacked side by side, the blocks of the parts are still the unitary map of the whole star onto the chain.
+  // With Nmax=6 the blocks Q_0..Q_7 of the two parts fill the 24 levels: stacked side by side they are unitary, and
+  // they satisfy the recursion of the whole star, blocks and all.
   Matrix<Complex> q(24, 24);
+  ASSERT_EQ(lanczos.size(), chain.Nmax + 2);
   for (std::size_t s = 0; s < lanczos.size(); s++) q.block(0, static_cast<Eigen::Index>(3 * s), 24, 3) = lanczos[s];
   EXPECT_LT(largest<Complex>(q.adjoint() * q - Matrix<Complex>::Identity(24, 24)), 1e-40);
   Matrix<Complex> star_hamiltonian = Matrix<Complex>::Zero(24, 24);
   for (std::size_t k = 0; k < star.levels.size(); k++)
     star_hamiltonian(static_cast<Eigen::Index>(k), static_cast<Eigen::Index>(k)) =
       make_scalar<Complex>(star.levels[k].energy, 0);
-  EXPECT_LT(largest<Complex>(q * chain_hamiltonian(chain) * q.adjoint() - star_hamiltonian), 1e-40);
+  for (unsigned int n = 0; n <= chain.Nmax; n++) {
+    Matrix<Complex> recursion = lanczos[n] * chain.E[n] + lanczos[n + 1] * chain.T[n];
+    if (n > 0) recursion += lanczos[n - 1] * chain.T[n - 1].adjoint();
+    EXPECT_LT(largest<Complex>(star_hamiltonian * lanczos[n] - recursion), 1e-40) << "site " << n;
+  }
 }
 
 TEST(MixChainChain, a_zero_block_has_a_zero_chain_and_does_not_spoil_the_diagnostics) { // NOLINT
@@ -448,7 +478,7 @@ TEST(MixChainChain, a_zero_block_has_a_zero_chain_and_does_not_spoil_the_diagnos
   EXPECT_EQ(chain.diagnostics.coupled_levels, 82);
   EXPECT_EQ(chain.V(1, 1), Real(0));
   for (unsigned int n = 0; n <= chain.Nmax; n++) EXPECT_EQ(chain.E[n](1, 1), Real(0));
-  for (unsigned int n = 0; n < chain.Nmax; n++) EXPECT_EQ(chain.T[n](1, 1), Real(0));
+  for (unsigned int n = 0; n <= chain.Nmax; n++) EXPECT_EQ(chain.T[n](1, 1), Real(0));
 }
 
 TEST(MixChainChain, ranks_of_blocks_add_up_site_by_site) { // NOLINT
@@ -478,7 +508,7 @@ TEST(MixChainChain, ranks_of_blocks_add_up_site_by_site) { // NOLINT
 
   const auto chain = build_chain<Real>(star, chain_options(4));
   EXPECT_EQ(chain.diagnostics.theta_rank, 2);
-  EXPECT_EQ(chain.diagnostics.hopping_ranks, (std::vector<int>{2, 1, 1, 1}));
+  EXPECT_EQ(chain.diagnostics.hopping_ranks, (std::vector<int>{2, 1, 1, 1, 1})); // one hopping per site, 0..Nmax
   EXPECT_EQ(chain.diagnostics.min_rank, 1);
   ASSERT_TRUE(chain.diagnostics.rank_drop_site.has_value());
   EXPECT_EQ(*chain.diagnostics.rank_drop_site, 1U);
@@ -493,7 +523,7 @@ TEST(MixChainChain, ranks_of_blocks_add_up_site_by_site) { // NOLINT
   EXPECT_EQ(chain.diagnostics.coupled_levels, 14);
 
   const auto alone_first = build_chain<Real>(first, chain_options(4));
-  for (unsigned int n = 0; n < chain.Nmax; n++) {
+  for (unsigned int n = 0; n <= chain.Nmax; n++) {
     EXPECT_EQ(chain.T[n](0, 0), alone_first.T[n](0, 0)) << "site " << n;
     if (n > 0) {
       EXPECT_EQ(chain.T[n](1, 1), Real(0)) << "site " << n;
@@ -502,8 +532,11 @@ TEST(MixChainChain, ranks_of_blocks_add_up_site_by_site) { // NOLINT
 }
 
 TEST(MixChainChain, rejects_a_star_too_small_for_the_chain) { // NOLINT
-  const auto star = arbitrary_star<double>(2, 7); // a chain of 4 sites with 2 channels needs 8 levels
+  // A chain of 4 sites with 2 channels needs 2*(4+1) = 10 levels: one block per site and one for the hopping out of
+  // the last one.
+  const auto star = arbitrary_star<double>(2, 9);
   EXPECT_THROW(build_chain<Real>(star, chain_options(3)), std::invalid_argument);
+  EXPECT_NO_THROW(build_chain<Real>(arbitrary_star<double>(2, 10), chain_options(3)));
   EXPECT_THROW(build_chain<Real>(arbitrary_star<double>(2, 12), chain_options(0)), std::invalid_argument);
 }
 
@@ -513,7 +546,7 @@ TEST(MixChainChain, works_in_double_precision_too) { // NOLINT
   const auto narrow = build_chain<double>(star, chain_options(3));
   const auto wide   = convert_chain<double>(build_chain<Real>(star, chain_options(3)));
   EXPECT_LT(largest<double>(narrow.V - wide.V), 1e-14);
-  for (unsigned int n = 0; n < 3; n++) EXPECT_LT(largest<double>(narrow.T[n] - wide.T[n]), 1e-13);
+  for (unsigned int n = 0; n <= 3; n++) EXPECT_LT(largest<double>(narrow.T[n] - wide.T[n]), 1e-13);
 }
 
 int main(int argc, char **argv) {

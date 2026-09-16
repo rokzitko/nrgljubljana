@@ -76,6 +76,10 @@ struct BranchCoverage {
   int unresolved_intervals{};
   double unresolved_from{}; // the upper edge of the outermost such interval
   double unresolved_to{};   // and its lower edge
+  // The weight sum_a w_a of those intervals, and of all of them. Their ratio says whether the count matters: a mesh
+  // that reaches far below the input has many unresolved intervals but hardly any weight in them.
+  double unresolved_weight{};
+  double branch_weight{};
   // Levels lost to double precision near the accumulation point of the mesh. Near an accumulation point away from
   // zero, set by hardgap or found by the adaptive mesh at a gap edge, the distance to it falls below the spacing of
   // doubles there: the two bounds of an interval become the same number, the interval has no width, and its levels
@@ -92,6 +96,8 @@ struct BranchCoverage {
   // the fixed mesh instead; all its levels have zero coupling, so the choice has no effect on the chain.
   bool fixed_mesh_fallback{};
   [[nodiscard]] auto continued() const { return innermost_input > 0.0 && lowest_mesh < innermost_input; }
+  // The share of the weight that sits where the input has no node, 0 if the branch carries no weight at all.
+  [[nodiscard]] auto unresolved_share() const { return branch_weight > 0.0 ? unresolved_weight / branch_weight : 0.0; }
 };
 
 struct StarDiagnostics {
@@ -109,6 +115,10 @@ template<typename S> struct Star {
   double Lambda{};
   double bandrescale{1.0};
   Blocks blocks; // the blocks that were discretized independently; a single one of all channels if none were
+  // The smallest |omega| tabulated in the input, in the rescaled band, and 0 if it is not known (a star read from a
+  // file that does not record it). The larger of the two frequency branches, so that below it at least one of them
+  // is the constant continuation of the input. The chain stage uses it to say where the chain sinks below the data.
+  double innermost_input{};
   std::vector<StarLevel<S>> levels;
   Matrix<S> theta;       // sum_k v_k v_k^dagger over the star that was built
   Matrix<S> theta_exact; // the integral of Gamma over the range the mesh covers
@@ -220,6 +230,8 @@ template<typename S> class SignDiscretizer {
   SignDiscretizer(SignDiscretizer &&)                 = delete;
   SignDiscretizer &operator=(SignDiscretizer &&)      = delete;
 
+  [[nodiscard]] auto innermost_input() const { return innermost_input_; }
+
   // Append the levels of this frequency branch for one value of z to the star of its block, with their diagnostics.
   // Not const: evaluating the densities updates their caches.
   void evaluate(const double z, BlockStar<S> &star);
@@ -239,7 +251,8 @@ template<typename S> void SignDiscretizer<S>::evaluate(const double z, BlockStar
 
     // An interval that holds no node of the input follows the interpolant alone.
     const auto first_inside = std::upper_bound(decomposition_.omega.begin(), decomposition_.omega.end(), lower);
-    if (first_inside == decomposition_.omega.end() || *first_inside >= upper) {
+    const bool unresolved   = first_inside == decomposition_.omega.end() || *first_inside >= upper;
+    if (unresolved) {
       coverage.unresolved_intervals++;
       if (upper > coverage.unresolved_from) {
         coverage.unresolved_from = upper;
@@ -259,6 +272,10 @@ template<typename S> void SignDiscretizer<S>::evaluate(const double z, BlockStar
         throw std::runtime_error("The representative energy of branch " + std::to_string(a + 1) + " at x="
                                  + std::to_string(x) + " is not positive and finite.");
     }
+
+    const auto interval_weight = std::accumulate(weights.begin(), weights.end(), 0.0);
+    coverage.branch_weight += interval_weight;
+    if (unresolved) coverage.unresolved_weight += interval_weight;
 
     // The eigenvectors at the representative energies. Branches whose energies coincide share one diagonalization,
     // so that degenerate branches give a mutually orthonormal set of coupling vectors.
@@ -383,6 +400,9 @@ template<typename S> class StarDiscretizer {
     result.Lambda      = options_.Lambda;
     result.bandrescale = options_.bandrescale;
     result.blocks      = blocks_;
+    for (const auto &discretizer : discretizers_)
+      result.innermost_input = std::max({result.innermost_input, discretizer.positive->innermost_input(),
+                                         discretizer.negative->innermost_input()});
     result.theta       = Matrix<S>::Zero(dimension, dimension);
     result.theta_exact = Matrix<S>::Zero(dimension, dimension);
     result.levels.reserve(2 * static_cast<std::size_t>(channels_) * (options_.mMAX + 1));

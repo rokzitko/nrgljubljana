@@ -42,7 +42,9 @@ namespace NRG::MixChain {
 // Without the conjugation it would be the transpose of Theta, which for a complex Gamma is a different model.
 
 struct ChainOptions {
-  unsigned int Nmax{0}; // the chain has the sites 0..Nmax
+  // The chain has the sites 0..Nmax, and one hopping per site, T_0..T_Nmax: the last leads out of the chain and is
+  // there because the coefficient tables of nrg are indexed 0..Nmax, as nrgchain writes xi.dat and zeta.dat.
+  unsigned int Nmax{0};
   // An eigenvalue of a Gram matrix, of Theta or of R^dag R for a residual block, counts as zero when it is below this
   // fraction of the largest one. Relative, so that it means the same at every precision.
   double rank_tolerance{1e-20};
@@ -70,7 +72,7 @@ template<typename S> struct Chain {
   unsigned int Nmax{};
   Matrix<S> V;              // the impurity coupling, Theta^(1/2) in the polar gauge
   std::vector<Matrix<S>> E; // the on-site blocks E_0..E_Nmax
-  std::vector<Matrix<S>> T; // the hoppings T_0..T_{Nmax-1}
+  std::vector<Matrix<S>> T; // the hoppings T_0..T_Nmax, the last one out of the chain
   Blocks blocks;            // the blocks of the star, each mapped onto a chain of its own
   ChainDiagnostics diagnostics;                    // of the whole chain
   std::vector<ChainDiagnostics> block_diagnostics; // one per block, in the order of 'blocks'
@@ -207,9 +209,13 @@ namespace detail {
 //            R = H Q_n - Q_n E_n - Q_{n-1} T_{n-1}^dag,   then reorthogonalized against every earlier block,
 //            T_n = (R^dag R)^(1/2),   Q_{n+1} = R (R^dag R)^(-1/2).
 //
-// H is the bath Hamiltonian, diagonal in the star levels. Every block is kept, because the reorthogonalization needs
-// them all. 'lanczos_blocks', if given, receives Q_0..Q_Nmax, which only a test has a use for: stacked side by side
-// they are the unitary that maps the star onto the chain.
+// H is the bath Hamiltonian, diagonal in the star levels. The recursion runs to n = Nmax, so it produces the sites
+// 0..Nmax and the hoppings T_0..T_Nmax: one hopping per site, the last leading out of the chain. That is the length
+// nrg reads, and what nrgchain writes into xi.dat and zeta.dat.
+//
+// Every block is kept, because the reorthogonalization needs them all. 'lanczos_blocks', if given, receives
+// Q_0..Q_{Nmax+1}, which only a test has a use for: stacked side by side they are the unitary that maps the star
+// onto the chain.
 //
 // The star is taken as a single block; build_chain() splits it first.
 template<typename S>
@@ -219,21 +225,22 @@ Chain<S> block_lanczos(const WideStar<S> &star, const ChainOptions &options, std
   const auto channels = star.start.cols();
   if (channels < 1) throw std::invalid_argument("The star has no channels.");
   if (options.Nmax < 1) throw std::invalid_argument("Nmax must be greater than 0.");
-  // A chain of Nmax+1 sites spans a Krylov space of dimension channels*(Nmax+1), which the star must be able to hold.
-  // Levels with vanishing coupling can make the space that is actually reached smaller still; that shows up as a drop
-  // in the rank of a hopping, rank_drop_site in the diagnostics.
-  const auto needed = channels * static_cast<Eigen::Index>(options.Nmax + 1);
+  // The sites 0..Nmax and the hopping out of the last one span a Krylov space of dimension channels*(Nmax+2), which
+  // the star must be able to hold. Levels with vanishing coupling can make the space that is actually reached smaller
+  // still; that shows up as a drop in the rank of a hopping, rank_drop_site in the diagnostics.
+  const auto needed = channels * static_cast<Eigen::Index>(options.Nmax + 2);
   if (levels < needed)
     throw std::invalid_argument("The star has " + std::to_string(levels) + " levels, but a chain of "
                                 + std::to_string(options.Nmax + 1) + " sites with " + std::to_string(channels)
                                 + " channels needs at least " + std::to_string(needed)
+                                + ", one block more than the sites, for the hopping out of the last site"
                                 + ". Increase mMAX or decrease Nmax.");
 
   Chain<S> chain;
   chain.channels = static_cast<int>(channels);
   chain.Nmax     = options.Nmax;
   chain.E.reserve(options.Nmax + 1);
-  chain.T.reserve(options.Nmax);
+  chain.T.reserve(options.Nmax + 1);
   auto &diagnostics  = chain.diagnostics;
   diagnostics.levels = static_cast<int>(levels);
   for (Eigen::Index k = 0; k < levels; k++)
@@ -251,7 +258,7 @@ Chain<S> block_lanczos(const WideStar<S> &star, const ChainOptions &options, std
   diagnostics.min_rank        = start.rank;
 
   std::vector<Matrix<S>> blocks;
-  blocks.reserve(options.Nmax + 1);
+  blocks.reserve(options.Nmax + 2);
   blocks.push_back(star.start * start.inverse);
 
   const auto half = make_scalar<S>(0.5, 0);
@@ -266,8 +273,6 @@ Chain<S> block_lanczos(const WideStar<S> &star, const ChainOptions &options, std
       diagnostics.max_antihermitian =
         std::max(diagnostics.max_antihermitian, static_cast<double>((onsite - hermitian).norm() / onsite_norm));
     chain.E.push_back(hermitian);
-
-    if (n == options.Nmax) break; // the last site has no outgoing hopping
 
     Matrix<S> residual = hq - blocks[n] * chain.E[n];
     if (n > 0) residual -= blocks[n - 1] * chain.T[n - 1].adjoint();
@@ -300,15 +305,15 @@ Chain<S> block_lanczos(const WideStar<S> &star, const ChainOptions &options, std
 
 // The diagnostics of the whole chain from those of its blocks. Ranks add up site by site; the ratios of eigenvalues
 // are taken within each block, since comparing eigenvalues across independent blocks means nothing.
-inline ChainDiagnostics merge_diagnostics(const std::vector<ChainDiagnostics> &parts, const unsigned int Nmax) {
+inline ChainDiagnostics merge_diagnostics(const std::vector<ChainDiagnostics> &parts, const unsigned int hoppings) {
   ChainDiagnostics merged;
-  merged.hopping_ranks.assign(Nmax, 0);
+  merged.hopping_ranks.assign(hoppings, 0);
   bool any_rank = false;
   for (const auto &part : parts) {
     merged.theta_rank += part.theta_rank;
     merged.levels += part.levels;
     merged.coupled_levels += part.coupled_levels;
-    for (unsigned int n = 0; n < Nmax; n++) merged.hopping_ranks[n] += part.hopping_ranks[n];
+    for (unsigned int n = 0; n < hoppings; n++) merged.hopping_ranks[n] += part.hopping_ranks[n];
     if (part.theta_rank > 0) {
       merged.theta_condition = any_rank ? std::min(merged.theta_condition, part.theta_condition) : part.theta_condition;
       any_rank               = true;
@@ -318,7 +323,7 @@ inline ChainDiagnostics merge_diagnostics(const std::vector<ChainDiagnostics> &p
     merged.max_reorthogonalization = std::max(merged.max_reorthogonalization, part.max_reorthogonalization);
   }
   merged.min_rank = merged.theta_rank;
-  for (unsigned int n = 0; n < Nmax; n++) {
+  for (unsigned int n = 0; n < hoppings; n++) {
     merged.min_rank = std::min(merged.min_rank, merged.hopping_ranks[n]);
     if (merged.hopping_ranks[n] < merged.theta_rank && !merged.rank_drop_site) merged.rank_drop_site = n;
   }
@@ -334,8 +339,8 @@ inline ChainDiagnostics merge_diagnostics(const std::vector<ChainDiagnostics> &p
 // block receives its levels with vanishing coupling as well and has 2*size*(mMAX+1) levels, in proportion to its size
 // exactly as the whole star. Within a block the levels keep their order in the star.
 //
-// 'lanczos_blocks', if given, receives Q_0..Q_Nmax of the whole star: the blocks of the parts, placed at the rows of
-// their levels and the columns of their channels.
+// 'lanczos_blocks', if given, receives Q_0..Q_{Nmax+1} of the whole star: the blocks of the parts, placed at the rows
+// of their levels and the columns of their channels.
 template<typename S>
 auto build_chain(const WideStar<S> &star, const ChainOptions &options,
                  std::vector<Matrix<S>> *lanczos_blocks = nullptr) {
@@ -361,8 +366,8 @@ auto build_chain(const WideStar<S> &star, const ChainOptions &options,
   chain.blocks   = star.blocks;
   chain.V        = Matrix<S>::Zero(channels, channels);
   chain.E.assign(options.Nmax + 1, Matrix<S>::Zero(channels, channels));
-  chain.T.assign(options.Nmax, Matrix<S>::Zero(channels, channels));
-  if (lanczos_blocks) lanczos_blocks->assign(options.Nmax + 1, Matrix<S>::Zero(levels, channels));
+  chain.T.assign(options.Nmax + 1, Matrix<S>::Zero(channels, channels));
+  if (lanczos_blocks) lanczos_blocks->assign(options.Nmax + 2, Matrix<S>::Zero(levels, channels));
 
   int offset = 0; // the first branch label of the current block
   for (const auto &block : star.blocks) {
@@ -392,9 +397,9 @@ auto build_chain(const WideStar<S> &star, const ChainOptions &options,
     };
     place(chain.V, piece.V);
     for (unsigned int n = 0; n <= options.Nmax; n++) place(chain.E[n], piece.E[n]);
-    for (unsigned int n = 0; n < options.Nmax; n++) place(chain.T[n], piece.T[n]);
+    for (unsigned int n = 0; n <= options.Nmax; n++) place(chain.T[n], piece.T[n]);
     if (lanczos_blocks)
-      for (unsigned int n = 0; n <= options.Nmax; n++)
+      for (unsigned int n = 0; n <= options.Nmax + 1; n++)
         for (std::size_t r = 0; r < rows.size(); r++)
           for (Eigen::Index i = 0; i < size; i++)
             (*lanczos_blocks)[n](rows[r], block[static_cast<std::size_t>(i)]) =
@@ -403,13 +408,24 @@ auto build_chain(const WideStar<S> &star, const ChainOptions &options,
     chain.block_diagnostics.push_back(piece.diagnostics);
     offset += static_cast<int>(size);
   }
-  chain.diagnostics = detail::merge_diagnostics(chain.block_diagnostics, options.Nmax);
+  chain.diagnostics = detail::merge_diagnostics(chain.block_diagnostics, options.Nmax + 1);
   return chain;
 }
 
 // The same from a star in double precision, widened to S first.
 template<typename S, typename StarScalar> auto build_chain(const Star<StarScalar> &star, const ChainOptions &options) {
   return build_chain<S>(to_wide<S>(star), options);
+}
+
+// The first site from which the chain is built on the continued density: the scale of a site is taken as the norm of
+// its hopping, and 'innermost' is the smallest frequency the input tabulates, both in the rescaled band. Empty when
+// the chain stays above it, or when the frequency is not known.
+template<typename S>
+std::optional<unsigned int> first_continued_site(const Chain<S> &chain, const double innermost) {
+  if (!(innermost > 0.0)) return std::nullopt;
+  for (unsigned int n = 0; n < chain.T.size(); n++)
+    if (static_cast<double>(chain.T[n].norm()) < innermost) return n;
+  return std::nullopt;
 }
 
 // The chain in another arithmetic: narrowing the result of the recursion to double for writing it out, or widening

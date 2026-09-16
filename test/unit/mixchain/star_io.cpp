@@ -266,6 +266,25 @@ TEST(MixChainStarIO, round_trip_preserves_the_blocks) { // NOLINT
   std::remove(filename);
 }
 
+TEST(MixChainStarIO, the_innermost_tabulated_frequency_round_trips) { // NOLINT
+  const auto filename = "star_io_innermost.dat";
+  auto input          = make_input<double>(real_gamma);
+  input.pos.innermost = 0.2;  // as the branches record it, in the rescaled band
+  input.neg.innermost = 0.15; // the larger of the two is what the star keeps
+  const auto star     = build_star(input, options_for());
+  EXPECT_DOUBLE_EQ(star.innermost_input, 0.2);
+  std::ostringstream out;
+  save_star(star, out);
+  EXPECT_NE(out.str().find("innermost=0.2"), std::string::npos);
+  save_star(star, filename);
+  EXPECT_DOUBLE_EQ(load_star<double>(filename).innermost_input, 0.2);
+
+  // A file that does not record it, as those written before it existed.
+  write_file(filename, minimal_star);
+  EXPECT_EQ(load_star<double>(filename).innermost_input, 0.0);
+  std::remove(filename);
+}
+
 TEST(MixChainStarIO, a_single_block_writes_no_blocks_line) { // NOLINT
   auto options         = options_for();
   const auto whole     = build_star(make_input<double>(real_gamma), options);
@@ -294,10 +313,14 @@ TEST(MixChainStarIO, a_single_block_writes_no_blocks_line) { // NOLINT
 
 TEST(MixChainStarIO, rejects_inconsistent_blocks) { // NOLINT
   const auto filename = "star_io_bad_blocks.dat";
-  const auto header   = std::string("# channels=2 mMAX=0 z=1 Lambda=2 bandrescale=1 complex=0\n");
+  // mMAX=1 and 2 channels: the file must hold 2*2*(1+1) = 8 rows.
+  const auto header = std::string("# channels=2 mMAX=1 z=1 Lambda=2 bandrescale=1 complex=0\n");
   // Two blocks of one channel each: branch 0 belongs to channel 1, branch 1 to channel 2.
   const auto rows = [](const std::string &first) {
-    return first + "0 + 1 0.7 0 0.4\n0 - 0 -0.7 0.5 0\n0 - 1 -0.7 0 0.4\n";
+    return first + "0 + 1 0.7 0 0.4\n"
+                   "1 + 0 0.35 0.3 0\n1 + 1 0.35 0 0.2\n"
+                   "0 - 0 -0.7 0.5 0\n0 - 1 -0.7 0 0.4\n"
+                   "1 - 0 -0.35 0.3 0\n1 - 1 -0.35 0 0.2\n";
   };
 
   write_file(filename, header + "# blocks= {1} {2}\n" + rows("0 + 0 0.7 0.5 0\n"));

@@ -2,9 +2,12 @@
 
 #include <cmath>
 #include <complex>
+#include <filesystem>
+#include <fstream>
 #include <map>
 #include <sstream>
 #include <string>
+#include <system_error>
 #include <tuple>
 #include <vector>
 
@@ -87,12 +90,92 @@ TEST(MixChainChainIO, the_chain_is_written_in_the_units_of_the_input) { // NOLIN
         EXPECT_EQ(bare.value.at({"E", static_cast<int>(n), i, j}), e);
         EXPECT_NEAR(rescaled.value.at({"E", static_cast<int>(n), i, j}), 2.5 * e, 1e-15 * std::abs(2.5 * e) + 1e-300);
       }
-      for (unsigned int n = 0; n < chain.Nmax; n++) {
+      for (unsigned int n = 0; n <= chain.Nmax; n++) {
         const auto t = static_cast<double>(chain.T[n](i - 1, j - 1));
         EXPECT_EQ(bare.value.at({"T", static_cast<int>(n), i, j}), t);
         EXPECT_NEAR(rescaled.value.at({"T", static_cast<int>(n), i, j}), 2.5 * t, 1e-15 * std::abs(2.5 * t));
       }
     }
+}
+
+TEST(MixChainChainIO, the_site_where_the_chain_sinks_below_the_input_is_reported) { // NOLINT
+  const auto chain = build_chain<Real>(arbitrary_star<double>(2, 12), [] {
+    ChainOptions options;
+    options.Nmax = 3;
+    return options;
+  }());
+  // Between the norms of T_1 and T_2, so the chain falls below it at site 2.
+  const auto innermost =
+    0.5 * static_cast<double>(chain.T[1].norm() + chain.T[2].norm());
+  ASSERT_LT(static_cast<double>(chain.T[2].norm()), innermost);
+  ASSERT_GT(static_cast<double>(chain.T[1].norm()), innermost);
+
+  const auto site = first_continued_site(chain, innermost);
+  ASSERT_TRUE(site.has_value());
+  EXPECT_EQ(*site, 2U);
+  EXPECT_FALSE(first_continued_site(chain, 0.0).has_value());                 // not recorded by the star
+  EXPECT_FALSE(first_continued_site(chain, 1e-300).has_value());              // the chain never sinks that low
+
+  std::ostringstream out;
+  save_chain(chain, ChainFileHeader{1.0, 2.0, 1.0, 50, innermost}, out);
+  EXPECT_NE(out.str().find("continued_from_site=2"), std::string::npos);
+  std::ostringstream none;
+  save_chain(chain, ChainFileHeader{1.0, 2.0, 1.0, 50, 0.0}, none);
+  EXPECT_NE(none.str().find("continued_from_site=none"), std::string::npos);
+}
+
+TEST(MixChainChainIO, the_matrix_files_hold_what_chain_dat_holds) { // NOLINT
+  const auto options = [] {
+    ChainOptions chain;
+    chain.Nmax = 3;
+    return chain;
+  }();
+  const std::filesystem::path directory = "chain_io_matrix_files";
+  std::filesystem::create_directories(directory);
+
+  // Real: one column per row, in the units of chain.dat.
+  const auto chain  = build_chain<Real>(arbitrary_star<double>(2, 12), options);
+  const auto header = ChainFileHeader{1.0, 2.0, 2.5, 50, 0.0};
+  save_chain_matrix_files(chain, header, directory);
+  const auto written = write(chain, header.bandrescale); // the same chain as chain.dat
+
+  for (int i = 1; i <= 2; i++)
+    for (int j = 1; j <= 2; j++) {
+      for (const auto &[name, rows] :
+           {std::pair{"V", 1U}, std::pair{"E", chain.Nmax + 1}, std::pair{"T", chain.Nmax + 1}}) {
+        const auto filename = directory / (name + std::to_string(i) + std::to_string(j) + ".dat");
+        std::ifstream file(filename);
+        ASSERT_TRUE(file) << filename;
+        std::vector<double> values;
+        for (std::string line; std::getline(file, line);) {
+          ASSERT_EQ(line.find(' '), std::string::npos) << "a real chain writes one column: " << line;
+          values.push_back(std::stod(line));
+        }
+        ASSERT_EQ(values.size(), rows) << filename;
+        for (unsigned int n = 0; n < values.size(); n++)
+          EXPECT_EQ(values[n], written.value.at({name, static_cast<int>(name == std::string("V") ? 0 : n), i, j}))
+            << filename << " row " << n;
+      }
+    }
+
+  // Complex: the pair "Re Im".
+  const auto complex_chain = build_chain<WideComplex<50>>(arbitrary_star<std::complex<double>>(2, 12), options);
+  save_chain_matrix_files(complex_chain, header, directory);
+  {
+    std::ifstream file(directory / "T12.dat");
+    std::string line;
+    ASSERT_TRUE(std::getline(file, line));
+    std::istringstream fields(line);
+    double re = 0, im = 0;
+    ASSERT_TRUE(fields >> re >> im) << line;
+    EXPECT_EQ(re, static_cast<double>(header.bandrescale * complex_chain.T[0](0, 1).real()));
+    EXPECT_EQ(im, static_cast<double>(header.bandrescale * complex_chain.T[0](0, 1).imag()));
+  }
+
+  // On a networked filesystem a file that is still open leaves a .nfs* entry behind when it is unlinked, so every
+  // stream above is closed first and the removal is allowed to fail rather than throw.
+  std::error_code ignored;
+  std::filesystem::remove_all(directory, ignored);
 }
 
 TEST(MixChainChainIO, the_header_records_the_run) { // NOLINT

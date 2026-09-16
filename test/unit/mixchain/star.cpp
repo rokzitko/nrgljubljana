@@ -290,6 +290,12 @@ TEST(MixChainStar, reports_intervals_that_hold_no_node_of_the_input) { // NOLINT
   EXPECT_EQ(coverage.unresolved_intervals, static_cast<int>(mmax) + 1 - 7);
   EXPECT_NEAR(coverage.unresolved_from, std::pow(lambda_value, -7.0), 1e-15);
 
+  // The weight of those intervals: everything below Lambda^-7 of a flat band on both frequency branches.
+  const auto covered = 1.0 - std::pow(lambda_value, -7.0);
+  EXPECT_NEAR(coverage.unresolved_share(), 1.0 - covered / (1.0 - std::pow(lambda_value, -static_cast<double>(mmax) - 1.0)),
+              1e-12);
+  EXPECT_NEAR(coverage.branch_weight, 0.3 * (1.0 - std::pow(lambda_value, -static_cast<double>(mmax) - 1.0)), 1e-13);
+
   // A grid that resolves every interval reports nothing.
   GammaInput<double> fine;
   fine.channels = 1;
@@ -302,7 +308,10 @@ TEST(MixChainStar, reports_intervals_that_hold_no_node_of_the_input) { // NOLINT
     }
   }
   fine.neg = fine.pos;
-  EXPECT_EQ(build_star(fine, base_options()).diagnostics[0].coverage_pos.unresolved_intervals, 0);
+  const auto &resolved = build_star(fine, base_options()).diagnostics[0].coverage_pos;
+  EXPECT_EQ(resolved.unresolved_intervals, 0);
+  EXPECT_EQ(resolved.unresolved_weight, 0.0);
+  EXPECT_GT(resolved.branch_weight, 0.0);
 }
 
 TEST(MixChainStar, counts_levels_that_collapse_onto_the_accumulation_point) { // NOLINT

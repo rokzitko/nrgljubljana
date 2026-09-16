@@ -167,6 +167,7 @@ struct Configuration {
   bool mmax_from_nmax{};
   ChainOptions chain;
   unsigned int preccpp{};
+  bool discretization_files{}; // write the chain also as one file per matrix element, beside chain.dat
 };
 
 auto builds_star(const Mode mode) { return mode != Mode::Chain; }
@@ -219,6 +220,8 @@ void read_chain_configuration(const Params &P, Configuration &configuration) {
   if (!(std::isfinite(configuration.chain.rank_tolerance) && configuration.chain.rank_tolerance > 0.0))
     throw std::invalid_argument("rank_tolerance must be a positive finite number.");
 
+  configuration.discretization_files = P.Pbool("discretization_files", false);
+
   // As in nrgchain, in bits. It is rounded up to the precision ladder of precision.hpp.
   const auto preccpp = P.Pint("preccpp", 2000);
   if (preccpp <= 10) throw std::invalid_argument("preccpp must be greater than 10.");
@@ -258,6 +261,7 @@ void report_configuration(const Configuration &configuration, const CommandLineO
     report.value("preccpp", configuration.preccpp);
     report.resolved("digits", resolve_precision(configuration.preccpp), "smallest precision rung covering preccpp");
     report.value("rank_tolerance", configuration.chain.rank_tolerance);
+    report.value("discretization_files", configuration.discretization_files);
   }
   report.write(std::cerr);
 }
@@ -320,8 +324,9 @@ template<typename S> void report_star(const Star<S> &star, std::ostream &out) {
             << coverage->accumulation_point << " in double precision" << std::endl;
       if (coverage->unresolved_intervals == 0) continue;
       out << prefix << coverage->unresolved_intervals << " of " << star.mMAX + 1
-          << " intervals contain no tabulated point of the input, the outermost being [" << coverage->unresolved_to
-          << ", " << coverage->unresolved_from << "]; ";
+          << " intervals contain no tabulated point of the input, carrying " << coverage->unresolved_share()
+          << " of the weight of this branch, the outermost being [" << coverage->unresolved_to << ", "
+          << coverage->unresolved_from << "]; ";
       if (coverage->continued())
         out << "the input ends at omega=" << coverage->innermost_input
             << " and below that the density is its constant continuation" << std::endl;
@@ -412,7 +417,8 @@ void check_star_against_parameters(const Star<S> &star, const Params &P, const T
     check("z", star.z, P.P("z", star.z), "the parameter file");
 }
 
-template<typename S> void report_chain(const Chain<S> &chain, const unsigned digits, std::ostream &out) {
+template<typename S>
+void report_chain(const Chain<S> &chain, const unsigned digits, const ChainFileHeader &header, std::ostream &out) {
   const auto &d = chain.diagnostics;
   out << "# chain: sites=" << chain.Nmax + 1 << " channels=" << chain.channels << " digits=" << digits << std::endl;
   if (chain.blocks.size() > 1) out << "# blocks: " << blocks_name(chain.blocks) << std::endl;
@@ -421,6 +427,12 @@ template<typename S> void report_chain(const Chain<S> &chain, const unsigned dig
       << " min_residual_condition=" << d.min_residual_condition << std::endl;
   out << "# max_antihermitian=" << d.max_antihermitian << " max_reorthogonalization=" << d.max_reorthogonalization
       << std::endl;
+  // Where the chain falls below the innermost tabulated frequency, its coefficients are built on the constant
+  // continuation of the input rather than on data.
+  if (const auto continued = first_continued_site(chain, header.innermost_input))
+    out << "# the chain falls below the innermost tabulated frequency " << header.innermost_input * header.bandrescale
+        << " at site " << *continued << " of " << chain.Nmax
+        << ": from there the coefficients are built on the constant continuation of the input" << std::endl;
   // A Theta of lower rank is a property of Gamma, and the chain is exact for it; a drop further down is not.
   if (d.theta_rank < chain.channels) {
     const auto decoupled = chain.channels - d.theta_rank;
@@ -452,10 +464,16 @@ template<typename S0> void run_chain(const Configuration &configuration, const P
   check_star_against_parameters(star, P, target, star_file);
   const auto digits     = resolve_precision(configuration.preccpp);
   const auto chain_file = target.file(chain_default_filename);
+  const ChainFileHeader header{star.z, star.Lambda, star.bandrescale, digits, star.innermost_input};
   with_precision_like<S0>(configuration.preccpp, [&]<typename S>() {
     const auto chain = build_chain<S>(star, configuration.chain);
-    report_chain(chain, digits, std::cout);
-    save_chain(chain, ChainFileHeader{star.z, star.Lambda, star.bandrescale, digits}, chain_file);
+    report_chain(chain, digits, header, std::cout);
+    save_chain(chain, header, chain_file);
+    if (configuration.discretization_files) {
+      save_chain_matrix_files(chain, header, target.directory);
+      std::cout << "# matrix files written to " << (target.directory.empty() ? "." : target.directory.string())
+                << std::endl;
+    }
   });
   std::cout << "# chain written to " << chain_file << std::endl;
   std::cout << "# chain z=" << star.z << ": " << seconds_since(start) << " s" << std::endl;
