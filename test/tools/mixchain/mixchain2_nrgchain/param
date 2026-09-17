@@ -1,0 +1,28 @@
+# mixchain against adapt --integral + nrgchain on a tabulated density: the Delta.dat of nrgchain1, which the run script
+# takes from there and also hands to mixchain as Gamma_11-re.dat.
+#
+# nrgchain does not compute representative energies itself: it reads FSOL.dat, which adapt tabulates on a grid in x
+# with step outputstep and nrgchain interpolates linearly, while mixchain evaluates E(x) directly. So the two chains
+# agree to the error of that tabulation, not to rounding; the tolerance in the run script is set by it.
+#
+# The parameters are nrgchain1's, except xmax: adapt must tabulate f(x) over every interval nrgchain uses, up to
+# x = z + mMAX + 2 = 53, which nrgchain1's xmax=30 does not reach.
+
+[param]
+
+# adapt
+dos=Delta.dat
+adapt=false
+xmax=60
+outputstep=0.015625
+xfine=5
+dx_fine=1e-5
+dx_fast=1e-4
+allowed_error=1e-10
+max_subdiv=20
+
+# all three
+Lambda=2
+z=1.0
+mMAX=50
+Nmax=30
