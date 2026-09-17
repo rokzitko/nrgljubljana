@@ -129,6 +129,31 @@ TEST(MixChainMesh, adaptive_mesh_accumulates_at_the_edge_of_a_gap) { // NOLINT
   EXPECT_NEAR(mesh.eps(30.0), expected_eps(30.0), 1e-12);
 }
 
+TEST(MixChainMesh, adaptive_mesh_inverts_the_continuation_beyond_the_table) { // NOLINT
+  // A flat weight tabulated on [0.25,0.5] alone is continued as a constant down to 0 and up to 1, so W(omega)=omega
+  // and the mesh is the fixed one, also where eps(x) lies above (x<3) or below (x>4) the table.
+  Mesh fixed(lambda, false, 0.0);
+  for (const auto method : {NRG::Tools::InterpolationMethod::linear, NRG::Tools::InterpolationMethod::steffen}) {
+    Mesh adaptive(lambda, false, 0.0, weight_table({0.25, 0.375, 0.5}, {1.0, 1.0, 1.0}), method);
+    for (const double x : {2.25, 2.5, 3.0, 3.5, 4.0, 5.0, 9.0})
+      EXPECT_NEAR(adaptive.eps(x), fixed.eps(x), 1e-14 * fixed.eps(x)) << x;
+    EXPECT_NEAR(adaptive.accumulation_point(), 0.0, 1e-15);
+  }
+
+  // A weight 1+2 omega up to 0.5, continued as 2 up to 1: the total is 1.75 and W(0.5)=3/7, above which
+  // W^{-1}(w) = 0.5 + (w-3/7) 1.75/2.
+  auto rising = adaptive_mesh(weight_table({0.0, 0.25, 0.5}, {1.0, 1.5, 2.0}));
+  for (const double x : {2.25, 2.5, 3.0}) {
+    const auto w = std::pow(2.0, 2.0 - x);
+    EXPECT_NEAR(rising.eps(x), 0.5 + (w - 3.0 / 7.0) * 1.75 / 2.0, 1e-14) << x;
+  }
+
+  // A vanishing weight above the table is a plateau reaching omega=1: W is already 1 at the last node, so the mesh
+  // lies inside the table.
+  auto gapped_top = adaptive_mesh(weight_table({0.0, 0.25, 0.5}, {1.0, 0.0, 0.0}));
+  for (const double x : {2.25, 3.0, 6.0}) EXPECT_LE(gapped_top.eps(x), 0.25 + 1e-15) << x;
+}
+
 TEST(MixChainMesh, knows_its_accumulation_point) { // NOLINT
   Mesh fixed(lambda, false, 0.0);
   EXPECT_EQ(fixed.accumulation_point(), 0.0);

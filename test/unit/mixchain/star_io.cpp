@@ -221,9 +221,31 @@ TEST(MixChainStarIO, rejects_an_invalid_header) { // NOLINT
                              "# channels=1 mMAX=0 z=1 Lambda=2 complex=0\n",
                              "# channels=1 mMAX=1 z=0 Lambda=2 complex=0\n",
                              "# channels=1 mMAX=1 z=1 Lambda=1 complex=0\n",
-                             "# channels=1 mMAX=1 z=1 Lambda=2 bandrescale=0 complex=0\n"}) {
+                             "# channels=1 mMAX=1 z=1 Lambda=2 bandrescale=0 complex=0\n",
+                             // integer fields that are not integers, or out of range
+                             "# channels=1.5 mMAX=1 z=1 Lambda=2 complex=0\n",
+                             "# channels=1 mMAX=1.5 z=1 Lambda=2 complex=0\n",
+                             "# channels=1 mMAX=1e0 z=1 Lambda=2 complex=0\n",
+                             "# channels=1 mMAX=-1 z=1 Lambda=2 complex=0\n",
+                             "# channels=1 mMAX=1 z=1 Lambda=2 complex=0.5\n",
+                             "# channels=1 mMAX=1 z=1 Lambda=2 complex=2\n"}) {
     write_file(filename, header);
-    EXPECT_THROW(read_star_header(filename), std::runtime_error);
+    EXPECT_THROW(read_star_header(filename), std::runtime_error) << header;
+  }
+  std::remove(filename);
+}
+
+TEST(MixChainStarIO, rejects_indices_that_are_not_integers) { // NOLINT
+  const auto filename = "star_io_bad_indices.dat";
+  const auto replace  = [](std::string text, const std::string &from, const std::string &to) {
+    return text.replace(text.find(from), from.size(), to);
+  };
+  // Each is the minimal star with one index spoiled; truncating it would give back a valid file.
+  for (const auto &contents : {replace(minimal_star, "0 + 0 0.7", "0.5 + 0 0.7"),
+                               replace(minimal_star, "1 + 0 0.35", "1.0 + 0 0.35"),
+                               replace(minimal_star, "0 + 0 0.7", "0 + 0.5 0.7")}) {
+    write_file(filename, contents);
+    EXPECT_THROW(load_star<double>(filename), std::runtime_error) << contents;
   }
   std::remove(filename);
 }

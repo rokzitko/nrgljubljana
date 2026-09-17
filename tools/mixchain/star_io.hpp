@@ -5,6 +5,7 @@
 #define _mixchain_star_io_hpp_
 
 #include <algorithm>
+#include <charconv>
 #include <cmath>
 #include <cstddef>
 #include <fstream>
@@ -15,6 +16,7 @@
 #include <ostream>
 #include <stdexcept>
 #include <string>
+#include <system_error>
 #include <vector>
 
 #include "../common/io.hpp"
@@ -125,6 +127,17 @@ inline auto star_columns(const int channels, const bool complex_data) {
   return static_cast<std::size_t>(4 + channels * (complex_data ? 2 : 1));
 }
 
+// An integer field, which save_star() writes as a plain decimal integer. Anything else, such as "1.5" or "1e3", is
+// rejected rather than truncated.
+inline int parse_integer(const std::string &text, const std::string &what, const std::string &filename) {
+  int value        = 0;
+  const auto *last = text.data() + text.size();
+  const auto [end, error] = std::from_chars(text.data(), last, value);
+  if (error != std::errc{} || end != last)
+    throw std::runtime_error(filename + ": " + what + " must be an integer, not '" + text + "'.");
+  return value;
+}
+
 inline void parse_header_line(const std::string &line, StarHeader &header, const std::string &filename) {
   const auto fields = NRG::Tools::split_fields(line);
   bool have_channels = false, have_mmax = false, have_lambda = false, have_z = false, have_complex = false;
@@ -135,10 +148,13 @@ inline void parse_header_line(const std::string &line, StarHeader &header, const
     const auto value = field.substr(separator + 1);
     const auto number = [&] { return NRG::Tools::parse_tabulated_double(value); };
     if (key == "channels") {
-      header.channels = static_cast<int>(number());
+      header.channels = parse_integer(value, "channels", filename);
       have_channels   = true;
     } else if (key == "mMAX") {
-      header.mMAX = static_cast<unsigned int>(number());
+      // Checked before the conversion to unsigned, where a negative value would wrap around.
+      const auto mMAX = parse_integer(value, "mMAX", filename);
+      if (mMAX < 1) throw std::runtime_error(filename + ": mMAX must be greater than 0.");
+      header.mMAX = static_cast<unsigned int>(mMAX);
       have_mmax   = true;
     } else if (key == "z") {
       header.z = number();
@@ -160,7 +176,9 @@ inline void parse_header_line(const std::string &line, StarHeader &header, const
           throw std::runtime_error(filename + ": untabulated must satisfy 0 <= from <= to, not '" + value + "'.");
       }
     } else if (key == "complex") {
-      header.complex_data = number() != 0.0;
+      const auto flag = parse_integer(value, "complex", filename);
+      if (flag != 0 && flag != 1) throw std::runtime_error(filename + ": complex must be 0 or 1.");
+      header.complex_data = flag == 1;
       have_complex        = true;
     }
     // Unknown keys belong to the diagnostic comments and are ignored.
@@ -169,7 +187,6 @@ inline void parse_header_line(const std::string &line, StarHeader &header, const
     throw std::runtime_error(filename + ": the star header must give channels, mMAX, z, Lambda and complex.");
   if (header.channels < 1 || header.channels > max_channels)
     throw std::runtime_error(filename + ": channels must be between 1 and " + std::to_string(max_channels) + ".");
-  if (header.mMAX < 1) throw std::runtime_error(filename + ": mMAX must be greater than 0.");
   if (!(header.Lambda > 1.0)) throw std::runtime_error(filename + ": Lambda must be greater than 1.");
   if (!(header.z > 0.0 && header.z <= 1.0)) throw std::runtime_error(filename + ": z must be in (0,1].");
   if (!(std::isfinite(header.bandrescale) && header.bandrescale > 0.0))
@@ -319,8 +336,8 @@ template<typename S> auto load_star(const std::string &filename) {
                                + " columns instead of " + std::to_string(columns) + ".");
 
     StarLevel<S> level;
-    level.m      = static_cast<int>(NRG::Tools::parse_tabulated_double(fields[0]));
-    level.branch = static_cast<int>(NRG::Tools::parse_tabulated_double(fields[2]));
+    level.m      = detail::parse_integer(fields[0], "row " + std::to_string(number) + ": the interval index", filename);
+    level.branch = detail::parse_integer(fields[2], "row " + std::to_string(number) + ": the branch index", filename);
     level.energy = NRG::Tools::parse_tabulated_double(fields[3]);
     if (fields[1] == "+")
       level.sign = Sign::POS;

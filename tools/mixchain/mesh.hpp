@@ -106,11 +106,23 @@ class Mesh {
   //
   // Where the weight vanishes W is flat, and the binary search lands on the upper edge of that plateau, which is
   // what CumulativeWeight::inverse returns there as well.
+  //
+  // Outside the tabulated nodes the density is the constant continuation of the outermost node, and that weight is
+  // part of the total. W is linear there, so the inverse is taken in closed form.
   double invert(const double weight) {
     if (weight >= 1.0) return 1.0;
     const auto upper = std::upper_bound(at_nodes_.begin(), at_nodes_.end(), weight);
-    if (upper == at_nodes_.end()) return std::min(table_.back().first, 1.0);
-    if (upper == at_nodes_.begin()) return std::min(table_.front().first, 1.0);
+    if (upper == at_nodes_.begin()) {
+      // Below the first node: W is positive there, so the continued density is too.
+      const auto [first, density] = table_.front();
+      return std::min(std::max(first - (at_nodes_.front() - weight) * total_ / density, 0.0), 1.0);
+    }
+    if (upper == at_nodes_.end()) {
+      // Above the last node, up to omega=1. A vanishing density there is a plateau reaching 1, its upper edge.
+      const auto [last, density] = table_.back();
+      if (!(density > 0.0)) return 1.0;
+      return std::min(last + (weight - at_nodes_.back()) * total_ / density, 1.0);
+    }
     const auto index = static_cast<std::size_t>(std::distance(at_nodes_.begin(), upper)) - 1;
 
     const auto [left, density_left]   = table_[index];
