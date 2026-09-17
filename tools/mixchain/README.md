@@ -148,11 +148,9 @@ normalized to its value at $\omega=1$: $\lVert\Gamma(\omega)\rVert_F$ for `mesh_
 ${\rm tr}\,\Gamma(\omega)$ for `mesh_weight=trace`. Both forms are followed by the `hardgap` rescaling
 $\epsilon\to(1-b)\,\epsilon+b$, with $b$ = `boundary`.
 
-This adaptive mesh is **not** the adaptive mesh of `adapt`, which solves a differential equation for a guiding
-function $g(x)$ and writes it to `GSOL.dat`. `mixchain` reads no such file and solves no differential equation: its
-intervals follow the structure of $\Gamma$ directly. Where the weight function vanishes identically below some
-frequency, as it does inside a gap, $W_{\rm mesh}$ is flat there and the mesh accumulates at the edge of that region
-without `hardgap`.
+The adaptive mesh gives every interval the same share of the cumulative weight. Where the weight function vanishes
+identically below some frequency, as it does inside a gap, $W_{\rm mesh}$ is flat there and the mesh accumulates at
+the edge of that region without `hardgap`.
 
 ### Branches
 
