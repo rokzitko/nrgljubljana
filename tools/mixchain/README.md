@@ -270,7 +270,7 @@ by the chain stage as whitespace-separated `key=value` pairs.
 | `z`, `Lambda` | The discretization. |
 | `bandrescale` | The rescaling applied to $\Gamma$; energies are in the rescaled band. |
 | `complex` | `1` if the couplings are complex, `0` if real. It fixes the number of columns. |
-| `innermost` | Optional: the smallest $\|\omega\|$ tabulated in the input, in the rescaled band, the larger of the two frequency branches. Below it the density is the constant continuation of the input; the chain stage uses it to say where the chain sinks below the data. |
+| `untabulated` | Optional: `from,to`, the part of the band the mesh reaches where the input is not tabulated, $\mathrm{from} < \|\omega\| < \mathrm{to}$ in the rescaled band: between the accumulation point of the mesh and the innermost tabulated frequency, the widest over the frequency branches and blocks. `none` when the mesh reaches no such part, as when it accumulates at a gap edge. There the star follows the constant continuation of the input; the chain stage uses it to report from which site the chain samples it. |
 
 | Column | Meaning |
 | --- | --- |
@@ -379,14 +379,14 @@ is `boundary` times `bandrescale`, and `mesh_weight` is `inactive` without `adap
 | `min_residual_condition=` | Smallest ratio of the nonzero eigenvalues of $R^\dagger R$ along the chain: how close a direction came to being counted as zero by `rank_tolerance`. |
 | `# max_antihermitian=` | Largest anti-Hermitian part removed from an on-site block $E_n$, relative to it: rounding at the working precision. |
 | `max_reorthogonalization=` | Largest component along earlier Lanczos blocks removed from a residual, relative to it: the loss of orthogonality that full reorthogonalization repairs. |
-| `# the chain falls below the innermost tabulated frequency w at site n of Nmax: ...` | From that site on the coefficients are built on the constant continuation of the input rather than on data. The frequency comes from the star (`innermost` in its header), and both it and the site are printed only when the star records it. |
+| `# from site n on, the chain samples \|omega\| < w, where Gamma is not tabulated (...)` | From that site on the coefficients rest on the constant continuation of the input rather than on data; extend the input grid to lower $\|\omega\|$, or lower `Nmax`. The region comes from the star (`untabulated` in its header) and is printed in the units of the input, as `a < \|omega\| < w` when the mesh accumulates at $a>0$. The site is the first whose hopping falls below the width of the region, so a mesh accumulating at or above the innermost tabulated frequency, at a gap edge, never reports it. |
 | `# Theta has rank r of N: ...` | $\Gamma$ is rank deficient over the whole band. The chain along the decoupled combinations is zero, which is exact. |
 | `# matrix files written to d` | With `discretization_files`, the directory the per-element files went to. |
 | `# chain written to`, `# chain z=: t s`, `# chain stage: t s` | The file, the wall time of this $z$, and of the whole stage. |
 
 `chain.dat` records the same quantities, plus `min_rank`, the smallest rank of a hopping, `rank_drop_site`, the first
-site where it falls below `theta_rank`, and `continued_from_site`, the first site below the innermost tabulated
-frequency (both `none` when they do not happen). With several blocks they are merged over the blocks: ranks and levels
+site where it falls below `theta_rank`, and `continued_from_site`, the first site that samples the untabulated
+region of the input (both `none` when they do not happen). With several blocks they are merged over the blocks: ranks and levels
 add up site by site, and the ratios of eigenvalues are taken within each block.
 
 `# Elapsed t s (CPU c s)` closes the log: the wall time, which the stage times add up to, and the CPU time.

@@ -79,7 +79,10 @@ struct ChainFileHeader {
   double Lambda{};
   double bandrescale{1.0};
   unsigned digits{};
-  double innermost_input{}; // as recorded by the star, in the rescaled band; 0 if unknown
+  // The untabulated region of the input as the star records it, untabulated_from < |omega| < untabulated_to in the
+  // rescaled band; empty (from == to) when there is none or it is not known.
+  double untabulated_from{};
+  double untabulated_to{};
 };
 
 namespace detail {
@@ -107,7 +110,7 @@ void write_block(std::ostream &out, const char *name, const unsigned int site, c
 
 template<typename S> void save_chain(const Chain<S> &chain, const ChainFileHeader &header, std::ostream &out) {
   const auto &d        = chain.diagnostics;
-  const auto continued = first_continued_site(chain, header.innermost_input);
+  const auto continued = first_continued_site(chain, header.untabulated_to - header.untabulated_from);
   out << std::setprecision(18);
   out << "# mixchain Wilson chain" << std::endl;
   out << "# channels=" << chain.channels << " Nmax=" << chain.Nmax << " z=" << header.z << " Lambda=" << header.Lambda

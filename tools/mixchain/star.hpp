@@ -115,10 +115,16 @@ template<typename S> struct Star {
   double Lambda{};
   double bandrescale{1.0};
   Blocks blocks; // the blocks that were discretized independently; a single one of all channels if none were
-  // The smallest |omega| tabulated in the input, in the rescaled band, and 0 if it is not known (a star read from a
-  // file that does not record it). The larger of the two frequency branches, so that below it at least one of them
-  // is the constant continuation of the input. The chain stage uses it to say where the chain sinks below the data.
-  double innermost_input{};
+  // The part of the band the mesh reaches where the input is not tabulated: between the accumulation point of the
+  // mesh and the innermost tabulated frequency, untabulated_from < |omega| < untabulated_to, in the rescaled band.
+  // Below its innermost node the input is continued at its last value, so this is where the star follows that
+  // continuation rather than data. The widest such region over the frequency branches and the blocks; empty
+  // (from == to) when the mesh accumulates at or above the innermost tabulated frequency, as it does at a gap edge.
+  // A star read from a file that does not record it has untabulated_known false. The chain stage uses it to say
+  // from which site the chain samples it.
+  double untabulated_from{};
+  double untabulated_to{};
+  bool untabulated_known{};
   std::vector<StarLevel<S>> levels;
   Matrix<S> theta;       // sum_k v_k v_k^dagger over the star that was built
   Matrix<S> theta_exact; // the integral of Gamma over the range the mesh covers
@@ -229,8 +235,6 @@ template<typename S> class SignDiscretizer {
   SignDiscretizer &operator=(const SignDiscretizer &) = delete;
   SignDiscretizer(SignDiscretizer &&)                 = delete;
   SignDiscretizer &operator=(SignDiscretizer &&)      = delete;
-
-  [[nodiscard]] auto innermost_input() const { return innermost_input_; }
 
   // Append the levels of this frequency branch for one value of z to the star of its block, with their diagnostics.
   // Not const: evaluating the densities updates their caches.
@@ -400,9 +404,6 @@ template<typename S> class StarDiscretizer {
     result.Lambda      = options_.Lambda;
     result.bandrescale = options_.bandrescale;
     result.blocks      = blocks_;
-    for (const auto &discretizer : discretizers_)
-      result.innermost_input = std::max({result.innermost_input, discretizer.positive->innermost_input(),
-                                         discretizer.negative->innermost_input()});
     result.theta       = Matrix<S>::Zero(dimension, dimension);
     result.theta_exact = Matrix<S>::Zero(dimension, dimension);
     result.levels.reserve(2 * static_cast<std::size_t>(channels_) * (options_.mMAX + 1));
@@ -431,6 +432,19 @@ template<typename S> class StarDiscretizer {
         }
       result.diagnostics.push_back(std::move(part.diagnostics));
     }
+
+    // The widest untabulated region the mesh reaches, over the frequency branches of every block. A mesh accumulating
+    // at a >= innermost reaches none of it.
+    result.untabulated_known = true;
+    for (const auto &diagnostics : result.diagnostics)
+      for (const auto *coverage : {&diagnostics.coverage_pos, &diagnostics.coverage_neg}) {
+        const auto from = coverage->accumulation_point;
+        const auto to   = coverage->innermost_input;
+        if (to - from > result.untabulated_to - result.untabulated_from) {
+          result.untabulated_from = from;
+          result.untabulated_to   = to;
+        }
+      }
 
     // The order of a single block: by frequency branch, then interval, then branch.
     std::stable_sort(result.levels.begin(), result.levels.end(), [](const StarLevel<S> &a, const StarLevel<S> &b) {

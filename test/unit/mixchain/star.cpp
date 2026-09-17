@@ -282,6 +282,33 @@ TEST(MixChainStar, reports_a_mesh_that_reaches_below_the_input) { // NOLINT
   EXPECT_FALSE(build_star(input, base_options()).diagnostics[0].coverage_pos.continued());
 }
 
+TEST(MixChainStar, the_untabulated_region_starts_at_the_accumulation_point) { // NOLINT
+  // A gapped density, zero up to omega = 0.1 and 0.3 above, tabulated only from the gap edge outward.
+  auto gapped = make_input<double>([](const double omega) { return scalar<double>(omega <= 0.1 + 1e-12 ? 0.0 : 0.3); });
+  for (auto *branch : {&gapped.pos, &gapped.neg}) branch->innermost = branch->omega[10]; // the edge node, 0.1
+
+  // The plain mesh accumulates at 0, so it reaches the whole of 0 < |omega| < 0.1, where the input is continued.
+  const auto plain = build_star(gapped, base_options());
+  EXPECT_TRUE(plain.untabulated_known);
+  EXPECT_EQ(plain.untabulated_from, 0.0);
+  EXPECT_DOUBLE_EQ(plain.untabulated_to, gapped.pos.omega[10]);
+
+  // A mesh accumulating at the gap edge reaches none of it.
+  auto options     = base_options();
+  options.hardgap  = true;
+  options.boundary = gapped.pos.omega[10];
+  const auto edge  = build_star(gapped, options);
+  EXPECT_TRUE(edge.untabulated_known);
+  EXPECT_EQ(edge.untabulated_to - edge.untabulated_from, 0.0);
+
+  // Nor does the adaptive mesh, which finds the edge on its own, since the weight is flat inside the gap.
+  options          = base_options();
+  options.adapt    = true;
+  const auto found = build_star(gapped, options);
+  EXPECT_NEAR(found.diagnostics[0].coverage_pos.accumulation_point, gapped.pos.omega[10], 1e-12);
+  EXPECT_LE(found.untabulated_to - found.untabulated_from, 1e-12);
+}
+
 TEST(MixChainStar, reports_intervals_that_hold_no_node_of_the_input) { // NOLINT
   // The input grid of make_input() runs from 0 to 1 in steps of 0.01, so every interval below 0.01 falls inside a
   // single tabulated interval: for Lambda=2 and z=1 those are m >= 7, since Lambda^(-7) = 0.0078.

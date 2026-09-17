@@ -504,14 +504,15 @@ template<typename S, typename StarScalar> auto build_chain(const Star<StarScalar
   return build_chain<S>(to_wide<S>(star), options);
 }
 
-// The first site from which the chain is built on the continued density: the scale of a site is taken as the norm of
-// its hopping, and 'innermost' is the smallest frequency the input tabulates, both in the rescaled band. Empty when
-// the chain stays above it, or when the frequency is not known.
-template<typename S>
-std::optional<unsigned int> first_continued_site(const Chain<S> &chain, const double innermost) {
-  if (!(innermost > 0.0)) return std::nullopt;
+// The first site from which the chain samples the untabulated region of the input, the star's
+// untabulated_from < |omega| < untabulated_to above the accumulation point of the mesh. The chain resolves ever
+// smaller distances from the accumulation point as it goes; the scale of a site is taken as the norm of its hopping,
+// and the site samples the region once that scale is below the region's width. Both in the rescaled band. Empty when
+// the chain stays above it, when there is no such region, or when it is not known (width 0).
+template<typename S> std::optional<unsigned int> first_continued_site(const Chain<S> &chain, const double width) {
+  if (!(width > 0.0)) return std::nullopt;
   for (unsigned int n = 0; n < chain.T.size(); n++)
-    if (static_cast<double>(chain.T[n].norm()) < innermost) return n;
+    if (static_cast<double>(chain.T[n].norm()) < width) return n;
   return std::nullopt;
 }
 

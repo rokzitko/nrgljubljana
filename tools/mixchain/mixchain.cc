@@ -441,12 +441,14 @@ void report_chain(const Chain<S> &chain, const unsigned digits, const ChainFileH
       << " min_residual_condition=" << d.min_residual_condition << std::endl;
   out << "# max_antihermitian=" << d.max_antihermitian << " max_reorthogonalization=" << d.max_reorthogonalization
       << std::endl;
-  // Where the chain falls below the innermost tabulated frequency, its coefficients are built on the constant
-  // continuation of the input rather than on data.
-  if (const auto continued = first_continued_site(chain, header.innermost_input))
-    out << "# the chain falls below the innermost tabulated frequency " << header.innermost_input * header.bandrescale
-        << " at site " << *continued << " of " << chain.Nmax
-        << ": from there the coefficients are built on the constant continuation of the input" << std::endl;
+  // From the site where the chain reaches the untabulated region of the input, its coefficients rest on the constant
+  // continuation of the input rather than on data. Printed in the units of the input.
+  if (const auto continued = first_continued_site(chain, header.untabulated_to - header.untabulated_from)) {
+    out << "# from site " << *continued << " on, the chain samples ";
+    if (header.untabulated_from > 0.0) out << header.untabulated_from * header.bandrescale << " < ";
+    out << "|omega| < " << header.untabulated_to * header.bandrescale
+        << ", where Gamma is not tabulated (extend the input grid to lower |omega|, or lower Nmax)" << std::endl;
+  }
   // A Theta of lower rank is a property of Gamma, and the chain is exact for it; a drop further down is not.
   if (d.theta_rank < chain.channels) {
     const auto decoupled = chain.channels - d.theta_rank;
@@ -478,7 +480,9 @@ template<typename S0> void run_chain(const Configuration &configuration, const P
   check_star_against_parameters(star, P, target, star_file);
   const auto digits     = resolve_precision(configuration.preccpp);
   const auto chain_file = target.file(chain_default_filename);
-  const ChainFileHeader header{star.z, star.Lambda, star.bandrescale, digits, star.innermost_input};
+  const ChainFileHeader header{star.z, star.Lambda, star.bandrescale, digits,
+                               star.untabulated_known ? star.untabulated_from : 0.0,
+                               star.untabulated_known ? star.untabulated_to : 0.0};
   with_precision_like<S0>(configuration.preccpp, [&]<typename S>() {
     const auto chain = build_chain<S>(star, configuration.chain);
     report_chain(chain, digits, header, std::cout);

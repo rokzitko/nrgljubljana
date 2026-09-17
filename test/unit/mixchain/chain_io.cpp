@@ -98,29 +98,31 @@ TEST(MixChainChainIO, the_chain_is_written_in_the_units_of_the_input) { // NOLIN
     }
 }
 
-TEST(MixChainChainIO, the_site_where_the_chain_sinks_below_the_input_is_reported) { // NOLINT
+TEST(MixChainChainIO, the_site_where_the_chain_samples_the_untabulated_region_is_reported) { // NOLINT
   const auto chain = build_chain<Real>(arbitrary_star<double>(2, 12), [] {
     ChainOptions options;
     options.Nmax = 3;
     return options;
   }());
-  // Between the norms of T_1 and T_2, so the chain falls below it at site 2.
-  const auto innermost =
-    0.5 * static_cast<double>(chain.T[1].norm() + chain.T[2].norm());
-  ASSERT_LT(static_cast<double>(chain.T[2].norm()), innermost);
-  ASSERT_GT(static_cast<double>(chain.T[1].norm()), innermost);
+  // A region whose width lies between the norms of T_1 and T_2, so the chain samples it from site 2 on. Only the
+  // width counts: the same region above an accumulation point at 0.5 gives the same site.
+  const auto width = 0.5 * static_cast<double>(chain.T[1].norm() + chain.T[2].norm());
+  ASSERT_LT(static_cast<double>(chain.T[2].norm()), width);
+  ASSERT_GT(static_cast<double>(chain.T[1].norm()), width);
 
-  const auto site = first_continued_site(chain, innermost);
+  const auto site = first_continued_site(chain, width);
   ASSERT_TRUE(site.has_value());
   EXPECT_EQ(*site, 2U);
-  EXPECT_FALSE(first_continued_site(chain, 0.0).has_value());                 // not recorded by the star
-  EXPECT_FALSE(first_continued_site(chain, 1e-300).has_value());              // the chain never sinks that low
+  EXPECT_FALSE(first_continued_site(chain, 0.0).has_value());    // no region, or not recorded by the star
+  EXPECT_FALSE(first_continued_site(chain, 1e-300).has_value()); // the chain never resolves anything that narrow
 
-  std::ostringstream out;
-  save_chain(chain, ChainFileHeader{1.0, 2.0, 1.0, 50, innermost}, out);
-  EXPECT_NE(out.str().find("continued_from_site=2"), std::string::npos);
+  for (const double from : {0.0, 0.5}) {
+    std::ostringstream out;
+    save_chain(chain, ChainFileHeader{1.0, 2.0, 1.0, 50, from, from + width}, out);
+    EXPECT_NE(out.str().find("continued_from_site=2"), std::string::npos) << "from " << from;
+  }
   std::ostringstream none;
-  save_chain(chain, ChainFileHeader{1.0, 2.0, 1.0, 50, 0.0}, none);
+  save_chain(chain, ChainFileHeader{1.0, 2.0, 1.0, 50, 0.0, 0.0}, none);
   EXPECT_NE(none.str().find("continued_from_site=none"), std::string::npos);
 }
 

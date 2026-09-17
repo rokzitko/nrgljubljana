@@ -266,22 +266,40 @@ TEST(MixChainStarIO, round_trip_preserves_the_blocks) { // NOLINT
   std::remove(filename);
 }
 
-TEST(MixChainStarIO, the_innermost_tabulated_frequency_round_trips) { // NOLINT
-  const auto filename = "star_io_innermost.dat";
+TEST(MixChainStarIO, the_untabulated_region_round_trips) { // NOLINT
+  const auto filename = "star_io_untabulated.dat";
   auto input          = make_input<double>(real_gamma);
   input.pos.innermost = 0.2;  // as the branches record it, in the rescaled band
-  input.neg.innermost = 0.15; // the larger of the two is what the star keeps
+  input.neg.innermost = 0.15; // the wider of the two regions is what the star keeps
   const auto star     = build_star(input, options_for());
-  EXPECT_DOUBLE_EQ(star.innermost_input, 0.2);
+  ASSERT_TRUE(star.untabulated_known);
+  EXPECT_EQ(star.untabulated_from, 0.0); // the plain mesh accumulates at 0
+  EXPECT_DOUBLE_EQ(star.untabulated_to, 0.2);
   std::ostringstream out;
   save_star(star, out);
-  EXPECT_NE(out.str().find("innermost=0.2"), std::string::npos);
+  EXPECT_NE(out.str().find("untabulated=0,0.2"), std::string::npos) << out.str().substr(0, 200);
   save_star(star, filename);
-  EXPECT_DOUBLE_EQ(load_star<double>(filename).innermost_input, 0.2);
+  const auto loaded = load_star<double>(filename);
+  EXPECT_TRUE(loaded.untabulated_known);
+  EXPECT_EQ(loaded.untabulated_from, 0.0);
+  EXPECT_DOUBLE_EQ(loaded.untabulated_to, 0.2);
+
+  // Tabulated down to omega = 0: no region.
+  input.pos.innermost = 0.0;
+  input.neg.innermost = 0.0;
+  std::ostringstream none;
+  save_star(build_star(input, options_for()), none);
+  EXPECT_NE(none.str().find("untabulated=none"), std::string::npos);
 
   // A file that does not record it, as those written before it existed.
   write_file(filename, minimal_star);
-  EXPECT_EQ(load_star<double>(filename).innermost_input, 0.0);
+  EXPECT_FALSE(load_star<double>(filename).untabulated_known);
+
+  // A malformed value.
+  write_file(filename, "# channels=1 mMAX=1 z=1 Lambda=2 bandrescale=1 complex=0 untabulated=0.2\n");
+  EXPECT_THROW(read_star_header(filename), std::runtime_error);
+  write_file(filename, "# channels=1 mMAX=1 z=1 Lambda=2 bandrescale=1 complex=0 untabulated=0.3,0.2\n");
+  EXPECT_THROW(read_star_header(filename), std::runtime_error);
   std::remove(filename);
 }
 
