@@ -6,12 +6,14 @@
 
 #include <cmath>
 #include <cstddef>
+#include <limits>
 #include <stdexcept>
 #include <string>
 
 #include <boost/multiprecision/cpp_bin_float.hpp>
 #include <boost/multiprecision/cpp_complex.hpp>
 #include <boost/multiprecision/eigen.hpp>
+#include <boost/version.hpp>
 
 #include "types.hpp"
 
@@ -35,6 +37,33 @@ template<unsigned Digits>
 using WideReal = boost::multiprecision::number<boost::multiprecision::backends::cpp_bin_float<Digits>,
                                                boost::multiprecision::et_off>;
 template<unsigned Digits> using WideComplex = boost::multiprecision::cpp_complex<Digits>;
+
+#if BOOST_VERSION < 107900
+namespace detail {
+
+// Eigen's NumTraits for the wide types, for Boost before 1.79 (Ubuntu 22.04 ships 1.74), whose own specialization
+// lacks infinity() and quiet_NaN(), which Eigen 3.4 calls. The members are those Boost 1.79 defines; Real is the
+// component type, which is Self itself for a real type. Newer Boost is complete and is left alone.
+template<typename Self, typename RealType, bool Complex> struct WideNumTraits {
+  using Real       = RealType;
+  using NonInteger = Self;
+  using Literal    = double;
+  using Nested     = Self;
+  enum { IsComplex = Complex, IsInteger = 0, IsSigned = 1, RequireInitialization = 1, ReadCost = 1, AddCost = 4, MulCost = 8 };
+  static Real epsilon() { return std::numeric_limits<Real>::epsilon(); }
+  static Real dummy_precision() { return 1000 * epsilon(); }
+  static Real highest() { return (std::numeric_limits<Real>::max)(); }
+  static Real lowest() { return (std::numeric_limits<Real>::min)(); }
+  static Real infinity() { return std::numeric_limits<Real>::infinity(); }
+  static Real quiet_NaN() { return std::numeric_limits<Real>::quiet_NaN(); }
+  static int digits10() { return std::numeric_limits<Real>::digits10; }
+  static int digits() { return std::numeric_limits<Real>::digits; }
+  static int min_exponent() { return std::numeric_limits<Real>::min_exponent; }
+  static int max_exponent() { return std::numeric_limits<Real>::max_exponent; }
+};
+
+} // namespace detail
+#endif
 
 // Decimal digits. Each rung instantiates the whole recursion twice, once real and once complex, so they are few and
 // far apart. The middle one is the default, since preccpp defaults to 664 bits; the last covers a request of 2000
@@ -97,5 +126,17 @@ template<typename Like, typename F> auto with_precision_like(const unsigned int 
 }
 
 } // namespace NRG::MixChain
+
+#if BOOST_VERSION < 107900
+// More specialized than Boost's specialization for every number type, so these are the ones Eigen uses.
+namespace Eigen {
+template<unsigned Digits>
+struct NumTraits<NRG::MixChain::WideReal<Digits>>
+  : NRG::MixChain::detail::WideNumTraits<NRG::MixChain::WideReal<Digits>, NRG::MixChain::WideReal<Digits>, false> {};
+template<unsigned Digits>
+struct NumTraits<NRG::MixChain::WideComplex<Digits>>
+  : NRG::MixChain::detail::WideNumTraits<NRG::MixChain::WideComplex<Digits>, NRG::MixChain::WideReal<Digits>, true> {};
+} // namespace Eigen
+#endif
 
 #endif

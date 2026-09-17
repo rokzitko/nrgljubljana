@@ -233,7 +233,7 @@ TEST(MixChainChain, a_diagonal_gamma_gives_independent_scalar_chains) { // NOLIN
   for (const auto &[density, channel] : {std::pair{std::function<double(double)>(first), 0},
                                          std::pair{std::function<double(double)>(second), 1}}) {
     const auto alone = build_chain<Real>(
-      star_of<double>([&](const double omega) { return Matrix<double>::Constant(1, 1, density(omega)); }, 40),
+      star_of<double>([&density = density](const double omega) { return Matrix<double>::Constant(1, 1, density(omega)); }, 40),
       chain_options(8));
     for (unsigned int n = 0; n <= joint.Nmax; n++) {
       EXPECT_NEAR(static_cast<double>(joint.T[n](channel, channel)), static_cast<double>(alone.T[n](0, 0)),
@@ -373,7 +373,7 @@ TEST(MixChainChain, a_split_diagonal_gamma_gives_exactly_the_scalar_chains) { //
   for (const auto &[density, channel] : {std::pair{std::function<double(double)>(first), 0},
                                          std::pair{std::function<double(double)>(second), 1}}) {
     const auto alone = build_chain<Real>(
-      star_of<double>([&](const double omega) { return Matrix<double>::Constant(1, 1, density(omega)); }, 40),
+      star_of<double>([&density = density](const double omega) { return Matrix<double>::Constant(1, 1, density(omega)); }, 40),
       chain_options(8));
     EXPECT_EQ(joint.V(channel, channel), alone.V(0, 0));
     EXPECT_EQ(joint.V(channel, 1 - channel), Real(0));

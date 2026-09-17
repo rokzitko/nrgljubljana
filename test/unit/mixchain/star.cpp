@@ -335,7 +335,7 @@ TEST(MixChainStar, reports_intervals_that_hold_no_node_of_the_input) { // NOLINT
     }
   }
   fine.neg = fine.pos;
-  const auto &resolved = build_star(fine, base_options()).diagnostics[0].coverage_pos;
+  const auto resolved = build_star(fine, base_options()).diagnostics[0].coverage_pos; // a copy: the star is a temporary
   EXPECT_EQ(resolved.unresolved_intervals, 0);
   EXPECT_EQ(resolved.unresolved_weight, 0.0);
   EXPECT_GT(resolved.branch_weight, 0.0);
@@ -427,7 +427,8 @@ TEST(MixChainStar, a_split_diagonal_gamma_is_exactly_the_scalar_problem_per_chan
     for (const auto &[density, channel] : {std::pair{std::function<double(double)>(first_density), 0},
                                            std::pair{std::function<double(double)>(second_density), 1}}) {
       const auto alone =
-        build_star(make_input<double>([&](const double omega) { return scalar<double>(density(omega)); }), options);
+        build_star(make_input<double>([&density = density](const double omega) { return scalar<double>(density(omega)); }),
+                   options);
       for (const auto sign : {Sign::POS, Sign::NEG}) {
         const auto joint_levels = select(joint, sign, channel);
         const auto alone_levels = select(alone, sign, 0);

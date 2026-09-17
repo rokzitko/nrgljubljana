@@ -36,7 +36,8 @@ inline auto piecewise_linear_integral(const Vec &table, const double lower, cons
     const auto right    = std::min(x1, upper);
     if (right <= left) continue;
     const auto slope = (y1 - y0) / (x1 - x0);
-    const auto at    = [&](const double x) { return y0 + slope * (x - x0); };
+    // Captured by name: structured bindings cannot be captured implicitly before Clang 16.
+    const auto at    = [x0 = x0, y0 = y0, slope](const double x) { return y0 + slope * (x - x0); };
     sum += (right - left) * (at(left) + at(right)) / 2.0;
   }
   return sum;
