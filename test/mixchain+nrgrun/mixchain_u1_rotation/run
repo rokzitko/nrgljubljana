@@ -51,5 +51,5 @@ done
 echo "=== comparison"
 # A change of basis leaves the spectrum alone, so the thermodynamics must agree; the spin expectation values must be
 # the rotation of the diagonal run's.
-perl "$shared_dir/compare_relative.pl" --tol=1e-8 --floor=1e-14 diagonal rotated td
+perl "$shared_dir/compare_relative.pl" --tol=1e-8 --floor=1e-10 diagonal rotated td
 perl "$shared_dir/check_rotation.pl" "$PHI" 1e-8

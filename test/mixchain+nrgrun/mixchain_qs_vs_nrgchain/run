@@ -47,8 +47,11 @@ done
 
 echo "=== comparison"
 # The coefficients agree to a few ulp: mixchain integrates the tabulated band in double precision while nrgchain has
-# it in closed form, so the star weights differ in the last bit and the chain inherits that. The nrg output amplifies
-# it through the iterations, which is why td and custom are given a looser tolerance than the chain.
-perl "$shared_dir/compare_relative.pl" --tol=1e-12 --floor=1e-14 mixchain nrgchain \
-  xi1.dat zeta1.dat theta1.dat
-perl "$shared_dir/compare_relative.pl" --tol=1e-8 --floor=1e-14 mixchain nrgchain td custom
+# it in closed form, so the star weights differ in the last bit and the chain inherits that.
+perl "$shared_dir/compare_relative.pl" --tol=1e-12 --floor=1e-14 mixchain nrgchain xi1.dat zeta1.dat theta1.dat
+
+# The nrg output gets a looser tolerance, the iteration amplifying those last bits, and a floor: the columns that
+# vanish by symmetry hold nothing but rounding, of a size that depends on the compiler and the BLAS. In td and custom
+# the smallest quantity that carries meaning is of order 1e-2, so 1e-10 is far below anything real and far above the
+# noise, which was seen at 1e-14.
+perl "$shared_dir/compare_relative.pl" --tol=1e-8 --floor=1e-10 mixchain nrgchain td custom
