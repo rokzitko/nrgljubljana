@@ -1,0 +1,6 @@
+#!/bin/sh
+# coefV is read from the V{i}{j} files although -s is not given and there are no scdelta/sckappa files: which tables
+# are loaded follows from the files that exist, and which are required from the expression.
+export PATH="$1:$PATH"
+matrix param matrix >result
+"$2/test/compare.pl" "$3/ref"
