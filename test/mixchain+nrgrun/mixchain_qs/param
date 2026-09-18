@@ -1,0 +1,21 @@
+# The single-channel SIAM through the SIAM/QS template, with the Wilson chain from mixchain.
+#
+# Read by the template's instantiate (Nmax, polarized), by matrix (the [extra] section, as param.extra) and by nrg
+# (the [param] section).
+
+[extra]
+U1=0.1
+eps1=-0.05
+
+[param]
+symtype=QS
+Lambda=2.0
+z=1.0
+Nmax=20
+polarized=false
+
+keep=1000
+keepenergy=8
+T=1e-4
+ops=n_d n_d^2 n_d_ud hop0
+data_has_rescaled_energies=false

@@ -1,0 +1,68 @@
+#!/bin/bash
+set -euo pipefail
+# $1 = PROJECT_SOURCE_DIR
+# $2 = PROJECT_BINARY_DIR
+# $3 = CMAKE_CURRENT_SOURCE_DIR/${test}
+#
+# One end-to-end run: mixchain discretizes Gamma, the staging step renames its per-element chain files into the
+# coefficient sets of a SIAM template, the template's own instantiate builds 'data', and nrg runs on it. No
+# Mathematica is involved: the templates are checked in beside this script and read the chain from files.
+source_dir=$1
+build_dir=$2
+test_dir=$3
+shared_dir=$(cd "$(dirname "$test_dir")" && pwd)
+
+export PATH="$build_dir/tools:$build_dir/c++:$PATH"
+
+symmetry=$(cat "$test_dir/symmetry")
+case "$symmetry" in
+  QS|U1|SPSU2) ;;
+  *) echo "runtest: unknown symmetry '$symmetry'"; exit 1 ;;
+esac
+
+# The template, then the parameters of this case. The template ships its own param, which is the one nrginit used to
+# generate it; the case overwrites it.
+cp -r "$shared_dir/templates/$symmetry/." .
+cp "$test_dir/param" .
+cp "$test_dir/param-mixchain" .
+sh "$test_dir/make_input.sh"
+
+mixchain param-mixchain
+perl "$shared_dir/stage_${symmetry}.pl"
+
+# The coefficient files of this symmetry type, as the staging step writes them.
+case "$symmetry" in
+  QS)    coefficients="xi1.dat zeta1.dat theta1.dat" ;;
+  U1)    coefficients="xi1.dat xi2.dat xi3.dat xi4.dat zeta1.dat zeta2.dat zeta3.dat zeta4.dat V111.dat V121.dat V211.dat V221.dat" ;;
+  SPSU2) coefficients="xi1.dat zeta1.dat scdelta1.dat sckappa1.dat V111.dat V121.dat V211.dat V221.dat" ;;
+esac
+
+# The SPSU2 template's instantiate removes the coefficient files once it has read them, so they are kept aside here
+# and put back afterwards: they are part of what the test compares.
+mkdir -p staged
+# shellcheck disable=SC2086
+cp $coefficients staged/
+
+./instantiate
+cp staged/*.dat .
+if ! "$build_dir/c++/nrg" 2>&1 | tee log; then
+  echo "Abnormal termination. Skipping comparisons."
+  exit 1
+fi
+if [ ! -f "DONE" ]; then
+  echo "File DONE not found. Skipping comparisons."
+  exit 1
+fi
+
+# With NRG_REFRESH=1 the run writes ref/ instead of comparing against it, which is what refresh does. The files are
+# the staged chain, so that a change in the coefficients shows up directly, and the output of nrg.
+if [ "${NRG_REFRESH:-0}" = "1" ]; then
+  rm -rf "$test_dir/ref"
+  mkdir -p "$test_dir/ref"
+  # shellcheck disable=SC2086
+  cp td custom $coefficients "$test_dir/ref/"
+  echo "refreshed $test_dir/ref: $(ls "$test_dir/ref" | tr '\n' ' ')"
+  exit 0
+fi
+
+"$source_dir/test/compare.pl" --strict "$test_dir/ref"

@@ -1,0 +1,55 @@
+#!/bin/bash
+set -euo pipefail
+# $1 = PROJECT_SOURCE_DIR, $2 = PROJECT_BINARY_DIR, $3 = this directory
+#
+# The same bath in two spin bases: diagonal, and turned by phi about the y axis together with the impurity field. The
+# second run is the first one seen from a rotated frame, so
+#
+#   <S_z>_rotated = cos(phi) <S_z>_diagonal,   <S_x>_rotated = sin(phi) <S_z>_diagonal,
+#
+# and the thermodynamics is unchanged. This is what pins the mixing coefficient sets: a chain written as its own
+# transpose swaps xi3 with xi4 and zeta3 with zeta4, which is the same as turning by -phi. It leaves td untouched and
+# reverses <S_x>, so only a spin-resolved observable can see it.
+#
+# The two bands have different shapes, not merely different heights, or the mixing would sit in V alone and the
+# hopping sets would stay zero; see the comment in mixchain_u1_rotated/make_input.sh.
+source_dir=$1
+build_dir=$2
+test_dir=$3
+shared_dir=$(cd "$(dirname "$test_dir")" && pwd)
+
+export PATH="$build_dir/tools:$build_dir/c++:$PATH"
+
+PHI=1.0471975511965976   # pi/3
+FIELD=0.02
+
+for route in diagonal rotated; do
+  if [ "$route" = diagonal ]; then phi=0; else phi=$PHI; fi
+  bz=$(perl -e 'printf "%.17g", $ARGV[0] * cos($ARGV[1])' "$FIELD" "$phi")
+  bx=$(perl -e 'printf "%.17g", $ARGV[0] * sin($ARGV[1])' "$FIELD" "$phi")
+
+  rm -rf "$route"
+  mkdir "$route"
+  cp -r "$shared_dir/templates/U1/." "$route/"
+  cp "$test_dir/param-mixchain" "$route/"
+  perl -pe "s/__BZ__/$bz/; s/__BX__/$bx/" "$test_dir/param" > "$route/param"
+  cd "$route"
+
+  sh "$shared_dir/mixchain_u1_rotated/make_input.sh" "$phi"
+  mixchain param-mixchain
+  perl "$shared_dir/stage_U1.pl"
+
+  ./instantiate
+  if ! "$build_dir/c++/nrg" 2>&1 | tee log; then
+    echo "$route: abnormal termination"
+    exit 1
+  fi
+  [ -f DONE ] || { echo "$route: no DONE"; exit 1; }
+  cd ..
+done
+
+echo "=== comparison"
+# A change of basis leaves the spectrum alone, so the thermodynamics must agree; the spin expectation values must be
+# the rotation of the diagonal run's.
+perl "$shared_dir/compare_relative.pl" --tol=1e-8 --floor=1e-14 diagonal rotated td
+perl "$shared_dir/check_rotation.pl" "$PHI" 1e-8

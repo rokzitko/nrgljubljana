@@ -1,0 +1,28 @@
+# The same SIAM as mixchain_u1, with the bath and the field turned together by phi = pi/3 about the y axis.
+#
+# Gamma no longer splits, so the block Lanczos runs on a full 2x2 block and the mixing coefficient sets xi3, xi4,
+# zeta3 and zeta4 carry the spin mixing. That is what this case covers: a chain written as its own transpose swaps
+# the two of them, which leaves the thermodynamics untouched and reverses SXd.
+#
+# The field is (B sin phi, 0, B cos phi) with B = 0.02, so that the whole problem is the rotation of mixchain_u1:
+# <S_z> = cos(phi) <S_z>_diagonal and <S_x> = sin(phi) <S_z>_diagonal, which the scratch prototype checks against
+# that run directly. Here the comparison is with ref/.
+
+[extra]
+U1=0.1
+eps1=-0.05
+Bz1=0.01
+Bx1=0.017320508075688773
+
+[param]
+symtype=U1
+pol2x2=true
+Lambda=2.0
+z=1.0
+Nmax=20
+
+keep=1000
+keepenergy=8
+T=1e-4
+ops=n_d n_d^2 n_d_u n_d_d SZd SXd hop0
+data_has_rescaled_energies=false

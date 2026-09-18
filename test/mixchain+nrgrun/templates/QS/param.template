@@ -1,0 +1,11 @@
+[extra]
+U1=
+eps1=
+
+[param]
+options=GENERATE_TEMPLATE GENERATE_TEMPLATE_ALL
+symtype=QS
+model=SIAM.m
+ops=n_d n_d^2 n_d_ud hop0 A_d self_d sigma_d SigmaHartree
+
+data_has_rescaled_energies=false

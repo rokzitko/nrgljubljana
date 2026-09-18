@@ -1,0 +1,241 @@
+# Input file for NRG Ljubljana
+# symtype 	SPSU2
+# Using sneg version 	2.0.7
+#!9
+# Number of channels, chain sites, subspaces: 
+1	0	3
+# SCALE 	1
+# Energies (GS energy subtracted, multiplied by 1/SCALE):
+1
+5
+DIAG 	ham_1
+2
+4
+DIAG 	ham_2
+3
+1
+DIAG 	ham_3
+# Irreducible matrix elements for Wilson chains:
+f 0 0
+4
+3	2
+0.	1.	0.	0.
+2	3
+0.
+0.
+1.224744871391589
+0.
+2	1
+1.	0.	0.	0.	0.
+0.	0.	0.	0.	0.
+0.	0.	-0.7071067811865475	0.	0.
+0.	0.	0.	1.	0.
+1	2
+0.	0.	0.	0.
+1.4142135623730951	0.	0.	0.
+0.	1.	0.	0.
+0.	0.	0.	0.
+0.	0.	0.	1.4142135623730951
+# GS energy in absolute units:
+e
+1
+# Irreducible matrix elements for other operators:
+sHimp
+3
+1	1
+op.Himp_1_1
+2	2
+op.Himp_2_2
+3	3
+op.Himp_3_3
+sHhyb
+3
+1	1
+op.Hhyb_1_1
+2	2
+op.Hhyb_2_2
+3	3
+op.Hhyb_3_3
+sn_d
+3
+1	1
+op.n_d_1_1
+2	2
+op.n_d_2_2
+3	3
+op.n_d_3_3
+sn_d_u
+3
+1	1
+op.n_d_u_1_1
+2	2
+op.n_d_u_2_2
+3	3
+op.n_d_u_3_3
+sn_d_d
+3
+1	1
+op.n_d_d_1_1
+2	2
+op.n_d_d_2_2
+3	3
+op.n_d_d_3_3
+sn_d_ud
+3
+1	1
+op.n_d_ud_1_1
+2	2
+op.n_d_ud_2_2
+3	3
+op.n_d_ud_3_3
+sn_d^2
+3
+1	1
+op.n_d^2_1_1
+2	2
+op.n_d^2_2_2
+3	3
+op.n_d^2_3_3
+spair_d
+3
+1	1
+op.pair_d_1_1
+2	2
+op.pair_d_2_2
+3	3
+op.pair_d_3_3
+dA_d
+4
+3	2
+op.A_d_3_2
+2	3
+op.A_d_2_3
+2	1
+op.A_d_2_1
+1	2
+op.A_d_1_2
+dAc_d
+4
+3	2
+op.Ac_d_3_2
+2	3
+op.Ac_d_2_3
+2	1
+op.Ac_d_2_1
+1	2
+op.Ac_d_1_2
+tsigma_d
+5
+3	3
+0.7071067811865476
+3	1
+0.	0.	0.5	0.	0.
+2	2
+0.	0.	0.	0.
+0.	0.8660254037844386	0.	0.
+0.	0.	0.8660254037844386	0.
+0.	0.	0.	0.
+1	3
+0.
+0.
+-0.8660254037844386
+0.
+0.
+1	1
+0.	0.	0.	0.	0.
+0.	0.	0.	0.	0.
+0.	0.	0.	0.	0.
+0.	0.	0.	0.	0.
+0.	0.	0.	0.	0.
+dself_d
+4
+3	2
+op.self_d_3_2
+2	3
+op.self_d_2_3
+2	1
+op.self_d_2_1
+1	2
+op.self_d_1_2
+dselfc_d
+4
+3	2
+op.selfc_d_3_2
+2	3
+op.selfc_d_2_3
+2	1
+op.selfc_d_2_1
+1	2
+op.selfc_d_1_2
+sHint
+3
+1	1
+op.Hint_1_1
+2	2
+op.Hint_2_2
+3	3
+op.Hint_3_3
+sSigmaHdAvg11
+3
+1	1
+op.SigmaHdAvg11_1_1
+2	2
+op.SigmaHdAvg11_2_2
+3	3
+op.SigmaHdAvg11_3_3
+sSigmaHdAvg22
+3
+1	1
+op.SigmaHdAvg22_1_1
+2	2
+op.SigmaHdAvg22_2_2
+3	3
+op.SigmaHdAvg22_3_3
+sSigmaHdAvg12
+3
+1	1
+op.SigmaHdAvg12_1_1
+2	2
+op.SigmaHdAvg12_2_2
+3	3
+op.SigmaHdAvg12_3_3
+sSigmaHdAvg21
+3
+1	1
+op.SigmaHdAvg21_1_1
+2	2
+op.SigmaHdAvg21_2_2
+3	3
+op.SigmaHdAvg21_3_3
+sSigmaHd11
+3
+1	1
+op.SigmaHd11_1_1
+2	2
+op.SigmaHd11_2_2
+3	3
+op.SigmaHd11_3_3
+sSigmaHd12
+3
+1	1
+op.SigmaHd12_1_1
+2	2
+op.SigmaHd12_2_2
+3	3
+op.SigmaHd12_3_3
+sSigmaHd21
+3
+1	1
+op.SigmaHd21_1_1
+2	2
+op.SigmaHd21_2_2
+3	3
+op.SigmaHd21_3_3
+sSigmaHd22
+3
+1	1
+op.SigmaHd22_1_1
+2	2
+op.SigmaHd22_2_2
+3	3
+op.SigmaHd22_3_3

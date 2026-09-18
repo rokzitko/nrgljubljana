@@ -1,0 +1,14 @@
+# Rename param.template to param, then run "nrginit".
+
+[extra]
+#eps1=
+#U1=
+
+[param]
+options=GENERATE_TEMPLATE GENERATE_TEMPLATE_ALL
+symtype=SPSU2
+model=model.m
+
+ops=A_d Ac_d self_d selfc_d n_d n_d^2 Himp Hhyb Hint pair_d sigma_d SigmaHd11 SigmaHd12 SigmaHd21 SigmaHd22 n_d_u n_d_d n_d_ud SigmaHdAvg11 SigmaHdAvg12 SigmaHdAvg21 SigmaHdAvg22 
+
+data_has_rescaled_energies=false

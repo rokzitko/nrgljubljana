@@ -1,0 +1,54 @@
+#!/bin/bash
+set -euo pipefail
+# $1 = PROJECT_SOURCE_DIR, $2 = PROJECT_BINARY_DIR, $3 = this directory
+#
+# The same flat band twice: the chain from mixchain, and the chain from nrgchain's band=flat. Both go through the
+# SIAM/QS template and nrg, and the two runs must agree.
+#
+# Unlike mixchain_qs, this test stores no numbers. It says that the two tools discretize the same band into the same
+# chain, and that the same physics comes out at the end -- a statement that stays true when the numbers legitimately
+# move, and that a refreshed reference cannot quietly absorb.
+source_dir=$1
+build_dir=$2
+test_dir=$3
+shared_dir=$(cd "$(dirname "$test_dir")" && pwd)
+
+export PATH="$build_dir/tools:$build_dir/c++:$PATH"
+
+for route in mixchain nrgchain; do
+  rm -rf "$route"
+  mkdir "$route"
+  cp -r "$shared_dir/templates/QS/." "$route/"
+  cp "$test_dir/param" "$route/"
+  cd "$route"
+
+  if [ "$route" = mixchain ]; then
+    cp "$test_dir/param-mixchain" .
+    sh "$shared_dir/mixchain_qs/make_input.sh"
+    mixchain param-mixchain
+    perl "$shared_dir/stage_QS.pl"
+  else
+    # band=flat in closed form, and the same three quantities under the names the template reads.
+    cp "$test_dir/param-nrgchain" .
+    nrgchain param-nrgchain
+    cp xi.dat xi1.dat
+    cp zeta.dat zeta1.dat
+    cp theta.dat theta1.dat
+  fi
+
+  ./instantiate
+  if ! "$build_dir/c++/nrg" 2>&1 | tee log; then
+    echo "$route: abnormal termination"
+    exit 1
+  fi
+  [ -f DONE ] || { echo "$route: no DONE"; exit 1; }
+  cd ..
+done
+
+echo "=== comparison"
+# The coefficients agree to a few ulp: mixchain integrates the tabulated band in double precision while nrgchain has
+# it in closed form, so the star weights differ in the last bit and the chain inherits that. The nrg output amplifies
+# it through the iterations, which is why td and custom are given a looser tolerance than the chain.
+perl "$shared_dir/compare_relative.pl" --tol=1e-12 --floor=1e-14 mixchain nrgchain \
+  xi1.dat zeta1.dat theta1.dat
+perl "$shared_dir/compare_relative.pl" --tol=1e-8 --floor=1e-14 mixchain nrgchain td custom

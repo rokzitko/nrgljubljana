@@ -1,0 +1,29 @@
+# The superconducting SIAM through nrginit instead of a template: the reference side of this test.
+#
+# nrginit builds the whole thing from the model name: a flat band (the default), the chain of that band, and the gap
+# added as a constant scdelta on every site, which is what bcsgap does (wilson.m:1225). The impurity is the built-in
+# SIAM at the particle-hole symmetric point, delta=0.
+#
+# The coupling: nrginit puts gammaPol = sqrt(theta0 gammaA / pi) in the hybridisation term, with theta0 = thetaCh
+# Gamma, thetaCh = 2 for band=flat and gammaA = 1 for discretization=Z. The template route instead reads
+# coefV = sqrt(theta) from a file, theta being the integral of its input. Matching the two gives Gamma = pi theta / 2,
+# which the run script substitutes from the same rho0 and delta as the mixchain side.
+
+[param]
+symtype=SPSU2
+model=SIAM
+
+U=0.1
+delta=0
+Gamma=__GAMMA__
+bcsgap=0.01
+
+discretization=Z
+Lambda=2.0
+z=1.0
+Nmax=24
+
+keep=1000
+keepenergy=8
+T=1e-5
+ops=n_d n_d^2 pair_d Himp Hhyb

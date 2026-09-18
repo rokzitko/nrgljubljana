@@ -1,0 +1,18 @@
+# mixchain: the 2x2 Nambu hybridisation of the BCS bath.
+#
+# The mesh accumulates at the gap edge rather than at zero (hardgap with boundary = delta/D), since there is nothing
+# to resolve inside the gap. chain_gauge=nambu is what makes the chain keep the structure the SPSU2 template
+# reconstructs from one number per block: E(2,2) = -E(1,1) and T(2,2) = -conj(T(1,1)).
+
+[param]
+Lambda=2.0
+z=1.0
+Nmax=24
+mMAX=48
+channels=2
+discretization_files=true
+chain_gauge=nambu
+
+hardgap=true
+boundary=0.01
+

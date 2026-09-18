@@ -1,0 +1,22 @@
+# The superconducting SIAM through the SIAM/SPSU2 template, with the chain from mixchain in the Nambu gauge.
+#
+# The impurity sits at the particle-hole symmetric point, where <pair_d> is the only observable that carries the sign
+# of the anomalous coefficients: <n_d>, <n_d^2> and the energies come out the same for either sign. The scratch
+# prototype measures that sign against a flat band with a constant gap and against nrginit; here ref/ holds it.
+
+[extra]
+U1=0.1
+eps1=-0.05
+
+[param]
+symtype=SPSU2
+Lambda=2.0
+z=1.0
+Nmax=24
+polarized=false
+
+keep=1000
+keepenergy=8
+T=1e-5
+ops=n_d n_d^2 pair_d
+data_has_rescaled_energies=false
