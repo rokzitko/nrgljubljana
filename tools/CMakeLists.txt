@@ -45,7 +45,7 @@ target_include_directories(nrgchain_core PRIVATE
                      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/include>
                      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++/include/range-v3>)
 
-set(all_executables adapt binavg broaden bw diag h5write hilb instantiate intavg integ kk matrix mats nrgchain resample specmoments tdavg unitary)
+set(all_executables adapt binavg broaden bw diag h5write hilb instantiate intavg integ kk matrix mats mixchain nrgchain resample specmoments tdavg unitary)
 set(NRG_TOOL_EXECUTABLES ${all_executables} PARENT_SCOPE)
 foreach(exec ${all_executables})
   add_tool(${exec})

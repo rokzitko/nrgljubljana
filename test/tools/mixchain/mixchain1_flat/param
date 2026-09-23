@@ -1,0 +1,19 @@
+# mixchain against nrgchain on a flat band, as in nrgchain12_flat.
+#
+# nrgchain's band=flat uses the analytic representative energies and a density of 1/2 on each frequency branch, so
+# its theta is 1. mixchain is given the same density as a tabulated Gamma_11-re.dat, which the run script writes;
+# for a flat band both the linear interpolant and the integral method are exact.
+#
+# z=0.5 on purpose: the first interval then breaks the pure scaling of the flat-band star, so the check covers the
+# first-interval branch of the representative energy as well as the rest.
+
+[param]
+
+# nrgchain
+band=flat
+
+# both
+Lambda=2
+z=0.5
+mMAX=60
+Nmax=30

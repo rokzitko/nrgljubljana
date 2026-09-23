@@ -1,0 +1,9 @@
+# nrgchain: the same flat band in closed form. Its theta is 1, band=flat being a density of 1/2 on each frequency
+# branch, which is exactly the band mixchain_qs/make_input.sh tabulates.
+
+[param]
+band=flat
+Lambda=2.0
+z=1.0
+Nmax=20
+mMAX=40

@@ -1,0 +1,22 @@
+#!/bin/sh
+# A table that is not on disk is reported where an expression uses it, naming both the file and the symbol. Here
+# scdelta.dat is absent and the input asks for coefdelta, so matrix must fail rather than evaluate.
+#
+# The complementary case is matrix11_V_no_sc_files: the same missing pairing tables are no error when nothing reads
+# them.
+export PATH="$1:$PATH"
+
+if matrix param matrix >result 2>error; then
+  echo "matrix succeeded although scdelta.dat is missing:"
+  cat result
+  exit 1
+fi
+
+if ! grep -q "scdelta.dat is needed by coefdelta" error; then
+  echo "matrix failed, but not with the expected message:"
+  cat error
+  exit 1
+fi
+
+echo "matrix reported the missing table:"
+cat error

@@ -1,0 +1,254 @@
+# Input file for NRG Ljubljana
+# symtype  U1
+# Using sneg version  2.1
+#!9
+# Number of channels, chain sites, subspaces: 
+1 0 5
+# SCALE  1
+# Energies (GS energy subtracted, multiplied by 1/SCALE):
+-2
+1
+DIAG  ham_-2
+-1
+4
+DIAG  ham_-1
+0
+6
+DIAG  ham_0
+1
+4
+DIAG  ham_1
+2
+1
+DIAG  ham_2
+# Irreducible matrix elements for Wilson chains:
+f 0 0
+4
+2 1
+0. 0. 1. 0.
+1 0
+0. -1. 0. 0. 0. 0.
+0. 0. 0. -1. 0. 0.
+0. 0. 0. 0. 0. 0.
+0. 0. 0. 0. 0. 1.
+0 -1
+1. 0. 0. 0.
+0. 0. 0. 0.
+0. 0. -1. 0.
+0. 0. 0. 0.
+0. 0. 0. -1.
+0. 0. 0. 0.
+-1 -2
+0.
+1.
+0.
+0.
+f 0 1
+4
+2 1
+0. 0. 0. -1.
+1 0
+0. 0. 1. 0. 0. 0.
+0. 0. 0. 0. 1. 0.
+0. 0. 0. 0. 0. 1.
+0. 0. 0. 0. 0. 0.
+0 -1
+0. -1. 0. 0.
+0. 0. -1. 0.
+0. 0. 0. 0.
+0. 0. 0. -1.
+0. 0. 0. 0.
+0. 0. 0. 0.
+-1 -2
+1.
+0.
+0.
+0.
+# GS energy in absolute units:
+e
+1
+# Irreducible matrix elements for other operators:
+sn_d
+5
+-2 -2
+op.n_d_-2_-2
+-1 -1
+op.n_d_-1_-1
+0 0
+op.n_d_0_0
+1 1
+op.n_d_1_1
+2 2
+op.n_d_2_2
+sn_d_u
+5
+-2 -2
+op.n_d_u_-2_-2
+-1 -1
+op.n_d_u_-1_-1
+0 0
+op.n_d_u_0_0
+1 1
+op.n_d_u_1_1
+2 2
+op.n_d_u_2_2
+sn_d_d
+5
+-2 -2
+op.n_d_d_-2_-2
+-1 -1
+op.n_d_d_-1_-1
+0 0
+op.n_d_d_0_0
+1 1
+op.n_d_d_1_1
+2 2
+op.n_d_d_2_2
+sn_d_ud
+5
+-2 -2
+op.n_d_ud_-2_-2
+-1 -1
+op.n_d_ud_-1_-1
+0 0
+op.n_d_ud_0_0
+1 1
+op.n_d_ud_1_1
+2 2
+op.n_d_ud_2_2
+sn_d^2
+5
+-2 -2
+op.n_d^2_-2_-2
+-1 -1
+op.n_d^2_-1_-1
+0 0
+op.n_d^2_0_0
+1 1
+op.n_d^2_1_1
+2 2
+op.n_d^2_2_2
+shop0
+5
+-2 -2
+op.hop0_-2_-2
+-1 -1
+op.hop0_-1_-1
+0 0
+op.hop0_0_0
+1 1
+op.hop0_1_1
+2 2
+op.hop0_2_2
+dA_d_u
+4
+2 1
+op.A_d_u_2_1
+1 0
+op.A_d_u_1_0
+0 -1
+op.A_d_u_0_-1
+-1 -2
+op.A_d_u_-1_-2
+dA_d_d
+4
+2 1
+op.A_d_d_2_1
+1 0
+op.A_d_d_1_0
+0 -1
+op.A_d_d_0_-1
+-1 -2
+op.A_d_d_-1_-2
+dself_d_u
+4
+2 1
+op.self_d_u_2_1
+1 0
+op.self_d_u_1_0
+0 -1
+op.self_d_u_0_-1
+-1 -2
+op.self_d_u_-1_-2
+dself_d_d
+4
+2 1
+op.self_d_d_2_1
+1 0
+op.self_d_d_1_0
+0 -1
+op.self_d_d_0_-1
+-1 -2
+op.self_d_d_-1_-2
+sSXd
+5
+-2 -2
+op.SXd_-2_-2
+-1 -1
+op.SXd_-1_-1
+0 0
+op.SXd_0_0
+1 1
+op.SXd_1_1
+2 2
+op.SXd_2_2
+sSZd
+5
+-2 -2
+op.SZd_-2_-2
+-1 -1
+op.SZd_-1_-1
+0 0
+op.SZd_0_0
+1 1
+op.SZd_1_1
+2 2
+op.SZd_2_2
+sSigmaHartree-uu
+5
+-2 -2
+op.SigmaHartree-uu_-2_-2
+-1 -1
+op.SigmaHartree-uu_-1_-1
+0 0
+op.SigmaHartree-uu_0_0
+1 1
+op.SigmaHartree-uu_1_1
+2 2
+op.SigmaHartree-uu_2_2
+sSigmaHartree-dd
+5
+-2 -2
+op.SigmaHartree-dd_-2_-2
+-1 -1
+op.SigmaHartree-dd_-1_-1
+0 0
+op.SigmaHartree-dd_0_0
+1 1
+op.SigmaHartree-dd_1_1
+2 2
+op.SigmaHartree-dd_2_2
+sSigmaHartree-ud
+5
+-2 -2
+op.SigmaHartree-ud_-2_-2
+-1 -1
+op.SigmaHartree-ud_-1_-1
+0 0
+op.SigmaHartree-ud_0_0
+1 1
+op.SigmaHartree-ud_1_1
+2 2
+op.SigmaHartree-ud_2_2
+sSigmaHartree-du
+5
+-2 -2
+op.SigmaHartree-du_-2_-2
+-1 -1
+op.SigmaHartree-du_-1_-1
+0 0
+op.SigmaHartree-du_0_0
+1 1
+op.SigmaHartree-du_1_1
+2 2
+op.SigmaHartree-du_2_2

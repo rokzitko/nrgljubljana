@@ -1,0 +1,38 @@
+#!/bin/bash
+set -euo pipefail
+# Regenerate the ref/ directory of every test here, by running the same pipeline that runtest runs.
+#
+#   refresh PROJECT_SOURCE_DIR PROJECT_BINARY_DIR [TEST...]
+#
+# With no test named, every test of the three lists is refreshed. A test whose symmetry type the build does not have
+# fails, and that failure is the message; name the tests explicitly to refresh only part of them. Each run happens in
+# a scratch directory under the build tree, never in the source tree.
+#
+# Unlike test/c++/refresh, this touches nothing but the ref/ files: the test lists are left alone. A reference is
+# only as good as the run that produced it, so look at what changed before committing it.
+source_dir=$1
+build_dir=$2
+shift 2
+here=$(cd "$(dirname "$0")" && pwd)
+
+tests=("$@")
+if [ ${#tests[@]} -eq 0 ]; then
+  # Read with a loop rather than mapfile: macOS still ships bash 3.2.
+  while IFS= read -r line; do
+    [ -n "$line" ] && tests+=("$line")
+  done < <(cat "$here/simple_tests" "$here/more_tests" "$here/all_tests" "$here/mathematica_tests")
+fi
+
+for test in "${tests[@]}"; do
+  [ -d "$here/$test" ] || { echo "refresh: no such test: $test" >&2; exit 1; }
+  # A test with its own run script compares two runs with each other and stores nothing.
+  if [ -x "$here/$test/run" ]; then
+    echo "=== $test: nothing to refresh, it compares two runs"
+    continue
+  fi
+  work="$build_dir/test/mixchain+nrgrun/$test.refresh"
+  rm -rf "$work"
+  mkdir -p "$work"
+  echo "=== $test"
+  ( cd "$work" && NRG_REFRESH=1 "$here/runtest" "$source_dir" "$build_dir" "$here/$test" )
+done

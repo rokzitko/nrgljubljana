@@ -1,0 +1,14 @@
+#!/bin/sh
+# mixchain against nrgchain on a flat band. Both use the representative energies in closed form or by the integral
+# method, which agree for a flat band, so the chains must agree to the digits nrgchain writes.
+set -eu
+export PATH="$1:$PATH"
+
+nrgchain param
+
+# The same flat band, 1/2 on [-1, 1], tabulated for mixchain.
+awk 'BEGIN { for (k = -100; k <= 100; k++) printf "%.17g 0.5\n", k / 100 }' >Gamma_11-re.dat
+{ cat param; printf '\ndiscretization_files=true\n'; } >param-mixchain
+mixchain -v param-mixchain >mixchain.log 2>&1
+
+sh "$3/../compare_nrgchain.sh" 1e-12

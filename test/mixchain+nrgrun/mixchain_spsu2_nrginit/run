@@ -1,0 +1,66 @@
+#!/bin/bash
+set -euo pipefail
+# $1 = PROJECT_SOURCE_DIR, $2 = PROJECT_BINARY_DIR, $3 = this directory, $4 = Mathematica kernel
+#
+# The superconducting SIAM twice: the discretized BCS Gamma through mixchain and the SPSU2 template, and the same
+# physics through nrginit, which puts a flat band and a constant gap (bcsgap) into the chain. The two baths are
+# different objects -- one has the gap and the coherence factors in the hybridisation, the other a gapless
+# hybridisation with the gap in the chain -- so the coefficients differ and the physics does not.
+#
+# <pair_d> is what matters here: at particle-hole symmetry it is the only observable that carries the sign of the
+# anomalous coefficients. That sign follows from the input, the anomalous part of Gamma being written in one Nambu
+# basis phase or the other, and this test is what says which phase agrees with the established route. <n_d> and
+# <n_d^2> come out the same either way, so they check the rest.
+source_dir=$1
+build_dir=$2
+test_dir=$3
+kernel=$4
+shared_dir=$(cd "$(dirname "$test_dir")" && pwd)
+
+export PATH="$build_dir/tools:$build_dir/c++:$PATH"
+
+nrginit="$source_dir/nrginit/nrginit"
+if [[ -e "${nrginit}.local" ]]; then
+  nrginit="${nrginit}.local"
+fi
+
+# The bath, as mixchain_spsu2/make_input.sh writes it, and the coupling that matches it on the nrginit side.
+#
+# nrginit puts gammaPol = sqrt(theta0 gammaA / pi) into the hybridisation, with theta0 = thetaCh * Gamma,
+# thetaCh = 2 for band=flat (nrginit/wilson.m) and gammaA = 1 for discretization=Z. The template route instead reads
+# coefV = sqrt(theta) from a file, theta being the integral of its input Gamma. Equating the two couplings,
+# 2 Gamma / pi = theta, so Gamma = pi rho0 sqrt(1 - delta^2).
+RHO0=0.1
+DELTA=0.01
+GAMMA=$(perl -e 'printf "%.17g", 3.14159265358979323846 * $ARGV[0] * sqrt(1 - $ARGV[1] ** 2)' "$RHO0" "$DELTA")
+
+rm -rf mixchain nrginit_route
+mkdir mixchain nrginit_route
+
+# The mixchain route, as in mixchain_spsu2.
+cp -r "$shared_dir/templates/SPSU2/." mixchain/
+cp "$test_dir/param" "$test_dir/param-mixchain" mixchain/
+cd mixchain
+RHO0=$RHO0 DELTA=$DELTA sh "$shared_dir/mixchain_spsu2/make_input.sh"
+mixchain param-mixchain
+perl "$shared_dir/stage_SPSU2.pl"
+./instantiate
+if ! "$build_dir/c++/nrg" 2>&1 | tee log; then echo "mixchain: abnormal termination"; exit 1; fi
+[ -f DONE ] || { echo "mixchain: no DONE"; exit 1; }
+cd ..
+
+# The nrginit route: everything from the model name, the band and the gap.
+perl -pe "s/__GAMMA__/$GAMMA/" "$test_dir/param-nrginit" > nrginit_route/param
+cd nrginit_route
+"$nrginit" "$kernel"
+[ -f data ] || { echo "nrginit wrote no data"; exit 1; }
+if ! "$build_dir/c++/nrg" 2>&1 | tee log; then echo "nrginit: abnormal termination"; exit 1; fi
+[ -f DONE ] || { echo "nrginit: no DONE"; exit 1; }
+cd ..
+
+echo "=== comparison"
+# Only the operators that mean the same thing on both sides: n_d, n_d^2 and pair_d come from nrginit's operators.m
+# either way. Himp and Hhyb do not, the template's model.m defining its own and putting the anomalous hybridisation
+# into Hhyb. The tolerance is the distance between two different baths, not arithmetic: the pairing amplitude came
+# out 0.3% apart when this was set up, the occupancies far closer.
+perl "$shared_dir/compare_observables.pl" --tol=0.02 --ops=pair_d,n_d,n_d^2 nrginit_route mixchain

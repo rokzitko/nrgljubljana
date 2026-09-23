@@ -1,0 +1,277 @@
+#!/usr/bin/env perl
+# Process a 'data.in' template file: fill in the numerical values,
+# diagonalize the Hamiltonian matrices, perform the transformations.
+# This version pertains to the QS symmetry type.
+# Rok Zitko, 2009-2019
+
+use strict;
+use warnings;
+use File::Copy;
+use Math::Trig;
+
+# Paths to tools used
+my $matrix = "matrix -s";   # Convert symbolic matrix to numerical matrix
+my $diag = "diag -B";       # Diagonalization tool
+my $unitary = "unitary -B"; # Unitary transformation tool
+
+my $verbose = 1;
+
+# Split param file into sections
+my $fnparam = "param";
+open (F, "<$fnparam") or die "Can't open $fnparam.";
+my $section = "";
+while (<F>) {
+    if (/^\[(.*)\]$/) {
+        close O if $section ne "";
+        $section = $1;
+        my $fnout = "$fnparam.$section";
+        open (O, ">$fnout") or die "Cant open $fnout.";
+    }
+    print O if $section ne "";
+}
+close O if $section ne "";
+close F;
+
+# Compute Wilson chain coefficients
+# system "./wilson";
+my $nr = getparam("Nmax");
+
+### Begin the data.in -> data translation:
+my $fnin = "data.in";
+open(F, "<$fnin") or die "Can't open $fnin.";
+
+my $fnout = "data";
+open(OUT, ">$fnout") or die "Can't open $fnout.";
+
+my $mode = 0; # Current parser mode
+my $factor = -1; # Rescale factor for energies
+my $smallest = 1e9; # Lowest rescaled energy (Egs=smallest/factor)
+
+my %dim; # Dimensions of invariant subspaces
+
+my $subspaces = -1; # Number of different subspaces
+my $Egs = -999;
+
+my $perch = 1;
+if (getparam("polarized") eq "true") {
+    $perch = 2;
+}
+my $channels;
+my $coefchannels;
+my $fctr = 0;
+
+while (<F>) {
+    print;
+
+    if (/^#/) {
+        if (/^# SCALE\s+(\S+)$/) {
+            # Extract the rescale factor
+            $factor = 1.0/$1;
+        }
+        # Copy comments verbatim
+        print OUT;
+        next;
+    }
+
+    if ($mode == 0) {
+        if (!/(\d+)\s+(\d+)\s+(\d+)/) { die "Parse error 1: $_"; }
+        $channels = $1;
+        $coefchannels = $channels * $perch;
+        my $impurities = $2;
+        $subspaces = $3;
+        $impurities = $nr; # override!
+        print "ch=$channels coefch=$coefchannels im=$impurities sub=$subspaces\n";
+        print OUT "$channels $impurities $subspaces\n";
+        $mode = 1;
+        next;
+    }
+
+    if ($mode == 1) {
+        my @buffer;
+        my $i;
+        for ($i = 1; $i <= $subspaces; $i++) {
+            if ($i != 1) { $_ = <F>; }
+            if (!/(\S+)/) { die "Parse error 2: $_"; }
+            my $qnspaces = "$1";
+            my $qn = "$1";
+            my $size;
+            chomp($size = <F>);
+            $dim{$qn} = $size; # store size!
+            print "[$i] $qn dim=$size\n";
+            my $line1;
+            chomp($line1 = <F>);
+            $line1 =~ /DIAG\s+(\S+)$/;
+            my $fn = $1;
+
+            system("$matrix -c$coefchannels param.extra $fn >ham");
+            if ($? != 0) { die "matrix call error"; }
+            copy("ham", "ham.$qn");
+
+            ($factor > 0) or die "no factor?";
+            system("$diag -q -s $factor -o val -O vec ham");
+
+            my $eig = `cat val`;
+            push(@buffer,  [ "$qnspaces\n$size\n", $eig ]);
+            if ($eig =~ /^([-0-9.]+)(\s|\n)/) {
+                my $min = $1;
+                if ($smallest > $min) { $smallest = $min; }
+            }
+            copy("vec", "vec.$qn");
+        }
+        $Egs=$smallest/$factor;
+        print "E_gs=$Egs\n";
+
+        @buffer = map { $_->[0].subtract($_->[1]) } @buffer;
+        print OUT @buffer;
+
+        $mode = 2;
+        next;
+    }
+
+    if ($mode == 2) {
+        if (!/f\s+(\d+)\s+(\d+)/) { die "Parse error 3: $_"; }
+        print OUT;
+        unitary();
+        $fctr++;
+        if ($fctr == $channels) {
+            $mode = 3;
+        }
+        next;
+    }
+
+    if ($mode == 3) {
+        if (!/^e/) { die "Parse error 5: $_"; }
+        my $egs = <F>;
+        print OUT "e\n$Egs\n";
+        $mode = 4;
+        next;
+    }
+
+    if ($mode == 4) {
+        if (/^[zZT]/) { # Discretization tables
+            $mode = 5;
+            next;
+        }
+        if (/^[spdvt]/) {
+            print OUT;
+            unitary();
+            next;
+        }
+        die "Parse error 6: $_";
+    }
+}
+
+# Append the Wilson chain coefficients (normal terms)
+print OUT "z\n";
+for (my $ch = 1; $ch <= $perch*$channels; $ch++) {
+    print OUT "$nr\n";
+    my $xi = `cat xi${ch}.dat`;
+    print OUT "$xi";
+}
+for (my $ch = 1; $ch <= $perch*$channels; $ch++) {
+    print OUT "$nr\n";
+    my $zeta = `cat zeta${ch}.dat`;
+    print OUT "$zeta";
+}
+
+# Append the Wilson chain coefficients (superconducting terms)
+print OUT "Z\n";
+for (my $ch = 1; $ch <= $perch*$channels; $ch++) {
+    print OUT "$nr\n";
+    my $scdelta = `cat scdelta${ch}.dat`;
+    print OUT "$scdelta";
+}
+for (my $ch = 1; $ch <= $perch*$channels; $ch++) {
+    print OUT "$nr\n";
+    my $sckappa = `cat sckappa${ch}.dat`;
+    print OUT "$sckappa";
+}
+
+
+## Auxiliary functions
+sub subtract
+{
+    my $vals = shift;
+    my @l = split(' ', $vals);
+    @l = map { $_-$smallest } @l;
+    return "@l\n";
+}
+
+sub unitary
+{
+    chomp(my $nr = <F>);
+    print "nr=$nr\n";
+    print OUT "$nr\n";
+    for (my $i = 1; $i <= $nr; $i++) {
+        print "unitary i=$i\n";
+        chomp(my $line = <F>);
+        if (!($line =~ /(\S+)\s+(\S+)/)) { die "Parse error 4: $_"; }
+        my $qn1spaces = "$1";
+        my $qn1 = "$1";
+        my $dim1 = $dim{$qn1};
+        my $qn2spaces = "$2";
+        my $qn2 = "$2";
+        my $dim2 = $dim{$qn2};
+        print "$qn1 $dim1 $qn2 $dim2\n";
+        $line = <F>;
+        my $c = substr($line, 0, 1);
+        if ($c ne "o") {
+            open(O, ">mat") or die "Can't open mat for writing.";
+            for (my $n = 1; $n <= $dim1; $n++) {
+                print O $line;
+                if ($n != $dim1) { $line = <F>; }
+            } # for $n
+            close(O);
+        } else {
+            chomp(my $fn = $line);
+            -e $fn or die "File not found: $fn";
+            system("$matrix -c$coefchannels param.extra $fn >mat");
+            if ($? != 0) { die "matrix call error for $fn"; }
+        }
+        my $cmd = "$unitary -l -q -o mat.res vec.$qn1 mat vec.$qn2";
+        system($cmd);
+        if ($? != 0) { die "unitary call error: $cmd"; }
+        my $res = `cat mat.res`;
+        print OUT "$qn1spaces $qn2spaces\n$res";
+   } # for $i
+}
+
+my $target_dir = shift;
+if (defined($target_dir) && -d $target_dir) {
+    system "cp param data $target_dir";
+}
+
+sub getparam
+{
+    my $keyword = shift;
+    my $fn = "param";
+    open (G, "<", $fn) or die "Can't open $fn for reading: $!\n";
+    while (<G>) {
+        if (/^$keyword=(.*)/) {
+            return $1;
+        }
+    }
+    close G;
+    die "Parsing failure: $keyword not found.";
+}
+
+unlink "xi1.dat";
+unlink "zeta1.dat";
+unlink "scdelta1.dat";
+unlink "sckappa1.dat";
+unlink "V111.dat";
+unlink "V121.dat";
+unlink "V211.dat";
+unlink "V221.dat";
+unlink "val";
+unlink "vec";
+unlink glob "vec.*";
+unlink "mat";
+unlink "mat.res";
+unlink "ham";
+unlink glob "ham.*";
+unlink "param.param";
+unlink "param.dmft";
+unlink "param.extra";
+unlink "solverlog";
+unlink "solverlogneg";

@@ -51,6 +51,7 @@ This release summarizes changes since the `2024.12` release, with major improvem
 - Parameter files, spectral meshes, and truncated inputs now receive substantially stricter validation.
 - The new `instantiate`/`nrgspawn` workflow can run prepared model templates without invoking Mathematica for every parameter point.
 - Basis, Hamiltonian, and operator blocks can be saved and reused in parameter sweeps.
+- `matrix` reads every coefficient file that is present, instead of selecting a fixed set with the `-s` switch, and reports a missing table only where an expression uses it. A template that reads `V{i}{j}{ch}` but has no pairing terms therefore no longer needs empty `scdelta`/`sckappa` files. `-s` is still accepted and now does nothing.
 - Conda packaging and build coverage now include broader Linux, macOS, ARM, BLAS, and compiler configurations.
 
 ## Installation

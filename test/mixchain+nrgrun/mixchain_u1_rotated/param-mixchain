@@ -1,0 +1,12 @@
+# mixchain: the 2x2 spin-space hybridisation of this case. In the rotated route Gamma does not split, so this is
+# where the block Lanczos runs on a full 2x2 block rather than on two 1x1 ones.
+
+[param]
+Lambda=2.0
+z=1.0
+Nmax=20
+mMAX=40
+channels=2
+discretization_files=true
+
+# The recursion runs at the default precision here: the comparison is with ref/, not with another tool.

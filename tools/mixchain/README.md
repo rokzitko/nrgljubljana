@@ -1,0 +1,423 @@
+# `mixchain`
+
+`mixchain` maps a **matrix** hybridization function onto a Wilson chain with matrix coefficients. `adapt` and
+`nrgchain` treat a scalar hybridization function; `mixchain` treats the $N\times N$ Hermitian positive semidefinite
+case, in which the channels mix. Each eigenvalue branch of $\Gamma(\omega)$ is discretized logarithmically into a star
+Hamiltonian, and block Lanczos maps the star onto a chain. The method follows Liu et al. (2016).
+
+It works in two stages with a file between them: the star stage reads the components of $\Gamma$ and writes
+`star.dat`; the chain stage reads `star.dat` and writes `chain.dat`. The chain is written in its general matrix form,
+optionally also as one file per matrix element; renaming those into the coefficient sets of a particular symmetry
+type of `nrg` is left to whoever stages them, and `chain_gauge` provides the one representative that such a consumer
+cannot choose for itself.
+
+## Usage
+
+```text
+mixchain [options] [s|l] [parameter_file]
+```
+
+- `parameter_file` defaults to `param`.
+- `s` runs the star stage: it reads $\Gamma$ and writes `star.dat`.
+- `l` runs the chain stage: it reads `star.dat` and writes `chain.dat`.
+- With neither, both stages run in turn. The chain is built from `star.dat` in this case too, so the default mode and `s` followed by `l` give the same chain.
+- `--Nz N` runs for $z_i = i/N$, $i = 1,\ldots,N$, with the files for $z_i$ in the directory `i/`. A `z` in the parameter file is then ignored. The star stage does everything that does not depend on $z$ once and shares it between the values of $z$; `l` reads `i/star.dat` and writes `i/chain.dat`, and checks that each star was built for $z_i$.
+- `--epsabs VALUE`, `--epsrel VALUE`, `--workspace-limit N` and `--gsl-error-policy ignore|warn|fail` control the CQUAD integration of the representative energies, with the names, defaults and meaning they have for `adapt --integral`.
+- `-v` writes the resolved configuration to standard error.
+- `-vv` is accepted for uniformity with the other tools and currently reports the same as `-v`.
+- `-V` or `--version` prints the project version and exits immediately.
+- `-h` or `--help` prints the command synopsis.
+
+Options and positional arguments may be given in either order. Each stage prints its diagnostics and its wall-clock
+time to standard output, with the shared setup of the star stage and each value of $z$ timed separately. Input and
+output paths are relative to the working directory.
+
+```sh
+mixchain                 # star and chain
+mixchain s custom.param  # the star only
+mixchain -v l            # the chain from an existing star.dat
+mixchain --Nz 4          # stars and chains for z = 1/4, 1/2, 3/4, 1 in 1/ .. 4/
+```
+
+## Input
+
+One two-column file $(\omega, \text{value})$ per component of $\Gamma$, named `<dos_prefix>_ij-re.dat` and
+`<dos_prefix>_ij-im.dat` for $i,j = 1,\ldots,$ `channels`. Each file covers both negative and positive frequencies,
+as `Delta.dat` does for the scalar tools.
+
+- All `-re` files are required, including the diagonal.
+- The off-diagonal `-im` files are required either all or none. None means that $\Gamma$ is real, and the whole calculation then runs in real arithmetic. A diagonal `-im` file is optional and must vanish.
+- Every file must be tabulated on one and the same frequency grid; the input is never reinterpolated.
+- $\Gamma_{ji}$ is checked against $\Gamma_{ij}^*$ relative to the largest element of $\Gamma$, with tolerance `hermiticity_tolerance`, and $\Gamma$ is then symmetrized to $(\Gamma+\Gamma^\dagger)/2$. Positive semidefiniteness is checked at every node.
+
+**Normalization.** `mixchain` fixes none: it discretizes the $\Gamma$ it is given. An overall factor leaves every
+$E_n$ and $T_n$ unchanged and scales only the hybridization weight
+
+$$
+\Theta = \int\Gamma\,d\omega, \qquad V = \Theta^{1/2},
+$$
+
+so $V$ comes out in the normalization of the input and the convention is a question of what the consumer of the
+chain expects. With
+
+$$
+\Delta(z) = \sum_k \frac{V_k V_k^\dagger}{z-\epsilon_k}, \qquad
+\rho(\omega) = -\frac{1}{2\pi i}\left[\Delta(\omega+i0^+) - \Delta(\omega+i0^+)^\dagger\right]
+= \sum_k V_k V_k^\dagger\,\delta(\omega-\epsilon_k),
+$$
+
+feeding $\pi\rho$, which for $N=1$ is $-{\rm Im}\,\Delta(\omega+i0^+)$, is the convention of the `dos` file of
+`adapt` and `nrgchain`: then $\Theta = \pi\sum_k V_kV_k^\dagger$ and the physical coupling is $V/\sqrt{\pi}$, the
+factor `nrginit` applies as ${\rm hybV} = \sqrt{1/\pi}\,V$. Feeding $\rho$ itself makes $V$ the physical coupling
+directly.
+
+**Band.** `bandrescale` maps the band edge to 1: $\omega\to\omega/$`bandrescale` and $\Gamma\to\Gamma\cdot$`bandrescale`,
+which leaves $\int\Gamma\,d\omega$ unchanged. The discretization runs in the rescaled band, and so do the level
+energies of `star.dat`, which belong to its mesh. `chain.dat` is written in the units of the input instead: $E_n$ and
+$T_n$ carry the factor `bandrescale` back, as `nrgchain` applies it to `xi.dat` and `zeta.dat`, and as `nrg` expects,
+since its ${\rm SCALE}(N)$ carries `bandrescale` too. $\Theta$ and $V$ need no factor, since the rescaling leaves
+$\int\Gamma\,d\omega$ alone. Both files record `bandrescale` in their header.
+
+The mesh reaches only $|\omega|\le1$, so weight tabulated beyond the band edge is discarded, and where the input
+stops short of the edge the density is continued at its last tabulated value. Both are reported per diagonal element
+when they occur.
+
+## Parameters
+
+Read from the `[param]` block of the parameter file, with the names of `adapt` and `nrgchain` wherever the quantity
+is the same.
+
+| Parameter | Default | Stage | Meaning |
+| --- | --- | --- | --- |
+| `channels` | `1` | star | Dimension $N$ of $\Gamma$. |
+| `dos_prefix` | `Gamma` | star | Prefix of the input files. |
+| `Lambda` | `2` | star | Discretization parameter $\Lambda$. |
+| `z` | `1` | star | Twist parameter. |
+| `mMAX` | `2*Nmax` | star | Largest interval index; the star has `2*channels*(mMAX+1)` levels. |
+| `bandrescale` | `1` | star | Band rescaling. |
+| `adapt` | `false` | star | Adaptive mesh, see below. |
+| `mesh_weight` | `frobenius` | star | Weight function of the adaptive mesh: `frobenius` or `trace`. |
+| `hardgap`, `boundary` | `false`, `0` | star | Accumulation point of the mesh, as a fraction of the rescaled band edge. |
+| `density_interpolation` | `linear` | star | `linear` or `steffen`, as for `adapt` and `nrgchain`. |
+| `branch_ordering` | `tracked` | star | `tracked` or `sorted`. |
+| `split_blocks` | `true` | star | Discretize the blocks of $\Gamma$ independently, each on a mesh of its own. |
+| `allowed_error` | `1e-10` | star | Default relative tolerance of the integral method. |
+| `hermiticity_tolerance` | `1e-8` | star | Allowed deviation of the input from a Hermitian matrix. |
+| `Nmax` | required | chain | Last site of the chain, which has the sites `0..Nmax` and the hoppings `T_0..T_Nmax`. |
+| `preccpp` | `664` | chain | Precision of the chain stage in bits, as for `nrgchain`; rounded up to the ladder below. |
+| `discretization_files` | `false` | chain | Also write the chain as one file per matrix element, beside `chain.dat`. |
+| `chain_gauge` | `polar` | chain | `polar` or `nambu`; see Gauge below. |
+| `nambu_tolerance` | `1e-8` | chain | How far a block may depart from the Nambu structure before `chain_gauge=nambu` refuses it. |
+| `rank_tolerance` | `1e-20` | chain | Eigenvalue of a Gram matrix, relative to its largest, below which it counts as zero. |
+
+`boundary` is a fraction of the rescaled band edge, as in `adapt`: a gap $\Delta$ in the units of the input with
+`bandrescale`$=D$ is `boundary`$=\Delta/D$. The `-v` report prints both values.
+
+The chain stage takes $\Lambda$, $z$ and `bandrescale` from `star.dat`. If the parameter file sets $\Lambda$ or
+`bandrescale` to a different value, the stage stops rather than choose between the two. The same holds for $z$: with
+`--Nz` it must be $i/N$ for the star in `i/`, and otherwise it must match a `z` given in the parameter file.
+
+## Star stage
+
+### Blocks
+
+Channels $i$ and $j$ belong to the same block if $\Gamma_{ij}$ is nonzero at some tabulated frequency, or if a chain
+of such elements connects them. Only exact zeros separate blocks: a small but nonzero element is part of the input.
+With `split_blocks=true`, each block is discretized as an independent problem, with its own branches, its own mesh
+(adaptive per block with `adapt=true`) and its own cumulative weights. A block of a single channel is then exactly the
+scalar problem, and a diagonal $\Gamma$ gives for every channel the star it would give alone. The chain stage maps
+each block onto a chain of its own and assembles the blocks, with exact zeros between channels of different blocks;
+`rank_tolerance` compares eigenvalues only within a block. With `split_blocks=false` the whole matrix is
+discretized, and with `adapt=true` all channels share one mesh.
+
+With `adapt=true`, a frequency branch on which the $\Gamma$ of a block vanishes has no weight to build the adaptive
+mesh from, for instance a channel that does not hybridize. That branch uses the fixed mesh, which is reported; its
+levels have zero coupling, so the choice does not affect the chain.
+
+### Mesh
+
+The interval of index $m = 0,\ldots,$`mMAX` is $[\epsilon(z+m+2),\,\epsilon(z+m+1)]$, where
+
+$$
+\epsilon(x) = \Lambda^{2-x} \quad\text{for } \texttt{adapt=false}, \qquad
+\epsilon(x) = W_{\rm mesh}^{-1}\!\left(\Lambda^{2-x}\right) \quad\text{for } \texttt{adapt=true},
+$$
+
+for $x>2$, and $\epsilon(x)=1$ otherwise. $W_{\rm mesh}$ is the cumulative of a scalar weight function of $\Gamma$,
+normalized to its value at $\omega=1$: $\lVert\Gamma(\omega)\rVert_F$ for `mesh_weight=frobenius`, or
+${\rm tr}\,\Gamma(\omega)$ for `mesh_weight=trace`. Both forms are followed by the `hardgap` rescaling
+$\epsilon\to(1-b)\,\epsilon+b$, with $b$ = `boundary`.
+
+The adaptive mesh gives every interval the same share of the cumulative weight. Where the weight function vanishes
+identically below some frequency, as it does inside a gap, $W_{\rm mesh}$ is flat there and the mesh accumulates at
+the edge of that region without `hardgap`.
+
+### Branches
+
+$\Gamma$ is diagonalized at the input nodes, $\Gamma(\omega) = \sum_a \rho_a(\omega)\,u_a(\omega)\,u_a(\omega)^\dagger$.
+With `branch_ordering=tracked`, the eigenvectors at neighbouring nodes are matched by overlap going outward from
+$\omega=0$, so that a branch keeps its identity where two eigenvalues cross, and degenerate subspaces are rotated to
+match the previous node. With `branch_ordering=sorted`, the branches are labelled by descending eigenvalue at every
+node, which exposes the crossing artefact: across a crossing the weight of one channel is attached to the eigenvector
+of another.
+
+### Star levels
+
+Each branch $\rho_a$ is treated as a scalar density: its interval weight $w_a$ is the integral of the interpolant, and
+its representative energy is given by the integral method of `adapt`,
+
+$$
+E_a(x) = W_a^{-1}\!\left[\int_x^{x+1} W_a(\epsilon(x'))\,dx'\right],
+$$
+
+with $W_a$ the normalized cumulative of $\rho_a$. The eigenvector $u_a$ at $E_a$ comes from $\Gamma$ interpolated
+element by element and diagonalized there. Each interval, branch and frequency branch then gives one bath level with
+energy $\pm E_a$ and coupling vector $v = \sqrt{w_a}\,u_a$, in the normalization of the input:
+
+$$
+H = \sum_k E_k\,c_k^\dagger c_k + \sum_k\sum_i \left(v_{k,i}\,d_i^\dagger c_k + {\rm h.c.}\right).
+$$
+
+A branch without weight in some interval gives a level with vanishing coupling, which is kept.
+
+## Chain stage
+
+Block Lanczos maps the star onto
+
+$$
+H = \sum_{ij}\left(V_{ij}\,d_i^\dagger f_{0j} + {\rm h.c.}\right)
++ \sum_n\sum_{ij}(E_n)_{ij}\,f_{ni}^\dagger f_{nj}
++ \sum_n\sum_{ij}\left((T_n)_{ij}\,f_{n+1,i}^\dagger f_{nj} + {\rm h.c.}\right),
+$$
+
+with $N\times N$ blocks, in the polar gauge: $V$ and every $T_n$ Hermitian positive semidefinite, the matrix
+analogue of choosing $\xi_n>0$, and no preferred basis, so that a rotation of the channels rotates every block in the
+same way. Writing $H_{\rm bath}$ for the diagonal of the star energies and $A$ for the matrix with
+$A_{ki} = v_{k,i}^*$, so that $A^\dagger A = \Theta$,
+
+$$
+V = \Theta^{1/2}, \qquad Q_0 = A\,\Theta^{-1/2},
+$$
+
+$$
+E_n = Q_n^\dagger H_{\rm bath} Q_n, \qquad
+R = H_{\rm bath}Q_n - Q_nE_n - Q_{n-1}T_{n-1}^\dagger, \qquad
+T_n = (R^\dagger R)^{1/2}, \qquad Q_{n+1} = R\,(R^\dagger R)^{-1/2}.
+$$
+
+The residual is reorthogonalized against every earlier block.
+
+**Gauge.** Lanczos fixes each site only up to a unitary rotation $U_n$ of its $N$ orbitals; $V\to VU_0^\dagger$,
+$E_n\to U_n^\dagger E_nU_n$ and $T_n\to U_{n+1}^\dagger T_nU_n$ describe the same bath. `chain_gauge` chooses the
+representative.
+
+`polar`, the default, is the one above: $V$ and every $T_n$ Hermitian positive semidefinite. Every element is written
+of the matrix is written. The files need to be properly renamed for futher use with NRG Ljubljana.
+
+`nambu` is for blocks of two channels read as particle and hole. A superconducting chain is stored in NRG Ljubljana
+as four numbers per site, $\xi = T(1,1)$, $\kappa = T(1,2)$, $\zeta = E(1,1)$ and $\Delta = E(1,2)$, and the rest is reconstructed
+from the Nambu structure $E(2,2) = -E(1,1)$, $T(2,2) = -T(1,1)^*$. The polar gauge does not have it: making $T_n$
+positive semidefinite absorbs the sign of the hole component into the Lanczos block, which turns a constant gap into
+one that alternates along the chain. Flipping the hole component at the even sites,
+$U_n = {\rm diag}(1,(-1)^{n+1})$, restores it.
+
+$U_0$ is deliberately not the identity. Only the chain orbitals are free; the impurity index of $V$ is physical, and
+in Nambu space a normal hybridization $v$ enters as $V = {\rm diag}(v,-v^*)$, since the hole row is written with the
+creation operator. The polar gauge gives $V = \Theta^{1/2}$, positive in both slots, which reproduces $\Theta$ but
+has the hole coupling of the wrong sign; $U_0 = {\rm diag}(1,-1)$ fixes it, and the relative signs along the chain,
+where the structure of $E_n$ and $T_n$ lives, are unaffected. The overall sign of the pair $(V,\Delta)$ is then fixed
+by this convention rather than left free.
+
+$V(2,2) = -V(1,1)^*$ and the two relations above are checked against `nambu_tolerance`, the worst deviation is
+reported, and a chain that is not of this form is refused. The gauge is recorded in the header of `chain.dat`.
+
+**Precision.** The late coefficients fall off as $\Lambda^{-n/2}$, below the resolution of double precision, so the
+recursion runs in multiprecision arithmetic. The scalar type carries its digit count as a template parameter, so the
+precision is fixed at compile time, and the stage is instantiated on a ladder of 50, 200 and 800 decimal digits:
+`preccpp` bits select the smallest rung that covers them, and the `-v` report shows the result. Requests beyond 800
+digits are rejected. The result is written with 18 significant digits, as `nrgchain` writes `xi.dat`.
+
+The default of 664 bits is the 200-digit rung. What the rung has to cover is the cancellation in the recursion, which
+costs about $N_{\rm max}\log_{10}\Lambda$ digits, on top of the 16 the star brings from double precision, so 200
+digits is far beyond any chain in use: measured on a superconducting bath at $\Lambda=2$, `Nmax=60`, and on a DMFT
+hybridization at $\Lambda=2.5$, `Nmax=33`, even the 50-digit rung reproduces all 18 written digits of every
+coefficient, while 800 digits costs a factor of twenty in the chain stage.
+
+**Rank deficiency.** The inverses above are pseudo-inverses: an eigenvalue of $\Theta$ or of $R^\dagger R$ below
+`rank_tolerance` times the largest is set to zero, and so is a residual that is rounding altogether. When $\Gamma$ is
+rank deficient over the whole band, some combinations of the impurity orbitals do not couple to the bath; the stage
+reports the rank of $\Theta$, and the part of the chain along those combinations is zero, which is exact. When the
+rank of $T_n$ drops part-way down the chain, the Krylov space of the star is exhausted in some direction, for
+instance because too few levels carry weight; the chain is again zero in that direction from there on, but this is
+an artifact of the star, and a warning names the site. Both are recorded in the header of `chain.dat`. The star must
+have at least `channels*(Nmax+1)` levels.
+
+## Outputs
+
+Both files are written to the working directory, or to `i/` for $z_i$ with `--Nz`.
+
+### `star.dat`
+
+One row per bath level. Lines beginning with `#` are comments; the one carrying `channels=` is the header, read back
+by the chain stage as whitespace-separated `key=value` pairs.
+
+| Header key | Meaning |
+| --- | --- |
+| `channels` | Dimension $N$, and the number of components of every coupling vector. |
+| `mMAX` | Largest interval index; the file holds `2*channels*(mMAX+1)` rows. |
+| `z`, `Lambda` | The discretization. |
+| `bandrescale` | The rescaling applied to $\Gamma$; energies are in the rescaled band. |
+| `complex` | `1` if the couplings are complex, `0` if real. It fixes the number of columns. |
+| `untabulated` | Optional: `from,to`, the part of the band the mesh reaches where the input is not tabulated, $\mathrm{from} < \|\omega\| < \mathrm{to}$ in the rescaled band: between the accumulation point of the mesh and the innermost tabulated frequency, the widest over the frequency branches and blocks. `none` when the mesh reaches no such part, as when it accumulates at a gap edge. There the star follows the constant continuation of the input; the chain stage uses it to report from which site the chain samples it. |
+
+| Column | Meaning |
+| --- | --- |
+| `m` | Interval index; a larger `m` lies closer to the Fermi level. |
+| `sign` | `+` for the positive, `-` for the negative frequency branch. |
+| `a` | Eigenvalue branch of $\Gamma$, `0..channels-1`. |
+| `E` | Representative energy, with the sign of its frequency branch. |
+| `v1 ... vN` | Coupling vector in the channel basis; for `complex=1` each component is a pair `Re_vi Im_vi`. |
+
+`a` is a label from the branch tracking, not a channel: a branch is an eigenvector direction of $\Gamma$, which in
+general points across several channels and rotates with $\omega$. With several blocks, the branches of the first
+block are numbered first, then those of the next. `m` and `sign` are not used by the chain stage, and `a` only to
+assign each level to its block; they are written so that the file can be read and checked. The star diagnostics are
+written as comments and are not read back; with several blocks each diagnostic line starts with its block, as in
+`# block {1,3}: max_cquad_error=...`.
+
+When $\Gamma$ was split into more than one block, the header is followed by the line `# blocks= {1,3} {2}`, with the
+channels numbered from 1. Without it the star is a single block. On loading, every level must couple only to the
+channels of the block its branch belongs to.
+
+### `chain.dat`
+
+One row per matrix element. The second line is the header. With several blocks it is followed by the same
+`# blocks=` line as in `star.dat`; the next line holds the diagnostics of the recursion over the whole chain.
+
+| Header key | Meaning |
+| --- | --- |
+| `channels` | Dimension of every block. |
+| `Nmax` | Last site. |
+| `z`, `Lambda`, `bandrescale` | As in `star.dat`; $E_n$ and $T_n$ are written multiplied by `bandrescale`. |
+| `complex` | `1` if the coefficients are complex, `0` if real. |
+| `digits` | Decimal digits of the arithmetic the recursion ran in. |
+
+| Column | Meaning |
+| --- | --- |
+| `block` | `V`, `E` or `T`. |
+| `n` | Site: `0` for `V`, `0..Nmax` for `E` and for `T`. |
+| `i`, `j` | Matrix indices, `1..channels`, as in `Gamma_ij`. |
+| `value` | The element; for `complex=1` a pair `Re Im`. |
+
+$V_{ij}$ multiplies $d_i^\dagger f_{0j}$, $(E_n)_{ij}$ multiplies $f_{ni}^\dagger f_{nj}$, and $(T_n)_{ij}$
+multiplies $f_{n+1,i}^\dagger f_{nj}$. $E_n$ and $T_n$ are in the units of the input, carrying the factor
+`bandrescale` back as the Band paragraph above describes. $V$ is in the normalization of the input,
+$V^2 = \Theta = \int\Gamma\,d\omega$; with the $\pi\rho$ convention of `adapt` the physical coupling is
+$V/\sqrt{\pi}$.
+
+### `V11.dat`, `E11.dat`, `T11.dat`, …
+
+With `discretization_files`, the same chain is written once more as one file per matrix element, in the directory of
+`chain.dat`. `V`$ij$`.dat` holds one row, `E`$ij$`.dat` and `T`$ij$`.dat` the sites $0\ldots$`Nmax`, one row per site. The rows are plain numbers with no header: a single column for a real chain,
+and the pair `Re Im` for a complex one, as `complex` in the header of `chain.dat` says. The values are those of
+`chain.dat`, in the units of the input. All $N^2$ files of each block are written, including elements that are
+exactly zero between blocks, so the set is always complete.
+
+This is the form the coefficient readers of `nrg` take. Which element belongs to which coefficient set of a given
+symmetry type is up to whatever stages them.
+
+## Log
+
+Standard output carries the progress and the diagnostics, as `#` lines in the order below; warnings and errors go to
+standard error. With several blocks, a star diagnostic that belongs to one block starts with it, as in
+`# block {1,3}: max_cquad_error=...`. With `--Nz`, the lines of each $z$ follow a heading `# --- z=0.25 in 1/`.
+
+### Configuration (`-v`, standard error)
+
+`mixchain: configuration` is followed by every parameter as it is used. A derived value is shown as
+`auto -> value (reason)`: `mMAX` from `Nmax`, `digits` from `preccpp`, and `z` from `--Nz`. `boundary_in_input_units`
+is `boundary` times `bandrescale`, and `mesh_weight` is `inactive` without `adapt`.
+
+### Input
+
+| Line | Meaning |
+| --- | --- |
+| `# Gamma: channels= complex= nodes= interval [ a : b ]` | The input as read, after `bandrescale`. `complex=1` if the off-diagonal imaginary parts are tabulated. |
+| `# Gamma_ii: X of Y (p%) of the weight lies beyond the band edge and is discarded` | Weight of a diagonal element at $\lvert\omega\rvert>1$, which no mesh reaches. |
+| `# Gamma_ii: X of Y (p%) of the weight is added by extrapolation to the band edge` | Weight added where the input stops short of $\lvert\omega\rvert=1$ and is continued at its last value. |
+| `# Gamma - POS - n nodes - interval [ lo : hi ]` | One frequency branch, in $\lvert\omega\rvert$, including the node added at $\omega=10^{-99}$. |
+| `# star setup: t s` | Wall time of everything that does not depend on $z$: branches, meshes, cumulative weights. |
+| `# blocks: {1,3} {2}` | The blocks found; `none (Gamma does not split)` if there is one. Absent with `split_blocks=false`. |
+
+### Star, for each $z$
+
+| Line | Meaning |
+| --- | --- |
+| `# levels= complex=` | Number of bath levels, `2*channels*(mMAX+1)`. |
+| `# max_interval_deviation= at omega=` | Largest $\lVert\sum_a w_a u_a u_a^\dagger - \int\Gamma\rVert / \lVert\int\Gamma\rVert$ over the intervals, and the upper edge of that interval. Near rounding when the branches are labelled right; large for a mislabelled branch or eigenvectors that rotate too fast for the interval. |
+| `# max_cquad_error=` | Largest CQUAD error estimate of the integral method. |
+| `# crossings: p positive, n negative` | Nodes where the tracked branches change their order by eigenvalue, per frequency branch. |
+| `# POS: Gamma vanishes on this branch; fixed mesh used` | With `adapt=true`, a branch without weight to build the adaptive mesh from. Its levels have zero coupling. |
+| `# POS: k representative energy levels are indistinguishable from the accumulation point b in double precision` | Levels in intervals whose bounds are the same double, near an accumulation point away from zero. They carry no weight, which truncates the star there. |
+| `# POS: k of M intervals contain no tabulated point of the input, carrying f of the weight of this branch, the outermost being [lo, hi]; ...` | Intervals where the star follows the interpolant rather than data, and the share $f$ of the branch's weight that sits in them, which is what says whether the count matters: a mesh reaching far below the input has many such intervals and almost no weight in them. The ending says whether the input ends above them (constant continuation) or is merely coarser than the mesh. |
+| `# tr(theta)= tr(int Gamma)= difference=` | Trace of $\Theta=\sum_k v_k v_k^\dagger$ against the integral of $\Gamma$ over the range the mesh covers; equal by construction. |
+| `# ||theta - int Gamma||/||int Gamma||=` | The same for the whole matrix. The off-diagonal elements agree only approximately, since one level per interval and branch cannot follow a rotating eigenvector. |
+| `# star written to`, `# star z=: t s`, `# star stage: t s` | The file, the wall time of this $z$, and of the whole stage. |
+
+### Chain, for each $z$
+
+| Line | Meaning |
+| --- | --- |
+| `# chain: sites= channels= digits= gauge=` | Chain length `Nmax+1`, block dimension, decimal digits of the arithmetic, and the gauge the chain is written in. |
+| `# the Nambu structure of the blocks holds to d of their largest element` | With `chain_gauge=nambu`, how far the chain departs from $E(2,2)=-E(1,1)$ and $T(2,2)=-T(1,1)^*$. |
+| `# blocks: {1,3} {2}` | The blocks of the star, each mapped onto its own chain. Only with several blocks. |
+| `# levels= coupled_levels=` | Levels of the star, and those with nonzero coupling. Only the latter enter the chain: a block of size $s$ spans at most `coupled_levels/s` full sites. |
+| `theta_rank=` | Rank of $\Theta$: the number of combinations of the impurity orbitals that couple to the bath. |
+| `theta_condition=` | Smallest nonzero eigenvalue of $\Theta$ over its largest, the smallest over the blocks. |
+| `min_residual_condition=` | Smallest ratio of the nonzero eigenvalues of $R^\dagger R$ along the chain: how close a direction came to being counted as zero by `rank_tolerance`. |
+| `# max_antihermitian=` | Largest anti-Hermitian part removed from an on-site block $E_n$, relative to it: rounding at the working precision. |
+| `max_reorthogonalization=` | Largest component along earlier Lanczos blocks removed from a residual, relative to it: the loss of orthogonality that full reorthogonalization repairs. |
+| `# from site n on, the chain samples \|omega\| < w, where Gamma is not tabulated (...)` | From that site on the coefficients rest on the constant continuation of the input rather than on data; extend the input grid to lower $\|\omega\|$, or lower `Nmax`. The region comes from the star (`untabulated` in its header) and is printed in the units of the input, as `a < \|omega\| < w` when the mesh accumulates at $a>0$. The site is the first whose hopping falls below the width of the region, so a mesh accumulating at or above the innermost tabulated frequency, at a gap edge, never reports it. |
+| `# Theta has rank r of N: ...` | $\Gamma$ is rank deficient over the whole band. The chain along the decoupled combinations is zero, which is exact. |
+| `# matrix files written to d` | With `discretization_files`, the directory the per-element files went to. |
+| `# chain written to`, `# chain z=: t s`, `# chain stage: t s` | The file, the wall time of this $z$, and of the whole stage. |
+
+`chain.dat` records the same quantities, plus `min_rank`, the smallest rank of a hopping, `rank_drop_site`, the first
+site where it falls below `theta_rank`, and `continued_from_site`, the first site that samples the untabulated
+region of the input (both `none` when they do not happen). With several blocks they are merged over the blocks: ranks and levels
+add up site by site, and the ratios of eigenvalues are taken within each block.
+
+`# Elapsed t s (CPU c s)` closes the log: the wall time, which the stage times add up to, and the CPU time.
+
+### Warnings and errors (standard error)
+
+| Line | Meaning |
+| --- | --- |
+| `mixchain: warning: the rank of the hopping drops below r at site n ..., in block {..}` | The levels with nonzero coupling of that block run out before the chain ends, and the chain is zero in the lost direction from site `n+1` on. The others lie where $\Gamma$ vanishes on the mesh (a gap that a fixed or shared mesh does not follow) or collapsed onto an accumulation point, so more `mMAX` does not help; a mesh that follows the block (`adapt=true`, `split_blocks=true`) or a smaller `Nmax` does. |
+| `mixchain: warning: Integral method failed at x=...` | A CQUAD failure, reported instead of stopping with `--gsl-error-policy warn`. |
+| `mixchain: error: ...` | The run stops with a nonzero exit status; files of the stages completed before it remain. |
+
+## Flat-band benchmark
+
+For a flat band at $z=1$ the star has $E_m = c\,\Lambda^{-m}$ with $c = (1-\Lambda^{-1})/\ln\Lambda$ and weights
+$w_m\propto\Lambda^{-m}(1-\Lambda^{-1})$. Wilson's discretization has the same weights and $c_W = (1+\Lambda^{-1})/2$,
+so the chain is Wilson's closed form divided by the Campo–Oliveira factor $A_\Lambda = c_W/c$:
+
+$$
+\xi_n = \frac{1-\Lambda^{-1}}{\ln\Lambda}\,
+\frac{(1-\Lambda^{-n-1})\,\Lambda^{-n/2}}{\sqrt{(1-\Lambda^{-2n-1})(1-\Lambda^{-2n-3})}},
+\qquad \zeta_n = 0.
+$$
+
+For $\Lambda=2$, `mMAX=80` and $n<20$, `mixchain` reproduces $\xi_n$ to machine precision; $\Gamma=\rho\,\mathbb{1}$
+gives $T_n=\xi_n\mathbb{1}$. With the usual `mMAX=2*Nmax`, the truncation of the star shows at the end of the chain:
+for `Nmax=20` the deviation starts at $2\times10^{-13}$ and doubles every two sites, reaching $1.7\times10^{-10}$ at
+the last site. The unit tests are in `test/unit/mixchain`.
+
+## References
+
+- J.-G. Liu et al., *Physical Review B* **93**, 035102 (2016).
+- K. G. Wilson, "The renormalization group: Critical phenomena and the Kondo problem", *Reviews of Modern Physics* **47**, 773 (1975).
+- V. L. Campo and L. N. Oliveira, "Alternative discretization in the numerical renormalization-group method", *Physical Review B* **72**, 104432 (2005).
+- Rok Zitko, "Adaptive logarithmic discretization for numerical renormalization group methods", *Computer Physics Communications* **180**, 1271-1276 (2009).
+- Rok Zitko and Thomas Pruschke, "Energy resolution and discretization artefacts in the numerical renormalization group", *Physical Review B* **79**, 085106 (2009).

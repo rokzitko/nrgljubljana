@@ -1,0 +1,12 @@
+# mixchain: the 2x2 spin-space hybridisation of this case. Channel 1 is up and channel 2 is down, the order the
+# staging step assumes. Lambda, z and Nmax are those of 'param'.
+
+[param]
+Lambda=2.0
+z=1.0
+Nmax=20
+mMAX=40
+channels=2
+discretization_files=true
+
+# The recursion runs at the default precision here: the comparison is with ref/, not with another tool.

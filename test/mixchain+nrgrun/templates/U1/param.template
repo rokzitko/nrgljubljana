@@ -1,0 +1,16 @@
+# Rename param.template to param, then run "nrginit".
+
+[extra]
+U1=
+eps1=
+Bz1=
+Bx1=
+
+[param]
+options=GENERATE_TEMPLATE GENERATE_TEMPLATE_ALL
+symtype=U1
+pol2x2=true
+model=SIAM.m
+ops=n_d n_d^2 n_d_u n_d_d n_d_ud hop0 SZd SXd A_d_u A_d_d self_d_u self_d_d SigmaHartree-uu SigmaHartree-dd SigmaHartree-ud SigmaHartree-du
+
+data_has_rescaled_energies=false

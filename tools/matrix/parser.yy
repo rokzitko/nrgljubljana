@@ -217,7 +217,7 @@ void usage()
             << "  -vv            also show detailed parser diagnostics\n"
             << "  -V, --version  show project version\n"
             << "  -c channels    use numbered coefficient files for this many channels\n"
-            << "  -s             use superconducting/Nambu coefficient files\n"
+            << "  -s             accepted for compatibility; every coefficient file that exists is now read\n"
             << "  -p | -P        omit or add '= ' to output lines" << std::endl;
 }
 
@@ -240,7 +240,7 @@ void parse_param(int argc, char *argv[])
        numberedch = true;
        break;
 	
-    case 's': // superconducting case with Nambu structure 
+    case 's': // accepted for compatibility: the tables are now loaded by what is on disk, not by this switch
       sc = true;
       break;
   
@@ -265,13 +265,33 @@ vector<vector<double>> delta;
 vector<vector<double>> kappa;
 vector<vector<vector<double>>> V;
 
-void load_vector(string filename, vector<double> &v)
+// Which optional tables were found, per channel. xi and zeta are not here: every consumer reads them, so a missing
+// one is an error while loading. The rest are required only where an expression uses them, which is what lets a
+// template that has no pairing terms run without scdelta and sckappa, and one that reads coefV run without theta.
+vector<char> has_theta;
+vector<char> has_delta;
+vector<char> has_kappa;
+vector<char> has_V;
+
+string coeffile(const string &name, int ch)
 {
-  ifstream F(filename);
-  if (!F) {
-    cerr << "Can't open " << filename << " for reading." << endl;
+  return name + (numberedch ? to_string(ch) : "") + ".dat";
+}
+
+// The table an expression asks for must have been loaded. Called from the accessors rather than from the loader, so
+// that the message names both the file and the symbol that wanted it.
+void require_table(bool loaded, const string &filename, const char *symbol)
+{
+  if (!loaded) {
+    cerr << "matrix: " << filename << " is needed by " << symbol << " but was not found." << endl;
     exit(1);
   }
+}
+
+bool load_vector(string filename, vector<double> &v)
+{
+  ifstream F(filename);
+  if (!F) return false;
   while (F.good()) {
     double x;
     F >> x;
@@ -283,66 +303,67 @@ void load_vector(string filename, vector<double> &v)
     }
   }
   F.close();
+  return true;
 }
 
+bool load_scalar(string filename, double &value)
+{
+  ifstream F(filename);
+  if (!F) return false;
+  F >> value;
+  if (F.fail()) {
+    cerr << "Can't read a number from " << filename << "." << endl;
+    exit(1);
+  }
+  F.close();
+  if (verbose) {
+    cerr << filename << " " << value << endl;
+  }
+  return true;
+}
+
+void load_required_vector(string filename, vector<double> &v)
+{
+  if (!load_vector(filename, v)) {
+    cerr << "Can't open " << filename << " for reading." << endl;
+    exit(1);
+  }
+}
+
+// Every coefficient table of every channel, whichever of them exist. Which ones a run needs depends on the
+// expressions it evaluates, not on a command line switch: a template with no Z block reads coefV and no pairing
+// tables, while a superconducting one reads scdelta and sckappa as well.
 void load_discretization()
 {
   for (int ch = 1; ch <= nrchannels ; ch++) {
     if (verbose)
       cerr << "Channel " << ch << endl;
-    string suffix = (numberedch ? to_string(ch) : "") + ".dat";
-    string fntheta = "theta" + suffix;
-    ifstream THETA(fntheta);
-    if (!THETA) {
-      cerr << "Can't open " << fntheta << endl;
-      exit(1);
-    }
-    THETA >> theta[ch-1];
-    THETA.close();
-    if (verbose) {
-      cerr << "theta[" << ch << "]=" << theta[ch-1] << endl;
-    }
-    assert(theta[ch-1] >= 0);
-  
-    string fnxi = "xi" + suffix;
-    load_vector(fnxi, xi[ch-1]);
-    string fnzeta = "zeta" + suffix;
-    load_vector(fnzeta, zeta[ch-1]);
-  }
-}
+    const string suffix = (numberedch ? to_string(ch) : "") + ".dat";
 
-void load_discretization_sc()
-{
-  for (int ch = 1; ch <= nrchannels ; ch++) {
-    if (verbose)
-      cerr << "Channel " << ch << endl;
-    string suffix = (numberedch ? to_string(ch) : "") + ".dat";
+    load_required_vector("xi" + suffix, xi[ch-1]);
+    load_required_vector("zeta" + suffix, zeta[ch-1]);
+
+    has_theta[ch-1] = load_scalar("theta" + suffix, theta[ch-1]);
+    if (has_theta[ch-1]) assert(theta[ch-1] >= 0);
+
+    has_delta[ch-1] = load_vector("scdelta" + suffix, delta[ch-1]);
+    has_kappa[ch-1] = load_vector("sckappa" + suffix, kappa[ch-1]);
+
+    // The Nambu structure is all four elements or none of them: a partial set is a staging mistake rather than a
+    // run that does not need V.
     V[ch-1].resize(2);
+    int found = 0;
     for (int i = 1; i <= 2; i++) {
       V[ch-1][i-1].resize(2);
-      for (int j = 1; j <= 2; j++) {
-        string fnV = "V" + to_string(i) + to_string(j) + suffix;
-        ifstream FV(fnV);
-        if (!FV) {
-          cerr << "Can't open " << fnV << endl;
-          exit(1);
-        }
-        FV >> V[ch-1][i-1][j-1];
-        FV.close();
-        if (verbose) {
-          cerr << "V[" << ch << "](" << i << ", " << j << ")=" << V[ch-1][i-1][j-1] << endl;
-        }
-      }
-    }  
-  
-    string fnxi = "xi" + suffix;
-    load_vector(fnxi, xi[ch-1]);
-    string fnzeta = "zeta" + suffix;
-    load_vector(fnzeta, zeta[ch-1]);
-    string fndelta = "scdelta" + suffix;
-    load_vector(fndelta, delta[ch-1]);
-    string fnkappa = "sckappa" + suffix;
-    load_vector(fnkappa, kappa[ch-1]);
+      for (int j = 1; j <= 2; j++)
+        if (load_scalar("V" + to_string(i) + to_string(j) + suffix, V[ch-1][i-1][j-1])) found++;
+    }
+    if (found != 0 && found != 4) {
+      cerr << "matrix: channel " << ch << " has " << found << " of the four V{i}{j}" << suffix
+           << " files; write all of them or none." << endl;
+      exit(1);
+    }
+    has_V[ch-1] = (found == 4);
   }
 }
 
@@ -387,7 +408,8 @@ void report_configuration()
   if (!verbose) return;
   NRG::Tools::ConfigurationReport report("matrix");
   report.value("verbosity", veryverbose ? 2 : 1);
-  report.value("mode", sc ? "superconducting" : "normal");
+  // -s no longer selects which tables are read; it is reported only so that a caller passing it sees that it was seen.
+  report.value("superconducting_switch", sc);
   report.value("channels", nrchannels);
   report.value("numbered_coefficient_files", numberedch);
   report.value("output.prefix", prefix.empty() ? "none" : "equals");
@@ -409,21 +431,25 @@ void report_configuration()
     report.value(base + "zeta.file", "zeta" + suffix);
     report.value(base + "zeta.count", zeta[ch - 1].size());
     if (!zeta[ch - 1].empty()) report.resolved(base + "zeta.max_index", zeta[ch - 1].size() - 1, "loaded coefficient file");
-    if (!sc) {
-      report.value(base + "theta.file", "theta" + suffix);
+    // Each optional table is reported as it was found, so the report says what this run has to work with.
+    report.value(base + "theta.file", "theta" + suffix);
+    if (has_theta[ch - 1])
       report.value(base + "theta", theta[ch - 1]);
-    } else {
-      report.value(base + "delta.file", "scdelta" + suffix);
-      report.value(base + "delta.count", delta[ch - 1].size());
-      report.value(base + "kappa.file", "sckappa" + suffix);
-      report.value(base + "kappa.count", kappa[ch - 1].size());
-      for (int i = 1; i <= 2; ++i)
-        for (int j = 1; j <= 2; ++j) {
-          const auto name = base + "V" + to_string(i) + to_string(j);
-          report.value(name + ".file", "V" + to_string(i) + to_string(j) + suffix);
+    else
+      report.value(base + "theta", "not found");
+    report.value(base + "delta.file", "scdelta" + suffix);
+    report.value(base + "delta.count", has_delta[ch - 1] ? to_string(delta[ch - 1].size()) : "not found");
+    report.value(base + "kappa.file", "sckappa" + suffix);
+    report.value(base + "kappa.count", has_kappa[ch - 1] ? to_string(kappa[ch - 1].size()) : "not found");
+    for (int i = 1; i <= 2; ++i)
+      for (int j = 1; j <= 2; ++j) {
+        const auto name = base + "V" + to_string(i) + to_string(j);
+        report.value(name + ".file", "V" + to_string(i) + to_string(j) + suffix);
+        if (has_V[ch - 1])
           report.value(name, V[ch - 1][i - 1][j - 1]);
-        }
-    }
+        else
+          report.value(name, "not found");
+      }
   }
   report.write(cerr);
 }
@@ -443,12 +469,12 @@ int main(int argc, char *argv[])
  delta.resize(nrchannels);
  kappa.resize(nrchannels);
  V.resize(nrchannels);
- 
- if (!sc) {
-   load_discretization();
- } else {
-   load_discretization_sc();
- }
+ has_theta.assign(nrchannels, 0);
+ has_delta.assign(nrchannels, 0);
+ has_kappa.assign(nrchannels, 0);
+ has_V.assign(nrchannels, 0);
+
+ load_discretization();
 
  report_configuration();
 
@@ -554,6 +580,7 @@ double gammapolch(int ch)
 {
   // In initial.m, gammaPolCh[] is defined as sqrt(theta/pi * Gamma) !!
   assert(1 <= ch && ch <= nrchannels);
+  require_table(has_theta[ch-1], coeffile("theta", ch), "gammaPolCh");
   return sqrt(theta[ch-1]/M_PI);
 }
 
@@ -575,6 +602,7 @@ double coefxi(int ch, int i)
 double coefdelta(int ch, int i)
 {
   assert(1 <= ch && ch <= nrchannels);
+  require_table(has_delta[ch-1], coeffile("scdelta", ch), "coefdelta");
   assert(i < delta[ch-1].size());
   return delta[ch-1][i];
 }
@@ -582,6 +610,7 @@ double coefdelta(int ch, int i)
 double coefkappa(int ch, int i)
 {
   assert(1 <= ch && ch <= nrchannels);
+  require_table(has_kappa[ch-1], coeffile("sckappa", ch), "coefkappa");
   assert(i < kappa[ch-1].size());
   return kappa[ch-1][i];
 }
@@ -591,6 +620,7 @@ double coefkappa(int ch, int i)
 double coefV(int i, int j)
 {
   const int ch = 1;
+  require_table(has_V[ch-1], coeffile("V11", ch), "coefV");
   assert(1 <= i && i <= V[ch-1].size());
   assert(1 <= j && j <= V[ch-1][i-1].size());
   return V[ch-1][i-1][j-1];

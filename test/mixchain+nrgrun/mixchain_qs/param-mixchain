@@ -1,0 +1,10 @@
+# mixchain: the scalar hybridisation of this case. 'channels' is the dimension of Gamma here, while nrg counts
+# physical channels, so the two files cannot be one.
+
+[param]
+Lambda=2.0
+z=1.0
+Nmax=20
+mMAX=40
+channels=1
+discretization_files=true

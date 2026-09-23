@@ -68,6 +68,7 @@ endif()
 add_subdirectory(tools)
 add_subdirectory(scripts)
 add_subdirectory(nrgspawn)
+add_subdirectory(mixchain+nrgrun)
 
 if(TEST_SCIENTIFIC)
   add_subdirectory(scientific)

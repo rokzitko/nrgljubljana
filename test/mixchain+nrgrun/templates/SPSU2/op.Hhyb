@@ -1,0 +1,7 @@
+{{{1}, {{0, 0, -(Sqrt[2]*coefV[1, 2]), 0, 0}, {0, 0, Sqrt[2]*coefV[1, 1], 0, 
+    0}, {-(Sqrt[2]*coefV[1, 2]), Sqrt[2]*coefV[1, 1], 0, Sqrt[2]*coefV[1, 1], 
+    Sqrt[2]*coefV[1, 2]}, {0, 0, Sqrt[2]*coefV[1, 1], 0, 0}, 
+   {0, 0, Sqrt[2]*coefV[1, 2], 0, 0}}}, 
+ {{2}, {{0, coefV[1, 1], coefV[1, 2], 0}, {coefV[1, 1], 0, 0, coefV[1, 2]}, 
+   {coefV[1, 2], 0, 0, -coefV[1, 1]}, {0, coefV[1, 2], -coefV[1, 1], 0}}}, 
+ {{3}, {{0}}}}
