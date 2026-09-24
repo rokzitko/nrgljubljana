@@ -2,9 +2,12 @@
 set -eu
 
 export PATH="$1:$PATH"
+case "$CHAIN_TEST_BACKEND" in legacy) method=lanczos ;; rkpw) method=rkpw ;; *) exit 1 ;; esac
 
 test ! -d template
+rm -f data
 instantiate -v >instantiate.out 2>verbose.txt
+grep -q "^  nrgchain.tridiag_method=$method$" verbose.txt
 
 grep -q '^instantiate: configuration$' verbose.txt
 grep -q '^  mode=auto -> full ' verbose.txt

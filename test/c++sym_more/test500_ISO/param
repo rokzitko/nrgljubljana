@@ -47,6 +47,7 @@ bins=200
 alpha=0.3
 
 tri=cpp
+tridiag_method=lanczos
 diag=dsyevr
 
 log=all

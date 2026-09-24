@@ -91,6 +91,7 @@ while (<F>) {
 
 	    ($factor > 0) or die "no factor?";
 	    system("$diag -q -s $factor -o val -O vec ham");
+	    die "diag call error" if $? != 0;
 
 	    my $eig = `cat val`;
 	    push(@buffer,  [ "$qnspaces\n$size\n", $eig ]);

@@ -1,0 +1,8 @@
+# Scalar nrgchain side of the comparison; mixchain continues to use param.
+[param]
+tridiag_method=lanczos
+band=flat
+Lambda=2
+z=0.5
+mMAX=60
+Nmax=30

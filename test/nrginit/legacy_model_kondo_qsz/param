@@ -4,6 +4,8 @@ B=0
 spin=3/2
 
 [param]
+tri=old
+tridiag_method=lanczos
 symtype=QSZ
 model=KONDO
 

@@ -4,6 +4,8 @@ Jkondo1=0.2
 Jkondo2=0.2
 
 [param]
+tri=old
+tridiag_method=lanczos
 symtype=SPSU2
 model=kondo.m
 

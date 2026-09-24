@@ -202,13 +202,43 @@ ctest --test-dir build --output-on-failure -R '^(test_dmnrg_only|test_fdm_only|t
 Some tests are only enabled when Mathematica is detected during configuration.
 Long-running suites are enabled with `-DTEST_LONG=ON`.
 
-For finite-chain SIAM checks against a model-driven ED reference, follow the
-[scientific-suite setup](test/scientific/README.md) to enable
-`-DTEST_SCIENTIFIC=ON` with Python and NumPy, then run:
+Scalar-chain producers have independent `base_legacy` and `base_rkpw` tests.
+`TEST_CHAIN_LEGACY` and `TEST_CHAIN_RKPW` default to `ON`; use
+`-DTEST_CHAIN_LEGACY=OFF -DTEST_CHAIN_RKPW=ON` for RKPW-only registration.
+Inspect enabled coverage with `ctest --test-dir build -N -L '^chain-rkpw$'`,
+then run it with:
 
 ```sh
-ctest --test-dir build -L '^scientific$' --output-on-failure --no-tests=error
+ctest --test-dir build -L '^chain-rkpw$' --output-on-failure --no-tests=error
 ```
+
+The `chain-legacy`/`chain-rkpw` labels promise independence from the other
+production backend and its generated artifacts. `TEST_CHAIN_CROSSCHECK`
+defaults to `OFF`, requires both backends when enabled, and uses only
+`chain-crosscheck` and `chain-uses-legacy`/`chain-uses-rkpw` labels. These test
+options do not change production defaults.
+
+When adding cases, use the [chain staging contract](test/README.md#staging-contract):
+declare inputs through `ChainBackendTests.cmake`, let `chain-backend.pl` pin
+selectors in `[param]`, and share immutable references, not result workdirs.
+Do not regenerate golden files to make a new backend pass. Retain shared
+fixtures and helpers when removing legacy registrations. Distinguish
+`chain-fixed-seed` runtime checks from fresh `chain-preparation` coverage.
+
+For finite-chain SIAM checks against a model-driven ED reference, follow the
+[scientific-suite setup](test/scientific/README.md) to enable
+`-DTEST_SCIENTIFIC=ON` with Python and NumPy. Its prepared-data tests need no
+Mathematica license and do not qualify chain generation:
+
+```sh
+ctest --test-dir build -L '^scientific$' -LE '^chain-generation$' \
+  --output-on-failure --no-tests=error
+```
+
+Omit `-LE` to include separately registered fixture regeneration: three fresh
+candidates per enabled backend, each checked against ED in both modes at both
+temperatures. These tests additionally require Mathematica and `SYM_ALL` and
+never modify committed fixtures during `--check`.
 
 ### Optional Core Checks
 

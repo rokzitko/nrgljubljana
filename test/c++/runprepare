@@ -1,0 +1,17 @@
+#!/bin/bash
+set -euo pipefail
+# Arguments match runtest, followed by the configured Mathematica kernel.
+root=$1
+build=$2
+source_case=$3
+kernel=$4
+if [[ "$(pwd -P)" == "$(realpath "$source_case")" ]]; then
+  printf 'Preparation regression tests must run in the build tree.\n' >&2
+  exit 1
+fi
+"$root/test/clean-physical-output.pl"
+if [[ "$(basename "$source_case")" == test53_template3 ]]; then
+  cp "$source_case/xi.dat" "$source_case/zeta.dat" .
+fi
+bash "$source_case/prep" "${CHAIN_TEST_BACKEND:?Missing chain backend}" "$build" "$kernel" 2>&1 | tee prep.log
+exec bash "$root/test/c++/runtest" "$root" "$build" "$source_case"

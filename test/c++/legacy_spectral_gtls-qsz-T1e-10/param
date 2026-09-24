@@ -49,5 +49,6 @@ NN2avg=true
 goodE=2.3
 
 tri=cpp
+tridiag_method=lanczos
 prec=100
 preccpp=2000

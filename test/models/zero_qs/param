@@ -1,4 +1,6 @@
 [param]
+tri=old
+tridiag_method=lanczos
 symtype=QS
 model=ZERO
 
@@ -21,4 +23,3 @@ fdmexpv=true
 fdmmats=true
 mats=5
 T=0.01
-

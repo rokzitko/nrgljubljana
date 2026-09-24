@@ -3,6 +3,7 @@ gamma=If[ch==1,  1+0.7 eps,  1-0.5 eps]
 
 [param]
 tri=cpp
+tridiag_method=lanczos
 preccpp=1200
 prec=50
 

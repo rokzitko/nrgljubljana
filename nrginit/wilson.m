@@ -72,8 +72,23 @@ as encoded in defaultchaintype[] *)
 (* matrix = enforce matrix interface *)
 defaultchaintype[_] := "legacy";
 WILSONCHAIN = paramdefault["wilsonchain", defaultchaintype[SYMTYPE]];
-If[RKPW && (isSC[] || POL2x2 || RUNGS || BAND == "nambu" || WILSONCHAIN != "legacy"),
-  MyError["rkpw requires scalar normal-state chains; superconducting, matrix and rung chains are not supported."];
+If[RKPW && (POL2x2 || RUNGS || BAND == "nambu" || WILSONCHAIN != "legacy"),
+  MyError["rkpw requires scalar chains; matrix, Nambu and rung chains are not supported."];
+];
+If[RKPW && isSC[],
+  (* Only reconstruct the normal scalar chain; prescribed constant pairing
+     tables are added below. Runtime star handoff does not carry those tables. *)
+  Module[{keys},
+    keys = If[paramexists["bcsgap"], {"bcsgap"},
+      If[MemberQ[{2, 3}, COEFCHANNELS], Table["bcsgap" <> ToString[a], {a, COEFCHANNELS}], {}]];
+    If[TRI != "rkpw" || BAND != "flat" ||
+        !MemberQ[{"SPSU2", "SPU1", "SPU1LR", "P", "PP", "NONE"}, SYMTYPE] || keys == {} ||
+        !And @@ (paramexists /@ keys) ||
+        !And @@ (MatchQ[Quiet[N[paramnum[#]]], _Real] & /@ keys),
+      MyError["rkpw superconducting-symmetry support requires full tri=rkpw, an audited scalar flat-band symmetry, ",
+        "and explicit finite constant bcsgap or channel-complete bcsgap1/2[/3]; cpp/none pairing-table handoff is unsupported."];
+    ];
+  ];
 ];
 If[RKPW,
   rkpwBandscale = Quiet[N[bandrescale, MachinePrecision], {General::munfl, General::ovfl}];
@@ -543,10 +558,17 @@ rkpwScalar[poles_, count_] := Module[{machine, amplitudes, maxAmplitude, shift, 
   {onsite, hopping}
 ];
 
-dothelanczosrkpw[] := Module[{a, poles, coefficients, n},
+dothelanczosrkpw[] := Module[{a, poles, coefficients, symmetric, n},
   For[a = 1, a <= COEFCHANNELS, a++,
     poles = Flatten[Table[{{de[a, m], du[a][0, m]}, {-deminus[a, m], dv[a][0, m]}}, {m, 0, mMAX}], 1];
     coefficients = rkpwScalar[poles, DISCNMAX + 1];
+    (* Preserve exact particle-hole symmetry, not a small-number cutoff:
+       spurious onsite terms can rotate degenerate initial-cluster states.
+       Exact representations avoid SameQ's tolerance for approximate reals. *)
+    symmetric = And @@ Table[
+      SetPrecision[poles[[2 m + 1]], Infinity] === SetPrecision[{-poles[[2 m + 2, 1]], poles[[2 m + 2, 2]]}, Infinity],
+      {m, 0, mMAX}];
+    If[symmetric, coefficients[[1]] = ConstantArray[0., DISCNMAX + 1]];
     Do[
       dzeta[a][n] = coefficients[[1, n + 1]];
       xi[a][n] = coefficients[[2, n + 1]],
@@ -1368,6 +1390,9 @@ zeta[a_][n_] := dzeta[a][n] +
 gapdefined = False;
 
 hookfile["hook_bcs"];
+If[RKPW && isSC[] && gapdefined,
+  MyError["rkpw does not support hook-defined pairing tables; use explicit constant bcsgap parameters."];
+];
 
 If[!gapdefined && paramexists["bcsgap"],
   gapdefined = True;

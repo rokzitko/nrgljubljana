@@ -2,6 +2,8 @@
 t=1e-3
 
 [param]
+tri=old
+tridiag_method=lanczos
 symtype=QS
 model=ZERO
 variant=COUPLED

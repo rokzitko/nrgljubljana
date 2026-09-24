@@ -11,8 +11,14 @@ for mode in rkpw cpp; do
   mkdir "$work/$mode"
   (
     cd "$work/$mode"
-    perl -ne 'print unless /^tri=/' "$source_dir/test/c++/test40_tri/param" > param
-    printf '\ntri=%s\ntridiag_method=rkpw\npreccpp=0\n' "$mode" >> param
+    if [ "$mode" = rkpw ]; then
+      # This golden fixture uses tri=cpp; full reconstruction needs an old
+      # baseline before the shared selector replaces it with tri=rkpw.
+      perl -pe 's/^tri=cpp$/tri=old/' "$source_dir/test/c++/test40_tri/param" > param.input
+    else
+      cp "$source_dir/test/c++/test40_tri/param" param.input
+    fi
+    perl "$source_dir/test/chain-backend.pl" --backend rkpw --mode initializer --input param.input --output param
     if ! "$source_dir/nrginit/nrginit" "$kernel" > initializer.log 2>&1; then
       cat initializer.log
       exit 1
@@ -29,8 +35,8 @@ done
 mkdir "$work/seed"
 (
   cd "$work/seed"
-  cp "$source_dir/test/nrginit/nrginit45_Ninit=1/param" param
-  printf '\ntri=rkpw\n' >> param
+  perl "$source_dir/test/chain-backend.pl" --backend rkpw --mode initializer \
+    --input "$source_dir/test/nrginit/nrginit45_Ninit=1/param" --output param
   if ! "$source_dir/nrginit/nrginit" "$kernel" > initializer.log 2>&1; then
     cat initializer.log
     exit 1

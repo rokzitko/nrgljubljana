@@ -17,12 +17,18 @@ refreshed reference would otherwise absorb unnoticed.
 | Test | Kind | Gamma | Runs when |
 | --- | --- | --- | --- |
 | `mixchain_qs` | ref | a flat scalar band, QS | always |
-| `mixchain_qs_vs_nrgchain` | pair | the same band through mixchain and through `nrgchain band=flat` | always |
+| `mixchain_qs_vs_nrgchain_legacy`, `mixchain_qs_vs_nrgchain_rkpw` | pair | the same band through mixchain and through `nrgchain band=flat` | selected chain backends |
 | `mixchain_u1` | ref | `diag(1/2, 1/4)`, field along z, U1 with `pol2x2` | `SYM_ALL` |
 | `mixchain_u1_rotated` | ref | two bands of different shape, turned by pi/3, field tilted with them | `SYM_ALL` |
 | `mixchain_u1_rotation` | pair | those two runs against each other, through the rotation identity | `SYM_ALL` |
 | `mixchain_spsu2` | ref | an s-wave BCS bath in Nambu form, `chain_gauge=nambu`, SPSU2 | `SYM_MORE` |
-| `mixchain_spsu2_nrginit` | pair | the same physics through `nrginit` with `bcsgap` | `SYM_MORE` and Mathematica |
+| `mixchain_spsu2_nrginit_legacy`, `mixchain_spsu2_nrginit_rkpw` | pair | the same physics through `nrginit` with `bcsgap` | selected chain backends, `SYM_MORE` and Mathematica |
+
+`TEST_CHAIN_LEGACY` and `TEST_CHAIN_RKPW` select the suffixed registrations (both default ON). Each has its own
+work directory and reruns both physical routes, without using another test's outputs. Only the scalar nrgchain or
+nrginit route selects the backend; mixchain's independent method is unchanged. The SC initializer route uses full
+`tri=old` or `tri=rkpw` with constant `bcsgap`, not a runtime star handoff. The registrations carry `chain-legacy`
+or `chain-rkpw` labels.
 
 `mixchain_u1` leaves the mixing sets `xi3`, `xi4` vanishing, since two flat bands of unequal height share their chain
 coefficients and a rotation cannot mix what is proportional to the identity. The rotated cases therefore give the two

@@ -58,3 +58,25 @@ set_tests_properties(${scientific_tests} PROPERTIES
   TIMEOUT 180
   PROCESSORS 1
   ENVIRONMENT "${SCIENTIFIC_TEST_ENV}")
+
+if(TEST_SCIENTIFIC AND Mathematica_FOUND AND SYM_ALL)
+  foreach(backend IN LISTS CHAIN_TEST_BACKENDS)
+    foreach(fixture IN ITEMS siam_qsz siam_qs siam_u0_qsz)
+      set(test_name "scientific_prepare_${fixture}_${backend}")
+      add_test(NAME ${test_name}
+        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/prepare_siam.py"
+          --source "${PROJECT_SOURCE_DIR}"
+          --fixture "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/${fixture}"
+          --kernel "${Mathematica_KERNEL_EXECUTABLE}"
+          --nrg $<TARGET_FILE:nrg>
+          --backend ${backend}
+          --work-root "${CMAKE_CURRENT_BINARY_DIR}/runs/$<CONFIG>/${test_name}"
+          --check)
+      set_tests_properties(${test_name} PROPERTIES
+        LABELS "scientific;chain-${backend};chain-generation"
+        TIMEOUT 1200
+        PROCESSORS 1
+        ENVIRONMENT "${SCIENTIFIC_TEST_ENV}")
+    endforeach()
+  endforeach()
+endif()

@@ -1,45 +1,9 @@
-(* Standalone numerical and wilson.m dispatch tests: no SNEG or model generation. *)
-DEBUG = 0;
-Get[FileNameJoin[{sourceDir, "nrginit", "misc.m"}]];
-Get[FileNameJoin[{sourceDir, "nrginit", "initialparse.m"}]];
-MyError[args__] := Throw[StringJoin[ToString /@ {args}], "initializer-error"];
-hook[_] := Null;
-hookfile[_] := Null;
-option[_] := False;
-isSC[] := False;
-SYMTYPE = "QS";
-COEFCHANNELS = CHANNELS = 1;
-POLARIZED = POL2x2 = RUNGS = False;
-BAND = "flat";
-DY = True; DC = DZ = False;
-lambda = 2.; z = 1.; bandrescale = 1;
-Ninit = 0;
+Get[FileNameJoin[{sourceDir, "test", "nrginit", "chain_test_setup.m"}]];
 
-failures = 0;
-check[label_, condition_] := If[!TrueQ[condition], Print["FAILED: ", label]; failures++];
-SetAttributes[expectError, HoldRest];
-expectError[label_, expression_, fragment_] := Module[{result},
-  result = Catch[expression, "initializer-error"];
-  check[label, StringQ[result] && StringContainsQ[result, fragment]];
-];
-close[x_, y_, tolerance_:10^-13] := Max[Abs[Flatten[x - y]]] < tolerance;
-
-loadWilson[pairs_] := Module[{},
-  ClearAll[data, de, deminus, df, dfminus, eps, thetaCh, demem, deminusmem, diagA, zeta,
-    du0, dv0, uvrescalefactor, xitable, zetatable, eptable, emtable, u0ptable, u0mtable, i, m];
-  listkeywords["param"] = First /@ pairs;
-  listkeywords["dmft"] = {};
-  Scan[(data["param"][#[[1]]] = #[[2]]) &, pairs];
-  bandrescale = paramdefaultnum["bandrescale", 1];
-  Nmax = 4;
-  Get[FileNameJoin[{sourceDir, "nrginit", "wilson.m"}]];
-];
-
-loadWilson[{}];
-check["legacy defaults", TRI == "old" && TRIDIAGMETHOD == "lanczos" && PREC == 1000 && !RKPW];
-oldCoefficients = {Flatten[zetatable[1]], Flatten[xitable[1]]};
-loadWilson[{{"tri", "rkpw"}, {"disccheck", "true"}}];
-check["rkpw agrees with short high-precision legacy chain", close[{Flatten[zetatable[1]], Flatten[xitable[1]]}, oldCoefficients]];
+loadWilson[{{"tri", "rkpw"}, {"tridiag_method", "rkpw"}, {"disccheck", "true"}}];
+analytic = Table[(1 + 1/2)/2 2^(-n/2) (1 - 2^(-n-1))/Sqrt[(1 - 2^(-2n-1)) (1 - 2^(-2n-3))], {n, 0, 4}];
+check["initializer flat-band analytic oracle", close[Flatten[xitable[1]], analytic] && close[Flatten[zetatable[1]], ConstantArray[0, 5]]];
+check["exact particle-hole symmetry in initializer tables", Flatten[zetatable[1]] === ConstantArray[0., 5]];
 check["upstream precision remains separate", PREC == 30 && Precision[du[1][0, 0]] > 20 && Precision[de[1, 0]] > 20];
 check["machine coefficients eagerly populated", And @@ (MachineNumberQ /@ Flatten[{Table[xi[1][n], {n, 0, 4}], Table[dzeta[1][n], {n, 0, 4}]}])];
 check["no higher vectors or squared hoppings", !NumericQ[du[1][1, 0]] && !NumericQ[dv[1][1, 0]] && SubValues[xi2] == {}];
@@ -54,23 +18,73 @@ loadWilson[{{"tri", "cpp"}, {"tridiag_method", "rkpw"}, {"disccheck", "true"}}];
 check["cpp rkpw Ninit seed", RKPW && DISCNMAX == 2 && TRUEDISCNMAX == 4 && close[{Flatten[zetatable[1]], Flatten[xitable[1]]}, Take[#, 3] & /@ fullCoefficients]];
 loadWilson[{{"tri", "none"}, {"tridiag_method", "rkpw"}}];
 check["none rkpw Ninit seed", RKPW && DISCNMAX == 2 && close[{Flatten[zetatable[1]], Flatten[xitable[1]]}, Take[#, 3] & /@ fullCoefficients]];
-loadWilson[{{"tri", "cpp"}}];
-check["cpp default seed unchanged", !RKPW && dothelanczos === dothelanczosold && PREC == 30 && !MachineNumberQ[xi[1][0]]];
-loadWilson[{{"tri", "none"}}];
-check["none default seed unchanged", !RKPW && dothelanczos === dothelanczosold];
+Block[{hookfile},
+  hookfile["hook_post_lanczosinit"] := (ClearAll[deminus]; deminus[a_, m_] := de[a, m]/2);
+  loadWilson[{{"tri", "rkpw"}}];
+  check["asymmetric initializer onsite is not removed", Abs[dzeta[1][0]] > 0.01];
+];
+Block[{hookfile},
+  nearAmplitude = 1. + 4 2.^-52;
+  nearChain = rkpwScalar[{{1., 1.}, {-1., nearAmplitude}}, 1];
+  hookfile["hook_post_lanczosinit"] := (ClearAll[de, deminus, du, dv];
+    de[_, _] = deminus[_, _] = 1.;
+    du[_][0, m_] := If[m == 0, 1., 0.];
+    dv[_][0, m_] := If[m == 0, nearAmplitude, 0.]);
+  loadWilson[{{"tri", "rkpw"}, {"nrxi", "0"}}];
+  check["near-machine asymmetry is not thresholded",
+    nearChain[[1, 1]] != 0. && Abs[nearChain[[1, 1]]] < 10^-14 && dzeta[1][0] === nearChain[[1, 1]]];
+];
 COEFCHANNELS = CHANNELS = 2;
 loadWilson[{{"tri", "rkpw"}}];
 check["independent scalar channels", close[xitable[1], xitable[2]] && MachineNumberQ[xi[2][4]] && Precision[dv[2][0, 0]] > 20];
 COEFCHANNELS = CHANNELS = 1;
 expectError["unknown tri", loadWilson[{{"tri", "typo"}}], "Unknown tri backend: typo"];
-expectError["unknown method even with old tri", loadWilson[{{"tridiag_method", "typo"}}], "Unknown tridiag_method backend: typo"];
+expectError["unknown method with full tri", loadWilson[{{"tri", "rkpw"}, {"tridiag_method", "typo"}}], "Unknown tridiag_method backend: typo"];
 expectError["unknown method with cpp", loadWilson[{{"tri", "cpp"}, {"tridiag_method", "typo"}}], "Unknown tridiag_method backend: typo"];
 POL2x2 = True;
-expectError["no matrix extension", loadWilson[{{"tri", "rkpw"}}], "scalar normal-state"];
+expectError["no matrix extension", loadWilson[{{"tri", "rkpw"}}], "scalar chains"];
 POL2x2 = False;
-isSC[] := True;
-expectError["no superconducting extension", loadWilson[{{"tri", "cpp"}, {"tridiag_method", "rkpw"}}], "scalar normal-state"];
-isSC[] := False;
+RUNGS = True;
+expectError["no rung extension", loadWilson[{{"tri", "rkpw"}}], "scalar chains"];
+RUNGS = False;
+expectError["no matrix interface", loadWilson[{{"tri", "rkpw"}, {"wilsonchain", "matrix"}}], "scalar chains"];
+Block[{BAND = "nambu"}, expectError["no Nambu band", loadWilson[{{"tri", "rkpw"}}], "scalar chains"]];
+Block[{isSC, SYMTYPE, COEFCHANNELS, CHANNELS, BAND},
+  isSC[] := True; BAND = "flat"; COEFCHANNELS = CHANNELS = 1;
+  Do[
+    SYMTYPE = symmetry;
+    Do[
+      loadWilson[{{"tri", "rkpw"}, {"tridiag_method", "rkpw"}, {"bcsgap", gap}}];
+      check["prescribed scalar pairing " <> symmetry <> " " <> gap,
+        close[Flatten[xitable[1]], analytic] && close[Flatten[scdeltatable[1]], ConstantArray[ToExpression[gap], 5]] &&
+        Flatten[sckappatable[1]] == ConstantArray[0, 5]],
+      {gap, {"0", "0.125"}}],
+    {symmetry, {"SPSU2", "SPU1", "SPU1LR", "P", "PP", "NONE"}}];
+  SYMTYPE = "SPSU2";
+  Do[
+    COEFCHANNELS = CHANNELS = channels;
+    pairs = Join[{{"tri", "rkpw"}}, Table[{"bcsgap" <> ToString[a], "!" <> ToString[a/8, InputForm]}, {a, channels}]];
+    loadWilson[pairs];
+    check["channel-complete prescribed pairing " <> ToString[channels],
+      And @@ Table[close[Flatten[scdeltatable[a]], ConstantArray[a/8, 5]], {a, channels}]],
+    {channels, {2, 3}}];
+  expectError["incomplete prescribed pairing", loadWilson[{{"tri", "rkpw"}, {"bcsgap1", "0"}, {"bcsgap2", "0"}}], "channel-complete"];
+  COEFCHANNELS = CHANNELS = 1;
+  expectError["missing prescribed pairing", loadWilson[{{"tri", "rkpw"}}], "explicit finite constant"];
+  Do[expectError["invalid prescribed pairing " <> gap, loadWilson[{{"tri", "rkpw"}, {"bcsgap", gap}}], "explicit finite constant"],
+    {gap, {"!Infinity", "!Indeterminate", "!I", "!omega"}}];
+  Do[expectError["no SC runtime handoff " <> mode,
+    loadWilson[{{"tri", mode}, {"tridiag_method", "rkpw"}, {"bcsgap", "0"}}], "pairing-table handoff"], {mode, {"cpp", "none"}}];
+  BAND = "cosine";
+  expectError["no non-flat SC extension", loadWilson[{{"tri", "rkpw"}, {"bcsgap", "0"}}], "flat-band"];
+  BAND = "flat"; SYMTYPE = "SPSU2T";
+  expectError["no unaudited SC extension", loadWilson[{{"tri", "rkpw"}, {"bcsgap", "0"}}], "audited scalar"];
+  SYMTYPE = "SPSU2";
+  Block[{hookfile},
+    hookfile["hook_bcs"] := (gapdefined = True);
+    expectError["no custom pairing tables", loadWilson[{{"tri", "rkpw"}, {"bcsgap", "0"}}], "hook-defined pairing"];
+  ];
+];
 
 Do[expectError["invalid RKPW bandrescale " <> value,
   loadWilson[{{"tri", "rkpw"}, {"bandrescale", value}}], "bandrescale must be a finite positive machine real"],
@@ -97,9 +111,6 @@ Block[{hookfile},
   check["least subnormal onsite and exact terminal zero", SetPrecision[zetatable[1][[1, 1]], Infinity] == 2^-1074 && xitable[1] === {{0.}}];
   expectError["physical onsite shift underflow", loadWilson[{{"tri", "rkpw"}, {"nrxi", "0"}, {"bandrescale", "!10^-310"}, {"shift0", "!10^-20"}}], "final scaled coefficient"];
 ];
-loadWilson[{{"bandrescale", "0"}}];
-check["legacy bandrescale behavior unchanged", !RKPW && Max[Abs[Flatten[xitable[1]]]] == 0];
-
 (* Independent 100-digit vector Lanczos oracle, used only for small stars. *)
 reference[poles_, count_] := Module[{e, v, previous, residual, alpha, beta = 0, aa = {}, bb = {}, j},
   {e, v} = Transpose[N[poles, 100]];

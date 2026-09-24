@@ -1,0 +1,16 @@
+# Scalar adapt/nrgchain side of the comparison; mixchain continues to use param.
+[param]
+tridiag_method=lanczos
+dos=Delta.dat
+adapt=false
+xmax=60
+outputstep=0.015625
+xfine=5
+dx_fine=1e-5
+dx_fast=1e-4
+allowed_error=1e-10
+max_subdiv=20
+Lambda=2
+z=1.0
+mMAX=50
+Nmax=30

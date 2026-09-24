@@ -34,6 +34,19 @@ Coef<S> make_coef(const Params &P, const std::vector<std::vector<StarPoint>> &st
   return coef;
 }
 
+std::vector<std::vector<StarPoint>> asymmetric_stars(const size_t channels) {
+  std::vector<std::vector<StarPoint>> stars(channels);
+  for (size_t ch = 0; ch < stars.size(); ++ch) {
+    for (size_t m = 0; m < 24; ++m) {
+      const auto energy = std::pow(2.0, -static_cast<double>(m));
+      const auto phase = static_cast<double>(m) + 0.4 * static_cast<double>(ch);
+      stars[ch].push_back({energy * (0.8 + 0.1 * std::cos(phase)), std::sqrt(energy * (0.6 + 0.1 * std::sin(phase)))});
+      stars[ch].push_back({-energy * (0.7 + 0.1 * std::sin(phase)), std::sqrt(energy * (0.3 + 0.1 * std::cos(phase)))});
+    }
+  }
+  return stars;
+}
+
 template<typename S>
 class ScalarTridiag : public ::testing::Test {
   const mp_bitcnt_t saved_precision = mpf_get_default_prec();
@@ -44,29 +57,20 @@ class ScalarTridiag : public ::testing::Test {
 using ScalarTypes = ::testing::Types<double, std::complex<double>>;
 TYPED_TEST_SUITE(ScalarTridiag, ScalarTypes);
 
-TYPED_TEST(ScalarTridiag, matches_gmp_multiple_channels_and_band_scales) { // NOLINT
+TYPED_TEST(ScalarTridiag, matches_kernel_multiple_channels_and_band_scales_rkpw) { // NOLINT
   Params P;
   P.tri = "cpp";
+  P.tridiag_method = "rkpw";
   P.set_channels_and_combs(2);
-  P.preccpp = 512;
+  P.preccpp = 0;
   P.validate();
-  std::vector<std::vector<StarPoint>> stars(P.coefchannels);
-  for (size_t ch = 0; ch < stars.size(); ++ch) {
-    for (size_t m = 0; m < 24; ++m) {
-      const auto energy = std::pow(2.0, -static_cast<double>(m));
-      const auto phase = static_cast<double>(m) + 0.4 * static_cast<double>(ch);
-      stars[ch].push_back({energy * (0.8 + 0.1 * std::cos(phase)), std::sqrt(energy * (0.6 + 0.1 * std::sin(phase)))});
-      stars[ch].push_back({-energy * (0.7 + 0.1 * std::sin(phase)), std::sqrt(energy * (0.3 + 0.1 * std::cos(phase)))});
-    }
-  }
+  const auto stars = asymmetric_stars(P.coefchannels);
   constexpr size_t nmax = 7;
-  auto legacy = make_coef<TypeParam>(P, stars);
-  Tridiag<TypeParam>(legacy, nmax, P); // Default method is the actual GMP integration path.
+  std::vector<ScalarChain> expected;
+  for (const auto &star : stars) expected.push_back(scalar_star_to_chain(star, nmax + 1));
 
   mpf_set_default_prec(192);
   const auto precision = mpf_get_default_prec();
-  P.tridiag_method = "rkpw";
-  P.preccpp = 0;
   for (const double scale : {1e-150, 1.0, 1e150}) {
     SCOPED_TRACE(scale);
     P.bandrescale = scale;
@@ -81,10 +85,10 @@ TYPED_TEST(ScalarTridiag, matches_gmp_multiple_channels_and_band_scales) { // NO
       ASSERT_EQ(actual.zeta.max(ch), nmax);
       for (size_t n = 0; n <= nmax; ++n) {
         SCOPED_TRACE(::testing::Message() << "ch=" << ch << " n=" << n);
-        const double xi = std::real(legacy.xi(n, ch));
+        const double xi = expected[ch].xi[n];
         ASSERT_GT(xi, 0.0);
         EXPECT_NEAR(std::real(actual.xi(n, ch)) / scale / xi, 1.0, 2e-12);
-        EXPECT_NEAR((std::real(actual.zeta(n, ch)) / scale - std::real(legacy.zeta(n, ch))) / xi, 0.0, 2e-12);
+        EXPECT_NEAR((std::real(actual.zeta(n, ch)) / scale - expected[ch].zeta[n]) / xi, 0.0, 2e-12);
         EXPECT_EQ(std::imag(actual.xi(n, ch)), 0.0);
         EXPECT_EQ(std::imag(actual.zeta(n, ch)), 0.0);
       }
@@ -92,7 +96,50 @@ TYPED_TEST(ScalarTridiag, matches_gmp_multiple_channels_and_band_scales) { // NO
   }
 }
 
-TYPED_TEST(ScalarTridiag, effective_support_and_terminal_hopping) { // NOLINT
+TYPED_TEST(ScalarTridiag, known_small_star_legacy) { // NOLINT
+  Params P;
+  P.tri = "cpp";
+  P.tridiag_method = "lanczos";
+  P.preccpp = 512;
+  P.bandrescale = 2.5;
+  P.set_channels_and_combs(1);
+  P.validate();
+  auto actual = make_coef<TypeParam>(P, {{{0.9, 0.5}, {-0.7, 0.5}}});
+  Tridiag<TypeParam>(actual, 0, P);
+  EXPECT_NEAR(std::real(actual.xi(0, 0)), 2.0, 2e-14);
+  EXPECT_NEAR(std::real(actual.zeta(0, 0)), 0.25, 2e-14);
+  EXPECT_EQ(std::imag(actual.xi(0, 0)), 0.0);
+  EXPECT_EQ(std::imag(actual.zeta(0, 0)), 0.0);
+}
+
+TYPED_TEST(ScalarTridiag, matches_explicit_gmp_crosscheck) { // NOLINT
+  Params P;
+  P.tri = "cpp";
+  P.tridiag_method = "lanczos";
+  P.preccpp = 512;
+  P.set_channels_and_combs(2);
+  P.validate();
+  const auto stars = asymmetric_stars(P.coefchannels);
+  constexpr size_t nmax = 7;
+  auto legacy = make_coef<TypeParam>(P, stars);
+  Tridiag<TypeParam>(legacy, nmax, P);
+  P.tridiag_method = "rkpw";
+  P.preccpp = 0;
+  P.validate();
+  auto actual = make_coef<TypeParam>(P, stars);
+  Tridiag<TypeParam>(actual, nmax, P);
+  for (size_t ch = 0; ch < P.coefchannels; ++ch) {
+    for (size_t n = 0; n <= nmax; ++n) {
+      SCOPED_TRACE(::testing::Message() << "ch=" << ch << " n=" << n);
+      const double xi = std::real(legacy.xi(n, ch));
+      ASSERT_GT(xi, 0.0);
+      EXPECT_NEAR(std::real(actual.xi(n, ch)) / xi, 1.0, 2e-12);
+      EXPECT_NEAR((std::real(actual.zeta(n, ch)) - std::real(legacy.zeta(n, ch))) / xi, 0.0, 2e-12);
+    }
+  }
+}
+
+TYPED_TEST(ScalarTridiag, effective_support_and_terminal_hopping_rkpw) { // NOLINT
   Params P;
   P.tri = "cpp";
   P.tridiag_method = "rkpw";
@@ -127,7 +174,7 @@ TYPED_TEST(ScalarTridiag, effective_support_and_terminal_hopping) { // NOLINT
   EXPECT_EQ(mpf_get_default_prec(), precision);
 }
 
-TYPED_TEST(ScalarTridiag, rejects_unrepresentable_scaled_coefficients_before_publication) { // NOLINT
+TYPED_TEST(ScalarTridiag, rejects_unrepresentable_scaled_coefficients_before_publication_rkpw) { // NOLINT
   Params P;
   P.tri = "cpp";
   P.tridiag_method = "rkpw";
@@ -167,10 +214,24 @@ TYPED_TEST(ScalarTridiag, rejects_unrepresentable_scaled_coefficients_before_pub
 
 TEST(ScalarTridiagParams, defaults_validation_and_reporting) { // NOLINT
   Params P;
-  EXPECT_EQ(P.tri.value(), "old");
-  EXPECT_EQ(P.tridiag_method.value(), "lanczos");
+  const auto default_tri = P.tri.value();
+  const auto default_method = P.tridiag_method.value();
+  EXPECT_FALSE(default_tri.empty());
+  ASSERT_TRUE(default_method == "lanczos" || default_method == "rkpw");
   EXPECT_EQ(P.preccpp.value(), 2000U);
   EXPECT_NO_THROW(P.validate());
+  std::ostringstream defaults;
+  P.dump(defaults);
+  EXPECT_NE(defaults.str().find("tri=" + default_tri + "\n"), std::string::npos);
+  EXPECT_NE(defaults.str().find("tridiag_method=" + default_method + "\n"), std::string::npos);
+  P.tri = "cpp";
+  P.preccpp = 0;
+  // Omitting the selector follows the reported default, not a hard-coded backend.
+  if (default_method == "rkpw") {
+    EXPECT_NO_THROW(P.validate());
+  } else {
+    EXPECT_THROW(P.validate(), std::invalid_argument);
+  }
   for (const auto tri : {"old", "cpp"}) {
     P.tri = tri;
     for (const auto method : {"unknown", "RKPW", ""}) {

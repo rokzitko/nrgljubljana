@@ -10,6 +10,8 @@
 # which the run script substitutes from the same rho0 and delta as the mixchain side.
 
 [param]
+tri=old
+tridiag_method=lanczos
 symtype=SPSU2
 model=SIAM
 

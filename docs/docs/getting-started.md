@@ -105,6 +105,9 @@ Useful configure options:
 
 - `-DBuild_Tests=ON|OFF` controls the test build (default: `ON` for a top-level build)
 - `-DTEST_LONG=ON` enables long-running tests
+- `-DTEST_CHAIN_LEGACY=ON|OFF` and `-DTEST_CHAIN_RKPW=ON|OFF` select independent scalar-chain test backends (both default: `ON`)
+- `-DTEST_CHAIN_CROSSCHECK=ON` enables optional cross-backend comparisons, only with both backend tests enabled (default: `OFF`)
+- `-DTEST_SCIENTIFIC=ON` enables Python/NumPy finite-chain ED validation (default: `OFF`)
 - `-DASAN=ON -DUBSAN=ON` enables sanitizer builds
 - `-DANALYZE_SOURCES=ON` turns on static analysis hooks
 - `-DNRGLJUBLJANA_ENABLE_APP_OPENMP=ON|OFF` enables application-level OpenMP regions (default: `OFF`)
@@ -125,6 +128,16 @@ ctest --test-dir build --output-on-failure --timeout 3600 --no-tests=error
 Increase `--timeout` for slow machines or debug builds.
 
 Some tests depend on Mathematica and are only configured when Mathematica is available.
+
+Chain-producing tests have explicit `base_legacy`/`base_rkpw` names and
+independent workdirs. To omit legacy coverage, configure with
+`-DTEST_CHAIN_LEGACY=OFF`, then select RKPW with
+`ctest --test-dir build -L '^chain-rkpw$' --output-on-failure --no-tests=error`.
+These test options do not change production defaults. See
+[Testing](testing.md#independent-chain-backends) for symmetry/Mathematica gates,
+crosscheck labels, and the distinction between fixed-seed and regenerated
+coverage. Prepared scientific fixtures need no license; their separately
+gated regeneration tests do.
 
 Useful focused runs from `CONTRIBUTING.md`:
 
@@ -203,7 +216,12 @@ tri=cpp
 tridiag_method=rkpw
 ```
 
-These are scalar normal-state options, not block or superconducting backends.
+These reconstruct scalar chains, not block chains. Full `tri=rkpw` additionally
+allows a narrow flat-band, explicit constant-pairing path in selected
+superconducting symmetries, including an explicitly zero gap; it is not general
+superconducting reconstruction, and deferred `cpp`/`none` pairing handoff is
+unsupported. See the [constant-pairing restrictions](nrginit-workflow.md#constant-pairing-in-superconducting-symmetries)
+before using that path.
 `prec` still controls the upstream high-precision discretization and normalized
 star amplitudes; selecting RKPW does not remove that stage. These settings
 affect generated `data`: regenerate with `nrginit` after changing either

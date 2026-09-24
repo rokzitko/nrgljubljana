@@ -52,6 +52,12 @@ cd ..
 # The nrginit route: everything from the model name, the band and the gap.
 perl -pe "s/__GAMMA__/$GAMMA/" "$test_dir/param-nrginit" > nrginit_route/param
 cd nrginit_route
+perl "$source_dir/test/chain-backend.pl" --backend "$CHAIN_TEST_BACKEND" --mode initializer --input param --output param
+case "$CHAIN_TEST_BACKEND" in
+  legacy) grep -q '^tri=old$' param; grep -q '^tridiag_method=lanczos$' param ;;
+  rkpw) grep -q '^tri=rkpw$' param; grep -q '^tridiag_method=rkpw$' param ;;
+  *) exit 1 ;;
+esac
 "$nrginit" "$kernel"
 [ -f data ] || { echo "nrginit wrote no data"; exit 1; }
 if ! "$build_dir/c++/nrg" 2>&1 | tee log; then echo "nrginit: abnormal termination"; exit 1; fi

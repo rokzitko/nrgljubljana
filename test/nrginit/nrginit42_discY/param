@@ -1,4 +1,6 @@
 [param]
+tri=old
+tridiag_method=lanczos
 symtype=QS
 model=SIAM
 
@@ -12,4 +14,3 @@ Lambda=2.0
 
 Nmax=4
 keep=100
-

@@ -35,8 +35,10 @@ build-tree library; installation is not required. For a multi-config generator,
 select the same configuration with `cmake --build build --config Release` and
 `ctest --test-dir build -C Release`, retaining the other options above.
 
-All 13 CTest entries have the `scientific` label: one Python unit-test entry and
-12 NRG comparisons. The latter are three fixtures times two temperatures
+The 13 license-free CTest entries have the `scientific` label: one Python
+unit-test entry and 12 prepared-data NRG comparisons. These consume committed
+fixtures; they do not exercise chain generation or qualify a generation
+backend. The latter are three fixtures times two temperatures
 (`T=0.05`, `0.2`) times two execution modes (`rescaled`, `absolute`). Their exact
 names are:
 
@@ -54,6 +56,16 @@ scientific_siam_u0_qsz_T005_rescaled
 scientific_siam_u0_qsz_T005_absolute
 scientific_siam_u0_qsz_T02_rescaled
 scientific_siam_u0_qsz_T02_absolute
+```
+
+With Mathematica and `SYM_ALL`, up to six additional backend-qualified
+generation tests also carry the `scientific` label; see
+[Fixture Preparation](#fixture-preparation). To run only license-free coverage
+even when generation tests are registered, use:
+
+```sh
+ctest --test-dir build -L '^scientific$' -LE '^chain-generation$' \
+  --output-on-failure --no-tests=error
 ```
 
 A focused run, or a direct invocation with an explicit work root, is:
@@ -77,7 +89,7 @@ and uses `LC_ALL=C`. The adapter applies these settings to each NRG subprocess.
 | --- | --- |
 | [`ed_siam.py`](ed_siam.py) | Build the Hamiltonian and fermion operators from physical parameters; solve all number sectors; evaluate thermodynamics, expectations, and Lehmann Green functions. |
 | [`test_ed.py`](test_ed.py) | Check fermion anticommutation, sector dimensions and eigenpairs, atomic and noninteracting limits, thermal limits, spectral moments, and invalid inputs. |
-| [`test_validation.py`](test_validation.py) | Check parsers, symmetry multiplicities, fixture integrity, isolation, and failure handling without running real NRG. |
+| [`test_validation.py`](test_validation.py) | Check parsers, symmetry multiplicities, fixture integrity, isolation, backend parameter/provenance handoffs, and failure handling without running real NRG or Mathematica. |
 | [`validate_siam.py`](validate_siam.py) | Translate a fixture model into NRG parameters, inspect its seed and chain coefficients, run NRG, and compare parsed outputs with ED. |
 | [`prepare_siam.py`](prepare_siam.py) | Generate candidate NRG inputs with the repository initializer and qualify them before writing or checking fixtures. |
 
@@ -285,10 +297,62 @@ runs as well.
 
 ## Fixture Preparation
 
-Normal scientific tests consume prepared `data` and `provenance.json` files
-and need no Mathematica kernel or license. Regeneration is a separate,
-explicit maintainer action requiring a licensed Wolfram kernel and a built
-`nrg`; it is not part of default configuration, CTest, or license-free CI.
+The 12 prepared-data comparisons consume committed `data` and `provenance.json`
+files and need no Mathematica kernel or license. Regeneration is separate
+coverage requiring a licensed Wolfram kernel and a built `nrg`; it is not part
+of the license-free tests. Each generation run creates a fresh candidate and
+qualifies it against the same independent ED oracle at both temperatures in
+both execution modes, not against output from the other backend.
+
+### Backend-Qualified CTest Coverage
+
+Generation tests are registered only with `TEST_SCIENTIFIC=ON`, detected
+Mathematica (`Mathematica_FOUND`), and `SYM_ALL=ON`. They iterate the parent
+configuration's `CHAIN_TEST_BACKENDS` list, filtered by `TEST_CHAIN_LEGACY` and
+`TEST_CHAIN_RKPW` (both default `ON`). Three tests are registered per enabled
+backend:
+
+```text
+scientific_prepare_siam_qsz_legacy
+scientific_prepare_siam_qs_legacy
+scientific_prepare_siam_u0_qsz_legacy
+scientific_prepare_siam_qsz_rkpw
+scientific_prepare_siam_qs_rkpw
+scientific_prepare_siam_u0_qsz_rkpw
+```
+
+Each has labels `scientific`, `chain-generation`, and `chain-legacy` or
+`chain-rkpw`, uses `--check` and an explicit `--backend`, and has an independent
+work root under `build/test/scientific/runs/<config>/<test-name>/`. They inherit
+the build-tree library environment and single-thread settings used by the
+prepared-data tests. There are no cross-backend test dependencies or shared
+generated artifacts. RKPW qualification does not invoke the production legacy
+generator and remains runnable with the legacy generation tests disabled or
+removed, regardless of production defaults. The committed historical fixtures
+are still inspected for integrity, not used as the candidate's ED oracle.
+
+For RKPW-only generation coverage, configure with these additional options
+(alongside the install prefix and Python selection shown above):
+
+```sh
+cmake -S . -B build -DCMAKE_INSTALL_PREFIX="$HOME/nrgljubljana" \
+  -DBuild_Tests=ON -DTEST_SCIENTIFIC=ON -DSYM_ALL=ON \
+  -DTEST_CHAIN_LEGACY=OFF -DTEST_CHAIN_RKPW=ON \
+  -DPython3_EXECUTABLE="$HOME/nrg-scientific-venv/bin/python"
+cmake --build build --target nrg --parallel
+ctest --test-dir build -R '^scientific_prepare_.*_rkpw$' \
+  --output-on-failure --no-tests=error
+```
+
+Mathematica must be detected during configuration and its kernel must have a
+working license. With both backends enabled, select all six using
+`-R '^scientific_prepare_'`, only legacy using
+`-R '^scientific_prepare_.*_legacy$'`, or a single fixture using
+`-R '^scientific_prepare_siam_qs_rkpw$'`. The 12 prepared-data tests retain their
+original names and are not duplicated or relabeled as RKPW generation tests.
+
+### Direct Preparation
+
 From the repository root, replace the kernel path below with your executable:
 
 ```sh
@@ -296,6 +360,7 @@ From the repository root, replace the kernel path below with your executable:
   --fixture test/scientific/fixtures/siam_qsz \
   --kernel /path/to/WolframKernel \
   --nrg build/c++/nrg \
+  --backend rkpw \
   --work-root build/scientific-preparation \
   --check
 ```
@@ -305,6 +370,15 @@ update that fixture's `data` and `provenance.json` only after all four
 temperature/mode validations pass. Repeat with the other fixture paths when
 regenerating the complete suite. Candidate directories, `initialization.log`,
 and validation runs are preserved under a fresh `prepare-*` directory.
+
+`--backend legacy|rkpw` defaults to `legacy` for compatibility with existing
+preparation commands. Legacy explicitly pins `tri=old` and
+`tridiag_method=lanczos`; RKPW explicitly pins `tri=rkpw` and
+`tridiag_method=rkpw`. Both retain `wilsonchain=legacy`, which selects the
+scalar data interface, not the generation algorithm. The selected backend is
+passed to all four candidate validations. Calling `validate_siam.py` alone
+with `--backend` only selects runtime parameters for existing data; it does not
+regenerate that data or change its recorded origin.
 
 `--source` defaults to the repository containing the script. Preparation calls
 that source tree's `nrginit/sneg.m` and `nrginit/initial.m` directly, sets
@@ -317,9 +391,12 @@ kernel license discovery remains available.
 
 Provenance records the model-case and `data` SHA-256 hashes, source revision,
 aggregate initializer-source hash, preparation-script hash, kernel version,
-`mMAX`, `prec`, and the full generation parameter text (`parameters`). The
-generation parameters use `T=0.05` and `rescaled` mode; the candidate is then
-validated in both modes at both temperatures.
+`mMAX`, `prec`, the selected `backend`, and the full generation parameter text
+(`parameters`). The generation parameters use `T=0.05` and `rescaled` mode;
+the candidate is then validated in both modes at both temperatures. Historical
+committed provenance retains the actual parameters used at its creation,
+including omitted parameters that then used defaults. It is not rewritten or
+reinterpreted as having used the newly selected backend.
 
 `--check` regenerates a new candidate and revalidates it against ED. It also
 inspects the stored fixture's seed and coefficients and verifies its case/data
@@ -341,6 +418,7 @@ A higher-cutoff, higher-precision check is:
   --fixture test/scientific/fixtures/siam_qsz \
   --kernel /path/to/WolframKernel \
   --nrg build/c++/nrg \
+  --backend legacy \
   --work-root build/scientific-preparation \
   --mmax 120 --precision 1500 --check
 ```
@@ -349,6 +427,9 @@ For a convergence study, first vary one control at a time: use
 `--mmax 120 --precision 1000`, then `--mmax 80 --precision 1500`, before the
 combined check above. Repeat for each fixture and retain the provenance and
 validation reports to compare numerical errors.
+Repeat with `--backend rkpw` to qualify that backend independently; `prec`
+controls upstream initializer arithmetic, while RKPW reconstruction uses
+machine arithmetic.
 
 ### Initial Qualification
 

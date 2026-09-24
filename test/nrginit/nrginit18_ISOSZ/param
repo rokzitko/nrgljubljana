@@ -1,4 +1,6 @@
 [param]
+tri=old
+tridiag_method=lanczos
 symtype=ISOSZ
 model=SIAM
 

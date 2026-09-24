@@ -3,6 +3,7 @@ eps=-0.03
 U=0.1
 
 [param]
+tridiag_method=lanczos
 xmax=20
 adapt=false
 prec=200

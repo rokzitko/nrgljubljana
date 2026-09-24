@@ -26,4 +26,5 @@ keepenergy=8
 dumpannotated=10
 
 tri=cpp
+tridiag_method=lanczos
 mMAX=40

@@ -2,6 +2,8 @@
 B=0.1
 
 [param]
+tri=old
+tridiag_method=lanczos
 symtype=P
 model=SIAM
 variant=MAGFIELD

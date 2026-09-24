@@ -1,7 +1,10 @@
 #!/bin/sh
 set -eu
 export PATH="$1:$PATH"
-if nrgchain >stdout.txt 2>stderr.txt; then
+case "$CHAIN_TEST_BACKEND" in legacy) method=lanczos ;; rkpw) method=rkpw ;; *) exit 1 ;; esac
+rm -f missing.dat theta.dat xi.dat zeta.dat
+if nrgchain -v >stdout.txt 2>stderr.txt; then
   exit 1
 fi
+grep -q "^  tridiag_method=$method$" stderr.txt
 grep -q "Can't open missing.dat" stderr.txt

@@ -121,6 +121,11 @@ does not change the machine-arithmetic recurrence or the exported `du/dv[0]`.
 The backend neither groups all positive energies first nor removes small
 coefficients using a bandwidth-relative threshold.
 
+For exactly matched particle/hole star pairs (opposite energies and equal
+amplitudes), the initializer preserves zero reconstructed normal-chain onsite
+terms. Equality is tested using exact representations of the input values,
+not a tolerance or small-value clip. Later physical onsite shifts still apply.
+
 For `count=DISCNMAX+1`, the effective unique nonzero support must have at
 least `count` poles. When support equals `count`, the output has `count`
 onsite entries, `count-1` positive hoppings, and a terminal zero hopping.
@@ -133,8 +138,26 @@ Nonfinite or nonrepresentable machine inputs, a nonzero input rounded to
 zero, and numerical breakdown are errors. Scaled norms avoid unnecessarily
 squaring tiny amplitudes or tail hoppings, but representability still limits
 how deep a chain can go. RKPW does not silently retry in arbitrary precision.
-Independent scalar channels are supported; matrix, rung, and superconducting
+Independent scalar channels are supported. Matrix, Nambu, rung, and `pol2x2`
 chains are not. The existing `sc` and `sc2` algorithms are unchanged.
+
+### Constant pairing in superconducting symmetries
+
+Full `tri=rkpw` also supports a narrow scalar flat-band path in symmetries
+`SPSU2`, `SPU1`, `SPU1LR`, `P`, `PP`, and `NONE`. It reconstructs the normal
+chain, then adds prescribed constant pairing tables; it is not a general
+superconducting tridiagonalization algorithm. This path requires `band=flat`
+and an explicit finite real `bcsgap` (including `bcsgap=0`), or a complete
+channel-specific set of finite real values `bcsgap1`, `bcsgap2`, and, for three
+coefficient channels, `bcsgap3`.
+
+Custom pairing hooks, other superconducting symmetries, non-flat bands, and
+matrix/Nambu/rung/`pol2x2` chains are outside this allowance. Deferred
+`tri=cpp`/`none` reconstruction is also rejected for these superconducting
+symmetries: its star handoff does not carry the pairing tables. Use the full
+initializer path for the supported constant-pairing cases.
+
+### Scaling and diagnostics
 
 For RKPW only, `bandrescale` must be a finite positive machine real. The
 initializer also checks the final rescaled coefficient tables, including
@@ -170,10 +193,20 @@ nodes and weights, the analytic flat-band chain through a long tail, support
 and representability boundaries, least-subnormal amplitude scale invariance,
 final physical-coefficient scaling, and initializer dispatch/seed behavior.
 When the Mathematica test suite is configured (Mathematica detected and
-`SYM_ALL` enabled), its CTest name is `nrginit_rkpw`.
-The `nrginit_rkpw_pipeline` test additionally generates fresh `data` with both
-RKPW execution paths, runs the solver against existing physical references,
-and checks a nontrivial initial cluster. Build `nrg` before running it.
+`SYM_ALL` enabled), its CTest name is `nrginit_rkpw`, gated by
+`TEST_CHAIN_RKPW`. The `nrginit_pipeline_rkpw` test additionally generates fresh
+`data` with both RKPW execution paths, runs the solver against existing physical
+references, and checks a nontrivial initial cluster. Build `nrg` before running it.
+
+Other chain-producing fixtures register as `base_legacy` and `base_rkpw`,
+with explicit selectors and separate workdirs against shared immutable
+references. `chain-rkpw` coverage runs without the production legacy backend
+or its generated artifacts, including with `TEST_CHAIN_LEGACY=OFF`.
+`nrginit_chain_defaults` is a neutral dispatch-only check that generates no
+chain. Implementation crosschecks require the separate, default-off
+`TEST_CHAIN_CROSSCHECK` option and both backends; they do not carry the
+independent backend labels. See [Testing](testing.md#independent-chain-backends)
+for selection commands and gates.
 
 ## Hand-Off To The C++ Runtime
 

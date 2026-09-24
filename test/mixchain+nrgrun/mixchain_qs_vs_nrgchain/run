@@ -14,6 +14,7 @@ test_dir=$3
 shared_dir=$(cd "$(dirname "$test_dir")" && pwd)
 
 export PATH="$build_dir/tools:$build_dir/c++:$PATH"
+case "$CHAIN_TEST_BACKEND" in legacy) method=lanczos ;; rkpw) method=rkpw ;; *) exit 1 ;; esac
 
 for route in mixchain nrgchain; do
   rm -rf "$route"
@@ -30,7 +31,9 @@ for route in mixchain nrgchain; do
   else
     # band=flat in closed form, and the same three quantities under the names the template reads.
     cp "$test_dir/param-nrgchain" .
-    nrgchain param-nrgchain
+    perl "$source_dir/test/chain-backend.pl" --backend "$CHAIN_TEST_BACKEND" --mode tool --input param-nrgchain --output param-nrgchain
+    nrgchain -v param-nrgchain 2>nrgchain.err
+    grep -q "^  tridiag_method=$method$" nrgchain.err
     cp xi.dat xi1.dat
     cp zeta.dat zeta1.dat
     cp theta.dat theta1.dat

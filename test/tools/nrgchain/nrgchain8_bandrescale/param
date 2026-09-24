@@ -2,6 +2,7 @@
 # Rok Zitko, rok.zitko@ijs.si
 
 [param]
+tridiag_method=lanczos
 
 # Parameters for the 'adapt' code
 # *******************************

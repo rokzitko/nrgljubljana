@@ -56,9 +56,10 @@ def load_case(fixture):
     return case
 
 
-def parameter_text(case, temperature, mode, mmax=80, precision=1000):
+def parameter_text(case, temperature, mode, mmax=80, precision=1000, *, backend="legacy"):
     require(np.isfinite(temperature) and temperature > 0, "temperature must be finite and positive")
     require(mode in {"rescaled", "absolute"}, "unknown execution mode")
+    require(backend in ("legacy", "rkpw"), "unknown chain backend: expected legacy or rkpw")
     p = case["model"]
     pair = "A_d-A_d" if case["symmetry"] == "QS" else "A_d-A_d-u A_d-A_d-d"
     extra = {"eps": p["epsilon_d"], "U": p["U"], "Gamma": p["Gamma"], "B": p["B"]}
@@ -66,7 +67,8 @@ def parameter_text(case, temperature, mode, mmax=80, precision=1000):
         "model": "SIAM", "variant": "EPS" if p["B"] == 0 else "MAGFIELDEPS",
         "symtype": case["symmetry"], "band": "flat", "bandrescale": p["D"],
         "discretization": "Z", "Lambda": p["Lambda"], "z": p["z"],
-        "Ninit": 0, "Nmax": p["bath_sites"] - 1, "tri": "old",
+        "Ninit": 0, "Nmax": p["bath_sites"] - 1, "tri": "old" if backend == "legacy" else "rkpw",
+        "tridiag_method": "lanczos" if backend == "legacy" else "rkpw",
         "wilsonchain": "legacy", "mMAX": mmax, "prec": precision,
         "data_has_rescaled_energies": "false", "polarized": "false", "substeps": "false",
         "ops": "I A_d n_d n_d_ud", "specd": pair,
@@ -258,14 +260,14 @@ def run_nrg(executable, directory, timeout=120):
     require((directory / "DONE").is_file() and not (directory / "DONE").is_symlink(), "NRG exited without a fresh DONE")
 
 
-def run_case(nrg, fixture, temperature, mode, work_root):
+def run_case(nrg, fixture, temperature, mode, work_root, *, backend="legacy"):
     fixture, nrg = Path(fixture).resolve(), Path(nrg).resolve()
     require(nrg.is_file() and os.access(nrg, os.X_OK), f"NRG executable is not runnable: {nrg}")
     case = load_case(fixture)
     provenance = json.loads((fixture / "provenance.json").read_text())
     require(provenance["case_sha256"] == case_digest(case), "model specification changed: regenerate the fixture")
     require(provenance["data_sha256"] == file_digest(fixture / "data"), "fixture data checksum mismatch")
-    parameters = parameter_text(case, temperature, mode)
+    parameters = parameter_text(case, temperature, mode, backend=backend)
     work_root = Path(work_root).resolve()
     work_root.mkdir(parents=True, exist_ok=True)
     directory = Path(tempfile.mkdtemp(prefix="run-", dir=work_root))
@@ -332,9 +334,11 @@ def main():
     parser.add_argument("--temperature", type=float, required=True)
     parser.add_argument("--mode", choices=("rescaled", "absolute"), required=True)
     parser.add_argument("--work-root", type=Path, required=True)
+    parser.add_argument("--backend", choices=("legacy", "rkpw"), default="legacy",
+                        help="runtime parameter selection; does not regenerate or relabel the fixture")
     args = parser.parse_args()
     try:
-        run_case(args.nrg, args.fixture, args.temperature, args.mode, args.work_root)
+        run_case(args.nrg, args.fixture, args.temperature, args.mode, args.work_root, backend=args.backend)
     except (ValueError, OSError, KeyError, IndexError, subprocess.SubprocessError) as error:
         parser.exit(1, f"Scientific validation failed: {error}\n")
 

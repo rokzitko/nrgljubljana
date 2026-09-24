@@ -30,4 +30,4 @@ alpha=0.3
 band=manual
 dos=Delta.dat
 tri=manual
-
+tridiag_method=lanczos

@@ -7,6 +7,8 @@ A=0.08
 Omega=0.234
 
 [param]
+tri=old
+tridiag_method=lanczos
 options=Ncut=1
 model=model.m
 hook_basis=hook_basis.m

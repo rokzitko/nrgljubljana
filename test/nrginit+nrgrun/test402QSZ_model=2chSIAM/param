@@ -11,6 +11,8 @@ anD=0.0042
 B=1e-3
 
 [param]
+tri=old
+tridiag_method=lanczos
 symtype=QSZ
 model=model.m
 Lambda=4.0

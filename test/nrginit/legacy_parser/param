@@ -1,4 +1,6 @@
 [param]
+tri=old
+tridiag_method=lanczos
 symtype=QS
 model=SIAM
 
@@ -14,5 +16,4 @@ Nmax=2
 keep=500
 
 ops=n_d n_d^2 n_f n_f^2 q_d q_d^2 q_f q_f^2 n_d_ud hop0 A_d A_f SdSf n_dn_f q_dq_f ntot ntot^2 s^2 sigma_d
-
 

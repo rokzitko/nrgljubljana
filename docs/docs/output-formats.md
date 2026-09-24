@@ -457,6 +457,14 @@ preserves the headerless `xi`/`zeta` file layout and 16-significant-digit
 output. `bandrescale` multiplies both arrays; standalone `rescalexi` applies
 the iteration-dependent scale only to hoppings. `theta` is unchanged.
 
+For exactly particle/hole-matched input stars, the Mathematica RKPW initializer
+preserves zero normal-chain onsite coefficients. It compares exact input-value
+representations, not a tolerance; this does not clip small physical asymmetries
+or suppress subsequent onsite shifts. The narrow
+[constant-pairing path](nrginit-workflow.md#constant-pairing-in-superconducting-symmetries)
+with full `tri=rkpw` appends the existing pairing tables without changing their
+layout. This is not support for deferred `cpp`/`none` pairing-table handoff.
+
 ### `data.in` And Symbolic Artifacts
 
 Template options emit `data.in`, which can contain `DIAG` and external matrix

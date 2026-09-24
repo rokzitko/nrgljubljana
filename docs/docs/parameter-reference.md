@@ -165,7 +165,8 @@ kernel at runtime. These are distinct selectors. `tri` still defaults to
 uses RKPW for the `Ninit` seed with `tri=cpp`/`none` and
 `tridiag_method=rkpw`; this setting does not override an explicit
 `tri=old`, `orth`, or `rkpw`. Upstream discretization retains its separate
-arbitrary-precision arithmetic. For the runtime path:
+arbitrary-precision arithmetic. Test-suite backend options do not change
+these production defaults. For the runtime path:
 
 ```ini
 tri=cpp
@@ -180,6 +181,15 @@ For `nrgchain` and `instantiate`, set only `tridiag_method=rkpw` in their
 in runtime `tri=cpp`. The tools parse it through a signed C++ `int`, while the
 runtime uses `size_t`. RKPW does not use GMP; increasing `preccpp` has no
 effect. Mathematica's separate `prec` parameter uses decimal digits.
+
+In superconducting symmetries, RKPW is limited to full `tri=rkpw`, `band=flat`,
+and `SPSU2`, `SPU1`, `SPU1LR`, `P`, `PP`, or `NONE`, with an explicit finite
+real constant `bcsgap` (zero allowed), or a complete set of finite real
+`bcsgap1` and `bcsgap2` (plus `bcsgap3` for three coefficient channels).
+It reconstructs the normal scalar chain and adds the prescribed pairing tables.
+Custom pairing hooks and deferred `cpp`/`none`
+pairing handoff are unsupported. Matrix/Nambu/rung/`pol2x2` chains remain
+unsupported by RKPW. See the [initializer restrictions](nrginit-workflow.md#constant-pairing-in-superconducting-symmetries).
 
 The C++ kernel consumes normalized scalar star amplitudes in interleaved
 positive/negative shell order, removes exactly zero amplitudes, and combines

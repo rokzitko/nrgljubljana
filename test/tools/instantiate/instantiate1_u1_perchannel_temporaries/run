@@ -2,13 +2,15 @@
 set -eu
 
 export PATH="$1:$PATH"
+case "$CHAIN_TEST_BACKEND" in legacy) method=lanczos ;; rkpw) method=rkpw ;; *) exit 1 ;; esac
 
 rm -rf external link
 rm -f data ham ham.0 val vec vec.0 xi.dat zeta.dat theta.dat xi1.dat zeta1.dat theta1.dat param.param
 printf 'caller-owned-ham\n' > ham.keep
 printf 'caller-owned-vec\n' > vec.keep
 
-instantiate --generate-temporaries > instantiate.out
+instantiate --generate-temporaries -v > instantiate.out 2>verbose.txt
+grep -q "^  nrgchain.tridiag_method=$method$" verbose.txt
 
 test -s data
 test -s ham
@@ -33,7 +35,10 @@ mkdir -p external/child
 cp param external/param
 ln -s external/child link
 printf 'caller-owned-param-section\n' > param.param
-instantiate --generate-temporaries --param link/../param > instantiate-custom-param.out
+rm -f data
+instantiate --generate-temporaries --param link/../param -v > instantiate-custom-param.out 2>instantiate-custom-param.err
+grep -q "^  nrgchain.tridiag_method=$method$" instantiate-custom-param.err
+test -s data
 grep -q '^caller-owned-param-section$' param.param
 grep -q '^\[param\]$' external/param.param
 

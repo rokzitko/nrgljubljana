@@ -3,6 +3,7 @@ gamma=1+0.7 eps
 
 [param]
 tri=cpp
+tridiag_method=lanczos
 preccpp=1200
 prec=50
 

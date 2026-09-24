@@ -1,7 +1,8 @@
 """Focused unittest checks for scientific validation parsing and failure contracts."""
 
 from collections import Counter
-from contextlib import redirect_stdout
+from configparser import ConfigParser
+from contextlib import redirect_stderr, redirect_stdout
 from dataclasses import replace
 from io import StringIO
 import json
@@ -16,10 +17,122 @@ import unittest
 from unittest import mock
 
 from ed_siam import AndersonModel, flat_band_model, solve
+import prepare_siam as preparation
 import validate_siam as validation
 
 
 QSZ_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "siam_qsz"
+
+
+class ParameterTests(unittest.TestCase):
+    def test_explicit_backends_pin_both_selectors_without_changing_physics(self):
+        for fixture in ("siam_qs", "siam_qsz", "siam_u0_qsz"):
+            case = validation.load_case(QSZ_FIXTURE.parent / fixture)
+            for mode in ("rescaled", "absolute"):
+                texts = []
+                for backend, tri, method in (("legacy", "old", "lanczos"), ("rkpw", "rkpw", "rkpw")):
+                    with self.subTest(fixture=fixture, mode=mode, backend=backend):
+                        params = ConfigParser()
+                        params.read_string(validation.parameter_text(case, 0.2, mode, 120, 1500, backend=backend))
+                        self.assertEqual(params["param"].pop("tri"), tri)
+                        self.assertEqual(params["param"].pop("tridiag_method"), method)
+                        self.assertEqual(params["param"]["wilsonchain"], "legacy")  # File format, not backend.
+                        self.assertEqual(params["param"]["mMAX"], "120")
+                        self.assertEqual(params["param"]["prec"], "1500")
+                        self.assertEqual(params["param"]["T"], "0.2")
+                        self.assertEqual(params["param"]["absolute"], str(mode == "absolute").lower())
+                        texts.append({section: dict(params[section]) for section in params.sections()})
+                self.assertEqual(*texts)
+
+    def test_default_selectors_are_explicit_and_consistent(self):
+        params = ConfigParser()
+        params.read_string(validation.parameter_text(validation.load_case(QSZ_FIXTURE), 0.05, "rescaled"))
+        self.assertIn((params["param"]["tri"], params["param"]["tridiag_method"]),
+                      (("old", "lanczos"), ("rkpw", "rkpw")))
+
+    def test_unknown_backend_is_rejected(self):
+        case = validation.load_case(QSZ_FIXTURE)
+        for backend in ("", "old", "lanczos", "RKPW", None, []):
+            with self.subTest(backend=backend), self.assertRaisesRegex(ValueError, "unknown chain backend"):
+                validation.parameter_text(case, 0.05, "rescaled", backend=backend)
+
+
+class PreparationTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.fixture = self.root / "fixture"
+        shutil.copytree(QSZ_FIXTURE, self.fixture)
+        self.source = Path(__file__).resolve().parents[2]
+
+    def test_fresh_candidates_record_backend_and_handoff_all_four_checks(self):
+        before = {path.name: path.read_bytes() for path in self.fixture.iterdir()}
+        candidates = []
+        # Mock only external execution: these are handoff contracts, not regeneration qualification.
+        for backend in ("rkpw", "legacy"):
+            def external_run(command, **kwargs):
+                if command == ["git", "rev-parse", "HEAD"]:
+                    return subprocess.CompletedProcess(command, 0, stdout="unit-test-revision\n")
+                self.assertEqual(command, [str(Path(sys.executable).resolve()),
+                                           "-noinit", "-noprompt", "-batchinput", "-batchoutput"])
+                candidate = kwargs["cwd"]
+                self.assertEqual({path.name for path in candidate.iterdir()},
+                                 {"model.json", "param", "initialization.log"})
+                self.assertEqual((candidate / "param").read_text(), validation.parameter_text(
+                    validation.load_case(self.fixture), 0.05, "rescaled", 120, 1500, backend=backend))
+                shutil.copyfile(self.fixture / "data", candidate / "data")
+                kwargs["stdout"].write("SCIENTIFIC_KERNEL_VERSION=unit-test-kernel\n"
+                                       "SCIENTIFIC_INITIALIZATION_SUCCESS\n")
+                return subprocess.CompletedProcess(command, 0)
+
+            with self.subTest(backend=backend), redirect_stdout(StringIO()):
+                with mock.patch.object(preparation.subprocess, "run", side_effect=external_run) as external:
+                    with mock.patch.object(preparation, "run_case", autospec=True) as validate:
+                        candidate = preparation.prepare(self.source, self.fixture, Path(sys.executable),
+                                                        Path(sys.executable), self.root / backend,
+                                                        mmax=120, precision=1500, backend=backend)
+                self.assertEqual(external.call_count, 2)
+                self.assertEqual(validate.call_args_list, [
+                    mock.call(Path(sys.executable), candidate, temperature, mode,
+                              candidate.parent / "validation", backend=backend)
+                    for temperature in (0.05, 0.2) for mode in ("rescaled", "absolute")
+                ])
+                provenance = json.loads((candidate / "provenance.json").read_text())
+                self.assertEqual(provenance["backend"], backend)
+                self.assertEqual(provenance["parameters"], (candidate / "param").read_text())
+                self.assertEqual(provenance["mMAX"], 120)
+                self.assertEqual(provenance["prec"], 1500)
+                self.assertEqual(provenance["case_sha256"], validation.case_digest(validation.load_case(candidate)))
+                self.assertEqual(provenance["data_sha256"], validation.file_digest(candidate / "data"))
+                self.assertEqual({path.name: path.read_bytes() for path in self.fixture.iterdir()}, before)
+                candidates.append(candidate)
+        self.assertNotEqual(candidates[0].parent, candidates[1].parent)
+
+    def test_invalid_backend_fails_before_external_execution_or_work_creation(self):
+        with mock.patch.object(preparation.subprocess, "run") as external:
+            with self.assertRaisesRegex(ValueError, "unknown chain backend"):
+                preparation.prepare(self.source, self.fixture, Path(sys.executable), Path(sys.executable),
+                                    self.root / "runs", backend="unknown")
+        external.assert_not_called()
+        self.assertFalse((self.root / "runs").exists())
+
+    def test_cli_backend_selection_and_legacy_compatibility_default(self):
+        required = ["prepare_siam.py", "--fixture", str(self.fixture), "--kernel", sys.executable,
+                    "--nrg", sys.executable, "--work-root", str(self.root / "runs"), "--check"]
+        for options, backend in (([], "legacy"), (["--backend", "legacy"], "legacy"),
+                                 (["--backend", "rkpw"], "rkpw")):
+            with self.subTest(options=options), mock.patch.object(sys, "argv", required + options):
+                with mock.patch.object(preparation, "prepare", autospec=True) as prepare:
+                    preparation.main()
+                self.assertEqual(prepare.call_args.kwargs, {"backend": backend})
+                self.assertFalse(prepare.call_args.args[-1])  # --check never requests a write.
+        with mock.patch.object(sys, "argv", required + ["--backend", "unknown"]), redirect_stderr(StringIO()):
+            with mock.patch.object(preparation, "prepare") as prepare:
+                with self.assertRaises(SystemExit) as error:
+                    preparation.main()
+                self.assertEqual(error.exception.code, 2)
+                prepare.assert_not_called()
 
 
 class SpectrumTests(unittest.TestCase):
@@ -477,6 +590,19 @@ class RunCaseTests(unittest.TestCase):
         for name in ("model.json", "data", "provenance.json"):
             shutil.copyfile(QSZ_FIXTURE / name, self.fixture / name)
         self.work_root = self.root / "runs"
+
+    def test_runtime_backend_reaches_parameters_without_relabeling_historical_fixture(self):
+        before = (self.fixture / "provenance.json").read_bytes()
+        for backend in ("legacy", "rkpw"):
+            with self.subTest(backend=backend), redirect_stdout(StringIO()):
+                with mock.patch.object(validation, "run_nrg", side_effect=RuntimeError("stop before NRG")) as run:
+                    with self.assertRaisesRegex(RuntimeError, "stop before NRG"):
+                        validation.run_case(sys.executable, self.fixture, 0.05, "rescaled",
+                                            self.work_root, backend=backend)
+                directory = run.call_args.args[1]
+                self.assertEqual((directory / "param").read_text(), validation.parameter_text(
+                    validation.load_case(self.fixture), 0.05, "rescaled", backend=backend))
+                self.assertEqual((self.fixture / "provenance.json").read_bytes(), before)
 
     def test_repeated_failed_runs_are_fresh_and_leave_source_unchanged(self):
         for name in ("DONE", "param", "report.nrg", "validation.json"):

@@ -1,4 +1,5 @@
 [param]
+tridiag_method=lanczos
 Lambda=2
 mMAX=24
 Nmax=12

@@ -6,6 +6,8 @@ t=0.2
 B=0.001
 
 [param]
+tri=old
+tridiag_method=lanczos
 symtype=QSZ
 model=SIDE
 variant=MAGFIELD
@@ -19,4 +21,3 @@ Nmax=4
 keep=100
 
 ops=n_d n_a SaSd
-

@@ -1,4 +1,5 @@
 [param]
+tridiag_method=lanczos
 dos=Delta.dat
 density_interpolation=linear
 Lambda=2

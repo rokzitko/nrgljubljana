@@ -8,8 +8,10 @@ nrginit="$1/nrginit/nrginit"
 if [[ -e "${nrginit}.local" ]]; then
   nrginit="${nrginit}.local"
 fi
-"$nrginit" "$4"
 "$1/test/clean-physical-output.pl"
+rm -f data
+"$nrginit" "$4"
+test -s data
 if ! "$2/c++/nrg" 2>&1 | tee log; then
   echo "Abnormal termination. Skipping comparisons."
   exit 1
@@ -18,4 +20,11 @@ if [ ! -f "DONE" ]; then
   echo "File DONE not found. Skipping comparisons."
   exit 1
 fi
-"$1/test/compare.pl" --strict "$3/ref"
+if [[ "${3##*/}" == zero_u1 ]]; then
+  "$1/test/compare.pl" --strict \
+    --exclude spec_FDMmats_dens_A_f_u-A_f_u.dat \
+    --exclude spec_FDMmats_dens_A_f_d-A_f_d.dat "$3/ref"
+  perl "$3/validate_matsubara.pl" "$3/ref" .
+else
+  "$1/test/compare.pl" --strict "$3/ref"
+fi

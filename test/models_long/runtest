@@ -8,8 +8,10 @@ nrginit="$1/nrginit/nrginit"
 if [[ -e "${nrginit}.local" ]]; then
   nrginit="${nrginit}.local"
 fi
-"$nrginit" "$4"
 "$1/test/clean-physical-output.pl"
+rm -f data
+"$nrginit" "$4"
+test -s data
 if ! "$2/c++/nrg" 2>&1 | tee log; then
   echo "Abnormal termination. Skipping comparisons."
   exit 1

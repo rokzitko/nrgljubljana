@@ -1,5 +1,6 @@
 [param]
 tri=cpp
+tridiag_method=lanczos
 
 symtype=QS
 model=SIAM
@@ -38,4 +39,3 @@ alpha=0.3
 
 broaden_ratio=1.03
 broaden_max=10.0
-

@@ -21,6 +21,10 @@ These tests are built as individual binaries and run through CTest.
 The `test/c++/`, `test/c++sym_basic/`, `test/c++sym_more/`, `test/c++sym_all/`, and related directories exercise the full executable on prepared `param` and `data` inputs and compare outputs against reference results.
 
 This is where end-to-end behavior across many symmetry types is checked.
+The `chain-fixed-seed` cases select a runtime reconstruction backend while
+retaining the same committed seed; they do not test matched-backend seed
+generation. Separate `chain-preparation` cases regenerate `data` before running
+the solver and require Mathematica.
 
 ## Tool Tests
 
@@ -48,6 +52,61 @@ The Conda recipe additionally defaults its
 ## Long Tests
 
 Long-running suites are gated behind `-DTEST_LONG=ON`.
+
+## Independent Chain Backends
+
+Scalar-chain producers use separate `base_legacy` and `base_rkpw` test names
+and workdirs, sharing only immutable source fixtures and references. For
+example, use `nrginit0_minimal_rkpw`, `test46_adapt_prepare_rkpw`, or the
+dedicated `nrginit_pipeline_rkpw` (formerly `nrginit_rkpw_pipeline`).
+
+`TEST_CHAIN_LEGACY` and `TEST_CHAIN_RKPW` both default to `ON`. Configure with
+`-DTEST_CHAIN_LEGACY=OFF -DTEST_CHAIN_RKPW=ON` to retain only independent RKPW
+coverage. A `chain-rkpw` test does not invoke the production legacy backend or
+consume another test's generated outputs; deleting legacy registrations must
+retain shared fixtures, references, and staging helpers. `chain-legacy` has the
+corresponding independent meaning. Production selectors still default to
+`tri=old` and `tridiag_method=lanczos`.
+
+Optional `TEST_CHAIN_CROSSCHECK=ON` requires both backends enabled. These tests
+carry `chain-crosscheck`, `chain-uses-legacy`, and `chain-uses-rkpw`, not the
+independent backend labels. Neutral default-policy tests inspect parsing or
+dispatch without executing a chain backend.
+
+```sh
+ctest --test-dir build -N -L '^chain-rkpw$'
+ctest --test-dir build -L '^chain-rkpw$' --output-on-failure --no-tests=error
+# Only after explicitly enabling crosschecks and both backends:
+ctest --test-dir build -L '^chain-crosscheck$' --output-on-failure --no-tests=error
+```
+
+Use `ctest -N` to check coverage after applying the Mathematica, symmetry, long,
+and scientific gates, rather than relying on a fixed total. The repository's
+[test guide](https://github.com/rokzitko/nrgljubljana/blob/master/test/README.md#independent-chain-backends)
+records the source-case inventory and the `ChainBackendTests.cmake` /
+`chain-backend.pl` input-only staging contract. Backend tests do not regenerate
+golden references.
+
+## Scientific Validation
+
+`TEST_SCIENTIFIC=ON` adds Python/NumPy ED checks. The 12 prepared-data NRG
+comparisons and Python unit tests are license-free consumers, not generation
+coverage. With Mathematica and `SYM_ALL`, three additional fixture-generation
+tests per enabled backend run all four temperature/mode checks against the same
+independent ED oracle. They use fresh candidates and `--check`, leaving
+committed data and historical provenance unchanged.
+
+```sh
+# License-free scientific coverage, even if regeneration tests are registered:
+ctest --test-dir build -L '^scientific$' -LE '^chain-generation$' \
+  --output-on-failure --no-tests=error
+# Independently regenerated RKPW coverage, when its gates are enabled:
+ctest --test-dir build -R '^scientific_prepare_.*_rkpw$' \
+  --output-on-failure --no-tests=error
+```
+
+See the [scientific suite guide](https://github.com/rokzitko/nrgljubljana/blob/master/test/scientific/README.md)
+for Python requirements, model conventions, and validation limits.
 
 ## Local Commands
 

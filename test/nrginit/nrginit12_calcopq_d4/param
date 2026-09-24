@@ -7,6 +7,8 @@ Gamma1=0.4
 t12=0.7
 
 [param]
+tri=old
+tridiag_method=lanczos
 symtype=SPU1
 model=DQD.m
 

@@ -1,4 +1,5 @@
 [param]
+tridiag_method=lanczos
 band=flat
 Lambda=2
 z=0.63

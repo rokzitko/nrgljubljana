@@ -16,24 +16,104 @@ The comparison tools are intended for numerical regression testing. They do
 not perform byte-for-byte comparison unless a test runner explicitly invokes
 `cmp` or `diff` instead.
 
+## Independent Chain Backends
+
+Scalar-chain-producing cases are registered as `base_legacy` and `base_rkpw`,
+with separate build-tree workdirs and explicit backend selection. Both use
+the same immutable source inputs and references; a source directory name,
+including a historical `legacy_*` name, does not select the test backend.
+RKPW tests neither invoke the production legacy chain implementation nor read
+another test's workdir or generated outputs. They remain runnable after legacy
+test registrations are removed, provided the shared fixtures, references, and
+staging helper are retained. References are not regenerated to obtain agreement.
+
+| CMake option | Default | Effect |
+| --- | --- | --- |
+| `TEST_CHAIN_LEGACY` | `ON` | Register explicitly pinned legacy cases. |
+| `TEST_CHAIN_RKPW` | `ON` | Register independently runnable RKPW cases. |
+| `TEST_CHAIN_CROSSCHECK` | `OFF` | Add implementation-to-implementation comparisons only when both backend options are also enabled. |
+
+`chain-legacy` and `chain-rkpw` label independent coverage of that backend.
+Only crosschecks use `chain-crosscheck`, `chain-uses-legacy`, and
+`chain-uses-rkpw`; they do **not** carry `chain-legacy` or `chain-rkpw`.
+Neutral parser, symbolic-template, prepared-data consumer, and default-policy
+checks are not duplicated as backend qualification. In particular,
+`nrginit_chain_defaults` inspects dispatch without executing chain generation.
+Test options do not change production defaults: `tri=old` and
+`tridiag_method=lanczos` remain unchanged.
+
+For RKPW-only coverage, add `-DTEST_CHAIN_LEGACY=OFF -DTEST_CHAIN_RKPW=ON`
+to the normal configure command, build the affected targets, then inspect and
+run the registered independent tests:
+
+```sh
+ctest --test-dir build -N -L '^chain-rkpw$'
+ctest --test-dir build -L '^chain-rkpw$' --output-on-failure --no-tests=error
+```
+
+The source registration inventory below counts cases **per backend**, before
+configuration gates; it is not a promised CTest total. Standalone numerical
+backend tests and the RKPW pipeline add coverage beyond these paired cases.
+
+| Case group | Source cases per backend | Coverage and gates |
+| --- | ---: | --- |
+| Initializer producers | 109 | Initializer, model, and template workflows; Mathematica and `SYM_ALL`, with long cases additionally requiring `TEST_LONG`. |
+| Tool and mixed workflows | 30 | Scalar-producing `adapt`, `nrgchain`, `instantiate`, `nrgspawn`, and mixed comparisons; symmetry and Mathematica gates apply where needed. |
+| Fixed-seed runtime reconstruction | 17 | `chain-fixed-seed`; runtime backend selected independently, committed seed unchanged; symmetry gates apply. This is not matched-backend seed generation. |
+| Fresh preparation workflows | 9 | `chain-preparation`; Mathematica required. `base_prepare_legacy` and `base_prepare_rkpw` regenerate `data` before the solver runs: 18 registrations when both backends are enabled. |
+| Scientific fixture regeneration | 3 | `scientific` and `chain-generation`; `TEST_SCIENTIFIC`, Python/NumPy, Mathematica, and `SYM_ALL` required: six registrations with both backends enabled. |
+
+Use `ctest -N` for the actual enabled coverage. For example, the dedicated RKPW
+pipeline is now `nrginit_pipeline_rkpw`, not `nrginit_rkpw_pipeline`; paired
+cases use names such as `nrginit0_minimal_rkpw` and `test46_adapt_prepare_rkpw`.
+
+### Staging Contract
+
+`ChainBackendTests.cmake` registers paired cases from `CHAIN_TEST_BACKENDS`
+and stages only their declared inputs, not whole result directories. Fixed
+seeds and symbolic template inputs may be declared inputs; another backend's
+generated data is never one. Source `ref/` directories remain shared and
+read-only. `chain-backend.pl` replaces selector keys inside the correct
+`[param]` block, inserting missing keys there rather than appending them after
+an `[extra]` block. Duplicate selectors or repeated `[param]` blocks fail.
+
+Initializer mode pins `tri=old`/`rkpw` and
+`tridiag_method=lanczos`/`rkpw`, retaining an explicit `tri=cpp` or `none`
+handoff when the fixture requires it. Tool and runtime modes replace only
+`tridiag_method`. Parameter files are staged for inspection at configure time
+and restaged before each run; the helper sets `CHAIN_TEST_BACKEND` and refuses
+to run in the source fixture directory. Explicit source pins also make manual
+runs of copied fixtures independent of future production-default changes.
+
+Keep shared inputs, references, and this helper when deleting obsolete legacy
+registrations. `chain_backend_contract` and `chain_registration_contract`
+check staging and registration behavior; adding a backend test should not
+require new golden output or relaxed tolerances.
+
 ## Scientific Validation
 
 The separate [`scientific/` suite](scientific/README.md) compares untruncated
 finite-chain SIAM calculations with a model-driven NumPy ED reference, rather
 than saved NRG outputs. It is opt-in with `-DTEST_SCIENTIFIC=ON` and requires
-Python >=3.10 and NumPy >=1.26,<3 in CMake's selected interpreter. Prepared
-fixtures need no Mathematica license; regeneration is a separate action.
+Python >=3.10 and NumPy >=1.26,<3 in CMake's selected interpreter. Its 12
+prepared-data comparisons need no Mathematica license and do not exercise
+chain generation. The separately gated `scientific_prepare_*_legacy` and
+`scientific_prepare_*_rkpw` tests each generate a fresh candidate and run all
+four temperature/mode comparisons against the same ED oracle. `--check`
+does not modify committed data or historical provenance.
 
 After following the suite's setup instructions, run its unit-test entry and
 12 temperature/mode comparisons with:
 
 ```sh
-ctest --test-dir build -L '^scientific$' --output-on-failure --no-tests=error
+ctest --test-dir build -L '^scientific$' -LE '^chain-generation$' \
+  --output-on-failure --no-tests=error
 ```
 
 The suite guide documents model conventions, exact test names, tolerances,
-preserved run artifacts, and validation limits. The regression policies below
-do not apply to its ED comparisons.
+preserved run artifacts, and validation limits. Omit `-LE` to include enabled
+generation tests. The regression policies below do not apply to its ED
+comparisons.
 
 ## Components
 
@@ -136,6 +216,14 @@ equal. Their difference must still satisfy the formula. Thus `8e-13` and
 `-8e-13` fail with the generic defaults because their difference is `1.6e-12`.
 References for quantities that mathematically must vanish should use a literal
 zero when possible.
+
+The fixture-local [zero-U1 Matsubara contract](models/zero_u1/README.md) handles
+two historical fermionic Matsubara tables whose real parts are analytically
+zero. Both backends enforce the same `abs(Re G) <= 1e-12` bound rather than
+reproduce old signed roundoff. Frequencies and imaginary parts retain their
+usual golden comparisons and additionally pass an independent analytic
+oracle. No golden files or `.tol` overrides change; this is not a general
+relaxation of spectral tolerances.
 
 ### Sign-insensitive comparison
 

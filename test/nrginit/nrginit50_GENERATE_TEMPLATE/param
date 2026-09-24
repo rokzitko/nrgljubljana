@@ -7,6 +7,8 @@ omega=
 g=
 
 [param]
+tri=old
+tridiag_method=lanczos
 options=GENERATE_TEMPLATE Nph=5
 # Don't use options=WRITE
 

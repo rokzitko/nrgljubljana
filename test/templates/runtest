@@ -5,14 +5,18 @@ set -euo pipefail
 # $3 = $CMAKE_CURRENT_SOURCE_DIR/${test}
 # $4 = Mathematica kernel executable
 
-# Only run nrginit if data does not yet exist. This allows to keep
-# reference and templeta-initialization runs in the same directory.
-if [ ! -e data ]; then
+# Only the prepared-data fixture skips initialization. Template inputs must
+# regenerate data on every run, including reruns in the same backend workdir.
+if [[ "${3##*/}" == template49_ref ]]; then
+  cp "$3/data" data
+else
+  rm -f data
   nrginit="$1/nrginit/nrginit"
   if [[ -e "${nrginit}.local" ]]; then
     nrginit="${nrginit}.local"
   fi
   "$nrginit" "$4"
+  test -s data
 fi
 
 "$1/test/clean-physical-output.pl"

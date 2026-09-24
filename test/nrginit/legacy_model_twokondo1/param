@@ -8,6 +8,8 @@ spin1=1/2
 spin2=1/2
 
 [param]
+tri=old
+tridiag_method=lanczos
 symtype=QSZ
 model=TWOKONDO
 

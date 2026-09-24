@@ -1,0 +1,58 @@
+# Paired tests share immutable source inputs/references, never generated output.
+find_package(Perl REQUIRED)
+option(TEST_CHAIN_LEGACY "Register explicitly selected legacy scalar-chain tests" ON)
+option(TEST_CHAIN_RKPW "Register explicitly selected RKPW scalar-chain tests" ON)
+option(TEST_CHAIN_CROSSCHECK "Register optional comparisons between scalar-chain implementations" OFF)
+set(CHAIN_TEST_BACKENDS)
+if(TEST_CHAIN_LEGACY)
+  list(APPEND CHAIN_TEST_BACKENDS legacy)
+endif()
+if(TEST_CHAIN_RKPW)
+  list(APPEND CHAIN_TEST_BACKENDS rkpw)
+endif()
+
+function(add_chain_test name backend)
+  cmake_parse_arguments(ARG "" "MODE;SOURCE" "INPUTS;PARAM_FILES;COMMAND;LABELS" ${ARGN})
+  if(ARG_UNPARSED_ARGUMENTS OR NOT ARG_MODE OR NOT ARG_SOURCE OR NOT ARG_COMMAND)
+    message(FATAL_ERROR "Incomplete scalar-chain registration: ${name}_${backend}")
+  endif()
+  if(NOT backend IN_LIST CHAIN_TEST_BACKENDS)
+    message(FATAL_ERROR "Disabled or unknown scalar-chain backend: ${backend}")
+  endif()
+  set(test_name "${name}_${backend}")
+  set(work "${CMAKE_CURRENT_BINARY_DIR}/${test_name}")
+  set(helper "${PROJECT_SOURCE_DIR}/test/chain-backend.pl")
+  file(MAKE_DIRECTORY "${work}")
+  foreach(input IN LISTS ARG_INPUTS)
+    if(IS_ABSOLUTE "${input}" OR input MATCHES "(^|/)\\.\\.(/|$)")
+      message(FATAL_ERROR "Expected a fixture-relative input: ${input}")
+    endif()
+    if(IS_DIRECTORY "${ARG_SOURCE}/${input}")
+      get_filename_component(parent "${input}" DIRECTORY)
+      file(COPY "${ARG_SOURCE}/${input}" DESTINATION "${work}/${parent}")
+    else()
+      configure_file("${ARG_SOURCE}/${input}" "${work}/${input}" COPYONLY)
+    endif()
+  endforeach()
+  if(NOT ARG_PARAM_FILES)
+    set(ARG_PARAM_FILES param)
+  endif()
+  set(param_args)
+  foreach(param IN LISTS ARG_PARAM_FILES)
+    # Also stage at configure time for inspection and manual reproduction.
+    execute_process(COMMAND "${PERL_EXECUTABLE}" "${helper}" --backend "${backend}" --mode "${ARG_MODE}"
+                    --input "${ARG_SOURCE}/${param}" --output "${work}/${param}"
+                    RESULT_VARIABLE status ERROR_VARIABLE error)
+    if(NOT status STREQUAL "0")
+      message(FATAL_ERROR "Cannot stage ${test_name}/${param}: ${error}")
+    endif()
+    list(APPEND param_args --param "${param}")
+  endforeach()
+  add_test(NAME "${test_name}" COMMAND "${PERL_EXECUTABLE}" "${helper}"
+           --backend "${backend}" --mode "${ARG_MODE}" --source "${ARG_SOURCE}" --work "${work}"
+           ${param_args} -- ${ARG_COMMAND}
+           WORKING_DIRECTORY "${work}")
+  set_tests_properties("${test_name}" PROPERTIES
+    ENVIRONMENT "${TEST_BUILD_ENV};CHAIN_TEST_BACKEND=${backend}"
+    LABELS "chain-${backend};${ARG_LABELS}")
+endfunction()

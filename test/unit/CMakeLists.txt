@@ -48,8 +48,37 @@ foreach(test ${all_tests})
     ${CMAKE_CURRENT_BINARY_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${PROJECT_BINARY_DIR}/tools/generated)
-  add_test(NAME ${gtest_test_name}${test_name} COMMAND ${test_name} WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${test_dir})
-  set_tests_properties(${gtest_test_name}${test_name} PROPERTIES ENVIRONMENT "${TEST_BUILD_ENV}" RESOURCE_LOCK "${test_resource_lock}")
+  if(test_name STREQUAL "scalar_tridiag")
+    add_test(NAME ${gtest_test_name}scalar_tridiag_params COMMAND scalar_tridiag --gtest_filter=ScalarTridiagParams.*
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${test_dir})
+    set_tests_properties(${gtest_test_name}scalar_tridiag_params PROPERTIES
+      ENVIRONMENT "${TEST_BUILD_ENV}" RESOURCE_LOCK "${test_resource_lock}")
+    foreach(backend ${CHAIN_TEST_BACKENDS})
+      add_test(NAME ${gtest_test_name}scalar_tridiag_${backend}
+        COMMAND scalar_tridiag --gtest_filter=ScalarTridiag/*.*_${backend}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${test_dir})
+      set_tests_properties(${gtest_test_name}scalar_tridiag_${backend} PROPERTIES
+        ENVIRONMENT "${TEST_BUILD_ENV}" RESOURCE_LOCK "${test_resource_lock}" LABELS "chain-${backend}")
+    endforeach()
+    if(TEST_CHAIN_CROSSCHECK AND TEST_CHAIN_LEGACY AND TEST_CHAIN_RKPW)
+      add_test(NAME ${gtest_test_name}scalar_tridiag_crosscheck
+        COMMAND scalar_tridiag --gtest_filter=ScalarTridiag/*.*_crosscheck
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${test_dir})
+      set_tests_properties(${gtest_test_name}scalar_tridiag_crosscheck PROPERTIES
+        ENVIRONMENT "${TEST_BUILD_ENV}" RESOURCE_LOCK "${test_resource_lock}"
+        LABELS "chain-crosscheck;chain-uses-legacy;chain-uses-rkpw")
+    endif()
+  elseif(test_name STREQUAL "star_to_chain")
+    if(TEST_CHAIN_RKPW)
+      add_test(NAME ${gtest_test_name}star_to_chain_rkpw COMMAND star_to_chain
+               WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${test_dir})
+      set_tests_properties(${gtest_test_name}star_to_chain_rkpw PROPERTIES
+        ENVIRONMENT "${TEST_BUILD_ENV}" RESOURCE_LOCK "${test_resource_lock}" LABELS chain-rkpw)
+    endif()
+  else()
+    add_test(NAME ${gtest_test_name}${test_name} COMMAND ${test_name} WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${test_dir})
+    set_tests_properties(${gtest_test_name}${test_name} PROPERTIES ENVIRONMENT "${TEST_BUILD_ENV}" RESOURCE_LOCK "${test_resource_lock}")
+  endif()
 
   file(GLOB_RECURSE txtfiles RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${test_dir}/*.txt)
   foreach(file ${txtfiles})

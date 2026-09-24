@@ -14,7 +14,11 @@ while (<$param>) {
     $base{$1} = $2 if /^([^=\s]+)=(\S+)\s*$/;
 }
 close $param;
-my $work = tempdir('rkpw-XXXXXX', DIR => '.');
+my $backend = $ENV{CHAIN_TEST_BACKEND} // die "CHAIN_TEST_BACKEND is required\n";
+die "Unknown backend: $backend\n" unless $backend eq 'legacy' || $backend eq 'rkpw';
+my $method = $backend eq 'legacy' ? 'lanczos' : 'rkpw';
+die "Staged param does not select $method\n" unless ($base{tridiag_method} // '') eq $method;
+my $work = tempdir("$backend-XXXXXX", DIR => '.');
 copy('Delta.dat', "$work/Delta.dat") or die "copy Delta.dat: $!";
 chdir $work or die "chdir $work: $!";
 
@@ -39,6 +43,11 @@ sub parameters {
 
 sub run {
     my ($label, $tool, $failure, @args) = @_;
+    unless ($failure) {
+        my @outputs = $tool eq 'nrgchain' ? qw(xi.dat zeta.dat)
+                    : $tool eq 'instantiate' ? qw(theta1.dat xi1.dat zeta1.dat) : ();
+        unlink($_) or die "unlink $_: $!" for grep { -e $_ } @outputs;
+    }
     my $pid = fork();
     die "fork: $!" unless defined $pid;
     if (!$pid) {
@@ -116,22 +125,21 @@ for my $band (qw(flat adapt)) {
         run('adapt-positive', 'adapt', 0, '--integral', 'P', 'current.param');
         run('adapt-negative', 'adapt', 0, '--integral', 'N', 'current.param');
     }
-    # Save once, then feed exactly the same text-rounded star to both backends.
+    # All producers and oracles in this registration use only the selected backend.
     run("$band-save", 'nrgchain', 0, 's', 'current.param');
     my %saved = map { $_ => text("$_.dat") } qw(theta de_pos de_neg du_pos du_neg);
-    my $err = run("$band-default", 'nrgchain', 0, '-v', 'l', 'current.param');
-    die "Default backend is not lanczos\n" unless $err =~ /tridiag_method=lanczos/;
+    my $err = run("$band-load", 'nrgchain', 0, '-v', 'l', 'current.param');
+    die "Missing selected backend configuration\n" unless $err =~ /^  tridiag_method=\Q$method\E$/m;
     my $raw = chain('', $count);
-    my %legacy_bytes = map { $_ => text("$_.dat") } qw(xi zeta);
-    parameters(band => $band, tridiag_method => 'lanczos');
-    run("$band-explicit-lanczos", 'nrgchain', 0, 'l', 'current.param');
-    die "Explicit lanczos changed the default outputs\n"
-        if grep { text("$_.dat") ne $legacy_bytes{$_} } qw(xi zeta);
+    my %loaded_bytes = map { $_ => text("$_.dat") } qw(xi zeta);
+    run("$band-load-repeat", 'nrgchain', 0, 'l', 'current.param');
+    die "Repeated load changed the outputs\n"
+        if grep { text("$_.dat") ne $loaded_bytes{$_} } qw(xi zeta);
 
-    parameters(band => $band, tridiag_method => 'rkpw', preccpp => 0);
-    run("$band-calculate-rkpw", 'nrgchain', 0, 'current.param');
+    parameters(band => $band, $backend eq 'rkpw' ? (preccpp => 0) : ());
+    run("$band-calculate", 'nrgchain', 0, 'current.param');
     compare_chain("$band calculate/save/load", $raw, chain('', $count));
-    die "RKPW changed saved star or theta\n"
+    die "Calculation changed saved star or theta\n"
         if grep { text("$_.dat") ne $saved{$_} } keys %saved;
     run("$band-calculate-instantiate", 'instantiate', 0, '--wilson-only', '--param', 'current.param');
     compare_chain("$band calculated result arrays", $raw, chain('1', $count));
@@ -140,30 +148,28 @@ for my $band (qw(flat adapt)) {
         for my $rescale (0, 1) {
             my $label = "$band-scale$scale-rescale$rescale";
             my %settings = (band => $band, bandrescale => $scale, rescalexi => $rescale,
-                            nrgchain_tables_load => 'true');
-            parameters(%settings, tridiag_method => 'lanczos');
-            run("$label-lanczos", 'nrgchain', 0, 'l', 'current.param');
-            my $legacy = chain('', $count);
-            parameters(%settings, tridiag_method => 'rkpw', preccpp => 0);
-            $err = run("$label-rkpw", 'nrgchain', 0, '-v', 'l', 'current.param');
-            die "Missing resolved RKPW configuration\n"
-                unless $err =~ /tridiag_method=rkpw/ && $err =~ /gmp_precision=auto -> inactive/;
-            my $rkpw = chain('', $count);
-            compare_chain("$label backends", $legacy, $rkpw, $rescale);
+                             nrgchain_tables_load => 'true');
+            parameters(%settings, $backend eq 'rkpw' ? (preccpp => 0) : ());
+            $err = run("$label-nrgchain", 'nrgchain', 0, '-v', 'l', 'current.param');
+            die "Missing selected backend configuration\n" unless $err =~ /^  tridiag_method=\Q$method\E$/m;
+            die "Missing inactive RKPW precision diagnostic\n"
+                if $backend eq 'rkpw' && $err !~ /gmp_precision=auto -> inactive/;
+            my $scaled = chain('', $count);
 
             my @xi = map {
                 my $factor = (1 - 1 / $base{Lambda}) / log($base{Lambda})
                              * $base{Lambda} ** (-$_ / 2 + 1 - $base{z});
                 $raw->{xi}[$_] * $scale / ($rescale ? $factor : 1);
             } 0 .. $count - 1;
-            near("$label hopping scaling", \@xi, $rkpw->{xi});
-            near("$label onsite scaling", [map { $_ * $scale } @{$raw->{zeta}}], $rkpw->{zeta});
-            near("$label unchanged theta", $raw->{theta}, $rkpw->{theta});
+            near("$label hopping scaling", \@xi, $scaled->{xi});
+            near("$label onsite scaling", [map { $_ * $scale } @{$raw->{zeta}}], $scaled->{zeta});
+            near("$label unchanged theta", $raw->{theta}, $scaled->{theta});
 
             $err = run("$label-instantiate", 'instantiate', 0, '--wilson-only', '-v', '--param', 'current.param');
-            die "Missing instantiate RKPW configuration\n"
-                unless $err =~ /nrgchain.tridiag_method=rkpw/ && $err =~ /nrgchain.preccpp=auto -> inactive/;
-            compare_chain("$label instantiate result arrays", $legacy, chain('1', $count), $rescale);
+            die "Missing instantiate backend configuration\n" unless $err =~ /^  nrgchain.tridiag_method=\Q$method\E$/m;
+            die "Missing inactive instantiate precision diagnostic\n"
+                if $backend eq 'rkpw' && $err !~ /nrgchain.preccpp=auto -> inactive/;
+            compare_chain("$label instantiate result arrays", $scaled, chain('1', $count), $rescale);
         }
     }
 }
@@ -176,17 +182,25 @@ for my $tool (qw(nrgchain instantiate)) {
         die "Missing method diagnostic\n" unless $err =~ /tridiag_method.*expected lanczos or rkpw/;
     }
     for my $precision ('-1', 'no', '1.5', '2147483648') {
-        parameters(tridiag_method => 'rkpw', preccpp => $precision);
+        parameters(preccpp => $precision);
         my $err = run("$tool-invalid-precision-$precision", $tool, 1, @args);
         die "Missing precision parsing diagnostic\n" unless $err =~ /preccpp/;
     }
-    parameters(tridiag_method => 'lanczos', preccpp => 10);
-    my $err = run("$tool-low-lanczos-precision", $tool, 1, @args);
-    die "Missing legacy precision diagnostic\n" unless $err =~ /preccpp must be greater than 10/;
+    if ($backend eq 'legacy') {
+        parameters(preccpp => 10);
+        my $err = run("$tool-low-lanczos-precision", $tool, 1, @args);
+        die "Missing legacy precision diagnostic\n" unless $err =~ /preccpp must be greater than 10/;
+    }
 }
 parameters(tridiag_method => 'invalid');
 my $err = run('save-invalid-method', 'nrgchain', 1, 's', 'current.param');
 die "Save-only mode did not validate the method\n" unless $err =~ /tridiag_method/;
+
+# Exact finite-support termination and scaled-output rejection are RKPW-specific contracts.
+if ($backend eq 'legacy') {
+    print "Scalar legacy integration passed (artifacts in $work).\n";
+    exit 0;
+}
 
 # Eight rows reduce to two supported energies: duplicates combine, zero weights vanish.
 write_text('de_pos.dat', "0.9\n0.9\n0.45\n0.2\n");
@@ -194,20 +208,20 @@ write_text('de_neg.dat', "0.7\n0.7\n0.3\n0.1\n");
 write_text('du_pos.dat', "0.5\n0.5\n0\n0\n");
 write_text('du_neg.dat', "0.5\n0.5\n0\n0\n");
 write_text('theta.dat', "2.75\n");
-parameters(mMAX => 3, Nmax => 1, tridiag_method => 'rkpw', nrgchain_tables_load => 'true');
+parameters(mMAX => 3, Nmax => 1, nrgchain_tables_load => 'true');
 run('finite-support', 'nrgchain', 0, 'l', 'current.param');
 my $finite = chain('', 2);
 near('finite hopping', [0.8, 0], $finite->{xi});
 near('finite onsite', [0.1, 0.1], $finite->{zeta});
 near('finite theta', [2.75], $finite->{theta});
 die "Terminal hopping is not exactly zero\n" unless $finite->{xi}[-1] == 0;
-parameters(mMAX => 3, Nmax => 1, tridiag_method => 'rkpw', preccpp => 0, nrgchain_tables_load => 'true');
+parameters(mMAX => 3, Nmax => 1, preccpp => 0, nrgchain_tables_load => 'true');
 run('finite-support-zero-precision', 'nrgchain', 0, 'l', 'current.param');
 compare_chain('RKPW ignores preccpp', $finite, chain('', 2));
 run('finite-support-instantiate', 'instantiate', 0, '--wilson-only', '--param', 'current.param');
 compare_chain('finite support result arrays', $finite, chain('1', 2));
 
-parameters(mMAX => 3, Nmax => 2, tridiag_method => 'rkpw', nrgchain_tables_load => 'true');
+parameters(mMAX => 3, Nmax => 2, nrgchain_tables_load => 'true');
 my %before = map { $_ => text("$_.dat") } qw(xi zeta xi1 zeta1 theta1);
 for my $tool (qw(nrgchain instantiate)) {
     my @args = $tool eq 'nrgchain' ? ('l', 'current.param') : ('--wilson-only', '--param', 'current.param');
@@ -229,7 +243,7 @@ for my $case (
     write_text('de_neg.dat', "$em\n0.05\n");
     write_text('du_pos.dat', "$up\n0\n");
     write_text('du_neg.dat', "$um\n0\n");
-    parameters(mMAX => 1, Nmax => 0, tridiag_method => 'rkpw', bandrescale => $scale,
+    parameters(mMAX => 1, Nmax => 0, bandrescale => $scale,
                nrgchain_tables_load => 'true');
     for my $tool (qw(nrgchain instantiate)) {
         my @args = $tool eq 'nrgchain' ? ('l', 'current.param') : ('--wilson-only', '--param', 'current.param');

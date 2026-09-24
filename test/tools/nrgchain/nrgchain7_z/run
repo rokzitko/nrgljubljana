@@ -1,7 +1,10 @@
 #!/bin/sh
+set -eu
 export PATH="$1:$PATH"
+case "$CHAIN_TEST_BACKEND" in legacy) method=lanczos ;; rkpw) method=rkpw ;; *) exit 1 ;; esac
+rm -f FSOL.dat FSOLNEG.dat GSOL.dat GSOLNEG.dat theta.dat xi.dat zeta.dat
 adapt P
 adapt N
-nrgchain
-"$2/test/compare.pl" "$3/ref"
-
+nrgchain -v 2>verbose.txt
+grep -q "^  tridiag_method=$method$" verbose.txt
+"$2/test/compare.pl" --strict "$3/ref"

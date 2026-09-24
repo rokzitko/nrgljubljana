@@ -1,0 +1,71 @@
+#!/bin/bash
+set -euo pipefail
+# Shared by the maintainer prep entry points. Run in the calculation directory.
+# Usage: prepare-chain CASE [legacy|rkpw [BUILD_DIR [MATH_KERNEL]]]
+root=$(realpath "$(dirname "$0")/../..")
+workflow=${1:?Missing preparation workflow}
+backend=${2:-legacy}
+build=$(realpath "${3:-${NRG_BUILD_DIR:-$root/build}}")
+kernel=${4:-${MATH_KERNEL:-math}}
+mode=initializer
+tools=(adapt)
+case "$workflow" in
+  test46_adapt|test48_adapt_tri=old|test50_ref1|test52_ref2|test54_ref3) ;;
+  test47_nrgchain) mode=tool; tools+=(nrgchain) ;;
+  test49_template1|test51_template2|test53_template3)
+    mode=tool
+    tools+=(nrgchain matrix diag unitary)
+    ;;
+  *) printf 'Unknown preparation workflow: %s\n' "$workflow" >&2; exit 1 ;;
+esac
+case "$backend" in
+  legacy|rkpw) ;;
+  *) printf 'Unknown chain backend: %s\n' "$backend" >&2; exit 1 ;;
+esac
+
+# The template processors also call matrix/diag/unitary and getparam by name.
+# Require every build-tree executable before putting the tools directory on PATH.
+for tool in "${tools[@]}"; do
+  if [[ ! -x "$build/tools/$tool" ]]; then
+    printf 'Missing build-tree tool: %s\n' "$build/tools/$tool" >&2
+    exit 1
+  fi
+done
+export PATH="$build/tools:$root/scripts:$PATH"
+export LD_LIBRARY_PATH="$build/c++${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+export DYLD_FALLBACK_LIBRARY_PATH="$build/c++${DYLD_FALLBACK_LIBRARY_PATH:+:$DYLD_FALLBACK_LIBRARY_PATH}"
+
+perl "$root/test/chain-backend.pl" --backend "$backend" --mode "$mode" --input param --output param
+rm -f data data.in FSOL.dat FSOLNEG.dat theta.dat
+rm -f basis.SIAM..QS ham.SIAM..QS_* op.SIAM..QS.*
+if [[ "$workflow" != test53_template3 ]]; then
+  rm -f xi.dat zeta.dat
+fi
+"$build/tools/adapt" P
+"$build/tools/adapt" N
+[[ -s FSOL.dat && -s FSOLNEG.dat ]]
+
+if [[ "$workflow" == test53_template3 ]]; then
+  # Template generation precedes chain reconstruction in this workflow.
+  # These imported tables are not used by prepare.pl or by the solver.
+  [[ -s xi.dat && -s zeta.dat ]]
+  printf '1.0\n' > theta.dat
+  "$root/nrginit/nrginit" "$kernel"
+  [[ -s data.in ]]
+  rm -f xi.dat zeta.dat theta.dat
+  "$build/tools/nrgchain"
+else
+  if [[ "$mode" == tool ]]; then
+    "$build/tools/nrgchain"
+    [[ -s xi.dat && -s zeta.dat && -s theta.dat ]]
+  fi
+  "$root/nrginit/nrginit" "$kernel"
+fi
+
+case "$workflow" in
+  test49_template1|test51_template2|test53_template3)
+    [[ -s data.in && -s xi.dat && -s zeta.dat && -s theta.dat ]]
+    perl ./prepare.pl
+    ;;
+esac
+[[ -s data ]]

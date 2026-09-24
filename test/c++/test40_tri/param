@@ -19,3 +19,4 @@ keep=100
 dumpannotated=10
 
 tri=cpp
+tridiag_method=lanczos

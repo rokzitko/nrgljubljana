@@ -7,6 +7,8 @@ omega=0.01
 g=0.02
 
 [param]
+tri=old
+tridiag_method=lanczos
 options=Nph=5
 
 symtype=SPSU2

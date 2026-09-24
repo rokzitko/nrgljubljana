@@ -14,6 +14,8 @@ if(ASAN)
   list(APPEND TEST_BUILD_ENV "ASAN_OPTIONS=${TEST_ASAN_OPTIONS}")
 endif()
 
+include(${CMAKE_CURRENT_SOURCE_DIR}/ChainBackendTests.cmake)
+
 if(GPROF)
   message(STATUS "*** gprof instrumentalization enabled")
   find_program(GPROF_EXECUTABLE gprof REQUIRED)

@@ -3,12 +3,16 @@
 # method, which agree for a flat band, so the chains must agree to the digits nrgchain writes.
 set -eu
 export PATH="$1:$PATH"
+case "$CHAIN_TEST_BACKEND" in legacy) method=lanczos ;; rkpw) method=rkpw ;; *) exit 1 ;; esac
+rm -f theta.dat xi.dat zeta.dat V11.dat T11.dat E11.dat
 
-nrgchain param
+nrgchain -v param-nrgchain 2>nrgchain.err
+grep -q "^  tridiag_method=$method$" nrgchain.err
 
 # The same flat band, 1/2 on [-1, 1], tabulated for mixchain.
 awk 'BEGIN { for (k = -100; k <= 100; k++) printf "%.17g 0.5\n", k / 100 }' >Gamma_11-re.dat
 { cat param; printf '\ndiscretization_files=true\n'; } >param-mixchain
 mixchain -v param-mixchain >mixchain.log 2>&1
 
+for file in theta.dat xi.dat zeta.dat V11.dat T11.dat E11.dat; do test -s "$file"; done
 sh "$3/../compare_nrgchain.sh" 1e-12

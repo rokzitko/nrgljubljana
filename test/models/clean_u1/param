@@ -1,4 +1,6 @@
 [param]
+tri=old
+tridiag_method=lanczos
 symtype=U1
 model=CLEAN
 
@@ -20,4 +22,3 @@ fdmexpv=true
 fdmmats=true
 mats=5
 T=0.01
-

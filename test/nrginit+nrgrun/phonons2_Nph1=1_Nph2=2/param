@@ -9,6 +9,8 @@ g1=0.02
 g2=0.01
 
 [param]
+tri=old
+tridiag_method=lanczos
 options=Nph1=1 Nph2=2
 
 symtype=SPSU2

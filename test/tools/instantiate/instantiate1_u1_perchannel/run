@@ -2,6 +2,7 @@
 set -eu
 
 export PATH="$1:$PATH"
+case "$CHAIN_TEST_BACKEND" in legacy) method=lanczos ;; rkpw) method=rkpw ;; *) exit 1 ;; esac
 
 sentinel_files="xi.dat zeta.dat theta.dat xi1.dat zeta1.dat theta1.dat val vec mat mat.res ham param.param param.dmft param.extra solverlogneg ham.keep vec.keep"
 rm -rf sentinels solverlog data data-target
@@ -22,7 +23,8 @@ rm data
 printf 'symlink-target\n' > data-target
 cp data-target sentinels/data-target
 ln -s data-target data
-instantiate > instantiate.out
+instantiate -v > instantiate.out 2>verbose.txt
+grep -q "^  nrgchain.tridiag_method=$method$" verbose.txt
 
 test -s data
 test ! -L data

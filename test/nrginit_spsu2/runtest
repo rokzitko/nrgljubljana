@@ -7,5 +7,7 @@ nrginit="$1/nrginit/nrginit"
 if [[ -e "${nrginit}.local" ]]; then
   nrginit="${nrginit}.local"
 fi
+rm -f data
 "$nrginit" "$3"
+test -s data
 "$1/test/compare-ignoresigns.pl" "$2/ref"

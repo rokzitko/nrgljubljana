@@ -2,6 +2,7 @@
 # branch, which is exactly the band mixchain_qs/make_input.sh tabulates.
 
 [param]
+tridiag_method=lanczos
 band=flat
 Lambda=2.0
 z=1.0

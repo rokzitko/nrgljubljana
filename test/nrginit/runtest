@@ -7,5 +7,19 @@ nrginit="$1/nrginit/nrginit"
 if [[ -e "${nrginit}.local" ]]; then
   nrginit="${nrginit}.local"
 fi
+# Reference filenames identify generated outputs, including symbolic templates
+# and auxiliary operator/Hamiltonian tables. Never accept leftovers on reruns.
+outputs=(data data.in)
+for reference in "$2/ref/"*; do
+  [[ -f "$reference" && "$reference" != *.tol ]] || continue
+  outputs+=("${reference##*/}")
+done
+rm -f -- "${outputs[@]}"
 "$nrginit" "$3"
+for primary in data data.in; do
+  if [[ -f "$2/ref/$primary" && ! -s "$primary" ]]; then
+    printf 'Initializer did not generate fresh %s. Skipping comparisons.\n' "$primary" >&2
+    exit 1
+  fi
+done
 "$1/test/compare-ignoresigns.pl" "$2/ref"

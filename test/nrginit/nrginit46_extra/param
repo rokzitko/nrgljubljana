@@ -4,6 +4,8 @@ Gamma=0.1
 delta=0.1
 
 [param]
+tri=old
+tridiag_method=lanczos
 symtype=QS
 model=SIAM
 

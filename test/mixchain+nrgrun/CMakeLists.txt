@@ -21,7 +21,17 @@ if(SYM_ALL)
   list(APPEND mixchain_nrgrun_tests ${all_tests})
 endif()
 
+set(registered_tests)
 foreach(test ${mixchain_nrgrun_tests})
+  if(test STREQUAL "mixchain_qs_vs_nrgchain")
+    foreach(backend IN LISTS CHAIN_TEST_BACKENDS)
+      add_chain_test(${test} ${backend} MODE tool SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/${test}
+        INPUTS param param-mixchain param-nrgchain PARAM_FILES param-nrgchain
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/${test}/run ${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${test})
+      list(APPEND registered_tests ${test}_${backend})
+    endforeach()
+    continue()
+  endif()
   if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${test}/run)
     set(command ${CMAKE_CURRENT_SOURCE_DIR}/${test}/run)
   else()
@@ -32,21 +42,22 @@ foreach(test ${mixchain_nrgrun_tests})
            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${test})
   set_tests_properties(${test} PROPERTIES ENVIRONMENT "${TEST_BUILD_ENV}")
   file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${test})
+  list(APPEND registered_tests ${test})
 endforeach()
 
 # The Mathematica route as a second opinion. It needs a kernel, which is passed as a fourth argument, and SPSU2.
 if(Mathematica_FOUND AND SYM_MORE)
   file(STRINGS mathematica_tests mathematica_tests)
   foreach(test ${mathematica_tests})
-    add_test(NAME ${test}
-             COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/${test}/run ${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${test} ${Mathematica_KERNEL_EXECUTABLE}
-             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${test})
-    set_tests_properties(${test} PROPERTIES ENVIRONMENT "${TEST_BUILD_ENV}")
-    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${test})
+    foreach(backend IN LISTS CHAIN_TEST_BACKENDS)
+      add_chain_test(${test} ${backend} MODE initializer SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/${test}
+        INPUTS param param-mixchain param-nrginit PARAM_FILES param-nrginit
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/${test}/run ${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${test} ${Mathematica_KERNEL_EXECUTABLE})
+      list(APPEND registered_tests ${test}_${backend})
+    endforeach()
   endforeach()
-  list(APPEND mixchain_nrgrun_tests ${mathematica_tests})
 endif()
 
 if(GPROF)
-  gprof("${mixchain_nrgrun_tests}" ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+  gprof("${registered_tests}" ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 endif()

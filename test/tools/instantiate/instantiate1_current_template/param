@@ -1,4 +1,5 @@
 [param]
+tridiag_method=lanczos
 symtype=U1
 Lambda=2
 band=flat

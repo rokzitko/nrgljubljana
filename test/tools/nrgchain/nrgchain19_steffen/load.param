@@ -1,4 +1,5 @@
 [param]
+tridiag_method=lanczos
 density_interpolation=steffen
 Lambda=2
 adapt=false

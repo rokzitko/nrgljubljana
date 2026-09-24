@@ -15,10 +15,11 @@ from validate_siam import (
 )
 
 
-def prepare(source, fixture, kernel, nrg, work_root, mmax=80, precision=1000, write=False):
+def prepare(source, fixture, kernel, nrg, work_root, mmax=80, precision=1000, write=False, *, backend="legacy"):
     source, fixture = source.resolve(), fixture.resolve()
     case = load_case(fixture)
     require(mmax >= 20 and precision >= 50, "insufficient discretization cutoff/precision")
+    parameters = parameter_text(case, 0.05, "rescaled", mmax, precision, backend=backend)
     work_root.mkdir(parents=True, exist_ok=True)
     # Both working directory and parent are owned by this invocation: the
     # initializer searches '.' and '..' for optional model/operator modules.
@@ -26,7 +27,6 @@ def prepare(source, fixture, kernel, nrg, work_root, mmax=80, precision=1000, wr
     candidate = root / fixture.name
     candidate.mkdir()
     shutil.copyfile(fixture / "model.json", candidate / "model.json")
-    parameters = parameter_text(case, 0.05, "rescaled", mmax, precision)
     (candidate / "param").write_text(parameters)
     nrgdir = source / "nrginit"
     # Use the initializer entry points directly to exclude ~/sneg.m and other
@@ -43,7 +43,7 @@ makedata["data"];
 WriteString[$Output[[1]], "SCIENTIFIC_INITIALIZATION_SUCCESS\\n"];
 Exit[0];
 '''
-    print(f"Preparing {fixture.name}: {candidate}", flush=True)
+    print(f"Preparing {fixture.name} with {backend}: {candidate}", flush=True)
     with (candidate / "initialization.log").open("w") as log:
         subprocess.run([str(kernel.resolve()), "-noinit", "-noprompt", "-batchinput", "-batchoutput"],
                        input=script, text=True, cwd=candidate, stdout=log,
@@ -67,13 +67,13 @@ Exit[0];
         "source_revision": revision, "initializer_sources_sha256": sources.hexdigest(),
         "preparation_script_sha256": file_digest(Path(__file__)),
         "kernel_version": versions[0], "mMAX": mmax, "prec": precision,
-        "parameters": parameters,
+        "backend": backend, "parameters": parameters,
     }
     (candidate / "provenance.json").write_text(json.dumps(provenance, indent=2) + "\n")
     # Regeneration is judged by physical results, not eigenvector phases or bytes.
     for temperature in (0.05, 0.2):
         for mode in ("rescaled", "absolute"):
-            run_case(nrg, candidate, temperature, mode, root / "validation")
+            run_case(nrg, candidate, temperature, mode, root / "validation", backend=backend)
     if write:
         for name in ("data", "provenance.json"):
             shutil.copyfile(candidate / name, fixture / name)
@@ -95,6 +95,8 @@ def main():
     parser.add_argument("--kernel", type=Path, required=True)
     parser.add_argument("--nrg", type=Path, required=True)
     parser.add_argument("--work-root", type=Path, required=True)
+    parser.add_argument("--backend", choices=("legacy", "rkpw"), default="legacy",
+                        help="fixture generation and validation backend (default: legacy)")
     parser.add_argument("--mmax", type=int, default=80)
     parser.add_argument("--precision", type=int, default=1000)
     action = parser.add_mutually_exclusive_group(required=True)
@@ -103,7 +105,7 @@ def main():
     args = parser.parse_args()
     try:
         prepare(args.source, args.fixture, args.kernel, args.nrg, args.work_root,
-                args.mmax, args.precision, args.write)
+                args.mmax, args.precision, args.write, backend=args.backend)
     except (ValueError, OSError, KeyError, IndexError, subprocess.SubprocessError) as error:
         parser.exit(1, f"Fixture preparation failed: {error}\n")
 

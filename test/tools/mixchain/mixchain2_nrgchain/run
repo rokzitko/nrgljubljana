@@ -3,15 +3,19 @@
 # is that of the FSOL tabulation rather than rounding.
 set -eu
 export PATH="$1:$PATH"
+case "$CHAIN_TEST_BACKEND" in legacy) method=lanczos ;; rkpw) method=rkpw ;; *) exit 1 ;; esac
+rm -f FSOL.dat FSOLNEG.dat theta.dat xi.dat zeta.dat V11.dat T11.dat E11.dat
 
 cp "$3/../../nrgchain/nrgchain1/Delta.dat" Delta.dat
 cp Delta.dat Gamma_11-re.dat
 
-adapt --integral P
-adapt --integral N
-nrgchain param
+adapt --integral P param-nrgchain
+adapt --integral N param-nrgchain
+nrgchain -v param-nrgchain 2>nrgchain.err
+grep -q "^  tridiag_method=$method$" nrgchain.err
 
 { cat param; printf '\ndiscretization_files=true\n'; } >param-mixchain
 mixchain -v param-mixchain >mixchain.log 2>&1
 
+for file in theta.dat xi.dat zeta.dat V11.dat T11.dat E11.dat; do test -s "$file"; done
 sh "$3/../compare_nrgchain.sh" 1e-6

@@ -2,6 +2,8 @@
 t=0.321
 
 [param]
+tri=old
+tridiag_method=lanczos
 symtype=SPSU2LR
 model=ZERO
 variant=COUPLED
@@ -21,4 +23,3 @@ dumpannotated=200
 
 fdmexpv=true
 T=0.01
-

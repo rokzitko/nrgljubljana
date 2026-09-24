@@ -1,16 +1,15 @@
 file(STRINGS simple_tests simple_tests)
 
 foreach(test ${simple_tests})
-  configure_file(${test}/param ${test}/param COPYONLY)
-  if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${test}/template)
-    file(COPY ${test}/template DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/${test})
-  endif()
-  foreach(file data.in ham_0)
+  set(inputs param)
+  foreach(file template data.in ham_0)
     if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${test}/${file})
-      configure_file(${test}/${file} ${test}/${file} COPYONLY)
+      list(APPEND inputs ${file})
     endif()
   endforeach()
-  add_test(NAME ${test} COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/${test}/run ${PROJECT_BINARY_DIR}/tools ${PROJECT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${test}
-           WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${test})
-  set_tests_properties(${test} PROPERTIES ENVIRONMENT "${TEST_BUILD_ENV}")
+  foreach(backend IN LISTS CHAIN_TEST_BACKENDS)
+    add_chain_test(${test} ${backend} MODE tool SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/${test}
+      INPUTS ${inputs}
+      COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/${test}/run ${PROJECT_BINARY_DIR}/tools ${PROJECT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${test})
+  endforeach()
 endforeach()

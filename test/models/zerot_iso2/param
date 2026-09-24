@@ -2,6 +2,8 @@
 t=0.321
 
 [param]
+tri=old
+tridiag_method=lanczos
 symtype=ISO2
 model=ZERO
 variant=COUPLED
@@ -24,4 +26,3 @@ fdmexpv=true
 fdmmats=true
 mats=5
 T=0.01
-

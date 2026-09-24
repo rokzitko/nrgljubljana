@@ -4,12 +4,16 @@ set -euo pipefail
 # $2 = $PROJECT_BINARY_DIR
 # $3 = $CMAKE_CURRENT_SOURCE_DIR/${test}
 
+case "$CHAIN_TEST_BACKEND" in legacy) method=lanczos ;; rkpw) method=rkpw ;; *) exit 1 ;; esac
+"$1/test/clean-physical-output.pl"
+rm -f FSOL.dat FSOLNEG.dat GSOL.dat GSOLNEG.dat data
 "$2/tools/adapt" P
 "$2/tools/adapt" N
 
-"$2/tools/instantiate"
+"$2/tools/instantiate" -v 2>instantiate.err
+grep -q "^  nrgchain.tridiag_method=$method$" instantiate.err
+test -s data
 
-"$1/test/clean-physical-output.pl"
 if ! "$2/c++/nrg" 2>&1 | tee log; then
   echo "Abnormal termination. Skipping comparisons."
   exit 1

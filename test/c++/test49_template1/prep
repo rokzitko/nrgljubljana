@@ -1,6 +1,4 @@
 #!/bin/sh
-adapt P
-adapt N
-nrgchain
-nrginit
-./prepare.pl
+# Usage: ./prep [legacy|rkpw [BUILD_DIR [MATH_KERNEL]]]
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+exec bash "$script_dir/../prepare-chain" "$(basename "$script_dir")" "$@"
