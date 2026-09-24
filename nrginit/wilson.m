@@ -24,6 +24,19 @@ TRIDIAGMETHOD = paramdefault["tridiag_method", "lanczos"];
 If[!MemberQ[{"lanczos", "rkpw"}, TRIDIAGMETHOD],
   MyError["Unknown tridiag_method backend: ", TRIDIAGMETHOD, "; expected lanczos or rkpw."];
 ];
+If[TRI == "cpp",
+  (* The star handoff cannot encode corrections applied to every chain site.
+     Require literal zero without floating conversion, also in the C++ reader. *)
+  Module[{keys = {"gap"}},
+    If[POLARIZED && MemberQ[{"SPU1", "P", "PP", "NONE"}, SYMTYPE], AppendTo[keys, "globalh"]];
+    Do[
+      If[paramexists[key] && !StringMatchQ[stripws[data["param"][key]],
+          RegularExpression["[+-]?(0+(\\.0*)?|\\.0+)([eE][+-]?[0-9]+)?"]],
+        MyError["tri=cpp does not carry all-site onsite corrections: ", key,
+          " must be omitted or a literal numeric zero. Use full initializer reconstruction and regenerate data."];
+      ], {key, keys}];
+  ];
+];
 RKPW = TRI == "rkpw" || (MemberQ[{"cpp", "none"}, TRI] && TRIDIAGMETHOD == "rkpw");
 If[TRI == "old",
   defaultprec = 1000;
@@ -1136,7 +1149,7 @@ If[DZ,
       tabneg = Select[l, Negative[ #[[1]] ]& ];
       tabneg[[All,1]] = -tabneg[[All,1]]; (* Change sign! *)
       tabneg = Sort[tabneg];
-      tabneg = Prepend[tabneg, {0, tab[[1,2]]}];
+      tabneg = Prepend[tabneg, {0, tabneg[[1,2]]}];
       tabneg = setpr @ tabneg;
       If[tabneg[[-1,1]] < 1.0, tabneg = Append[tabneg, {1, tabneg[[-1,2]]}]; ]; (* fix boundary *)
       rhoneg = Interpolation[tabneg, InterpolationOrder -> 1]; (* Linear interpolation!! *)

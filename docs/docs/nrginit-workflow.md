@@ -99,6 +99,17 @@ without changing its existing coefficient-table output policy.
 Unknown `tri` or `tridiag_method` strings are initialization errors, even when
 the runtime-method setting would otherwise be unused.
 
+Deferred `tri=cpp` does not transfer all-site onsite corrections added after
+reconstruction. Both backends reject nonzero `gap`, and reject active
+`globalh` (`polarized=true` with `SPU1`, `P`, `PP`, or `NONE`). Omit an
+inactive correction or write a literal numeric zero; expressions such as
+`!1-1` are not part of this portable handoff. The runtime checks these settings
+too, so an old `data` file cannot silently bypass the restriction. Use full
+initializer reconstruction and regenerate `data` when those corrections are
+needed. Seed-only `shift0`/`globalB` and star-encoded `bulkh` remain supported;
+the external `tri=none` handoff is unchanged. Pairing-table restrictions below
+are separate from this onsite-correction rule.
+
 ### Precision and support
 
 RKPW does **not** eliminate upstream arbitrary-precision work. `prec` still
@@ -172,6 +183,13 @@ The normalized high-precision `du/dv[0]` amplitudes remain available for star
 output. With `disccheck` present, RKPW reports the initial-state normalization,
 first-moment error, and square-root-of-variance error for each channel. It
 does not reconstruct higher Lanczos vectors for orthogonality diagnostics.
+
+For the `asymode` band, the positive and negative densities retain their own
+one-sided zero-energy limits when the table is extended to zero. In particular,
+asymmetric endpoint densities are not made equal before shell integration.
+The `nrginit_mapping_legacy` and `nrginit_mapping_rkpw` tests check analytic
+one-sided shell weights, total weight, normalization and first chain moments,
+as well as the deferred onsite-correction restrictions.
 
 ### Ownership and testing
 

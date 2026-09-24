@@ -173,6 +173,24 @@ tri=cpp
 tridiag_method=rkpw
 ```
 
+Deferred `tri=cpp` reconstruction cannot carry onsite corrections added after
+the star-to-chain transformation. For either C++ backend, `gap` must be
+absent or a literal numeric zero. The same rule applies to `globalh` when
+`polarized=true` and `symtype` is `SPU1`, `P`, `PP`, or `NONE`. Both the
+initializer and runtime reject unsupported settings, including when running
+an existing `data` file. Write zero as a portable literal such as `0`, `-0.0`,
+or `0e-20`; Mathematica expressions such as `!1-1` are not evaluated by this
+handoff validation. Tiny nonzero values are rejected without first rounding
+them to machine zero. Use appropriate full initializer reconstruction
+(`tri=old` or supported `tri=rkpw`) and regenerate `data` for nonzero
+all-site corrections. This rule does not change `tri=none` external handoffs.
+
+`shift0` and active `globalB` terms affect only site zero and remain part of
+the already-generated seed. `bulkh` in `flat_with_bulk_field` changes the
+star itself and remains supported. These settings are not additional runtime
+onsite corrections. The new safety check does not promote `gap` or `globalh`
+to registered runtime parameters; they remain initializer-owned settings.
+
 For `nrgchain` and `instantiate`, set only `tridiag_method=rkpw` in their
 `[param]` block; `tri` does not select their backend. Unknown
 `tridiag_method` names are rejected, including when the setting is inactive.
@@ -199,6 +217,10 @@ exceed the number of distinct supported energies. At equality, the final
 restriction. Both arrays are multiplied by `bandrescale`; only the tools
 additionally support `rescalexi`, which rescales hoppings but not on-site
 energies. `theta`, coefficient layouts, and output precision are unchanged.
+Full `instantiate` and `--diag-seed-only` require `rescalexi=false`: their
+Hamiltonians and solver coefficient blocks consume physical, unrescaled
+hoppings. `rescalexi=true` is rejected before output creation in those modes;
+it remains available in `instantiate --wilson-only` and standalone `nrgchain`.
 RKPW requires positive finite `bandrescale` and rejects nonfinite scaled
 coefficients or scaling that turns a nonzero coefficient into zero; exact
 terminal zero hoppings remain valid.
@@ -216,6 +238,11 @@ requires `polarized=true` and `SPU1` or `QSZ`. `band=dmft` requires a `[dmft]`
 block containing either `gamma=<value>` or `run=<path>` and can additionally
 use `[dmft] discchecksum=<value>`. Normal DMFT chains require
 `discretization=Y` or `C`, and the superconducting DMFT path requires `Y`.
+
+For `band=asymode`, each one-sided density is extended to zero using that
+branch's own innermost tabulated value. Positive and negative endpoint
+densities need not match. This affects shell weights and total hybridization
+weight independently of the selected reconstruction backend.
 
 `polarized=true` and `pol2x2=true` are mutually exclusive.
 

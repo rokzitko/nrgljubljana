@@ -445,6 +445,50 @@ TEST(params, parser_rejects_invalid_bool_values) {
   std::remove(filename);
 }
 
+TEST(params, deferred_chain_rejects_unrepresented_onsite_corrections) {
+  Workdir directory(".", true);
+  const auto filename = directory.get() + "/onsite.param";
+  auto read = [&](const std::string &settings) {
+    {
+      std::ofstream file(filename);
+      file << "[param]\n" << settings;
+    }
+    Params P(filename, "param", std::make_unique<Workdir>(".", true), true, true);
+  };
+  for (const auto &method : {"lanczos"s, "rkpw"s}) {
+    const auto cpp = "tri=cpp\ntridiag_method=" + method + "\n";
+    EXPECT_NO_THROW(read(cpp));
+    for (const auto value : {"0", "-0", "+0.0", ".0", "0.", "0e-999", "00.00E+999"}) {
+      SCOPED_TRACE(value);
+      EXPECT_NO_THROW(read(cpp + "gap=" + value + "\n"));
+      EXPECT_NO_THROW(read(cpp + "symtype=P\npolarized=true\nglobalh=" + value + "\n"));
+    }
+    for (const auto value : {"0.125", "-0.125", "1e-300", "1e-999", "NaN", "inf", "!0", "!1-1", "0 trailing", ""}) {
+      SCOPED_TRACE(value);
+      try {
+        read(cpp + "gap=" + value + "\n");
+        FAIL() << "Deferred correction was accepted";
+      } catch (const std::invalid_argument &error) {
+        EXPECT_NE(std::string(error.what()).find("all-site onsite corrections: gap"), std::string::npos);
+      }
+      for (const auto &symmetry : {"SPU1"s, "P"s, "PP"s, "NONE"s})
+        EXPECT_THROW(read(cpp + "symtype=" + symmetry + "\npolarized=true\nglobalh=" + value + "\n"), std::invalid_argument);
+    }
+    for (const auto symmetry : {"QS", "QSZ", "U1", "SPU1LR"})
+      EXPECT_NO_THROW(read(cpp + "symtype=" + symmetry + "\npolarized=true\nglobalh=0.125\n"));
+    EXPECT_NO_THROW(read(cpp + "symtype=SPU1\npolarized=false\nglobalh=0.125\n"));
+    EXPECT_NO_THROW(read(cpp + "shift0=0.125\nglobalB=0.5\nbulkh=0.2\n"));
+    for (const auto tri : {"old", "rkpw", "none", "manual"})
+      EXPECT_NO_THROW(read("tri="s + tri + "\ntridiag_method=" + method + "\ngap=0.125\nsymtype=P\npolarized=true\nglobalh=0.25\n"));
+  }
+  // These remain initializer-owned settings, not registered runtime parameters.
+  Params P;
+  std::ostringstream report;
+  P.dump(report);
+  EXPECT_EQ(report.str().find("\ngap="), std::string::npos);
+  EXPECT_EQ(report.str().find("\nglobalh="), std::string::npos);
+}
+
 TEST(params, resume_requires_persistent_workdir) {
   Params P;
   P.resume = true;

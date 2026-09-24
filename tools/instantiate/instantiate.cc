@@ -585,10 +585,14 @@ ResolvedNrgChainConfiguration resolve_nrgchain_configuration(
   return config;
 }
 
-NrgChainInvocation make_nrgchain_invocation(const std::string &filename, const NrgChainTableMode mode) {
+NrgChainInvocation make_nrgchain_invocation(const Options &options, const NrgChainTableMode mode) {
   // Keep reporting and core execution on the same parser output and mode.
-  auto parameters = read_nrgchain_parameters(filename);
+  auto parameters = read_nrgchain_parameters(options.param_filename);
   auto configuration = resolve_nrgchain_configuration(parameters, mode);
+  if (!options.wilson_only && configuration.rescalexi)
+    throw std::invalid_argument("rescalexi=true is not supported for full instantiation or --diag-seed-only: "
+                                "seed generation requires unrescaled Wilson coefficients. "
+                                "Use rescalexi=false (the default), or --wilson-only for rescaled chain output.");
   if (!configuration.tridiagonalize)
     throw std::invalid_argument("instantiate requires nrgchain_tridiag=true.");
   return {std::move(parameters), std::move(configuration)};
@@ -1040,7 +1044,7 @@ void register_full_legacy_artifacts(ArtifactManifest &artifacts, const std::file
 
 void run_diag_seed_only(const Options &options) {
   auto sections = parse_param_sections(options.param_filename);
-  const auto nrgchain = make_nrgchain_invocation(options.param_filename, NrgChainTableMode::Calculate);
+  const auto nrgchain = make_nrgchain_invocation(options, NrgChainTableMode::Calculate);
   report_configuration(options, nrgchain);
   write_param_section_files(sections, options.param_filename);
   auto params = make_instantiate_params(options.param_filename);
@@ -1063,7 +1067,7 @@ void run_diag_seed_only(const Options &options) {
 
 void run_full_instantiation(const Options &options) {
   auto sections = parse_param_sections(options.param_filename);
-  const auto nrgchain = make_nrgchain_invocation(options.param_filename, NrgChainTableMode::Calculate);
+  const auto nrgchain = make_nrgchain_invocation(options, NrgChainTableMode::Calculate);
   report_configuration(options, nrgchain);
   const auto data_destination = std::filesystem::absolute("data");
   NRG::Workdir staging_workdir(data_destination.parent_path().string(), true);
@@ -1115,7 +1119,7 @@ void run_full_instantiation(const Options &options) {
 }
 
 void run_wilson_only(const Options &options) {
-  const auto nrgchain = make_nrgchain_invocation(options.param_filename, NrgChainTableMode::Calculate);
+  const auto nrgchain = make_nrgchain_invocation(options, NrgChainTableMode::Calculate);
   report_configuration(options, nrgchain);
   const auto wilson = NRG::Tools::NrgChain::calculate_from_params(nrgchain.parameters, nrgchain.configuration.mode);
   if (wilson.channels.size() != 1)

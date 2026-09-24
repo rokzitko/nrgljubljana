@@ -5,12 +5,12 @@ source_dir=$1
 kernel=$2
 suite=${3:-rkpw}
 case "$suite" in
-  rkpw|chain_legacy|chain_defaults|chain_crosscheck) ;;
+  rkpw|chain_legacy|chain_defaults|chain_crosscheck|chain_mapping) ;;
   *) printf 'Unknown initializer chain test: %s\n' "$suite" >&2; exit 1 ;;
 esac
 
 "$kernel" -batchinput -batchoutput <<EOF
 sourceDir = "$source_dir";
-If[Check[Get["$source_dir/test/nrginit/$suite.m"], \$Failed] === True, Exit[0], Exit[1]];
+If[Check[Catch[Get["$source_dir/test/nrginit/$suite.m"], _, (Print[#1]; \$Failed) &], \$Failed] === True, Exit[0], Exit[1]];
 Exit[1];
 EOF

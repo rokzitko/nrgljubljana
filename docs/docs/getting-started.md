@@ -216,6 +216,11 @@ tri=cpp
 tridiag_method=rkpw
 ```
 
+Deferred reconstruction does not support nonzero all-site `gap` or active
+`globalh` onsite corrections. Use full initializer reconstruction for those
+settings and regenerate `data`; see the
+[handoff restrictions](nrginit-workflow.md#wilson-chain-reconstruction).
+
 These reconstruct scalar chains, not block chains. Full `tri=rkpw` additionally
 allows a narrow flat-band, explicit constant-pairing path in selected
 superconducting symmetries, including an explicitly zero gap; it is not general

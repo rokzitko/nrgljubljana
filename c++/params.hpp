@@ -15,6 +15,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <regex>
 #include <ostream>
 #include <utility>
 #include <list>
@@ -787,6 +788,18 @@ class Params {
         if (parsed_params.count(keyword) == 1) {
           i->set_str(parsed_params[keyword]);
           parsed_params.erase(keyword);
+        }
+      }
+      if (tri == "cpp") {
+        // Initializer-only corrections are not encoded in the exported star.
+        // Inspect the raw settings too, so old data cannot silently lose them.
+        static const std::regex literal_zero(R"([+-]?(0+(\.0*)?|\.0+)([eE][+-]?[0-9]+)?)");
+        const bool globalh_active = polarized && (symtype == "SPU1" || symtype == "P" || symtype == "PP" || symtype == "NONE");
+        for (const auto &key : {"gap"s, "globalh"s}) {
+          if (key == "globalh" && !globalh_active) continue;
+          if (const auto it = parsed_params.find(key); it != parsed_params.end() && !std::regex_match(it->second, literal_zero))
+            throw std::invalid_argument("tri=cpp does not carry all-site onsite corrections: " + key
+                                        + " must be omitted or a literal numeric zero. Use full initializer reconstruction and regenerate data.");
         }
       }
       if (parsed_params.size()) {

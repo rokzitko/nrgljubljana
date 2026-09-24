@@ -41,3 +41,82 @@ test -d solverlog
 for directory in ??????; do
   test ! -d "$directory"
 done
+
+# Keep rescalexi checks isolated from the existing publication checks above.
+rm -rf rescalexi-check rescalexi-expected
+mkdir rescalexi-check
+cp -R template rescalexi-check/template
+perl -pe 's/^\[param\]$/[param]\nrescalexi=true/' param > rescalexi-check/param
+printf '\n[dmft]\n\n[extra]\n' >> rescalexi-check/param
+for file in $sentinel_files data ham.0 vec.0 de_pos.dat de_neg.dat du_pos.dat du_neg.dat solverlog; do
+  printf 'caller-owned:%s\n' "$file" > "rescalexi-check/$file"
+done
+cp -R rescalexi-check rescalexi-expected
+
+check_rescalexi_rejected() {
+  if (
+    cd rescalexi-check || exit 1
+    instantiate "$@"
+  ) > rescalexi.out 2> rescalexi.err; then
+    printf 'instantiate unexpectedly accepted rescalexi=true: %s\n' "$*" >&2
+    exit 1
+  fi
+  test ! -s rescalexi.out
+  grep -q '^instantiate: error: .*rescalexi=true.*full instantiation.*--diag-seed-only' rescalexi.err
+  grep -q 'unrescaled Wilson coefficients.*rescalexi=false.*--wilson-only' rescalexi.err
+  test "$(wc -l < rescalexi.err)" -eq 1
+  diff -r rescalexi-expected rescalexi-check
+}
+
+check_rescalexi_rejected
+check_rescalexi_rejected --generate-temporaries -v
+check_rescalexi_rejected --diag-seed-only
+check_rescalexi_rejected --diag-seed-only --generate-temporaries -v
+
+# Missing inputs must not mask the rejection: neither chain generation nor
+# template inspection (including verbose reporting) may run first.
+for directory in rescalexi-check rescalexi-expected; do
+  rm -rf "$directory/template"
+  perl -pi -e 's/^band=flat$/band=adapt\ndos=missing-density.dat/' "$directory/param"
+done
+check_rescalexi_rejected --generate-temporaries -v
+check_rescalexi_rejected --diag-seed-only -v
+
+# Both seed-producing modes still accept explicit false and the default.
+rm -rf rescalexi-check rescalexi-expected
+mkdir rescalexi-check
+cp -R template rescalexi-check/template
+cp param rescalexi-check/param
+(
+  cd rescalexi-check
+  instantiate --generate-temporaries > default-full.out
+  cp data default-data
+  cp xi1.dat default-xi
+  cp zeta1.dat default-zeta
+  cp theta1.dat default-theta
+  instantiate --diag-seed-only > default-seed.out
+  cmp default-full.out default-seed.out
+  perl -pe 's/^\[param\]$/[param]\nrescalexi=false/' param > param-false
+  instantiate --param param-false --generate-temporaries > false-full.out
+  cmp data default-data
+  cmp default-full.out false-full.out
+  instantiate --param param-false --diag-seed-only > false-seed.out
+  cmp default-seed.out false-seed.out
+  cmp xi1.dat default-xi
+  cmp zeta1.dat default-zeta
+  cmp theta1.dat default-theta
+
+  perl -pe 's/^\[param\]$/[param]\nrescalexi=true/' param > param-true
+  instantiate --param param-true --wilson-only -v > wilson.out 2> wilson.err
+  grep -q '^  nrgchain.rescalexi=true$' wilson.err
+  grep -q "^  nrgchain.tridiag_method=$method$" wilson.err
+  test -s xi.dat
+  test -s xi1.dat
+  if cmp -s xi1.dat default-xi; then
+    printf 'rescalexi=true did not rescale Wilson hoppings\n' >&2
+    exit 1
+  fi
+  cmp zeta1.dat default-zeta
+  cmp theta1.dat default-theta
+  cmp data default-data
+)

@@ -31,7 +31,14 @@ add_test(NAME nrginit_chain_defaults
          COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/test_rkpw ${PROJECT_SOURCE_DIR} ${Mathematica_KERNEL_EXECUTABLE} chain_defaults)
 
 add_test(NAME nrginit_runner_contracts
-         COMMAND ${PERL_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_runner_contracts.pl ${PROJECT_SOURCE_DIR})
+          COMMAND ${PERL_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_runner_contracts.pl ${PROJECT_SOURCE_DIR})
+
+foreach(backend IN LISTS CHAIN_TEST_BACKENDS)
+  add_test(NAME nrginit_mapping_${backend}
+           COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/test_rkpw ${PROJECT_SOURCE_DIR} ${Mathematica_KERNEL_EXECUTABLE} chain_mapping)
+  set_tests_properties(nrginit_mapping_${backend} PROPERTIES
+    ENVIRONMENT "${TEST_BUILD_ENV};CHAIN_TEST_BACKEND=${backend}" LABELS chain-${backend})
+endforeach()
 
 if(TEST_CHAIN_LEGACY)
   add_test(NAME nrginit_chain_legacy

@@ -90,7 +90,7 @@ Do[expectError["invalid RKPW bandrescale " <> value,
   loadWilson[{{"tri", "rkpw"}, {"bandrescale", value}}], "bandrescale must be a finite positive machine real"],
   {value, {"0", "-1", "!Infinity", "!Indeterminate", "!I", "!10^400", "!10^-400"}}];
 expectError["scaled hopping underflow", loadWilson[{{"tri", "rkpw"}, {"bandrescale", "!2^-1074"}, {"gap", "1"}}], "final scaled coefficient"];
-expectError["cpp seed scaling checked", loadWilson[{{"tri", "cpp"}, {"tridiag_method", "rkpw"}, {"bandrescale", "!2^-1074"}, {"gap", "1"}}], "final scaled coefficient"];
+expectError["cpp seed scaling checked", loadWilson[{{"tri", "cpp"}, {"tridiag_method", "rkpw"}, {"bandrescale", "!2^-1074"}, {"shift0", "1"}}], "final scaled coefficient"];
 loadWilson[{{"tri", "rkpw"}, {"bandrescale", "!10^-310"}, {"gap", "1"}}];
 scaledTables = {Flatten[zetatable[1]], Flatten[xitable[1]]};
 rawTables = {Table[zeta[1][n], {n, 0, 4}], Table[xi[1][n], {n, 0, 4}]};
