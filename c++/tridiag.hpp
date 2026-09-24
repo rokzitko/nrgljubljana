@@ -5,12 +5,16 @@
 #define _tridiag_hpp_
 
 #include <cstddef>
+#include <cmath>
 #include <iostream>
 #include <ostream>
+#include <stdexcept>
+#include <vector>
 
 #include "mp.hpp"
 #include "coef.hpp"
 #include "params.hpp"
+#include "star-to-chain.hpp"
 
 namespace NRG {
 
@@ -50,11 +54,14 @@ inline void fix_norm(vmpf &up, vmpf &um, const unsigned int mMAX) {
   }
 }
 
-// Tridiagonalisation of the discretization coefficients. Multiple precision arithmetics library GMP is required.
+// Tridiagonalisation of the discretization coefficients; GMP Lanczos remains the default.
 template<scalar S>
 void Tridiag<S>::tridiag_ch(const size_t alpha, Coef<S> &coef) {
   std::cout << "Tridiagonalisation, ch=" << alpha << ".";
-  std::cout << " Using GMP version " << gmp_version << std::endl;
+  if (P.tridiag_method == "rkpw")
+    std::cout << " Using scalar RKPW (preccpp unused)." << std::endl;
+  else
+    std::cout << " Using GMP version " << gmp_version << std::endl;
 
   const unsigned int mMAX = coef.em.max(alpha);
   std::cout << "mMAX=" << mMAX << std::endl;
@@ -62,6 +69,34 @@ void Tridiag<S>::tridiag_ch(const size_t alpha, Coef<S> &coef) {
   my_assert(coef.ep.max(alpha) == mMAX);
   my_assert(coef.u0p.max(alpha) == mMAX);
   my_assert(coef.u0m.max(alpha) == mMAX);
+
+  if (P.tridiag_method == "rkpw") {
+    if (!std::isfinite(P.bandrescale.value()) || P.bandrescale <= 0.0)
+      throw std::invalid_argument("rkpw: bandrescale must be positive and finite.");
+    std::vector<StarPoint> star;
+    star.reserve(2 * (static_cast<size_t>(mMAX) + 1));
+    // Preserve shell order and the existing real-only contract for complex S.
+    for (size_t m = 0; m <= mMAX; ++m) {
+      star.push_back({real_part_with_check(coef.ep(m, alpha)), real_part_with_check(coef.u0p(m, alpha))});
+      star.push_back({-real_part_with_check(coef.em(m, alpha)), real_part_with_check(coef.u0m(m, alpha))});
+    }
+    const auto chain = scalar_star_to_chain(star, Nmax + 1);
+    // Validate the full channel before publishing any scaled coefficients.
+    for (size_t n = 0; n < chain.xi.size(); ++n) {
+      const auto xi = chain.xi[n] * P.bandrescale;
+      const auto zeta = chain.zeta[n] * P.bandrescale;
+      if (!std::isfinite(xi) || !std::isfinite(zeta) || (chain.xi[n] != 0.0 && xi == 0.0)
+          || (chain.zeta[n] != 0.0 && zeta == 0.0))
+        throw std::runtime_error("rkpw: scaled coefficient is nonfinite or underflowed.");
+    }
+    for (size_t n = 0; n < chain.xi.size(); ++n) {
+      coef.xi.set(n, alpha, chain.xi[n] * P.bandrescale);
+      coef.zeta.set(n, alpha, chain.zeta[n] * P.bandrescale);
+      std::cout << "  xi(" << n << ")=" << HIGHPREC(chain.xi[n]) << std::endl;
+      std::cout << "zeta(" << n << ")=" << HIGHPREC(chain.zeta[n]) << std::endl;
+    }
+    return;
+  }
 
   mpf_set_default_prec(P.preccpp);
   std::cout << "Using precision of " << P.preccpp << " digits." << std::endl;

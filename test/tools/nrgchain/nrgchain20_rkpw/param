@@ -1,0 +1,10 @@
+[param]
+band=flat
+Lambda=2
+z=0.63
+Nmax=7
+mMAX=16
+preccpp=512
+adapt=false
+xmax=20
+outputstep=0.125

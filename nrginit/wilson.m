@@ -4,6 +4,7 @@ ClearAll[thetaCh]; (* Bug honey-pot *)
 
 (* ---- Tridiagonalisation approach (parameter "tri" in param file):
 old - direct use of the recursion relations
+rkpw - unsquared Rutishauser/Gragg-Harrod scalar reconstruction (machine arithmetic)
 sc - as above, but extended for superconducting hosts with arbitrary DOS
      and even-frequency pairing function
 sc2 - as above, but for fully general pairing function
@@ -15,6 +16,15 @@ manual_namnu - as above, for the superconducting case
 *)
 
 TRI = paramdefault["tri", "old"];
+If[!MemberQ[{"old", "rkpw", "sc", "sc2", "cpp", "orth", "none", "nambu",
+    "manual", "manual_nambu", "manual_nambu_new"}, TRI],
+  MyError["Unknown tri backend: ", TRI];
+];
+TRIDIAGMETHOD = paramdefault["tridiag_method", "lanczos"];
+If[!MemberQ[{"lanczos", "rkpw"}, TRIDIAGMETHOD],
+  MyError["Unknown tridiag_method backend: ", TRIDIAGMETHOD, "; expected lanczos or rkpw."];
+];
+RKPW = TRI == "rkpw" || (MemberQ[{"cpp", "none"}, TRI] && TRIDIAGMETHOD == "rkpw");
 If[TRI == "old",
   defaultprec = 1000;
   dothelanczos = dothelanczosold;
@@ -47,6 +57,10 @@ If[TRI == "manual" || TRI == "manual_nambu" || TRI == "manual_nambu_new",
   defaultprec = 30; (* Should be enough *)
   dothelanczos = loaddiscretizationtables;
 ];
+If[RKPW,
+  defaultprec = 30; (* Upstream discretization still uses arbitrary precision. *)
+  dothelanczos = dothelanczosrkpw;
+];
 If[option["GENERATE_TEMPLATE"],
   dothelanczos = None;
   Nmax = 0;
@@ -58,6 +72,15 @@ as encoded in defaultchaintype[] *)
 (* matrix = enforce matrix interface *)
 defaultchaintype[_] := "legacy";
 WILSONCHAIN = paramdefault["wilsonchain", defaultchaintype[SYMTYPE]];
+If[RKPW && (isSC[] || POL2x2 || RUNGS || BAND == "nambu" || WILSONCHAIN != "legacy"),
+  MyError["rkpw requires scalar normal-state chains; superconducting, matrix and rung chains are not supported."];
+];
+If[RKPW,
+  rkpwBandscale = Quiet[N[bandrescale, MachinePrecision], {General::munfl, General::ovfl}];
+  If[!TrueQ[Head[rkpwBandscale] === Real && MachineNumberQ[rkpwBandscale] && rkpwBandscale > 0.],
+    MyError["rkpw: bandrescale must be a finite positive machine real."];
+  ];
+];
 
 (* Use arbitrary precision arithmetics *)
 PREC = paramdefaultnum["prec", defaultprec];
@@ -417,6 +440,120 @@ dothelanczosold[] := Module[{},
   dv[a_][n_, m_] :=
   dv[a][n, m] = ((-deminusmem[a, m] - dzeta[a][n - 1]) dv[a][n - 1, m] -
     xi[a][n - 2] dv[a][n - 2, m])/xi[a][n - 1];
+];
+
+(* Gragg and Harrod, Numer. Math. 44 (1984), equations (7)-(14), UNSQUARED.
+   Compile keeps intermediates in machine arithmetic, including gradual
+   underflow, without Mathematica's arbitrary-precision fallback. Overflow
+   is a failure, not a reason to rerun the recurrence in the evaluator. *)
+rkpwHypot[] := rkpwHypot[] = Compile[{{x, _Real}, {y, _Real}},
+  Module[{hi = Max[Abs[x], Abs[y]], lo = Min[Abs[x], Abs[y]], q = 0.},
+    (* Compile implements division via a reciprocal: scale subnormal
+       denominators before taking ratios, even when the ratio is order one. *)
+    If[hi == 0., 0.,
+      q = If[hi < 2.2250738585072014*^-308, (lo 2.^512)/(hi 2.^512), lo/hi];
+      hi Sqrt[1. + q q]]
+  ], RuntimeOptions -> {"CatchMachineOverflow" -> True, "CompareWithTolerance" -> False,
+    "EvaluateSymbolically" -> False, "RuntimeErrorHandler" -> Function[$Failed], "WarningMessages" -> False}];
+
+rkpwSweep[] := rkpwSweep[] = With[{hypot = rkpwHypot[]},
+  Compile[{{poles, _Real, 2}, {cap, _Integer}},
+    Module[{a = Table[0., {cap}], b = Table[0., {cap}], node = 0., pi = 0.,
+        cold = 1., sold = 0., tauold = 0., oldb = 0., rho = 0., nextb = 0.,
+        c = 1., s = 0., scale = 1., rotationNorm = 0., nextpi = 0., nexttau = 0., i = 0, k = 0},
+      a[[1]] = poles[[1, 1]]; b[[1]] = poles[[1, 2]];
+      For[i = 2, i <= Length[poles], i++,
+        node = poles[[i, 1]];
+        If[i <= cap, a[[i]] = node; b[[i]] = 0.];
+        pi = poles[[i, 2]]; cold = 1.; sold = 0.; tauold = 0.;
+        For[k = 1, k <= Min[i, cap], k++,
+          oldb = b[[k]];
+          rho = hypot[oldb, pi];
+          nextb = cold rho;
+          If[rho == 0., c = 1.; s = 0.,
+            If[rho < 2.2250738585072014*^-308,
+              (* Recover the rotation direction before subnormal norm rounding;
+                 retain physical rho for nextb. The power of two also keeps
+                 Compile's reciprocal-based divisions in the normal range. *)
+              scale = Max[Abs[oldb], Abs[pi]] 2.^512;
+              c = (oldb 2.^512)/scale; s = -(pi 2.^512)/scale;
+              rotationNorm = hypot[c, s];
+              c = c/rotationNorm; s = s/rotationNorm,
+              c = oldb/rho; s = -pi/rho
+            ];
+          ];
+          nextpi = s (a[[k]] - node) + c sold oldb;
+          nexttau = s nextpi;
+          a[[k]] = a[[k]] - (nexttau - tauold);
+          b[[k]] = nextb;
+          pi = nextpi; cold = c; sold = s; tauold = nexttau;
+        ];
+      ];
+      {a, b}
+    ], CompilationOptions -> {"InlineCompiledFunctions" -> True},
+    RuntimeOptions -> {"CatchMachineOverflow" -> True, "CompareWithTolerance" -> False,
+      "EvaluateSymbolically" -> False, "RuntimeErrorHandler" -> Function[$Failed], "WarningMessages" -> False}]
+];
+
+(* Input rows are {signed energy, nonnegative amplitude}, in insertion order.
+   Return count onsite and hopping entries; only exhausted support terminates
+   with zero. Even a short prefix must incorporate every input pole. *)
+rkpwScalar[poles_, count_] := Module[{machine, amplitudes, maxAmplitude, shift, groups, support, r, cap, result, onsite, hopping},
+  If[!IntegerQ[count] || count < 1,
+    MyError["rkpw: requested coefficient count must be a positive integer."]; Return[$Failed]];
+  If[!MatrixQ[poles] || Length[poles] == 0 || Last[Dimensions[poles]] != 2,
+    MyError["rkpw: expected nonempty {energy, amplitude} rows."]; Return[$Failed]];
+  machine = Quiet[N[poles, MachinePrecision], {General::munfl, General::ovfl}];
+  If[!MatrixQ[machine, (Head[#] === Real && MachineNumberQ[#]) &] ||
+      !And @@ MapThread[(#2 != 0. || TrueQ[#1 == 0]) &, {Flatten[poles], Flatten[machine]}],
+    MyError["rkpw: input is not a finite representable machine real (or a nonzero input rounded to zero)."]; Return[$Failed]];
+  If[Min[machine[[All, 2]]] < 0.,
+    MyError["rkpw: amplitudes must be nonnegative."]; Return[$Failed]];
+  maxAmplitude = Max[machine[[All, 2]]];
+  If[maxAmplitude > 0.,
+    (* Equivalent to frexp(max,&exp), then scalbn(amp,1-exp). Use exact
+       binary preprocessing so even the least subnormal can be scaled up
+       without first rounding a norm or overflowing the scale factor. *)
+    shift = 1 - Last[MantissaExponent[SetPrecision[maxAmplitude, Infinity], 2]];
+    amplitudes = Quiet[N[SetPrecision[machine[[All, 2]], Infinity] 2^shift, MachinePrecision], General::munfl];
+    If[!VectorQ[amplitudes, (Head[#] === Real && MachineNumberQ[#]) &] ||
+        !And @@ MapThread[(#2 != 0. || #1 == 0.) &, {machine[[All, 2]], amplitudes}],
+      MyError["rkpw: nonrepresentable amplitude during common power-of-two scaling (nonzero rounded to zero)."]; Return[$Failed]];
+    machine[[All, 2]] = amplitudes;
+  ];
+  (* Exact binary keys avoid Mathematica SameQ's tolerance for nearby reals.
+     GatherBy preserves the first occurrence, including shell interleaving. *)
+  groups = GatherBy[Select[machine, #[[2]] != 0. &], SetPrecision[First[#], Infinity] &];
+  r = Length[groups];
+  If[count > r,
+    MyError["rkpw: requested ", count, " coefficients but effective nonzero support is ", r, "."]; Return[$Failed]];
+  support = Map[{#[[1, 1]], Fold[rkpwHypot[], 0., #[[All, 2]]]} &, groups];
+  If[!MatrixQ[support, (Head[#] === Real && MachineNumberQ[#]) &] ||
+      !And @@ Thread[support[[All, 2]] > 0.],
+    MyError["rkpw: merged amplitudes are not representable in machine arithmetic."]; Return[$Failed]];
+  cap = Min[r, count + 1];
+  result = rkpwSweep[][support, cap];
+  If[!MatrixQ[result, (Head[#] === Real && MachineNumberQ[#]) &] || Dimensions[result] != {2, cap},
+    MyError["rkpw: numerical breakdown or nonrepresentable coefficient in machine recurrence."]; Return[$Failed]];
+  onsite = Take[result[[1]], count];
+  hopping = Take[Rest[result[[2]]], Min[count, r - 1]];
+  If[!And @@ Thread[hopping > 0.],
+    MyError["rkpw: numerical breakdown (nonpositive or underflowed hopping before support exhaustion)."]; Return[$Failed]];
+  If[count == r, AppendTo[hopping, 0.]];
+  {onsite, hopping}
+];
+
+dothelanczosrkpw[] := Module[{a, poles, coefficients, n},
+  For[a = 1, a <= COEFCHANNELS, a++,
+    poles = Flatten[Table[{{de[a, m], du[a][0, m]}, {-deminus[a, m], dv[a][0, m]}}, {m, 0, mMAX}], 1];
+    coefficients = rkpwScalar[poles, DISCNMAX + 1];
+    Do[
+      dzeta[a][n] = coefficients[[1, n + 1]];
+      xi[a][n] = coefficients[[2, n + 1]],
+      {n, 0, DISCNMAX}];
+  ];
+  (* No higher Lanczos vectors or squared tail hoppings are needed. du/dv[0]
+     remain the high-precision normalized amplitudes used by star output. *)
 ];
 
 (* Calculation of Wilson chain coefficients: ** superconducting host with
@@ -784,7 +921,19 @@ loadtablesckappa[] := Module[{imp1,imp2},
 ];
 
 (* Use the following for debugging purposes. *)
-discretizationChecks[] := Module[{},
+discretizationChecks[] := Module[{a, norm, mean, width},
+  If[RKPW,
+    Do[
+      norm = Sum[du[a][0, m]^2 + dv[a][0, m]^2, {m, 0, mMAX}];
+      mean = Sum[de[a, m] du[a][0, m]^2 - deminus[a, m] dv[a][0, m]^2, {m, 0, mMAX}]/norm;
+      width = Sqrt[Sum[((de[a, m] - mean) du[a][0, m])^2 +
+        ((-deminus[a, m] - mean) dv[a][0, m])^2, {m, 0, mMAX}]/norm];
+      MyPrintForm["rkpw check (channel ``): 1-norm=``; first moment error=``; sqrt(variance) error=``",
+        a, N[1 - norm, 10], N[SetPrecision[dzeta[a][0], PREC] - mean, 10],
+        N[SetPrecision[xi[a][0], PREC] - width, 10]],
+      {a, COEFCHANNELS}];
+    Return[];
+  ];
   normalizationcheck[a_] := Module[{tab},
     tab = Table[1-Sum[du[a][n,m]^2, {n, 0, DISCNMAX}], {m, 0, mMAX}];
     MyPrintForm["Normalization: 1-sums_n u_{nm}^2 (channel ``)", a];
@@ -1281,12 +1430,26 @@ showtable[name_, channel_, table_] := Module[{},
 OUTPREC = 20;
 
 (* Legacy interface for building Wilson chain coefficient tables *)
-Module[{a, precxi, preczeta},
+Module[{a, precxi, preczeta, raw, scaled},
   For[a = 1, a <= COEFCHANNELS, a++,
       MyPrintForm["Discretization (channel ``)", a];
 
-      xitable[a]   = Table[{N[bandrescale xi[a][i],   OUTPREC]}, {i, 0, DISCNMAX}];
-      zetatable[a] = Table[{N[bandrescale zeta[a][i], OUTPREC]}, {i, 0, DISCNMAX}];
+      If[RKPW,
+        (* Validate the physical onsite terms as well as the reconstructed
+           chain. Exact binary products give one checked machine rounding,
+           including subnormals, without evaluator overflow fallback. *)
+        raw = Quiet[Table[{xi[a][i], zeta[a][i]}, {i, 0, DISCNMAX}], {General::munfl, General::ovfl}];
+        scaled = Quiet[N[SetPrecision[rkpwBandscale, Infinity] SetPrecision[raw, Infinity], MachinePrecision],
+          {General::munfl, General::ovfl}];
+        If[!MatrixQ[scaled, (Head[#] === Real && MachineNumberQ[#]) &] ||
+            !And @@ MapThread[(#2 != 0. || TrueQ[#1 == 0]) &, {Flatten[raw], Flatten[scaled]}],
+          MyError["rkpw: nonrepresentable final scaled coefficient (nonfinite or nonzero rounded to zero), channel ", a, "."];
+        ];
+        xitable[a] = List /@ scaled[[All, 1]];
+        zetatable[a] = List /@ scaled[[All, 2]],
+        xitable[a]   = Table[{N[bandrescale xi[a][i],   OUTPREC]}, {i, 0, DISCNMAX}];
+        zetatable[a] = Table[{N[bandrescale zeta[a][i], OUTPREC]}, {i, 0, DISCNMAX}];
+      ];
 
       showtable["xitable", a, xitable[a]];
       showtable["zetatable", a, zetatable[a]];

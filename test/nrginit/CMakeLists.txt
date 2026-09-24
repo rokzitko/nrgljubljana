@@ -16,6 +16,14 @@ add_test(NAME nrginit_bool_parser
 add_test(NAME nrginit_floquet_primitives
          COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/test_floquet_primitives ${PROJECT_SOURCE_DIR} ${Mathematica_KERNEL_EXECUTABLE})
 
+add_test(NAME nrginit_rkpw
+         COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/test_rkpw ${PROJECT_SOURCE_DIR} ${Mathematica_KERNEL_EXECUTABLE})
+
+add_test(NAME nrginit_rkpw_pipeline
+         COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/test_rkpw_pipeline ${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR}
+                      ${Mathematica_KERNEL_EXECUTABLE})
+set_tests_properties(nrginit_rkpw_pipeline PROPERTIES ENVIRONMENT "${TEST_BUILD_ENV}")
+
 configure_file(nrginit10_calcopq_d2/SIAM.m nrginit10_calcopq_d2/SIAM.m COPYONLY)
 configure_file(nrginit11_calcopq_d3/SIAM.m nrginit11_calcopq_d3/SIAM.m COPYONLY)
 configure_file(nrginit12_calcopq_d4/DQD.m nrginit12_calcopq_d4/DQD.m COPYONLY)

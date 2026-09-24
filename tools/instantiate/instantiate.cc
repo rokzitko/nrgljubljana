@@ -478,6 +478,7 @@ struct ResolvedNrgChainConfiguration {
   unsigned int Nmax;
   unsigned int mMAX;
   unsigned int preccpp;
+  std::string tridiag_method;
   bool adapt;
   bool rescalexi;
   std::string band;
@@ -539,6 +540,7 @@ ResolvedNrgChainConfiguration resolve_nrgchain_configuration(
     .Nmax = integer("Nmax", 0),
     .mMAX = 0,
     .preccpp = integer("preccpp", 2000),
+    .tridiag_method = string("tridiag_method", "lanczos"),
     .adapt = boolean("adapt", false),
     .rescalexi = boolean("rescalexi", false),
     .band = string("band", "adapt"),
@@ -562,7 +564,10 @@ ResolvedNrgChainConfiguration resolve_nrgchain_configuration(
     throw std::invalid_argument("Nmax is too large to derive mMAX.");
   config.mMAX = integer("mMAX", 2U * config.Nmax);
   if (config.mMAX == 0) throw std::invalid_argument("mMAX must be greater than 0.");
-  if (config.preccpp <= 10) throw std::invalid_argument("preccpp must be greater than 10.");
+  if (config.tridiag_method != "lanczos" && config.tridiag_method != "rkpw")
+    throw std::invalid_argument("Unknown tridiag_method: " + config.tridiag_method + "; expected lanczos or rkpw.");
+  if (config.tridiag_method == "lanczos" && config.preccpp <= 10)
+    throw std::invalid_argument("preccpp must be greater than 10 for tridiag_method=lanczos.");
   config.tables_save = config.requested_tables_save;
   config.tables_load = config.requested_tables_load;
   config.tridiagonalize = config.requested_tridiagonalize;
@@ -659,7 +664,11 @@ void report_configuration(const Options &options, const NrgChainInvocation &invo
   parameter("nrgchain.xmax", "xmax", config.xmax);
   parameter("nrgchain.Nmax", "Nmax", config.Nmax);
   parameter("nrgchain.mMAX", "mMAX", config.mMAX, "2 * Nmax");
-  parameter("nrgchain.preccpp", "preccpp", config.preccpp);
+  parameter("nrgchain.tridiag_method", "tridiag_method", config.tridiag_method);
+  if (config.tridiag_method == "lanczos")
+    parameter("nrgchain.preccpp", "preccpp", config.preccpp);
+  else
+    report.resolved("nrgchain.preccpp", "inactive", "tridiag_method=rkpw; preccpp unused");
   report.value("nrgchain.output_precision", 16);
   parameter("nrgchain.adapt", "adapt", config.adapt);
   parameter("nrgchain.rescalexi", "rescalexi", config.rescalexi);

@@ -1,0 +1,40 @@
+#!/bin/bash
+set -euo pipefail
+
+source_dir=$1
+build_dir=$2
+kernel=$3
+export LD_LIBRARY_PATH="$build_dir/c++${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+work=$(mktemp -d "$build_dir/test/nrginit/rkpw-pipeline.XXXXXX")
+
+for mode in rkpw cpp; do
+  mkdir "$work/$mode"
+  (
+    cd "$work/$mode"
+    perl -ne 'print unless /^tri=/' "$source_dir/test/c++/test40_tri/param" > param
+    printf '\ntri=%s\ntridiag_method=rkpw\npreccpp=0\n' "$mode" >> param
+    if ! "$source_dir/nrginit/nrginit" "$kernel" > initializer.log 2>&1; then
+      cat initializer.log
+      exit 1
+    fi
+    test -s data
+    bash "$source_dir/test/c++/runtest" "$source_dir" "$build_dir" "$source_dir/test/c++/test40_tri"
+    if [ "$mode" = cpp ]; then
+      perl -0777 -ne 'die "Runtime did not select RKPW\n" unless /Using scalar RKPW/' log
+    fi
+  )
+done
+
+# A nontrivial seed must also be constructed correctly from machine coefficients.
+mkdir "$work/seed"
+(
+  cd "$work/seed"
+  cp "$source_dir/test/nrginit/nrginit45_Ninit=1/param" param
+  printf '\ntri=rkpw\n' >> param
+  if ! "$source_dir/nrginit/nrginit" "$kernel" > initializer.log 2>&1; then
+    cat initializer.log
+    exit 1
+  fi
+  "$source_dir/test/compare-ignoresigns.pl" "$source_dir/test/nrginit/nrginit45_Ninit=1/ref"
+)
+printf 'RKPW initializer/solver pipeline passed (artifacts in %s).\n' "$work"

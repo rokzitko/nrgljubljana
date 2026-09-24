@@ -183,9 +183,10 @@ class Params {
   //! param<double> Tmin {"Tmin", "Lowest scale on the Wilson chain", "1e-4", all}; // S
 
   // If tri=cpp, we do the tridiagonalisation in the C++ part of the
-  // code. In other cases,. we make use of external tools or Mathematica.
+  // code. In other cases, we make use of external tools or Mathematica.
   param<std::string> tri{"tri", "Tridiagonalisation approach", "old", all};               // N
-  param<size_t> preccpp{"preccpp", "Precision for tridiagonalisation", "2000", all}; // N
+  param<std::string> tridiag_method{"tridiag_method", "C++ scalar chain backend (lanczos|rkpw)", "lanczos", all}; // N
+  param<size_t> preccpp{"preccpp", "GMP precision in bits for legacy C++ Lanczos (unused by rkpw)", "2000", all}; // N
 
   // ************************
   // NRG iteration parameters
@@ -726,6 +727,10 @@ class Params {
     if (dm_flags()) dm = true;
     if (!std::isfinite(Lambda.value()) || Lambda <= 1.0)
       throw std::invalid_argument("Lambda must be finite and greater than 1.");
+    if (tridiag_method != "lanczos"s && tridiag_method != "rkpw"s)
+      throw std::invalid_argument("Unknown tridiag_method: " + tridiag_method.value() + "; expected lanczos or rkpw.");
+    if (tri == "cpp" && tridiag_method == "lanczos" && preccpp <= 10)
+      throw std::invalid_argument("preccpp must be greater than 10 for tridiag_method=lanczos.");
     if (diag == "dsyevr"s || diag == "zheevr"s) {
       if (!std::isfinite(diagratio.value()) || diagratio <= 0.0 || diagratio > 1.0)
         throw std::invalid_argument("diagratio must be finite and in (0, 1] for partial diagonalisation.");

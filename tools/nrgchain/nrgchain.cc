@@ -22,6 +22,8 @@
 
 #include <gmp.h>
 
+#include <star-to-chain.hpp>
+
 #include "../common/tabulated_density.hpp"
 
 #ifndef NRGCHAIN_NO_MAIN
@@ -49,6 +51,7 @@ double bandrescale = 1.0;   // band rescaling factor
 bool rescalexi     = false; // rescale coefficients xi
 
 unsigned int preccpp; // precision for GMP
+string tridiag_method = "lanczos";
 
 Vec vecrho_pos, vecrho_neg; // rho, for positive and negative energies
 NRG::Tools::TabulatedDensity rho_pos, rho_neg;
@@ -219,8 +222,13 @@ void set_parameters() {
   if (mmax_value <= 0) throw std::invalid_argument("mMAX must be greater than 0.");
   mMAX = static_cast<unsigned int>(mmax_value);
 
-  const auto precision_value = Pint("preccpp", 2000); // Precision for GMP
-  if (precision_value <= 10) throw std::invalid_argument("preccpp must be greater than 10.");
+  tridiag_method = Pstr("tridiag_method", "lanczos");
+  if (tridiag_method != "lanczos" && tridiag_method != "rkpw")
+    throw std::invalid_argument("Unknown tridiag_method: " + tridiag_method + "; expected lanczos or rkpw.");
+  const auto precision_value = Pint("preccpp", 2000); // GMP precision in bits, unused by RKPW
+  if (precision_value < 0) throw std::invalid_argument("preccpp must be nonnegative.");
+  if (tridiag_method == "lanczos" && precision_value <= 10)
+    throw std::invalid_argument("preccpp must be greater than 10 for tridiag_method=lanczos.");
   preccpp = static_cast<unsigned int>(precision_value);
 
   band = Pstr("band", "adapt"); // Default: load FSOL*.dat
@@ -448,6 +456,46 @@ void fix_norm(vmpf &up, vmpf &um, unsigned int mMAX_) {
 // OUTPUT: written to files "xi.dat" and "zeta.dat"
 
 void tridiag() {
+  if (tridiag_method == "rkpw") {
+    vector<NRG::StarPoint> star;
+    star.reserve(2 * (static_cast<size_t>(mMAX) + 1));
+    // Preserve shell order, alternating signs from high to low shell energy.
+    for (size_t m = 0; m <= mMAX; ++m) {
+      star.push_back({de_pos[m], du_pos[m]});
+      star.push_back({-de_neg[m], du_neg[m]});
+    }
+    const auto chain = NRG::scalar_star_to_chain(star, static_cast<size_t>(Nmax) + 1);
+    result_xi = chain.xi;
+    result_zeta = chain.zeta;
+    for (size_t n = 0; n < result_xi.size(); ++n) {
+      const auto hopping_scale = rescalexi ? SCALE(static_cast<int>(n + 1)) : 1.0;
+      if (!std::isfinite(hopping_scale) || hopping_scale <= 0.0)
+        throw runtime_error("rkpw: hopping rescaling factor must be positive and finite.");
+      result_xi[n] = (chain.xi[n] / hopping_scale) * bandrescale;
+      result_zeta[n] = chain.zeta[n] * bandrescale;
+      if (!std::isfinite(result_xi[n]) || !std::isfinite(result_zeta[n])
+          || (chain.xi[n] != 0.0 && result_xi[n] == 0.0) || (chain.zeta[n] != 0.0 && result_zeta[n] == 0.0))
+        throw runtime_error("rkpw: scaled coefficient is nonfinite or underflowed.");
+    }
+
+    // Do not truncate coefficient files until the finite-star calculation succeeds.
+    ofstream XI, ZETA;
+    const auto xi_filename = output_path("xi.dat");
+    const auto zeta_filename = output_path("zeta.dat");
+    safe_open(XI, xi_filename);
+    safe_open(ZETA, zeta_filename);
+    cout << "Using scalar RKPW tridiagonalisation (preccpp unused)." << endl;
+    for (size_t n = 0; n < result_xi.size(); ++n) {
+      XI << result_xi[n] << endl;
+      ZETA << result_zeta[n] << endl;
+      cout << "  xi(" << n << ")=" << HIGHPREC(chain.xi[n]) << " --> " << HIGHPREC(result_xi[n]) << endl;
+      cout << "zeta(" << n << ")=" << HIGHPREC(chain.zeta[n]) << endl;
+    }
+    close_output_checked(XI, xi_filename);
+    close_output_checked(ZETA, zeta_filename);
+    return;
+  }
+
   ofstream XI, ZETA;
   const auto xi_filename = output_path("xi.dat");
   const auto zeta_filename = output_path("zeta.dat");
@@ -628,6 +676,7 @@ void reset_calculation_state() {
   bandrescale = 1.0;
   rescalexi = false;
   preccpp = 0;
+  tridiag_method = "lanczos";
   vecrho_pos.clear();
   vecrho_neg.clear();
   rho_pos = NRG::Tools::TabulatedDensity();
@@ -698,7 +747,11 @@ void report_configuration(const TableMode mode) {
   report.value("bandrescale", bandrescale);
   report.value("adapt", adapt);
   report.value("rescalexi", rescalexi);
-  report.value("gmp_precision", preccpp);
+  report.value("tridiag_method", tridiag_method);
+  if (tridiag_method == "lanczos")
+    report.value("gmp_precision", preccpp);
+  else
+    report.resolved("gmp_precision", "inactive", "tridiag_method=rkpw; preccpp unused");
   report.value("output_precision", PREC);
   const auto density_method = NRG::Tools::interpolation_method_name(density_interpolation);
   if (nrgchain_tables_load) {

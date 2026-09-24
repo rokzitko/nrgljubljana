@@ -26,6 +26,49 @@ legacy misspelling `nrgchains_tridiag` remains a fallback when
 `nrgchain_tables_save=true` and `nrgchain_tables_load=true` are mutually
 exclusive. `instantiate` requires tridiagonalization to be enabled.
 
+## Scalar tridiagonalization backend
+
+The opt-in parameter `tridiag_method=rkpw` selects the scalar RKPW
+star-to-chain kernel. The default, `tridiag_method=lanczos`, keeps the legacy
+GMP calculation. Names are case-sensitive and other values are rejected, even
+in save-only mode. `instantiate` uses the same setting for its in-process
+Wilson-chain generation; the C++ runtime uses it when `tri=cpp`.
+
+For example, add this to `[param]` and run `nrgchain -v`, or compare the
+backends on the same saved star with `nrgchain s` followed by `nrgchain l`
+after changing only `tridiag_method`:
+
+```ini
+tridiag_method=rkpw
+```
+
+`preccpp` defaults to `2000` and specifies **GMP precision in bits**, not decimal
+digits. It must be an integer greater than `10` for `lanczos`. With `rkpw`, it
+is still parsed as a nonnegative integer but is unused; `0` is allowed and
+verbose diagnostics mark it inactive. The tools accept values through the
+maximum signed C++ `int`. RKPW uses fixed floating-point arithmetic, not GMP,
+and changing `preccpp` does not increase its precision.
+
+Both backends receive the same normalized amplitudes and representative
+energies. RKPW preserves shell order, alternating positive and negative
+energies from high to low shells. Exactly zero amplitudes are removed and
+exactly equal energies are combined. If the resulting finite star has `K`
+distinct supported energies, `Nmax+1` must not exceed `K`. At equality, the
+last hopping is exactly zero; an overlong request fails rather than padding
+or silently shortening the chain. The calculation finishes before RKPW opens
+`xi.dat` and `zeta.dat`, so this failure does not truncate existing coefficient
+files.
+
+The backend does not change `theta`, normalization, file precision, or
+coefficient conventions: both `xi` and `zeta` have `Nmax+1` entries and
+`xi[n]` couples sites `n` and `n+1`. `rescalexi=true` divides hoppings only by
+`SCALE(n+1)`; on-site energies are never rescaled this way. `bandrescale`
+multiplies both coefficient arrays afterward. Runtime `tri=cpp` applies
+`bandrescale` but has no `rescalexi` step.
+RKPW rejects a nonfinite scaled coefficient or a nonzero coefficient that
+underflows to zero during scaling, rather than silently emitting a broken
+chain. An exact terminal zero remains valid.
+
 ## Density interpolation
 
 The parameter
@@ -66,3 +109,6 @@ loading saved coefficient tables with mode `l`.
 
 See `test/tools/nrgchain/nrgchain1/param` for a complete parameter-file example
 and `test/tools/nrgchain/nrgchain19_steffen` for a Steffen pipeline example.
+`test/tools/nrgchain/nrgchain20_rkpw` compares both scalar backends on identical
+saved flat/asymmetric stars and exercises scaling, `instantiate`, and finite
+support diagnostics.

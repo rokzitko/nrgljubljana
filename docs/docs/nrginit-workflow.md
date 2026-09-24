@@ -67,6 +67,114 @@ the process status before running `nrg`: a failed rerun does not remove an old
 `data` file. `mmalog` is diagnostic output and can vary with the Mathematica
 version.
 
+## Wilson-Chain Reconstruction
+
+The default remains `tri=old`, the existing high-precision recursion in
+`wilson.m`. The runtime method default remains `tridiag_method=lanczos`.
+For scalar normal-state chains, select the unsquared
+Rutishauser/Gragg-Harrod (RKPW) backend in the `[param]` block:
+
+```ini
+tri=rkpw
+```
+
+Then run `nrginit` normally. This generates the full requested coefficient
+table in Mathematica using machine arithmetic for reconstruction only.
+There is no C++ reconstruction of that table in this mode.
+
+For C++ runtime reconstruction, select both settings:
+
+```ini
+tri=cpp
+tridiag_method=rkpw
+```
+
+Here Mathematica uses machine RKPW to generate the coefficients needed by
+the initial cluster, through `Ninit`; the C++ runtime reconstructs its chain
+from the exported star data. With `tri=cpp` and the default
+`tridiag_method=lanczos`, the initializer keeps its old high-precision seed
+recursion. `tri=none` also honors `tridiag_method=rkpw` for the `Ninit` seed,
+without changing its existing coefficient-table output policy.
+`tridiag_method` does not override an explicit `tri=old`, `orth`, or `rkpw`.
+Unknown `tri` or `tridiag_method` strings are initialization errors, even when
+the runtime-method setting would otherwise be unused.
+
+### Precision and support
+
+RKPW does **not** eliminate upstream arbitrary-precision work. `prec` still
+controls discretization energies, hybridization integrals, and normalized
+initial amplitudes. Its default is 30 for `tri=rkpw`, as for `tri=cpp` and
+`tri=none`; the `tri=old` default stays 1000. Increase upstream precision when
+the band integration requires it. Increasing `prec` does not turn RKPW
+reconstruction into an arbitrary-precision algorithm.
+
+The scalar reconstruction inserts signed energies in shell order,
+`+de[m], -deminus[m]`, from the outside inward. It discards exactly zero
+amplitudes and merges exactly identical **machine** energies, preserving
+their first occurrence and combining amplitudes with a scaled Euclidean
+norm. Before merging or reconstruction, all amplitudes receive one common
+power-of-two scale that puts the largest amplitude in `[1,2)`. This preserves
+common-scale invariance even for the least subnormal input and prevents
+amplitude-norm overflow. A nonzero amplitude that rounds to zero under this
+normalization is an error, not discarded support. The binary preprocessing
+does not change the machine-arithmetic recurrence or the exported `du/dv[0]`.
+The backend neither groups all positive energies first nor removes small
+coefficients using a bandwidth-relative threshold.
+
+For `count=DISCNMAX+1`, the effective unique nonzero support must have at
+least `count` poles. When support equals `count`, the output has `count`
+onsite entries, `count-1` positive hoppings, and a terminal zero hopping.
+Requests beyond support fail instead of padding a longer chain. A short
+requested prefix still incorporates every pole; only coefficient storage and
+the insertion sweeps are capped. For `tri=cpp`/`none`, the initializer uses
+`DISCNMAX=Ninit` for this check.
+
+Nonfinite or nonrepresentable machine inputs, a nonzero input rounded to
+zero, and numerical breakdown are errors. Scaled norms avoid unnecessarily
+squaring tiny amplitudes or tail hoppings, but representability still limits
+how deep a chain can go. RKPW does not silently retry in arbitrary precision.
+Independent scalar channels are supported; matrix, rung, and superconducting
+chains are not. The existing `sc` and `sc2` algorithms are unchanged.
+
+For RKPW only, `bandrescale` must be a finite positive machine real. The
+initializer also checks the final rescaled coefficient tables, including
+onsite adjustments from `gap`, `shift0`, and bulk fields. Nonfinite results
+or any nonzero coefficient rounded to zero are errors; representable
+subnormals and the exact terminal zero hopping are allowed. A very small
+positive bandwidth can therefore fail even when the unscaled reconstruction
+succeeded. These checks also apply to RKPW seeds with `tri=cpp`/`none`, but
+do not change legacy-backend scaling behavior.
+
+The normalized high-precision `du/dv[0]` amplitudes remain available for star
+output. With `disccheck` present, RKPW reports the initial-state normalization,
+first-moment error, and square-root-of-variance error for each channel. It
+does not reconstruct higher Lanczos vectors for orthogonality diagnostics.
+
+### Ownership and testing
+
+`tri` is an initializer setting. `tridiag_method` is also read by the
+initializer to select the `cpp`/`none` seed and by the runtime to select its
+reconstruction method. Treat these settings, along with `prec`, `Ninit`,
+`nrxi`, and discretization inputs, as generation-locked: changing them
+requires regenerating `data` before running the solver. See the
+[parameter reference](parameter-reference.md) for the ownership inventory.
+
+The focused Mathematica-only test needs no model generation or C++ build:
+
+```sh
+sh test/nrginit/test_rkpw "$PWD" "$(command -v math)"
+```
+
+It checks an independent high-precision asymmetric-star reference, spectral
+nodes and weights, the analytic flat-band chain through a long tail, support
+and representability boundaries, least-subnormal amplitude scale invariance,
+final physical-coefficient scaling, and initializer dispatch/seed behavior.
+When the Mathematica test suite is configured (Mathematica detected and
+`SYM_ALL` enabled), its CTest name is `nrginit_rkpw`.
+The `nrginit_rkpw_pipeline` test additionally generates fresh `data` with both
+RKPW execution paths, runs the solver against existing physical references,
+and checks a nontrivial initial cluster. Build `nrg` before running it.
+
 ## Hand-Off To The C++ Runtime
 
 The key artifact produced by `nrginit` is `data`.

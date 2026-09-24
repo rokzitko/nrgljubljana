@@ -68,6 +68,15 @@ of these generation-locked values:
 in `data`, and `nrg` obtains it from that file. When `Tmin_ratio` is used, `T`
 and `Tmin_ratio` also determine that generated chain length.
 
+`tridiag_method` selects the C++ scalar backend and the initializer's seed
+backend for `tri=cpp`/`none`. Regenerate `data` after changing it so the seed
+and chain use the same method. With `tri=cpp`, the runtime reads the saved
+star and applies `tridiag_method` and (for Lanczos only) `preccpp`; changing
+only `preccpp` does not require regenerating that star. When `nrgchain` or
+`instantiate` generates coefficient files or `data`, changing
+`tridiag_method` requires regenerating those outputs. It does not require
+regenerating `adapt` tables.
+
 Physical energies, temperatures, and frequencies are normally expressed in
 units of the half-bandwidth `D`, with `k_B=1`. `keepenergy` is a dimensionless
 shell cutoff. Other degeneracy and patching thresholds act in the current
@@ -129,8 +138,9 @@ Builds made without the extended symmetry sets support only a subset. Complex
 | `Tmin_ratio` | number | unset | If positive and `T` is also explicitly present, finite, and positive, set `Tmin=T*Tmin_ratio`; the product must also be finite. An explicit `Tmin` takes precedence. |
 | `tri` | string | `old` | Tridiagonalization implementation. |
 | `wilsonchain` | string | `legacy` | Coefficient-table interface. `matrix` is an experimental initializer output not consumed by a normal build. |
-| `prec` | integer | method-dependent | Mathematica precision used for tridiagonalization. |
-| `preccpp` | non-negative integer | `2000` | C++ tridiagonalization precision when `tri=cpp`. |
+| `prec` | integer | method-dependent | Mathematica decimal precision for discretization and legacy tridiagonalization; RKPW reconstruction always uses machine arithmetic. Defaults to `30` with RKPW. |
+| `tridiag_method` | string | `lanczos` | Scalar backend, `lanczos` or `rkpw`; used at runtime for `tri=cpp`, by `nrgchain`/`instantiate`, and for the initializer's `cpp`/`none` seed. |
+| `preccpp` | non-negative integer | `2000` | Legacy C++ Lanczos precision in GMP **bits**, not decimal digits; unused by `rkpw`. |
 | `nrxi` | integer | `-1` | Number of discretization intervals; a negative value follows `Nmax`, and the resolved value must be in `0..998`. |
 | `mMAX` | integer | derived | Number of Lanczos input values; normally `max(80, 2*nrxi)` and constrained to `1..998`. |
 | `dos` | path | `Delta.dat` | Tabulated density of states for methods that require one. |
@@ -139,7 +149,7 @@ Builds made without the extended symmetry sets support only a subset. Complex
 | `floquet` | boolean | `false` | Generate input for Floquet quasi-energies; runtime use also requires `[extra] Omega` and `ops=m`. See [Floquet model construction](floquet-nrginit.md). |
 | `data_has_rescaled_energies` | boolean | `true` | Compatibility switch for the seed-energy convention in `data`. |
 
-Recognized `tri` values are `old`, `sc`, `sc2`, `orth`, `cpp`, `none`,
+Recognized `tri` values are `old`, `sc`, `sc2`, `orth`, `rkpw`, `cpp`, `none`,
 `nambu`, `manual`, `manual_nambu`, and `manual_nambu_new`. Manual methods need
 coefficient files in the working directory. `none` intentionally emits no
 coefficient table and is only useful for an external hand-off; its direct
@@ -147,6 +157,41 @@ coefficient table and is only useful for an external hand-off; its direct
 zero-filled placeholder rather than a production tridiagonalization method.
 Automatic `Nmax` derivation stops with an error if the requested scale would
 require a value greater than `998`.
+
+`tri=rkpw` opts into scalar RKPW tridiagonalization in Mathematica;
+`tri=cpp` with `tridiag_method=rkpw` instead opts into the shared C++ scalar
+kernel at runtime. These are distinct selectors. `tri` still defaults to
+`old`, and the C++ backend still defaults to `lanczos`. The initializer also
+uses RKPW for the `Ninit` seed with `tri=cpp`/`none` and
+`tridiag_method=rkpw`; this setting does not override an explicit
+`tri=old`, `orth`, or `rkpw`. Upstream discretization retains its separate
+arbitrary-precision arithmetic. For the runtime path:
+
+```ini
+tri=cpp
+tridiag_method=rkpw
+```
+
+For `nrgchain` and `instantiate`, set only `tridiag_method=rkpw` in their
+`[param]` block; `tri` does not select their backend. Unknown
+`tridiag_method` names are rejected, including when the setting is inactive.
+`preccpp` remains a parsed nonnegative integer for RKPW but is unused, so
+`preccpp=0` is accepted there. Lanczos requires `preccpp>10` in the tools and
+in runtime `tri=cpp`. The tools parse it through a signed C++ `int`, while the
+runtime uses `size_t`. RKPW does not use GMP; increasing `preccpp` has no
+effect. Mathematica's separate `prec` parameter uses decimal digits.
+
+The C++ kernel consumes normalized scalar star amplitudes in interleaved
+positive/negative shell order, removes exactly zero amplitudes, and combines
+exactly equal energies. `Nmax+1` coefficients are requested; this cannot
+exceed the number of distinct supported energies. At equality, the final
+`xi` is exactly zero. Complex runtime builds retain the real-only star-input
+restriction. Both arrays are multiplied by `bandrescale`; only the tools
+additionally support `rescalexi`, which rescales hoppings but not on-site
+energies. `theta`, coefficient layouts, and output precision are unchanged.
+RKPW requires positive finite `bandrescale` and rejects nonfinite scaled
+coefficients or scaling that turns a nonzero coefficient into zero; exact
+terminal zero hoppings remain valid.
 
 Built-in `band` branches include `flat`, `cosine`, `dmft`, `nambu`, `manual`,
 `manual_V`, `asymode`, `adapt`, and `flat_with_bulk_field`. A value ending in
@@ -256,7 +301,8 @@ An empty string default means that the feature or list is disabled.
 | `pol2x2` | boolean | `false` | Use the full `2x2` spin structure. |
 | `rungs` | boolean | `false` | Use channel-mixing Wilson-chain terms. |
 | `tri` | string | `old` | Coefficient source; exact `cpp` selects C++ tridiagonalization. |
-| `preccpp` | non-negative integer | `2000` | Precision used by C++ tridiagonalization. |
+| `tridiag_method` | string | `lanczos` | C++ scalar backend for `tri=cpp`: `lanczos` or `rkpw`, case-sensitive; unknown names are always rejected. |
+| `preccpp` | non-negative integer | `2000` | GMP precision in bits for `tri=cpp` with `tridiag_method=lanczos`, where it must exceed `10`; parsed but unused by `rkpw`. |
 | `diag` | string | `default` | Eigensolver. See [Eigensolvers and backends](#eigensolvers-and-backends). |
 | `saveram` | boolean | `false` | Request minimal documented LAPACK workspace sizes. |
 | `mult` | string | `blas` | Matrix multiplication backend, `blas` or `cuda`; case-insensitive. |

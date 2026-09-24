@@ -446,6 +446,17 @@ it, parse it as a result format, or assume that generated files are portable
 between incompatible releases. Keep the original `param` and regenerate
 `data` when generation-locked settings change.
 
+The opt-in scalar RKPW backend (`tri=rkpw`, or `tri=cpp` with
+`tridiag_method=rkpw`) preserves coefficient-block layouts, indices, and
+units. Its reconstructed coefficients have machine precision; printing more
+digits does not add accuracy. Exactly exhausted finite support produces a
+zero final hopping, not a padded longer chain. Nonrepresentable scaled
+coefficients are rejected rather than silently zeroed. The standalone
+`nrgchain`/`instantiate` backend selected by `tridiag_method=rkpw` likewise
+preserves the headerless `xi`/`zeta` file layout and 16-significant-digit
+output. `bandrescale` multiplies both arrays; standalone `rescalexi` applies
+the iteration-dependent scale only to hoppings. `theta` is unchanged.
+
 ### `data.in` And Symbolic Artifacts
 
 Template options emit `data.in`, which can contain `DIAG` and external matrix

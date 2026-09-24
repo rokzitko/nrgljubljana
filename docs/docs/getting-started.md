@@ -184,6 +184,38 @@ A successful initializer exits with status zero, prints `Success!`, and leaves
 `data` and `mmalog` in the calculation directory. `data` is the generated input
 for `nrg`; `mmalog` is a diagnostic Mathematica transcript.
 
+### Optional scalar chain backend
+
+The example above retains the legacy defaults: `tri=old` and
+`tridiag_method=lanczos`. To opt into machine-arithmetic, unsquared
+Rutishauser/Gragg-Harrod reconstruction entirely in Mathematica, add this to
+the `[param]` block **before running `nrginit`**:
+
+```ini
+tri=rkpw
+```
+
+Alternatively, to use C++ reconstruction for the runtime chain and the
+matching machine RKPW algorithm for the initializer's `Ninit` seed, use:
+
+```ini
+tri=cpp
+tridiag_method=rkpw
+```
+
+These are scalar normal-state options, not block or superconducting backends.
+`prec` still controls the upstream high-precision discretization and normalized
+star amplitudes; selecting RKPW does not remove that stage. These settings
+affect generated `data`: regenerate with `nrginit` after changing either
+backend setting, rather than editing `param` only for an existing seed.
+RKPW requires a finite positive `bandrescale` and rejects rescaled
+coefficients that overflow or round a nonzero value to zero; representable
+subnormal coefficients and an exact terminal zero hopping are supported.
+See [Wilson-chain reconstruction](nrginit-workflow.md#wilson-chain-reconstruction)
+for support limits and diagnostics.
+
+### Run the solver
+
 Run the iterative solver only after `nrginit` succeeds:
 
 ```sh

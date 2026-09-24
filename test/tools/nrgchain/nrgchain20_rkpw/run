@@ -1,0 +1,3 @@
+#!/bin/sh
+set -eu
+exec perl "$3/check.pl" "$1"
