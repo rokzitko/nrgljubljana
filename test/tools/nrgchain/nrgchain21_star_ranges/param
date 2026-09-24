@@ -1,0 +1,13 @@
+[param]
+tridiag_method=lanczos
+Lambda=2
+z=0.5
+Nmax=4
+mMAX=4
+band=flat
+adapt=false
+hardgap=true
+boundary=0.25
+preccpp=4096
+xmax=6
+outputstep=0.125

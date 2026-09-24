@@ -2003,6 +2003,11 @@ to perform various extra tweaks, log parameters and other debugging info,
 check if parameters make any sense, etc. *)
 
 maketable[]:=Module[{t},
+  (* Clipping the seed or appended chain/star tables invalidates RKPW's
+     representability checks, including deferred cpp/none reconstruction. *)
+  If[RKPW && (option["CHOP"] || option["EPSCLIP"]),
+    MyError["rkpw serialization is incompatible with CHOP/EPSCLIP; remove these options to preserve physical seed, chain and star coefficients."];
+  ];
   timestart["maketable"];
 
   perturbhamiltonian[];

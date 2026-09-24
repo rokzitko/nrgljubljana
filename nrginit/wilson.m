@@ -2,6 +2,15 @@ MyPrint["Wilson chain"];
 
 ClearAll[thetaCh]; (* Bug honey-pot *)
 
+HARDGAP = paramdefaultbool["hardgap", False];
+HARDGAPBOUNDARY = If[HARDGAP, paramdefaultnum["boundary", 0], 0];
+If[HARDGAP && !TrueQ[Quiet[0 <= HARDGAPBOUNDARY < 1]],
+  MyError["boundary must be a finite real in [0,1) when hardgap=true."];
+];
+If[HARDGAP && HARDGAPBOUNDARY > 0 && (BAND != "asymode" || paramdefaultbool["adapt", False]),
+  MyError["Scalar hard-gap initializer input requires band=asymode and adapt=false, with complete FSOL tables."];
+];
+
 (* ---- Tridiagonalisation approach (parameter "tri" in param file):
 old - direct use of the recursion relations
 rkpw - unsquared Rutishauser/Gragg-Harrod scalar reconstruction (machine arithmetic)
@@ -234,6 +243,23 @@ MyImport[fn_String, opts___] := Module[{l},
   l = Import[fn, opts];
   If[l === $Failed, MyError["Failed importing file ", fn]];
   l
+];
+
+(* A gap-edge f grows exponentially. Interpolate the energies within the
+   supplied table instead, and never continue a last f towards zero. *)
+hardGapEnergyTable[filename_] := Module[{tab, xs},
+  tab = MyImport[filename, "Table"];
+  If[!MatrixQ[tab] || Length[tab] < 2 || Last[Dimensions[tab]] != 2 ||
+      !And @@ (MatchQ[Quiet[N[#]], _Real] & /@ Flatten[tab]),
+    MyError[filename, ": expected a finite two-column hard-gap table."]];
+  tab = setpr @ tab;
+  xs = tab[[All, 1]];
+  If[!TrueQ[Min[Differences[xs]] > 0 && Min[tab[[All, 2]]] > 0],
+    MyError[filename, ": hard-gap table requires increasing abscissas and positive coefficients."]];
+  If[!TrueQ[First[xs] <= setpr[1 + z] && Last[xs] >= setpr[1 + mMAX + z]],
+    MyError[filename, ": does not cover all hard-gap representative queries; extend the table or reduce mMAX."]];
+  tab = Map[{#[[1]], #[[2]] LAMBDA^(2 - #[[1]])} &, tab];
+  Interpolation[tab, InterpolationOrder -> 1]
 ];
 
 ImportTable[fn_String] := Module[{l, dim},
@@ -1136,10 +1162,10 @@ If[DZ,
 
       eps[_, 0] = 1;
       (* Rescale here! *)
-      If[!parambool["hardgap"],
+      If[!HARDGAP,
         eps[_, m_] = LAMBDA^(-Z-m+1),
       (* else *)
-        boundary = SetPrecision[paramnum["boundary"], PREC];
+        boundary = SetPrecision[HARDGAPBOUNDARY, PREC];
         eps[_, m_] = (1-boundary) LAMBDA^(-Z-m+1) + boundary;
       ];
 
@@ -1170,34 +1196,56 @@ If[DZ,
       solpath = paramdefault["solpath", ".."];
       lfn = solpath <> "/FSOL.dat";
       If[a > 1, lfn = lfn <> ToString[a]];
-      fsol[a] = MyImport[lfn, "Table"];
-      fsol[a] = Interpolation[fsol[a], InterpolationOrder -> 1];
+      If[HARDGAPBOUNDARY > 0,
+        fsol[a] = hardGapEnergyTable[lfn],
+        fsol[a] = MyImport[lfn, "Table"];
+        fsol[a] = Interpolation[fsol[a], InterpolationOrder -> 1]
+      ];
 
       (* Perform an extrapolation to larger arguments x! *)
-      Eps[a_, x_] := If[x <= xmax-1, fsol[a][x],
-                                     fsol[a][xmax-1]] lambda^(2-x);
+      Eps[a_, x_] := If[HARDGAPBOUNDARY > 0, fsol[a][x],
+        If[x <= xmax-1, fsol[a][x], fsol[a][xmax-1]] lambda^(2-x)];
 
       zfaktor = (1-lambda^-1)/Log[lambda];
 
       (* Show results for error checking. *)
-      tab = Table[{j, Eps[a, j+z]/(zfaktor lambda^(2-j-z))}, {j, 1, xmax}];
+      tab = Table[{j, Eps[a, j+z]/(zfaktor lambda^(2-j-z))}, {j, 1, If[HARDGAPBOUNDARY > 0, mMAX+1, xmax]}];
       Scan[MyPrint, tab];
 
       lfn = solpath <> "/FSOLNEG.dat";
       If[a > 1, lfn = lfn <> ToString[a]];
-      fsolneg[a] = MyImport[lfn, "Table"];
-      fsolneg[a] = Interpolation[fsolneg[a], InterpolationOrder -> 1];
+      If[HARDGAPBOUNDARY > 0,
+        fsolneg[a] = hardGapEnergyTable[lfn],
+        fsolneg[a] = MyImport[lfn, "Table"];
+        fsolneg[a] = Interpolation[fsolneg[a], InterpolationOrder -> 1]
+      ];
 
       (* Perform an extrapolation to larger arguments x! *)
-      Epsneg[a_, x_] := If[x <= xmax-1, fsolneg[a][x],
-                                        fsolneg[a][xmax-1]] lambda^(2-x);
+      Epsneg[a_, x_] := If[HARDGAPBOUNDARY > 0, fsolneg[a][x],
+        If[x <= xmax-1, fsolneg[a][x], fsolneg[a][xmax-1]] lambda^(2-x)];
 
       (* Show results for error checking. *)
-      tabneg = Table[{j, Epsneg[a, j+z]/(zfaktor lambda^(2-j-z))}, {j, 1, xmax}];
+      tabneg = Table[{j, Epsneg[a, j+z]/(zfaktor lambda^(2-j-z))}, {j, 1, If[HARDGAPBOUNDARY > 0, mMAX+1, xmax]}];
       Scan[MyPrint, tabneg];
 
       de[a_, m_] := de[a, m] = setpr @ Eps[a, 1+m+z];
       deminus[a_, m_] := deminus[a, m] = setpr @ Epsneg[a, 1+m+z];
+      If[HARDGAPBOUNDARY > 0,
+        Do[With[{lo = eps[a, m+1], hi = eps[a, m], ep = de[a, m], em = deminus[a, m]},
+          If[!TrueQ[HARDGAPBOUNDARY < lo < hi <= 1],
+            MyError["Hard-gap interval collapsed or unordered at m=", m, "; reduce mMAX."]];
+          If[!TrueQ[If[df[a, m] > 0, lo < ep < hi, lo <= ep <= hi]] ||
+              !TrueQ[If[dfminus[a, m] > 0, lo < em < hi, lo <= em <= hi]],
+            MyError["Representative energy outside its hard-gap shell at m=", m,
+              "; refine/regenerate FSOL tables or reduce mMAX."]]
+        ], {m, 0, mMAX}];
+        (* As in nrgchain, normalize the finite retained star, not discarded tails. *)
+        thetaCh[a] = intrho[a][eps[a, 0]] - intrho[a][eps[a, mMAX+1]] +
+          intrhoneg[a][eps[a, 0]] - intrhoneg[a][eps[a, mMAX+1]];
+        If[!TrueQ[thetaCh[a] > 0], MyError["Retained hard-gap hybridization weight must be positive."]];
+        theta0Ch[a] = N @ thetaCh[a];
+        MyPrint["retained hard-gap theta=", thetaCh[a]];
+      ];
     ]; (* loop over channels *)
    ]; (* Module *)
   ]; (* BAND == "asymode" *)

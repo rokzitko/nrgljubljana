@@ -234,8 +234,16 @@ backend setting, rather than editing `param` only for an existing seed.
 RKPW requires a finite positive `bandrescale` and rejects rescaled
 coefficients that overflow or round a nonzero value to zero; representable
 subnormal coefficients and an exact terminal zero hopping are supported.
+Do not combine RKPW with `options=CHOP` or `options=EPSCLIP`: serialization
+rejects these options to preserve validated seed, chain, and star coefficients.
 See [Wilson-chain reconstruction](nrginit-workflow.md#wilson-chain-reconstruction)
 for support limits and diagnostics.
+
+To move beyond the ungapped example, initializer nonzero hard gaps require
+`band=asymode`, `adapt=false`, and complete fixed-mesh integral FSOL tables.
+`boundary` is normalized to the band, and finite table coverage and resolvable
+shells limit `mMAX`. See [Bounded hard gaps](nrginit-workflow.md#bounded-hard-gaps)
+before changing these generation inputs; regenerate tables and `data` together.
 
 ### Run the solver
 

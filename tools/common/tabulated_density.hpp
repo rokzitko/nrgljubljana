@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <iterator>
 #include <limits>
+#include <numeric>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -403,6 +404,79 @@ class TabulatedDensity {
     if (std::isfinite(legacy) && legacy >= 0.0 && std::abs(direct - legacy) <= compatibility_tolerance)
       return legacy;
     return direct;
+  }
+
+  double normalized_amplitude(const double lower, const double upper, const double root_total_weight) {
+    if (!std::isfinite(root_total_weight) || root_total_weight <= 0.0)
+      throw std::invalid_argument("Density root normalization weight must be finite and positive.");
+    const auto mass = integral(lower, upper);
+    if (!std::isfinite(mass) || mass < 0.0)
+      throw std::runtime_error("Integrated density shell weight is negative or non-finite.");
+    if (mass >= std::numeric_limits<double>::min()) {
+      const auto result = std::sqrt(mass) / root_total_weight;
+      if (!std::isfinite(result) || result <= 0.0)
+        throw std::runtime_error("Nonzero density shell amplitude is not representable as a finite positive double.");
+      return result;
+    }
+
+    // Accumulate unnormalized roots with an explicit exponent; only the complete shell must fit in double.
+    long double root_mantissa = 0.0L;
+    int root_exponent = 0;
+    const auto add = [&](const long double mean, const double left, const double right) {
+      if (!std::isfinite(mean)) throw std::runtime_error("Density shell mean is not finite.");
+      if (mean <= 0.0L) throw std::runtime_error("Underresolved nonzero density shell: local mean is not positive.");
+      int mean_exponent, span_exponent, adjustment;
+      const auto piece_mantissa = std::frexp(std::sqrt(mean), &mean_exponent)
+                                 * std::frexp(std::sqrt(static_cast<long double>(right) - left), &span_exponent);
+      const auto piece_exponent = mean_exponent + span_exponent;
+      const auto exponent = root_mantissa == 0.0L ? piece_exponent : std::max(root_exponent, piece_exponent);
+      const auto combined = std::hypot(std::scalbn(root_mantissa, root_exponent - exponent),
+                                       std::scalbn(piece_mantissa, piece_exponent - exponent));
+      root_mantissa = std::frexp(combined, &adjustment);
+      root_exponent = exponent + adjustment;
+    };
+    const auto domain_lower = samples_.front().first;
+    const auto domain_upper = samples_.back().first;
+    if (lower < std::min(upper, domain_lower) && samples_.front().second > 0.0)
+      add(samples_.front().second, lower, std::min(upper, domain_lower));
+    const auto inside_lower = std::max(lower, domain_lower);
+    const auto inside_upper = std::min(upper, domain_upper);
+    if (inside_lower < inside_upper) {
+      for (auto interval = interval_index(inside_lower);
+           interval + 1 < samples_.size() && samples_[interval].first < inside_upper; ++interval) {
+        const auto [left, value_left] = samples_[interval];
+        const auto [right, value_right] = samples_[interval + 1];
+        if (value_left == 0.0 && value_right == 0.0) continue;
+        const auto lo = std::max(inside_lower, left);
+        const auto hi = std::min(inside_upper, right);
+        long double mean;
+        if (method_ == InterpolationMethod::linear) {
+          const auto width = static_cast<long double>(right) - static_cast<long double>(left);
+          const auto value = [&](const double x) {
+            if (value_left == value_right) return static_cast<long double>(value_left);
+            // Compute both convex weights directly, retaining small distances to either endpoint.
+            return ((static_cast<long double>(right) - x) / width) * value_left
+                   + ((static_cast<long double>(x) - left) / width) * value_right;
+          };
+          mean = std::midpoint(value(lo), value(hi));
+        } else {
+          const auto lo_u = detail::normalized_interval_coordinate(lo, left, right);
+          const auto hi_u = detail::normalized_interval_coordinate(hi, left, right);
+          mean = detail::normalized_polynomial_integral(polynomial_->coefficients()[interval], lo_u, hi_u, 1.0L).real();
+        }
+        add(mean, lo, hi);
+      }
+    }
+    if (std::max(lower, domain_upper) < upper && samples_.back().second > 0.0)
+      add(samples_.back().second, std::max(lower, domain_upper), upper);
+    if (root_mantissa == 0.0L) return 0.0;
+    int normalization_exponent;
+    const auto normalization_mantissa = std::frexp(static_cast<long double>(root_total_weight), &normalization_exponent);
+    const auto result = static_cast<double>(std::scalbn(root_mantissa / normalization_mantissa,
+                                                       root_exponent - normalization_exponent));
+    if (!std::isfinite(result)) throw std::runtime_error("Density shell amplitude is not finite.");
+    if (result == 0.0) throw std::runtime_error("Nonzero density shell amplitude underflows double.");
+    return result;
   }
 
   bool flag() const {

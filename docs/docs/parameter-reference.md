@@ -128,6 +128,8 @@ Builds made without the extended symmetry sets support only a subset. Complex
 | `z` | number | `1.0` | Twist of the logarithmic mesh. |
 | `band` | string | `flat` | Band construction method. See the values below. |
 | `bandrescale` | number | `1` | Support and energy rescaling factor. |
+| `hardgap` | boolean | `false` | Enable the gap-edge mesh; a nonzero boundary is supported only for `band=asymode`, `adapt=false` in the scalar initializer. |
+| `boundary` | number | `0` | Normalized gap edge `b`, finite and in `[0,1)` when `hardgap=true`; physical gap magnitude is `bandrescale*b`. Inactive when `hardgap=false`. |
 | `discretization` | string | `Z` | `Y`, `C`, or `Z`; only the first uppercase character is used. |
 | `polarized` | boolean | `false` | Generate spin-dependent coefficients; supported by `QSZ`, `U1`, `SPU1`, `P`, `PP`, and `NONE`. |
 | `pol2x2` | boolean | `false` | Generate a full spin-space `2x2` Wilson chain; supported with `U1`. |
@@ -142,9 +144,9 @@ Builds made without the extended symmetry sets support only a subset. Complex
 | `tridiag_method` | string | `lanczos` | Scalar backend, `lanczos` or `rkpw`; used at runtime for `tri=cpp`, by `nrgchain`/`instantiate`, and for the initializer's `cpp`/`none` seed. |
 | `preccpp` | non-negative integer | `2000` | Legacy C++ Lanczos precision in GMP **bits**, not decimal digits; unused by `rkpw`. |
 | `nrxi` | integer | `-1` | Number of discretization intervals; a negative value follows `Nmax`, and the resolved value must be in `0..998`. |
-| `mMAX` | integer | derived | Number of Lanczos input values; normally `max(80, 2*nrxi)` and constrained to `1..998`. |
+| `mMAX` | integer | derived | Maximum star-shell index, giving `mMAX+1` values per branch; normally `max(80, 2*nrxi)` and constrained to `1..998`. |
 | `dos` | path | `Delta.dat` | Tabulated density of states for methods that require one. |
-| `xmax` | number | `30` | Largest argument used by the `asymode` and `adapt` solver tables. |
+| `xmax` | number | `30` | Solver-table extent setting; a nonzero hard gap requires actual FSOL coverage through `z+mMAX+1`, regardless of this value. |
 | `solpath` | path | `..` | Directory containing `FSOL*` and `GSOL*` files. |
 | `floquet` | boolean | `false` | Generate input for Floquet quasi-energies; runtime use also requires `[extra] Omega` and `ops=m`. See [Floquet model construction](floquet-nrginit.md). |
 | `data_has_rescaled_energies` | boolean | `true` | Compatibility switch for the seed-energy convention in `data`. |
@@ -238,11 +240,39 @@ requires `polarized=true` and `SPU1` or `QSZ`. `band=dmft` requires a `[dmft]`
 block containing either `gamma=<value>` or `run=<path>` and can additionally
 use `[dmft] discchecksum=<value>`. Normal DMFT chains require
 `discretization=Y` or `C`, and the superconducting DMFT path requires `Y`.
+Exactly zero-mass shells in normal scalar DMFT `Y`/`C` retain zero amplitudes
+and finite, inert midpoint energies, avoiding division by zero. This applies
+to `wilsonchain=legacy` with `tri=old`, `orth`, `rkpw`, `cpp`, or `none`, not
+superconducting, matrix, Nambu, rung, or `pol2x2` constructions. Nonzero shell
+weights are not clipped to zero.
 
 For `band=asymode`, each one-sided density is extended to zero using that
 branch's own innermost tabulated value. Positive and negative endpoint
 densities need not match. This affects shell weights and total hybridization
 weight independently of the selected reconstruction backend.
+
+A nonzero `hardgap` is a bounded scalar discretization contract, distinct
+from the post-reconstruction onsite correction `gap`. In `nrginit` it requires
+`band=asymode`, `discretization=Z`, and `adapt=false`; other band branches
+are rejected. Each positive/negative FSOL table must contain positive finite
+coefficients at finite strictly increasing abscissas and cover `z+1` through
+`z+mMAX+1`. The initializer converts nodes to `E_i=f_i*Lambda^(2-x_i)` and
+interpolates **energies** linearly within the actual table, without
+extrapolation or another gap shift. Shells must resolve
+`b < lo < up <= 1`; energies must be strictly inside for positive mass,
+with endpoints allowed only for zero mass. Normalization uses the retained
+weight above the finite cutoff, excluding the gap and discarded tails.
+`hardgap=false` or `boundary=0` preserves the ungapped mapping. Regenerate
+tables and `data` after changing these discretization inputs; see the
+[bounded hard-gap workflow](nrginit-workflow.md#bounded-hard-gaps).
+
+The C++ `nrgchain`/`instantiate` pipeline additionally supports analytic
+`band=flat` hard-gap stars, also only with `adapt=false`. Generated flat-band
+stars reject `adapt=true` even without a gap. For tabulated nonzero gaps,
+`adapt` requires its integral method (`--integral` or `f_method=integral`)
+on a fixed mesh; ODE and adaptive-mesh paths are rejected. Loading saved stars
+instead checks the declared gap band without requiring FSOL tables or using
+`adapt`. These tool allowances do not extend the initializer's supported bands.
 
 `polarized=true` and `pol2x2=true` are mutually exclusive.
 
@@ -305,6 +335,11 @@ Some models accept valued tokens such as `Nph=value`. The Floquet initializer
 requires exactly one `Ncut=value` token with a non-negative decimal integer.
 Options affect generated Mathematica artifacts and are not a general
 replacement for named parameters.
+
+`CHOP` and `EPSCLIP` are rejected at `maketable` whenever RKPW is active,
+including `tri=cpp`/`none` with `tridiag_method=rkpw`. Clipping would invalidate
+the representability checks for physical seed, chain, and star coefficients.
+Legacy-backend option behavior is unchanged.
 
 ### The `[extra]` Block
 

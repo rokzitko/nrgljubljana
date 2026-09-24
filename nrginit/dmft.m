@@ -226,7 +226,13 @@ integrationroutines[] := Module[{},
 km[m_] = LAMBDA^(1-Z-m);
 km[0] = 1;
 
-Module[{},
+Module[{emptyShellQ},
+  (* Empty normal scalar shells retain their table slots with an inert in-shell
+     energy. Sign tests numeric zero without a small-weight cutoff. SC/Nambu
+     and matrix/rung constructions keep their existing validation. *)
+  emptyShellQ[weight_] := TrueQ[!isSC[] && !POL2x2 && !RUNGS && WILSONCHAIN == "legacy" &&
+    MemberQ[{"old", "orth", "rkpw", "cpp", "none"}, TRI]] && NumberQ[weight] && Sign[weight] === 0;
+
   getdmftgamma[];
   getgamma[];
 
@@ -273,9 +279,10 @@ Module[{},
 
       (* NOTE THE MINUS SIGN in the definition of deminus[]! *)
       For[m = 0, m <= mMAX, m++,
-        de[aa, m] = Re @ setprec[ intP[aa][km[m+1], km[m]]/df[aa, m] ];
-        deminus[aa, m] = 
-          - Re @ setprec[ intN[aa][-km[m], -km[m+1]]/dfminus[aa, m] ];
+        de[aa, m] = If[emptyShellQ[df[aa, m]], setprec[(km[m+1] + km[m])/2],
+          Re @ setprec[ intP[aa][km[m+1], km[m]]/df[aa, m] ]];
+        deminus[aa, m] = If[emptyShellQ[dfminus[aa, m]], setprec[(km[m+1] + km[m])/2],
+          - Re @ setprec[ intN[aa][-km[m], -km[m+1]]/dfminus[aa, m] ]];
       ];
     ];
 
@@ -290,9 +297,10 @@ Module[{},
       xxint[];  
 
       For[m = 0, m <= mMAX, m++,
-        de[aa, m] = Re @ setprec[ df[aa, m] / intP[aa][km[m+1], km[m]] ];
-        deminus[aa, m] = 
-          -Re @ setprec[ dfminus[aa, m] / intN[aa][-km[m], -km[m+1]] ];
+        de[aa, m] = If[emptyShellQ[df[aa, m]], setprec[(km[m+1] + km[m])/2],
+          Re @ setprec[ df[aa, m] / intP[aa][km[m+1], km[m]] ]];
+        deminus[aa, m] = If[emptyShellQ[dfminus[aa, m]], setprec[(km[m+1] + km[m])/2],
+          -Re @ setprec[ dfminus[aa, m] / intN[aa][-km[m], -km[m+1]] ]];
       ];
     ];
       

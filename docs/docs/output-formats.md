@@ -457,6 +457,19 @@ preserves the headerless `xi`/`zeta` file layout and 16-significant-digit
 output. `bandrescale` multiplies both arrays; standalone `rescalexi` applies
 the iteration-dependent scale only to hoppings. `theta` is unchanged.
 
+For a nonzero scalar hard gap, `boundary` is in normalized band units and
+`de_pos.dat`/`de_neg.dat` remain positive normalized energy magnitudes. The
+physical gap edge is `bandrescale*boundary`. FSOL files still contain `x f(x)`;
+bounded hard-gap consumers convert the supplied nodes to
+`E(x)=f(x)*Lambda^(2-x)` and interpolate these energies without extrapolation.
+The table must cover every requested representative energy. In this mode,
+`theta` denotes the weight of the retained finite star, excluding the gap and
+the omitted edge tail. It is not rescaled a second time when chain coefficients
+are multiplied by `bandrescale`. Positive shell amplitudes can remain
+representable when their squared weights do not; the exported total `theta`
+must still be a positive finite double. These rules apply to both scalar
+backends; see the [hard-gap input contract](nrginit-workflow.md).
+
 For exactly particle/hole-matched input stars, the Mathematica RKPW initializer
 preserves zero normal-chain onsite coefficients. It compares exact input-value
 representations, not a tolerance; this does not clip small physical asymmetries
@@ -464,6 +477,18 @@ or suppress subsequent onsite shifts. The narrow
 [constant-pairing path](nrginit-workflow.md#constant-pairing-in-superconducting-symmetries)
 with full `tri=rkpw` appends the existing pairing tables without changing their
 layout. This is not support for deferred `cpp`/`none` pairing-table handoff.
+
+The initializer options `CHOP` and `EPSCLIP` are incompatible with scalar RKPW
+(`tri=rkpw`, or `tri=cpp`/`none` with `tridiag_method=rkpw`) and are rejected
+before table assembly or output. Remove these options rather than clipping
+validated, representable physical coefficients. The rejection also covers the
+seed data, even when no chain block is emitted; exempting only the appended
+chain or star tables could leave them inconsistent with the seed. Defaults are
+unchanged. For non-RKPW generation, the legacy output-wide clipping remains:
+`CHOP` zeros real or complex values with magnitude below `1e-12` and drops
+imaginary components below that threshold; `EPSCLIP` zeros real or complex
+values with magnitude below `1e-300`. Both thresholds can remove representable
+double-precision values, not just numerical underflow.
 
 ### `data.in` And Symbolic Artifacts
 

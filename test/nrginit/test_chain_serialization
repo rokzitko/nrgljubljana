@@ -1,0 +1,32 @@
+#!/bin/sh
+# API: CHAIN_TEST_BACKEND=rkpw|legacy sh test_chain_serialization SOURCE KERNEL
+# No build or installed packages required. TMPDIR chooses the artifact parent.
+set -eu
+
+export CHAIN_SERIALIZATION_SOURCE=$1
+kernel=$2
+case "${CHAIN_TEST_BACKEND:-}" in
+  rkpw|legacy) ;;
+  *) printf 'Set CHAIN_TEST_BACKEND to rkpw or legacy\n' >&2; exit 1 ;;
+esac
+
+work=$(mktemp -d "${TMPDIR:-/tmp}/chain-serialization-${CHAIN_TEST_BACKEND}.XXXXXX")
+for mode in full cpp none; do
+  for exponent in 20 305; do
+    export CHAIN_SERIALIZATION_MODE=$mode
+    export CHAIN_SERIALIZATION_EXPONENT=$exponent
+    export CHAIN_SERIALIZATION_WORK="$work/$mode-$exponent"
+    mkdir "$CHAIN_SERIALIZATION_WORK"
+    if ! "$kernel" -batchinput -batchoutput > "$CHAIN_SERIALIZATION_WORK/test.log" 2>&1 <<'EOF'
+If[Check[Catch[Get[FileNameJoin[{Environment["CHAIN_SERIALIZATION_SOURCE"], "test", "nrginit", "chain_serialization.m"}]], _, (Print[#1]; $Failed) &], $Failed] === True, Exit[0], Exit[1]];
+Exit[1];
+EOF
+    then
+      cat "$CHAIN_SERIALIZATION_WORK/test.log"
+      printf 'Serialization test failed; artifacts in %s\n' "$work" >&2
+      exit 1
+    fi
+    printf 'Passed %s serialization: %s, 1e-%s\n' "$CHAIN_TEST_BACKEND" "$mode" "$exponent"
+  done
+done
+printf 'Serialization artifacts: %s\n' "$work"

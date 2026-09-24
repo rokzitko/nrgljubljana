@@ -152,6 +152,211 @@ TEST(TabulatedDensity, guards_common_input_mistakes) { // NOLINT
   EXPECT_THROW((void)density(std::numeric_limits<double>::quiet_NaN()), std::invalid_argument);
 }
 
+TEST(TabulatedDensity, normalized_amplitude_preserves_normal_mass_arithmetic_exactly) { // NOLINT
+  using NRG::Tools::InterpolationMethod;
+  for (const auto method : {InterpolationMethod::linear, InterpolationMethod::steffen}) {
+    NRG::Tools::TabulatedDensity density({{0.25, 2.0}, {0.5, 1.0}, {1.0, 3.0}}, method);
+    for (const auto &[lower, upper] : {std::pair{0.0, 2.0}, std::pair{0.3, 0.8}, std::pair{1.0, 2.0}}) {
+      const auto mass = density.integral(lower, upper);
+      for (const auto total : {1e-200, 1.0, 4.875, 1e200})
+        EXPECT_EQ(density.normalized_amplitude(lower, upper, std::sqrt(total)), std::sqrt(mass) / std::sqrt(total));
+    }
+    NRG::Tools::TabulatedDensity constant({{0.0, 1.0}, {0.5, 1.0}, {1.0, 1.0}}, method);
+    const auto minimum = std::numeric_limits<double>::min();
+    EXPECT_EQ(constant.normalized_amplitude(0.0, minimum, std::sqrt(3.0)), std::sqrt(minimum) / std::sqrt(3.0));
+  }
+}
+
+TEST(TabulatedDensity, normalized_amplitude_is_invariant_under_uniform_density_scaling) { // NOLINT
+  using NRG::Tools::InterpolationMethod;
+  for (const auto method : {InterpolationMethod::linear, InterpolationMethod::steffen}) {
+    NRG::Tools::TabulatedDensity ordinary({{0.0, 1.0}, {0.5, 1.0}, {1.0, 1.0}}, method);
+    NRG::Tools::TabulatedDensity tiny({{0.0, 1e-200}, {0.5, 1e-200}, {1.0, 1e-200}}, method);
+    for (const auto width : {0.25, 1e-120, 1e-150}) {
+      const auto expected = ordinary.normalized_amplitude(0.0, width, 1.0);
+      const auto actual = tiny.normalized_amplitude(0.0, width, std::sqrt(1e-200));
+      EXPECT_GT(actual, 0.0);
+      EXPECT_NEAR(actual / expected, 1.0, 2e-15);
+    }
+    EXPECT_EQ(tiny.integral(0.0, 1e-150), 0.0);
+    EXPECT_NEAR(tiny.normalized_amplitude(0.0, 1e-150, std::sqrt(1e-200)) / 1e-75, 1.0, 2e-15);
+  }
+}
+
+TEST(TabulatedDensity, normalized_amplitude_recovers_linear_pseudogaps_in_both_directions) { // NOLINT
+  NRG::Tools::TabulatedDensity rising({{0.0, 0.0}, {1.0, 1.0}});
+  NRG::Tools::TabulatedDensity falling({{-1.0, 1.0}, {0.0, 0.0}});
+  const auto expected = std::sqrt(1.5) * 1e-200;
+  EXPECT_EQ(rising.integral(1e-200, 2e-200), 0.0);
+  EXPECT_EQ(falling.integral(-2e-200, -1e-200), 0.0);
+  EXPECT_NEAR(rising.normalized_amplitude(1e-200, 2e-200, 1.0) / expected, 1.0, 2e-15);
+  EXPECT_NEAR(falling.normalized_amplitude(-2e-200, -1e-200, 1.0) / expected, 1.0, 2e-15);
+}
+
+TEST(TabulatedDensity, normalized_amplitude_does_not_use_rounded_subnormal_mass) { // NOLINT
+  using NRG::Tools::InterpolationMethod;
+  for (const auto method : {InterpolationMethod::linear, InterpolationMethod::steffen}) {
+    NRG::Tools::TabulatedDensity density({{0.0, 1e-200}, {0.5, 1e-200}, {1.0, 1e-200}}, method);
+    const auto mass = density.integral(0.0, 1e-120);
+    ASSERT_GT(mass, 0.0);
+    ASSERT_LT(mass, std::numeric_limits<double>::min());
+    const auto rounded = std::sqrt(mass) / std::sqrt(1e-200);
+    EXPECT_GT(std::abs(rounded / 1e-60 - 1.0), 1e-7);
+    EXPECT_NEAR(density.normalized_amplitude(0.0, 1e-120, std::sqrt(1e-200)) / 1e-60, 1.0, 2e-15);
+
+    const auto minimum = std::numeric_limits<double>::denorm_min();
+    NRG::Tools::TabulatedDensity subnormal({{0.0, minimum}, {1.0, minimum}, {2.0, minimum}}, method);
+    EXPECT_EQ(subnormal.normalized_amplitude(0.0, 1.0, std::sqrt(minimum)), 1.0);
+    EXPECT_NEAR(subnormal.normalized_amplitude(0.0, 0.5, std::sqrt(minimum)), std::sqrt(0.5), 2e-15);
+  }
+}
+
+TEST(TabulatedDensity, normalized_amplitude_accumulates_multiple_pieces_and_constant_tails) { // NOLINT
+  constexpr double width = 1e-150;
+  constexpr double scale = 1e-200;
+  const auto root_scale = std::sqrt(scale);
+  NRG::Tools::TabulatedDensity density(
+    {{width, scale}, {2 * width, 2 * scale}, {3 * width, 0.0}, {4 * width, 0.0}, {5 * width, 3 * scale}});
+  EXPECT_EQ(density.integral(0.0, 6 * width), 0.0);
+  const auto whole = density.normalized_amplitude(0.0, 6 * width, root_scale);
+  EXPECT_NEAR(whole / (std::sqrt(8.0) * std::sqrt(width)), 1.0, 2e-15);
+  const auto left = density.normalized_amplitude(0.0, 2.5 * width, root_scale);
+  const auto right = density.normalized_amplitude(2.5 * width, 6 * width, root_scale);
+  EXPECT_NEAR(std::hypot(left, right) / whole, 1.0, 2e-15);
+  EXPECT_EQ(density.normalized_amplitude(3 * width, 4 * width, root_scale), 0.0);
+
+  using NRG::Tools::InterpolationMethod;
+  for (const auto method : {InterpolationMethod::linear, InterpolationMethod::steffen}) {
+    NRG::Tools::TabulatedDensity constant({{width, scale}, {2 * width, scale}, {3 * width, scale}}, method);
+    EXPECT_NEAR(constant.normalized_amplitude(0.0, 4 * width, root_scale) / (2 * std::sqrt(width)), 1.0, 2e-15);
+    EXPECT_NEAR(constant.normalized_amplitude(-width, 0.0, root_scale) / std::sqrt(width), 1.0, 2e-15);
+    EXPECT_NEAR(constant.normalized_amplitude(4 * width, 5 * width, root_scale) / std::sqrt(width), 1.0, 2e-15);
+  }
+}
+
+TEST(TabulatedDensity, normalized_amplitude_is_partition_independent_when_individual_pieces_underflow) { // NOLINT
+  constexpr double width = 1e-46;
+  constexpr double rho = 1e-300;
+  const auto root_total_weight = std::sqrt(1e300);
+  NRG::Tools::DensityTable samples;
+  for (int i = 0; i <= 100; ++i) samples.emplace_back(width * (i / 100.0), rho);
+  samples.emplace_back(2 * width, rho);
+  using NRG::Tools::InterpolationMethod;
+  for (const auto method : {InterpolationMethod::linear, InterpolationMethod::steffen}) {
+    NRG::Tools::TabulatedDensity split(samples, method);
+    NRG::Tools::TabulatedDensity unsplit({{0.0, rho}, {width, rho}, {2 * width, rho}}, method);
+    const auto expected = unsplit.normalized_amplitude(0.0, width, root_total_weight);
+    ASSERT_EQ(expected, 2 * std::numeric_limits<double>::denorm_min());
+    EXPECT_EQ(split.normalized_amplitude(0.0, width, root_total_weight), expected);
+    for (int i = 0; i < 100; ++i)
+      EXPECT_THROW(split.normalized_amplitude(samples[i].first, samples[i + 1].first, root_total_weight), std::runtime_error);
+  }
+}
+
+TEST(TabulatedDensity, normalized_amplitude_preserves_root_normalization_without_rounding_total_mass) { // NOLINT
+  using NRG::Tools::InterpolationMethod;
+  const auto base_root = std::sqrt(std::numeric_limits<double>::min());
+  for (const auto method : {InterpolationMethod::linear, InterpolationMethod::steffen}) {
+    for (const auto width : {1e-23, 1e-24}) {
+      NRG::Tools::TabulatedDensity density({{0.0, 1e-300}, {width, 1e-300}, {2 * width, 1e-300}}, method);
+      const auto root_total_weight = std::sqrt(1e-300) * std::sqrt(width);
+      const auto recovered_root = density.normalized_amplitude(0.0, width, base_root) * base_root;
+      EXPECT_NEAR(recovered_root / root_total_weight, 1.0, 2e-15);
+      for (const auto fraction : {0.25, 0.5, 1.0}) {
+        EXPECT_NEAR(density.normalized_amplitude(0.0, fraction * width, root_total_weight), std::sqrt(fraction), 2e-15);
+        EXPECT_NEAR(density.normalized_amplitude(0.0, fraction * width, recovered_root), std::sqrt(fraction), 2e-15);
+      }
+    }
+  }
+}
+
+TEST(TabulatedDensity, normalized_amplitude_applies_root_normalization_only_at_the_end) { // NOLINT
+  using NRG::Tools::InterpolationMethod;
+  const auto minimum = std::numeric_limits<double>::denorm_min();
+  for (const auto method : {InterpolationMethod::linear, InterpolationMethod::steffen}) {
+    NRG::Tools::TabulatedDensity density({{0.0, 1.0}, {1.0, 1.0}, {2.0, 1.0}}, method);
+    // Dividing sqrt(mean) by this root first would overflow, although the complete result is finite.
+    EXPECT_NEAR(density.normalized_amplitude(0.0, minimum, minimum) / (1.0 / std::sqrt(minimum)), 1.0, 2e-15);
+    EXPECT_EQ(density.normalized_amplitude(0.0, 1.0, 1e200), 1.0 / 1e200);
+  }
+}
+
+TEST(TabulatedDensity, normalized_amplitude_steffen_matches_analytic_polynomial) { // NOLINT
+  // On the first segment Steffen gives rho/scale = 1 + u + u^2 - u^3.
+  for (const auto &[width, scale] : {std::pair{1.0, 1.0}, std::pair{1e-150, 1e-200}}) {
+    NRG::Tools::TabulatedDensity density({{0.0, scale}, {width, 2 * scale}, {2 * width, scale}},
+                                       NRG::Tools::InterpolationMethod::steffen);
+    const auto expected = std::sqrt(155.0 / 192.0) * std::sqrt(width);
+    EXPECT_NEAR(density.normalized_amplitude(0.25 * width, 0.75 * width, std::sqrt(scale)) / expected, 1.0, 3e-15);
+    EXPECT_NEAR(density.normalized_amplitude(0.0, 2 * width, std::sqrt(scale))
+                  / (std::sqrt(19.0 / 6.0) * std::sqrt(width)), 1.0, 3e-15);
+  }
+}
+
+TEST(TabulatedDensity, normalized_amplitude_returns_zero_only_for_empty_intervals_and_zero_density) { // NOLINT
+  using NRG::Tools::InterpolationMethod;
+  for (const auto method : {InterpolationMethod::linear, InterpolationMethod::steffen}) {
+    NRG::Tools::TabulatedDensity density({{0.0, 0.0}, {1.0, 1.0}, {2.0, 0.0}, {3.0, 0.0}}, method);
+    EXPECT_EQ(density.normalized_amplitude(1.0, 1.0, 1.0), 0.0);
+    EXPECT_EQ(density.normalized_amplitude(-2.0, -1.0, 1.0), 0.0);
+    EXPECT_EQ(density.normalized_amplitude(4.0, 5.0, 1.0), 0.0);
+    EXPECT_EQ(density.normalized_amplitude(2.0, 3.0, 1.0), 0.0);
+    EXPECT_EQ(density.normalized_amplitude(2.25, 2.75, 1.0), 0.0);
+    EXPECT_EQ(density.normalized_amplitude(2.0, 5.0, 1.0), 0.0);
+  }
+}
+
+TEST(TabulatedDensity, normalized_amplitude_diagnoses_underresolved_nonzero_steffen_shells) { // NOLINT
+  NRG::Tools::TabulatedDensity density({{-1.0, 1.0}, {0.0, 0.0}, {1.0, 0.0}},
+                                     NRG::Tools::InterpolationMethod::steffen);
+  try {
+    (void)density.normalized_amplitude(-1e-100, 0.0, 1.0);
+    FAIL() << "A positive overlap must not silently become a zero shell.";
+  } catch (const std::runtime_error &error) {
+    EXPECT_NE(std::string(error.what()).find("Underresolved nonzero density shell"), std::string::npos);
+  }
+}
+
+TEST(TabulatedDensity, normalized_amplitude_diagnoses_unrepresentable_positive_output) { // NOLINT
+  using NRG::Tools::InterpolationMethod;
+  const auto minimum = std::numeric_limits<double>::denorm_min();
+  const auto maximum = std::numeric_limits<double>::max();
+  for (const auto method : {InterpolationMethod::linear, InterpolationMethod::steffen}) {
+    NRG::Tools::TabulatedDensity density({{0.0, minimum}, {1.0, minimum}, {2.0, minimum}}, method);
+    EXPECT_EQ(density.normalized_amplitude(-minimum, 0.0, 1.0), minimum);
+    const auto expected = std::sqrt(minimum) / std::sqrt(maximum);
+    ASSERT_GT(expected, 0.0);
+    EXPECT_EQ(density.normalized_amplitude(-minimum, 1.0, std::sqrt(maximum)), expected);
+    EXPECT_EQ(density.normalized_amplitude(-1.0, minimum, std::sqrt(maximum)), expected);
+    try {
+      (void)density.normalized_amplitude(-minimum, 0.0, std::sqrt(maximum));
+      FAIL() << "A complete positive shell that narrows to zero must fail.";
+    } catch (const std::runtime_error &error) {
+      EXPECT_NE(std::string(error.what()).find("amplitude underflows double"), std::string::npos);
+    }
+  }
+  NRG::Tools::TabulatedDensity large({{0.0, maximum}, {0.25, maximum}});
+  EXPECT_THROW(large.normalized_amplitude(0.0, 0.25, std::sqrt(minimum)), std::runtime_error);
+  EXPECT_THROW(large.normalized_amplitude(0.0, 2.0, 1.0), std::runtime_error);
+}
+
+TEST(TabulatedDensity, normalized_amplitude_validates_bounds_and_root_total_weight) { // NOLINT
+  const auto infinity = std::numeric_limits<double>::infinity();
+  const auto nan = std::numeric_limits<double>::quiet_NaN();
+  NRG::Tools::TabulatedDensity uninitialized;
+  EXPECT_THROW(uninitialized.normalized_amplitude(0.0, 1.0, 1.0), std::logic_error);
+  NRG::Tools::TabulatedDensity density({{0.0, 1.0}, {1.0, 1.0}});
+  EXPECT_THROW(density.normalized_amplitude(1.0, 0.0, 1.0), std::invalid_argument);
+  for (const auto invalid : {-infinity, infinity, nan}) {
+    EXPECT_THROW(density.normalized_amplitude(invalid, 1.0, 1.0), std::invalid_argument);
+    EXPECT_THROW(density.normalized_amplitude(0.0, invalid, 1.0), std::invalid_argument);
+  }
+  for (const auto invalid : {-1.0, -0.0, 0.0, infinity, -infinity, nan}) {
+    EXPECT_THROW(density.normalized_amplitude(0.0, 1.0, invalid), std::invalid_argument);
+    EXPECT_THROW(density.normalized_amplitude(0.0, 0.0, invalid), std::invalid_argument);
+  }
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS(); // NOLINT

@@ -20,6 +20,11 @@
 #include <stdexcept>
 #include <optional>
 #include <memory>
+#include <sstream>
+#include <cerrno>
+#include <cstdio>
+#include <system_error>
+#include <unistd.h>
 
 #include "../common/gsl_config.hpp"
 #include "../common/tabulated_density.hpp"
@@ -260,7 +265,30 @@ class Adapt {
    }
    // Evaluate the representative energy from the integrated cumulative weight.
    auto Eps_integral(const double x_, gsl_integration_cquad_workspace *workspace) {
-     return representative_energy.Eps(x_, workspace);
+     if (!(mesh.hardgap && mesh.boundary > 0.0) || x_ == 1.0)
+       return representative_energy.Eps(x_, workspace);
+     const double lower = eps(x_ + 1.0);
+     const double upper = eps(x_);
+     if (!(std::isfinite(lower) && std::isfinite(upper) && mesh.boundary < lower && lower < upper && upper <= 1.0)) {
+       std::ostringstream message;
+       message << std::setprecision(17) << "Hardgap mesh interval collapsed or invalid at x=" << x_
+               << ": boundary=" << mesh.boundary << " lower=" << lower << " upper=" << upper
+               << "; require boundary < lower < upper <= 1. Reduce xmax to keep intervals resolvable.";
+       throw std::runtime_error(message.str());
+     }
+     const double energy = representative_energy.Eps(x_, workspace);
+     const double weight = rho.integral(lower, upper);
+     // A plateau inverse may lie on an edge only when the interval has exactly zero mass.
+     if (!(std::isfinite(energy) && lower <= energy && energy <= upper)
+         || (weight > 0.0 && !(lower < energy && energy < upper))) {
+       std::ostringstream message;
+       message << std::setprecision(17) << "Hardgap representative energy outside its allowed interval at x=" << x_
+               << ": E=" << energy << " lower=" << lower << " upper=" << upper << " weight=" << weight
+               << "; require finite E in [lower,upper], strictly inside for positive weight."
+               << " Reduce xmax or check the density and integral tolerances.";
+       throw std::runtime_error(message.str());
+     }
+     return energy;
    }
    // Right-hand-side of the differential equation. y=f !
    auto rhs_F(const double x_, const double y_) {
@@ -371,6 +399,9 @@ class Adapt {
          throw std::invalid_argument("f_method must be either 'ode' or 'integral'.");
        }
      }
+     if (mesh.hardgap && mesh.boundary > 0.0 && (mesh.adapt || f_method != FMethod::INTEGRAL))
+       throw std::invalid_argument("Nonzero hardgap supports only a fixed mesh and the integral method; "
+                                   "use adapt=false and --integral (or f_method=integral).");
      report_parameters();
    }
    auto g_fn(const Sign &sign_) { return "GSOL" + (sign_ == Sign::POS ? ""s : "NEG"s) + ".dat"; }
@@ -423,13 +454,18 @@ class Adapt {
 
      init_cumulative();
 
+     const bool bounded_hardgap = mesh.hardgap && mesh.boundary > 0.0;
      std::ofstream OUTF;
-     safe_open(OUTF, f_fn(sign));
+     std::ostringstream buffer;
+     if (!bounded_hardgap) safe_open(OUTF, f_fn(sign));
+     // Do not replace an existing hardgap table until the requested extent has been validated.
+     std::ostream &out = bounded_hardgap ? static_cast<std::ostream &>(buffer) : OUTF;
+     out << std::setprecision(16);
      rho(1); // NECESSARY!
      x         = 1.0;
      y         = 1.0 / mesh.Lambda;
      max_error = 0.0;
-     save(OUTF);
+     save(out);
      double x_st = x;
      do {
        advance_output_target(x_st);
@@ -439,12 +475,45 @@ class Adapt {
        if (!(std::isfinite(y) && y > 0.0)) {
          throw std::runtime_error("Integral method produced a non-positive or non-finite f(x) at x=" + std::to_string(x));
        }
-       save(OUTF);
+       save(out);
        if (std::abs(y) > max_abs) {
+         if (bounded_hardgap && x < xmax) {
+           std::ostringstream message;
+           message << std::setprecision(17) << "Hardgap f(x) exceeded max_abs before the requested extent: x_last=" << x
+                   << " xmax=" << xmax << " max_abs=" << max_abs
+                   << ". The coefficient grows near the gap even though E remains bounded; increase max_abs or reduce xmax.";
+           throw std::runtime_error(message.str());
+         }
          std::cout<< "***** y=" << y << " |y|>max_abs=" << max_abs << std::endl;
          std::cout<< "***** Terminating!" << std::endl;
        }
      } while (x < xmax && std::abs(y) <= max_abs);
+     if (bounded_hardgap) {
+       const auto contents = buffer.str();
+       const auto filename = f_fn(sign);
+       auto temporary = filename + ".tmp.XXXXXX";
+       const int fd = ::mkstemp(temporary.data());
+       if (fd == -1)
+         throw std::system_error(errno, std::generic_category(), "Failed to create temporary output for " + filename);
+       try {
+         std::unique_ptr<std::FILE, decltype(&std::fclose)> file(::fdopen(fd, "w"), &std::fclose);
+         if (!file) {
+           const int error = errno;
+           ::close(fd);
+           throw std::system_error(error, std::generic_category(), "Failed to open temporary output for " + filename);
+         }
+         if (std::fwrite(contents.data(), 1, contents.size(), file.get()) != contents.size() || std::ferror(file.get()))
+           throw std::system_error(errno, std::generic_category(), "Failed to write temporary output for " + filename);
+         if (std::fclose(file.release()) != 0)
+           throw std::system_error(errno, std::generic_category(), "Failed to close temporary output for " + filename);
+         // Rename the sibling only after checked I/O; replace a destination symlink rather than following it.
+         if (std::rename(temporary.c_str(), filename.c_str()) != 0)
+           throw std::system_error(errno, std::generic_category(), "Failed to rename temporary output to " + filename);
+       } catch (...) {
+         std::remove(temporary.c_str());
+         throw;
+       }
+     }
    }
    void run() {
      load_init_rho();

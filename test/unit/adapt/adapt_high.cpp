@@ -5,10 +5,18 @@
 #include <cmath>
 #include <fstream>
 #include <initializer_list>
+#include <iterator>
 #include <memory>
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <cerrno>
+#include <csignal>
+#include <filesystem>
+#include <system_error>
+#include <sys/resource.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 #include <adapt/adapt.hpp>
 
@@ -19,6 +27,16 @@ namespace {
 void write_file(const std::string &filename, const std::string &contents) {
   std::ofstream file(filename);
   file << contents;
+}
+
+std::string read_file(const std::string &filename) {
+  std::ifstream file(filename);
+  return {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+}
+
+void expect_no_temporary_output(const std::string &filename) {
+  for (const auto &entry : std::filesystem::directory_iterator("."))
+    EXPECT_FALSE(entry.path().filename().string().starts_with(filename + ".tmp.")) << entry.path();
 }
 
 } // namespace
@@ -165,6 +183,298 @@ TEST(Adapt, cumulative_inverse_uses_upper_plateau_edge) { // NOLINT
 
   std::remove(dos_filename);
   std::remove(param_filename);
+}
+
+TEST(Adapt, hardgap_integral_matches_flat_band_on_both_rescaled_branches) { // NOLINT
+  const auto filename = "adapt_hardgap_flat.param";
+  write_file(filename, "[param]\nLambda=2\nadapt=false\nhardgap=true\nboundary=0.25\n"
+                       "f_method=integral\nxmax=6\noutputstep=0.25\n");
+  Params params(filename);
+  for (const auto sign : {Sign::POS, Sign::NEG}) {
+    for (const double bandwidth : {0.5, 2.0}) {
+      SCOPED_TRACE(sign == Sign::POS ? "positive" : "negative");
+      SCOPED_TRACE(bandwidth);
+      params["bandrescale"] = std::to_string(bandwidth);
+      Adapt calc(params, sign, 0.01);
+      calc.run();
+      const auto values = load_g(calc.f_fn(sign));
+      ASSERT_EQ(values.size(), 21U);
+      EXPECT_DOUBLE_EQ(values.front().first, 1.0);
+      EXPECT_DOUBLE_EQ(values.front().second, 0.5);
+      EXPECT_DOUBLE_EQ(values.back().first, 6.0);
+      for (const auto &[x, f] : values) {
+        SCOPED_TRACE(x);
+        const double scale = std::pow(2.0, 2.0 - x);
+        const double ungapped = x < 2.0 ? 2.0 - x + (1.0 - std::pow(2.0, 1.0 - x)) / std::log(2.0)
+                                       : scale * 0.5 / std::log(2.0);
+        const double expected = 0.25 + 0.75 * ungapped;
+        EXPECT_NEAR(f, expected / scale, 1e-10);
+        const double energy = calc.mesh.Eps(x, f);
+        EXPECT_NEAR(energy * bandwidth, expected * bandwidth, 1e-10);
+        if (x > 1.0) {
+          const double lower = calc.eps(x + 1.0);
+          const double upper = calc.eps(x);
+          EXPECT_NEAR(lower, 0.25 + 0.75 * std::pow(2.0, 1.0 - x), 1e-14);
+          EXPECT_NEAR(upper, x <= 2.0 ? 1.0 : 0.25 + 0.75 * scale, 1e-14);
+          EXPECT_GT(lower, 0.25);
+          EXPECT_LT(lower, upper);
+          EXPECT_LE(upper, 1.0);
+          EXPECT_GT(energy, lower);
+          EXPECT_LT(energy, upper);
+        }
+      }
+      std::remove(calc.f_fn(sign).c_str());
+    }
+  }
+  std::remove(filename);
+}
+
+TEST(Adapt, hardgap_rejects_unsupported_modes_after_cli_override_without_touching_outputs) { // NOLINT
+  const auto filename = "adapt_hardgap_modes.param";
+  write_file(filename, "[param]\nhardgap=true\nboundary=0.25\n");
+  Params params(filename);
+  const std::string original = "existing table\n";
+  for (const auto sign : {Sign::POS, Sign::NEG}) {
+    const auto f_filename = sign == Sign::POS ? "FSOL.dat" : "FSOLNEG.dat";
+    const auto g_filename = sign == Sign::POS ? "GSOL.dat" : "GSOLNEG.dat";
+    write_file(f_filename, original);
+    write_file(g_filename, original);
+    for (const bool adaptive : {false, true}) {
+      params["adapt"] = adaptive ? "true" : "false";
+      for (const auto method : {"ode", "integral"}) {
+        params["f_method"] = method;
+        for (const bool force_integral : {false, true}) {
+          const bool supported = !adaptive && (force_integral || params["f_method"] == "integral");
+          try {
+            Adapt calc(params, sign, 0.01, force_integral);
+            EXPECT_TRUE(supported);
+            EXPECT_EQ(calc.f_method, FMethod::INTEGRAL);
+          } catch (const std::invalid_argument &error) {
+            EXPECT_FALSE(supported);
+            const std::string message = error.what();
+            EXPECT_NE(message.find("adapt=false"), std::string::npos);
+            EXPECT_NE(message.find("--integral"), std::string::npos);
+          }
+          EXPECT_EQ(read_file(f_filename), original);
+          EXPECT_EQ(read_file(g_filename), original);
+        }
+      }
+    }
+    std::remove(f_filename);
+    std::remove(g_filename);
+  }
+  std::remove(filename);
+}
+
+TEST(Adapt, hardgap_max_abs_truncation_fails_and_preserves_previous_table) { // NOLINT
+  const auto filename = "adapt_hardgap_max_abs.param";
+  write_file(filename, "[param]\nLambda=2\nhardgap=true\nboundary=0.25\nf_method=integral\n"
+                       "xmax=6\noutputstep=1\nmax_abs=1\n");
+  Params params(filename);
+  for (const auto sign : {Sign::POS, Sign::NEG}) {
+    Adapt calc(params, sign, 0.01);
+    const auto output = calc.f_fn(sign);
+    const std::string original = "previous valid table\n";
+    write_file(output, original);
+    try {
+      calc.run();
+      FAIL() << "Expected a hardgap truncation error";
+    } catch (const std::runtime_error &error) {
+      const std::string message = error.what();
+      for (const auto text : {"x_last=3", "xmax=6", "max_abs=1", "increase max_abs", "reduce xmax"})
+        EXPECT_NE(message.find(text), std::string::npos) << message;
+    }
+    EXPECT_EQ(read_file(output), original);
+    calc.max_abs = 100.0;
+    EXPECT_NO_THROW(calc.run());
+    EXPECT_DOUBLE_EQ(load_g(output).back().first, 6.0);
+    // Exceeding the coefficient bound at the requested endpoint does not truncate the table.
+    calc.max_abs = 1.0;
+    calc.xmax = 3.0;
+    EXPECT_NO_THROW(calc.run());
+    EXPECT_DOUBLE_EQ(load_g(output).back().first, 3.0);
+    std::remove(output.c_str());
+  }
+  std::remove(filename);
+}
+
+TEST(Adapt, hardgap_rejects_collapsed_intervals_and_unresolvable_positive_weight_energies) { // NOLINT
+  const auto filename = "adapt_hardgap_collapsed.param";
+  write_file(filename, "[param]\nLambda=2\nhardgap=true\nboundary=0.25\nf_method=integral\n"
+                       "xmax=3\noutputstep=1\nmax_abs=1e100\n");
+  Params params(filename);
+  Adapt calc(params, Sign::POS, 1.0);
+  calc.load_init_rho();
+  calc.init_cumulative();
+  calc.max_error = 0.0;
+  std::unique_ptr<gsl_integration_cquad_workspace, GslWorkspaceDeleter> workspace(gsl_integration_cquad_workspace_alloc(1000));
+  ASSERT_TRUE(workspace);
+  EXPECT_DOUBLE_EQ(calc.Eps_integral(1.0, workspace.get()), 1.0);
+  EXPECT_GT(calc.eps(55.0), calc.mesh.boundary);
+  EXPECT_LT(calc.eps(55.0), calc.eps(54.0));
+  EXPECT_GT(calc.rho.integral(calc.eps(55.0), calc.eps(54.0)), 0.0);
+  EXPECT_THROW(calc.Eps_integral(54.0, workspace.get()), std::runtime_error);
+  EXPECT_DOUBLE_EQ(calc.eps(60.0), calc.mesh.boundary);
+  EXPECT_THROW(calc.Eps_integral(60.0, workspace.get()), std::runtime_error);
+
+  // A very large Lambda makes the first exported interval collapse onto the gap.
+  params["Lambda"] = "1e20";
+  Adapt collapsed(params, Sign::POS, 1.0);
+  const std::string original = "previous valid table\n";
+  write_file("FSOL.dat", original);
+  try {
+    collapsed.run();
+    FAIL() << "Expected a collapsed hardgap interval error";
+  } catch (const std::runtime_error &error) {
+    EXPECT_NE(std::string(error.what()).find("interval collapsed"), std::string::npos);
+  }
+  EXPECT_EQ(read_file("FSOL.dat"), original);
+  std::remove("FSOL.dat");
+  std::remove(filename);
+}
+
+TEST(Adapt, hardgap_publication_replaces_symlink_without_touching_target) { // NOLINT
+  const auto filename = "adapt_hardgap_symlink.param";
+  const auto target = "adapt_hardgap_symlink_target.dat";
+  write_file(filename, "[param]\nLambda=2\nhardgap=true\nboundary=0.25\nf_method=integral\nxmax=3\noutputstep=1\n");
+  Params params(filename);
+  const std::string original = "existing target\n";
+  write_file(target, original);
+  for (const auto sign : {Sign::POS, Sign::NEG}) {
+    Adapt calc(params, sign, 0.01);
+    const auto output = calc.f_fn(sign);
+    std::filesystem::create_symlink(target, output);
+    ASSERT_NO_THROW(calc.run());
+    EXPECT_FALSE(std::filesystem::is_symlink(output));
+    EXPECT_TRUE(std::filesystem::is_regular_file(output));
+    EXPECT_DOUBLE_EQ(load_g(output).back().first, 3.0);
+    EXPECT_EQ(read_file(target), original);
+    expect_no_temporary_output(output);
+    std::remove(output.c_str());
+  }
+  std::remove(target);
+  std::remove(filename);
+}
+
+TEST(Adapt, hardgap_publication_rename_failure_preserves_destination_and_removes_temporary) { // NOLINT
+  const auto filename = "adapt_hardgap_rename.param";
+  write_file(filename, "[param]\nLambda=2\nhardgap=true\nboundary=0.25\nf_method=integral\nxmax=3\noutputstep=1\n");
+  Params params(filename);
+  const std::string original = "existing directory contents\n";
+  for (const auto sign : {Sign::POS, Sign::NEG}) {
+    Adapt calc(params, sign, 0.01);
+    const auto output = calc.f_fn(sign);
+    ASSERT_TRUE(std::filesystem::create_directory(output));
+    const auto marker = output + "/previous";
+    write_file(marker, original);
+    try {
+      calc.run();
+      FAIL() << "Expected a publication rename error";
+    } catch (const std::system_error &error) {
+      EXPECT_NE(std::string(error.what()).find("Failed to rename temporary output to " + output), std::string::npos);
+    }
+    EXPECT_EQ(read_file(marker), original);
+    expect_no_temporary_output(output);
+    std::remove(marker.c_str());
+    std::filesystem::remove(output);
+  }
+  std::remove(filename);
+}
+
+TEST(Adapt, hardgap_publication_write_and_close_failures_preserve_existing_table) { // NOLINT
+  const auto filename = "adapt_hardgap_io_failure.param";
+  write_file(filename, "[param]\nLambda=2\nhardgap=true\nboundary=0.25\nf_method=integral\nxmax=3\n");
+  Params params(filename);
+  const std::string original = "previous valid table\n";
+  for (const auto sign : {Sign::POS, Sign::NEG}) {
+    // Small output fails when fclose flushes it; output larger than the stdio buffer fails in fwrite.
+    for (const auto step : {"1", "0.001953125"}) {
+      SCOPED_TRACE(step);
+      params["outputstep"] = step;
+      Adapt calc(params, sign, 0.01);
+      const auto output = calc.f_fn(sign);
+      write_file(output, original);
+      const std::string operation = params["outputstep"] == "1" ? "close" : "write";
+      const auto child = ::fork();
+      ASSERT_GE(child, 0);
+      if (child == 0) {
+        // Never alter the test runner's resource limits or signal handling.
+        struct rlimit limit;
+        if (::getrlimit(RLIMIT_FSIZE, &limit) != 0) ::_exit(2);
+        limit.rlim_cur = 0;
+        if (::signal(SIGXFSZ, SIG_IGN) == SIG_ERR || ::setrlimit(RLIMIT_FSIZE, &limit) != 0) ::_exit(2);
+        std::cout.setstate(std::ios_base::badbit);
+        try {
+          calc.run();
+        } catch (const std::system_error &error) {
+          const bool expected = error.code() == std::errc::file_too_large
+                                && std::string(error.what()).find("Failed to " + operation + " temporary output for " + output)
+                                     != std::string::npos;
+          ::_exit(expected ? 0 : 3);
+        } catch (...) {
+          ::_exit(4);
+        }
+        ::_exit(1);
+      }
+      int status = 0;
+      pid_t waited;
+      do {
+        waited = ::waitpid(child, &status, 0);
+      } while (waited == -1 && errno == EINTR);
+      ASSERT_EQ(waited, child);
+      ASSERT_TRUE(WIFEXITED(status));
+      EXPECT_EQ(WEXITSTATUS(status), 0) << "1=unexpected success, 2=setup failure, 3=wrong I/O error, 4=non-I/O exception";
+      EXPECT_EQ(read_file(output), original);
+      expect_no_temporary_output(output);
+      std::remove(output.c_str());
+    }
+  }
+  std::remove(filename);
+}
+
+TEST(Adapt, hardgap_zero_weight_allows_an_edge_but_not_an_outside_plateau_inverse) { // NOLINT
+  const auto filename = "adapt_hardgap_plateau.param";
+  write_file(filename, "[param]\nLambda=2\nhardgap=true\nboundary=0.25\nf_method=integral\n");
+  Params params(filename);
+  Adapt calc(params, Sign::POS);
+  calc.vecrho = {{0.0, 0.0}, {0.625, 0.0}, {1.0, 1.0}};
+  calc.rho = NRG::Tools::TabulatedDensity(calc.vecrho);
+  calc.init_cumulative();
+  calc.max_error = 0.0;
+  std::unique_ptr<gsl_integration_cquad_workspace, GslWorkspaceDeleter> workspace(gsl_integration_cquad_workspace_alloc(1000));
+  ASSERT_TRUE(workspace);
+  EXPECT_DOUBLE_EQ(calc.rho.integral(calc.eps(4.0), calc.eps(3.0)), 0.0);
+  EXPECT_DOUBLE_EQ(calc.Eps_integral(3.0, workspace.get()), 0.625);
+  EXPECT_DOUBLE_EQ(calc.rho.integral(calc.eps(4.5), calc.eps(3.5)), 0.0);
+  EXPECT_THROW(calc.Eps_integral(3.5, workspace.get()), std::runtime_error);
+  std::remove(filename);
+}
+
+TEST(Adapt, zero_or_disabled_hardgap_keeps_ungapped_modes_and_truncation) { // NOLINT
+  const auto filename = "adapt_hardgap_ungapped.param";
+  write_file(filename, "[param]\nLambda=2\nxmax=6\noutputstep=0.25\nmax_abs=0.1\n");
+  Params params(filename);
+  for (const bool hardgap : {false, true}) {
+    params["hardgap"] = hardgap ? "true" : "false";
+    params["boundary"] = hardgap ? "0" : "0.25";
+    for (const bool adaptive : {false, true}) {
+      params["adapt"] = adaptive ? "true" : "false";
+      for (const auto method : {"ode", "integral"}) {
+        params["f_method"] = method;
+        EXPECT_NO_THROW(Adapt(params, Sign::POS, 0.01));
+      }
+    }
+    params["adapt"] = "false";
+    Adapt calc(params, Sign::POS, 0.01);
+    EXPECT_NO_THROW(calc.run());
+    const auto values = load_g("FSOL.dat");
+    ASSERT_EQ(values.size(), 2U);
+    EXPECT_DOUBLE_EQ(values.back().first, 1.25);
+    const double expected = 0.75 + (1.0 - std::pow(2.0, -0.25)) / std::log(2.0);
+    EXPECT_NEAR(values.back().second * std::pow(2.0, 0.75), expected, 1e-10);
+    std::remove("FSOL.dat");
+  }
+  std::remove(filename);
 }
 
 TEST(Adapt, cumulative_inverse_extends_terminal_plateau_to_band_edge) { // NOLINT

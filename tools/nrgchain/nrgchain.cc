@@ -40,6 +40,7 @@ using namespace std;
 #include "parser.h"
 #include "load.h"
 #include "nrgchain.hpp"
+#include "../common/log_mesh.hpp"
 
 LAMBDA Lambda;              // discretization parameter
 double z;                   // twist parameter
@@ -55,7 +56,7 @@ string tridiag_method = "lanczos";
 
 Vec vecrho_pos, vecrho_neg; // rho, for positive and negative energies
 NRG::Tools::TabulatedDensity rho_pos, rho_neg;
-LinInt g_pos, g_neg;              // g(x)
+NRG::Tools::LogMesh<LinInt> mesh_pos, mesh_neg;
 LinInt f_pos, f_neg;
 
 using Table = vector<double>;
@@ -67,6 +68,9 @@ double result_theta = 0.0;
 Table de_pos, de_neg, du_pos, du_neg;
 
 bool adapt; // If adapt=false --> g(x)=1.
+bool hardgap = false;
+double boundary = 0.0; // In normalized band units, as in adapt.
+bool finite_gap() { return hardgap && boundary > 0.0; }
 NRG::Tools::InterpolationMethod density_interpolation = NRG::Tools::InterpolationMethod::linear;
 
 string band; // If band="flat", we use an analytical expression for f,
@@ -91,13 +95,11 @@ void close_output_checked(ofstream &output, const string &filename) {
 // This is only an auxiliary quantity which defines the discretization
 // mesh.
 double eps_pos(double x) {
-  const double gx = (adapt ? g_pos(x) : 1.0);
-  return (x <= 2.0 ? 1.0 : gx * Lambda.power(2.0 - x));
+  return mesh_pos.eps(x);
 }
 
 double eps_neg(double x) {
-  const double gx = (adapt ? g_neg(x) : 1.0);
-  return (x <= 2.0 ? 1.0 : gx * Lambda.power(2.0 - x));
+  return mesh_neg.eps(x);
 }
 
 // Analytical expression for Epsilon(x) in the case of a flat band.
@@ -117,19 +119,19 @@ inline double Eps_flat(double x) {
 // Eps(x) = D f(x) Lambda^(2-x)
 // This are the "representative energies" of the grid.
 inline double Eps_pos(double x) {
-  if (band == "flat") return Eps_flat(x);
+  if (band == "flat") return hardgap ? mesh_pos.rescale(Eps_flat(x)) : Eps_flat(x);
 
   assert(x >= 1.0);
   const double f = f_pos(x);
-  return f * Lambda.power(2.0 - x);
+  return finite_gap() ? f : f * Lambda.power(2.0 - x);
 }
 
 inline double Eps_neg(double x) {
-  if (band == "flat") return Eps_flat(x);
+  if (band == "flat") return hardgap ? mesh_neg.rescale(Eps_flat(x)) : Eps_flat(x);
 
   assert(x >= 1.0);
   const double f = f_neg(x);
-  return f * Lambda.power(2.0 - x);
+  return finite_gap() ? f : f * Lambda.power(2.0 - x);
 }
 
 void about(ostream &F = cout) {
@@ -200,6 +202,16 @@ void set_parameters() {
   if (!(0 < z && z <= 1.0)) throw std::invalid_argument("z must satisfy 0 < z <= 1.");
 
   adapt = Pbool("adapt", false); // Enable adaptable g(x)? Default is false!!
+  hardgap = Pbool("hardgap", false);
+  boundary = P("boundary", 0.0);
+  if (hardgap && !(boundary >= 0.0 && boundary < 1.0))
+    throw invalid_argument("boundary must be in [0,1) when hardgap=true.");
+  for (auto *mesh : {&mesh_pos, &mesh_neg}) {
+    mesh->Lambda = Lambda;
+    mesh->adapt = adapt;
+    mesh->hardgap = hardgap;
+    mesh->boundary = boundary;
+  }
 
   bandrescale = P("bandrescale", 1.0);
   if (!(std::isfinite(bandrescale) && bandrescale > 0.0))
@@ -278,21 +290,40 @@ void init_rho() {
 void load_g() {
   const string gfn_pos = "GSOL.dat";
   Vec vecg_pos         = load_g(gfn_pos);
-  g_pos                = LinInt(vecg_pos);
+  mesh_pos.g           = LinInt(vecg_pos);
 
   const string gfn_neg = "GSOLNEG.dat";
   Vec vecg_neg         = load_g(gfn_neg);
-  g_neg                = LinInt(vecg_neg);
+  mesh_neg.g           = LinInt(vecg_neg);
 }
 
 void load_f() {
-  const string ffn_pos = "FSOL.dat";
-  Vec vecf_pos         = load_g(ffn_pos); // same load_g() function as for g
-  f_pos                = LinInt(vecf_pos);
-
-  const string ffn_neg = "FSOLNEG.dat";
-  Vec vecf_neg         = load_g(ffn_neg);
-  f_neg                = LinInt(vecf_neg);
+  const auto load = [](const string &filename) {
+    Vec values = load_g(filename); // same file layout as g
+    if (finite_gap()) {
+      if (values.size() < 2) throw runtime_error(filename + ": at least two hard-gap table points required.");
+      for (size_t i = 0; i < values.size(); ++i) {
+        if (!(std::isfinite(values[i].first) && std::isfinite(values[i].second) && values[i].second > 0.0)
+            || (i && !(values[i - 1].first < values[i].first)))
+          throw runtime_error(filename + ": hard-gap table requires increasing abscissas and positive finite coefficients.");
+      }
+      const auto first = z + 1.0;
+      const auto last = z + static_cast<double>(mMAX) + 1.0;
+      if (values.front().first > first || values.back().first < last)
+        throw runtime_error(filename + ": does not cover all hard-gap representative queries; extend the table or reduce mMAX.");
+      // Interpolate physical representative energies within the supplied table.
+      // Interpolating the exponentially growing f creates gap-sized errors;
+      // holding its last value beyond the table incorrectly tends to zero.
+      for (auto &[x, value] : values) {
+        value *= Lambda.power(2.0 - x);
+        if (!(std::isfinite(value) && value > 0.0))
+          throw runtime_error(filename + ": nonrepresentable hard-gap representative energy.");
+      }
+    }
+    return LinInt(values);
+  };
+  f_pos = load("FSOL.dat");
+  f_neg = load("FSOLNEG.dat");
 }
 
 // The factor that multiplies eigenvalues of the Wilson chain Hamiltonian
@@ -302,13 +333,24 @@ double SCALE(int N) { return (1.0 - 1. / Lambda) / log(Lambda) * pow(Lambda, -(N
 inline double sqr(double x) { return x * x; }
 
 void tables() {
+  if (finite_gap() && !(eps_pos(z + mMAX + 2) > boundary && eps_neg(z + mMAX + 2) > boundary))
+    throw runtime_error("Hard-gap cutoff collapsed onto the gap edge; reduce mMAX.");
   const double int_pos1 = rho_pos.integral(0.0, 1.0);
   const double int_neg1 = rho_neg.integral(0.0, 1.0);
   const double theta1   = int_pos1 + int_neg1;
   cout << "# int_pos1=" << int_pos1 << " int_neg1=" << int_neg1 << " theta1=" << theta1 << endl;
   const double int_pos2 = rho_pos.integral(eps_pos(z + mMAX + 2), eps_pos(z + 1));
   const double int_neg2 = rho_neg.integral(eps_neg(z + mMAX + 2), eps_neg(z + 1));
-  const double theta2 = int_pos2 + int_neg2;
+  double theta2 = int_pos2 + int_neg2;
+  double root_theta = sqrt(theta2);
+  if (theta2 < numeric_limits<double>::min()) {
+    // Combine retained branch weights before their final rounding. A common
+    // root scale also protects a very weak branch from intermediate underflow.
+    const auto base_root = sqrt(numeric_limits<double>::min());
+    root_theta = hypot(rho_pos.normalized_amplitude(eps_pos(z + mMAX + 2), eps_pos(z + 1), base_root),
+                       rho_neg.normalized_amplitude(eps_neg(z + mMAX + 2), eps_neg(z + 1), base_root)) * base_root;
+    theta2 = root_theta * root_theta;
+  }
   cout << "# int_pos2=" << int_pos2 << " int_neg2=" << int_neg2 << " theta2=" << theta2 << endl;
 
   // For consistency with df_pos & df_neg, we use set 2
@@ -317,29 +359,31 @@ void tables() {
     throw runtime_error("Hybridisation weight theta must be positive and finite.");
   result_theta = theta;
   
-  ofstream THETA;
-  const auto theta_filename = output_path("theta.dat");
-  safe_open(THETA, theta_filename); // theta (hybridisation fnc. weight)
-  THETA << setprecision(18) << theta << endl;
-  close_output_checked(THETA, theta_filename);
-
-  Table df_pos(mMAX + 1), df_neg(mMAX + 1);
   Table du0_neg(mMAX + 1), du0_pos(mMAX + 1);
 
   de_pos.resize(mMAX + 1);
   de_neg.resize(mMAX + 1);
 
   for (unsigned int m = 0; m <= mMAX; m++) {
-    df_pos[m] = rho_pos.integral(eps_pos(z + m + 2), eps_pos(z + m + 1));
-    df_neg[m] = rho_neg.integral(eps_neg(z + m + 2), eps_neg(z + m + 1));
-
-    du0_pos[m] = sqrt(df_pos[m]) / sqrt(theta);
-    du0_neg[m] = sqrt(df_neg[m]) / sqrt(theta);
+    const auto lp = eps_pos(z + m + 2), up = eps_pos(z + m + 1);
+    const auto lm = eps_neg(z + m + 2), um = eps_neg(z + m + 1);
+    if (finite_gap() && !(boundary < lp && lp < up && up <= 1.0 && boundary < lm && lm < um && um <= 1.0))
+      throw runtime_error("Hard-gap interval collapsed or unordered at m=" + to_string(m) + "; reduce mMAX.");
+    du0_pos[m] = rho_pos.normalized_amplitude(lp, up, root_theta);
+    du0_neg[m] = rho_neg.normalized_amplitude(lm, um, root_theta);
 
     de_pos[m] = Eps_pos(z + m + 1);
     de_neg[m] = Eps_neg(z + m + 1);
     if (!(std::isfinite(de_pos[m]) && de_pos[m] > 0.0 && std::isfinite(de_neg[m]) && de_neg[m] > 0.0))
       throw runtime_error("Representative energies must be positive and finite.");
+    if (finite_gap()) {
+      const auto inside = [](const double energy, const double lower, const double upper, const double amplitude) {
+        return amplitude > 0.0 ? lower < energy && energy < upper : lower <= energy && energy <= upper;
+      };
+      if (!inside(de_pos[m], lp, up, du0_pos[m]) || !inside(de_neg[m], lm, um, du0_neg[m]))
+        throw runtime_error("Representative energy outside its hard-gap shell at m=" + to_string(m)
+                            + "; refine/regenerate FSOL tables or reduce mMAX.");
+    }
   }
 
   double checksum = 0.0;
@@ -366,6 +410,12 @@ void tables() {
   for (unsigned int m = 0; m <= mMAX; m++) {
     cout << "# " << m << " " << du_pos[m] << " " << du_neg[m] << " " << de_pos[m] << " " << de_neg[m] << endl;
   }
+  // Publish only after the entire star has passed numerical validation.
+  ofstream THETA;
+  const auto theta_filename = output_path("theta.dat");
+  safe_open(THETA, theta_filename);
+  THETA << setprecision(18) << theta << endl;
+  close_output_checked(THETA, theta_filename);
 }
 
 void save_tables() {
@@ -397,6 +447,9 @@ void load_tables() {
     if (!(std::isfinite(de_pos[index]) && de_pos[index] > 0.0 && std::isfinite(de_neg[index])
           && de_neg[index] > 0.0))
       throw runtime_error("Loaded representative energies must be positive and finite.");
+    if (finite_gap() && !(de_pos[index] >= boundary && de_pos[index] <= 1.0
+                          && de_neg[index] >= boundary && de_neg[index] <= 1.0))
+      throw runtime_error("Loaded representative energy violates the declared hard-gap band.");
     if (!(std::isfinite(du_pos[index]) && du_pos[index] >= 0.0 && std::isfinite(du_neg[index])
           && du_neg[index] >= 0.0))
       throw runtime_error("Loaded Wilson amplitudes must be nonnegative and finite.");
@@ -681,8 +734,8 @@ void reset_calculation_state() {
   vecrho_neg.clear();
   rho_pos = NRG::Tools::TabulatedDensity();
   rho_neg = NRG::Tools::TabulatedDensity();
-  g_pos = LinInt();
-  g_neg = LinInt();
+  mesh_pos = NRG::Tools::LogMesh<LinInt>();
+  mesh_neg = NRG::Tools::LogMesh<LinInt>();
   f_pos = LinInt();
   f_neg = LinInt();
   de_pos.clear();
@@ -690,6 +743,8 @@ void reset_calculation_state() {
   du_pos.clear();
   du_neg.clear();
   adapt = false;
+  hardgap = false;
+  boundary = 0.0;
   density_interpolation = NRG::Tools::InterpolationMethod::linear;
   band.clear();
   nrgchain_tables_save = false;
@@ -746,6 +801,10 @@ void report_configuration(const TableMode mode) {
   report.value("band", band);
   report.value("bandrescale", bandrescale);
   report.value("adapt", adapt);
+  report.value("hardgap", hardgap);
+  if (hardgap) report.value("boundary", boundary);
+  else report.resolved("boundary", "inactive", "hardgap=false");
+  if (finite_gap() && !nrgchain_tables_load && band != "flat") report.value("representative_interpolation", "energy-linear, no extrapolation");
   report.value("rescalexi", rescalexi);
   report.value("tridiag_method", tridiag_method);
   if (tridiag_method == "lanczos")
@@ -841,6 +900,8 @@ WilsonData run_calculation(const TableMode mode, const filesystem::path &output_
   apply_mode(mode);
   if (nrgchain_tables_load && nrgchain_tables_save)
     throw invalid_argument("nrgchain_tables_load and nrgchain_tables_save cannot both be true.");
+  if (!nrgchain_tables_load && adapt && (finite_gap() || band == "flat"))
+    throw invalid_argument("Scalar hard-gap and analytic flat-band generation require adapt=false.");
 #ifndef NRGCHAIN_NO_MAIN
   report_configuration(mode);
 #endif

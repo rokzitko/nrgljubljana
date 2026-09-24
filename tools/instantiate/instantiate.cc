@@ -480,6 +480,8 @@ struct ResolvedNrgChainConfiguration {
   unsigned int preccpp;
   std::string tridiag_method;
   bool adapt;
+  bool hardgap;
+  double boundary;
   bool rescalexi;
   std::string band;
   std::string dos;
@@ -542,6 +544,8 @@ ResolvedNrgChainConfiguration resolve_nrgchain_configuration(
     .preccpp = integer("preccpp", 2000),
     .tridiag_method = string("tridiag_method", "lanczos"),
     .adapt = boolean("adapt", false),
+    .hardgap = boolean("hardgap", false),
+    .boundary = number("boundary", 0.0),
     .rescalexi = boolean("rescalexi", false),
     .band = string("band", "adapt"),
     .dos = string("dos", "Delta.dat"),
@@ -560,6 +564,8 @@ ResolvedNrgChainConfiguration resolve_nrgchain_configuration(
   if (!(config.z > 0.0 && config.z <= 1.0)) throw std::invalid_argument("z must satisfy 0 < z <= 1.");
   if (!(config.bandrescale > 0.0)) throw std::invalid_argument("bandrescale must be positive.");
   if (!(config.xmax >= 1.0)) throw std::invalid_argument("xmax must be greater than or equal to 1.");
+  if (config.hardgap && !(config.boundary >= 0.0 && config.boundary < 1.0))
+    throw std::invalid_argument("boundary must be in [0,1) when hardgap=true.");
   if (config.Nmax > static_cast<unsigned int>(std::numeric_limits<int>::max() / 2))
     throw std::invalid_argument("Nmax is too large to derive mMAX.");
   config.mMAX = integer("mMAX", 2U * config.Nmax);
@@ -582,6 +588,8 @@ ResolvedNrgChainConfiguration resolve_nrgchain_configuration(
   }
   if (config.tables_load && config.tables_save)
     throw std::invalid_argument("nrgchain_tables_load and nrgchain_tables_save cannot both be true.");
+  if (!config.tables_load && config.adapt && ((config.hardgap && config.boundary > 0.0) || config.band == "flat"))
+    throw std::invalid_argument("Scalar hard-gap and analytic flat-band generation require adapt=false.");
   return config;
 }
 
@@ -675,6 +683,9 @@ void report_configuration(const Options &options, const NrgChainInvocation &invo
     report.resolved("nrgchain.preccpp", "inactive", "tridiag_method=rkpw; preccpp unused");
   report.value("nrgchain.output_precision", 16);
   parameter("nrgchain.adapt", "adapt", config.adapt);
+  parameter("nrgchain.hardgap", "hardgap", config.hardgap);
+  if (config.hardgap) parameter("nrgchain.boundary", "boundary", config.boundary);
+  else report.resolved("nrgchain.boundary", "inactive", "hardgap=false");
   parameter("nrgchain.rescalexi", "rescalexi", config.rescalexi);
   parameter("nrgchain.band", "band", config.band);
   parameter("nrgchain.dos", "dos", config.dos);

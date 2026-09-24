@@ -4,6 +4,24 @@
 selected Wilson-chain backend. `--diag-seed-only` stops after generating and
 diagonalizing the seed; `--wilson-only` generates chain files without a seed.
 
+## Scalar Star Inputs
+
+Wilson generation uses the shared [`nrgchain` pipeline](../nrgchain/README.md),
+including root-normalized small-shell amplitudes and bounded hard gaps.
+With `hardgap=true`, `boundary=b` is finite in `[0,1)` and gives a physical
+gap magnitude `bandrescale*b`. Generated nonzero-gap or analytic `band=flat`
+stars require `adapt=false`. Tabulated hard-gap stars require both FSOL
+branches to cover `z+1` through `z+mMAX+1`; interpolation is linear in the
+converted energies, without extrapolation or a second gap shift. Generated
+shells and representatives must pass the same in-shell checks as `nrgchain`.
+
+With `nrgchain_tables_load=true`, density/FSOL/GSOL inputs and `adapt` are
+inactive. Saved stars still undergo normalization and declared gap-band
+validation. The physical `theta` must remain a positive finite `double`,
+even when root-space normalization recovers underflowed shell masses.
+These rules apply independently of `tridiag_method`; its production default
+remains `lanczos`.
+
 ## Wilson Coefficient Scaling
 
 Full instantiation and `--diag-seed-only` require `rescalexi=false` in `[param]`

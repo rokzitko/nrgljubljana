@@ -53,12 +53,13 @@ ctest --test-dir build -L '^chain-rkpw$' --output-on-failure --no-tests=error
 
 The source registration inventory below counts cases **per backend**, before
 configuration gates; it is not a promised CTest total. Standalone numerical
-backend tests and the RKPW pipeline add coverage beyond these paired cases.
+backend tests, focused initializer contracts below, and the RKPW pipeline add
+coverage beyond these paired fixture cases.
 
 | Case group | Source cases per backend | Coverage and gates |
 | --- | ---: | --- |
 | Initializer producers | 109 | Initializer, model, and template workflows; Mathematica and `SYM_ALL`, with long cases additionally requiring `TEST_LONG`. |
-| Tool and mixed workflows | 30 | Scalar-producing `adapt`, `nrgchain`, `instantiate`, `nrgspawn`, and mixed comparisons; symmetry and Mathematica gates apply where needed. |
+| Tool and mixed workflows | 31 | Scalar-producing `adapt`, `nrgchain`, `instantiate`, `nrgspawn`, and mixed comparisons; symmetry and Mathematica gates apply where needed. |
 | Fixed-seed runtime reconstruction | 17 | `chain-fixed-seed`; runtime backend selected independently, committed seed unchanged; symmetry gates apply. This is not matched-backend seed generation. |
 | Fresh preparation workflows | 9 | `chain-preparation`; Mathematica required. `base_prepare_legacy` and `base_prepare_rkpw` regenerate `data` before the solver runs: 18 registrations when both backends are enabled. |
 | Scientific fixture regeneration | 3 | `scientific` and `chain-generation`; `TEST_SCIENTIFIC`, Python/NumPy, Mathematica, and `SYM_ALL` required: six registrations with both backends enabled. |
@@ -89,6 +90,49 @@ Keep shared inputs, references, and this helper when deleting obsolete legacy
 registrations. `chain_backend_contract` and `chain_registration_contract`
 check staging and registration behavior; adding a backend test should not
 require new golden output or relaxed tolerances.
+
+### Scalar Star Contracts
+
+`nrgchain21_star_ranges_legacy` and `nrgchain21_star_ranges_rkpw` each use
+only their selected backend. They check analytic and table-based bounded
+hard gaps, off-grid energy interpolation, retained weight, load mode,
+`instantiate` scaling, and rejection of incomplete/unordered tables,
+out-of-shell energies, collapsed intervals, and unsupported mesh modes.
+Deep ungapped cases use `mMAX=800`, `Nmax=100`: flat densities include
+uniform scaling by `1e-200` with linear and Steffen interpolation; a linear
+pseudogap reaches down to the minimum positive normal sample without a
+density floor in the retained mesh. A separate case checks retained
+`theta=3*denorm_min`, combining branch roots before final mass rounding.
+No golden files are added or regenerated.
+
+The unit tests separate local root-amplitude arithmetic (`tabulated_density`)
+from integral hard-gap mapping and checked atomic FSOL publication
+(`adapt_high`). After test inputs are staged in an existing configured build,
+build the affected targets and run these groups:
+
+```sh
+cmake --build build --target adapt_high tabulated_density adapt nrgchain instantiate --parallel 2
+ctest --test-dir build -R '^(adapt_high|tabulated_density)$' \
+  --output-on-failure --no-tests=error
+ctest --test-dir build -R '^nrgchain(20_rkpw|21_star_ranges)_(legacy|rkpw)$' \
+  --output-on-failure --no-tests=error
+```
+
+`nrgchain20_rkpw_*` tests calculate/save/load and tool consistency within
+each selected backend, not one backend against the other. Exact support
+termination remains RKPW-specific. The new Mathematica cases are also paired:
+
+- `nrginit_dmft_empty_*`: normal `Y`/`C` zero-mass shells, inert midpoint energies, analytic moments, and backend-specific support limits.
+- `nrginit_hardgap_mapping_*`: retained cutoff weight, physical scaling, energy interpolation, actual table coverage, and negative cases.
+- `nrginit_serialization_*`: actual full/`cpp`/`none` writes at bandwidths `1e-20` and `1e-305`, preservation of tiny coefficients, RKPW `CHOP`/`EPSCLIP` rejection, and unchanged legacy clipping.
+
+These registrations require Mathematica, `SYM_ALL`, and the selected backend
+test option; they need no C++ solver build. Run the enabled variants with:
+
+```sh
+ctest --test-dir build -R '^nrginit_(dmft_empty|hardgap_mapping|serialization)_(legacy|rkpw)$' \
+  --output-on-failure --no-tests=error
+```
 
 ## Scientific Validation
 

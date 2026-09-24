@@ -179,6 +179,12 @@ positive bandwidth can therefore fail even when the unscaled reconstruction
 succeeded. These checks also apply to RKPW seeds with `tri=cpp`/`none`, but
 do not change legacy-backend scaling behavior.
 
+RKPW rejects the `CHOP` and `EPSCLIP` options at `maketable`, before table
+assembly or output replacement, including RKPW seeds for `tri=cpp`/`none`.
+These options could otherwise erase validated small physical seed, chain,
+or star coefficients during serialization. Remove them for RKPW; legacy
+clipping behavior is unchanged.
+
 The normalized high-precision `du/dv[0]` amplitudes remain available for star
 output. With `disccheck` present, RKPW reports the initial-state normalization,
 first-moment error, and square-root-of-variance error for each channel. It
@@ -190,6 +196,51 @@ asymmetric endpoint densities are not made equal before shell integration.
 The `nrginit_mapping_legacy` and `nrginit_mapping_rkpw` tests check analytic
 one-sided shell weights, total weight, normalization and first chain moments,
 as well as the deferred onsite-correction restrictions.
+
+### Bounded hard gaps
+
+For a nonzero `hardgap`, the scalar initializer supports only
+`band=asymode`, `discretization=Z`, and `adapt=false`. Other band branches,
+including initializer `band=flat` and `band=adapt`, are rejected.
+With `hardgap=true`, `boundary=b` must be finite and in `[0,1)`; it is a
+normalized band coordinate, so the physical gap magnitude is `bandrescale*b`.
+This mesh setting is distinct from the onsite correction `gap`.
+
+Prepare both branches with the `adapt` tool using `adapt=false` and
+`--integral` (or `f_method=integral`). Nonzero-gap ODE and adaptive-mesh
+calculations are rejected. Premature `max_abs` termination is an error, not
+a usable partial table; raise `max_abs` or reduce the requested extent.
+The tool validates the complete hard-gap table before publishing it through
+a checked temporary file and atomic rename, preserving the previous file on
+failure without promising crash durability.
+
+Every channel's `FSOL.dat`/`FSOLNEG.dat` (with channel suffixes where needed)
+must have at least two finite `(x, f)` rows, strictly increasing abscissas,
+positive coefficients, and actual coverage from `z+1` through `z+mMAX+1`. A larger
+declared `xmax` cannot substitute for missing rows. Stored nodes become
+`E_i=f_i*Lambda^(2-x_i)` before linear interpolation of **energies**; there is
+no extrapolation and no extra affine gap shift. The fixed shell edges do
+receive the gap mapping: `eps[0]=1`,
+`eps[m]=b+(1-b)*Lambda^(1-z-m)` for `m>=1`.
+
+For every retained shell, `b < lo < up <= 1` must remain resolved. A
+positive-mass representative must satisfy `lo < E < up`; only zero-mass
+shells may use an endpoint. Refine the tables or reduce `mMAX` on failure.
+`thetaCh` includes only the retained weight above `eps[mMAX+1]`, excluding
+both the gap and discarded tails. `hardgap=false` or `boundary=0` retains
+the ungapped behavior. Regenerate FSOL tables and `data` when these inputs
+change. The C++ tools' additional analytic flat-gap path is not an
+initializer allowance.
+
+### Empty normal DMFT shells
+
+For normal scalar `band=dmft` with `discretization=Y` or `C`, an exactly
+zero shell mass keeps its table slot and zero amplitude but receives the
+finite inert midpoint `(km[m+1]+km[m])/2`, avoiding division by zero.
+There is no small-weight cutoff. This applies to `wilsonchain=legacy` and
+`tri=old`, `orth`, `rkpw`, `cpp`, or `none`; it does not extend
+superconducting, matrix/Nambu, rung, or `pol2x2` support or waive finite-star
+support limits.
 
 ### Ownership and testing
 
@@ -225,6 +276,16 @@ chain. Implementation crosschecks require the separate, default-off
 `TEST_CHAIN_CROSSCHECK` option and both backends; they do not carry the
 independent backend labels. See [Testing](testing.md#independent-chain-backends)
 for selection commands and gates.
+
+The paired `nrginit_dmft_empty_*`, `nrginit_hardgap_mapping_*`, and
+`nrginit_serialization_*` cases check empty-shell moments, bounded hard-gap
+mapping, and actual full/`cpp`/`none` serialization respectively, using only
+the selected backend. With the Mathematica suite enabled, run:
+
+```sh
+ctest --test-dir build -R '^nrginit_(dmft_empty|hardgap_mapping|serialization)_(legacy|rkpw)$' \
+  --output-on-failure --no-tests=error
+```
 
 ## Hand-Off To The C++ Runtime
 

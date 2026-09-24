@@ -28,7 +28,7 @@ tool pipeline; the legacy Mathematica implementation remains linear.
 
 ## Discretization functions
 
-In units of the half-bandwidth, the mesh points and representative energies are
+Without a nonzero hardgap, in units of the half-bandwidth, the mesh points and representative energies are
 
 $$
 \epsilon(x) = g(x)\Lambda^{2-x}, \qquad
@@ -42,7 +42,76 @@ The output files contain the coefficient functions, not the physical energies:
 - `GSOL.dat` and `GSOLNEG.dat` contain $g(x)$ for adaptive positive and negative meshes.
 - `FSOL.dat` and `FSOLNEG.dat` contain $f(x)$ for positive and negative representative energies.
 
-Downstream programs reconstruct $\epsilon(x)$ and $E(x)$ using the powers of $\Lambda$ shown above. This file format is the same for both representative-energy algorithms.
+Downstream programs reconstruct $\epsilon(x)$ and $E(x)$ using the powers of $\Lambda$ shown above (with the mesh modification below for a hardgap). This file format is the same for both representative-energy algorithms.
+
+### Bounded hardgap
+
+A nonzero hardgap is supported only on the fixed mesh with the integral method:
+
+```ini
+adapt=false
+hardgap=true
+boundary=0.25
+f_method=integral
+xmax=6
+max_abs=100
+```
+
+Here `boundary` is the normalized gap edge $b\in(0,1)$, not an energy in
+the original density units. With half-bandwidth $D=\mathtt{bandrescale}$,
+the physical gap edge is $bD$ on either frequency branch. The fixed mesh is
+
+$$
+\epsilon(x)=
+\begin{cases}
+1, & x\le2,\\
+b+(1-b)\Lambda^{2-x}, & x>2.
+\end{cases}
+$$
+
+Only the guiding mesh receives this affine transformation. The output still
+stores $f(x)=E(x)\Lambda^{x-2}$: reconstruct $E(x)=f(x)\Lambda^{2-x}$,
+without applying another gap shift. Positive and negative tables both store
+positive energy magnitudes in half-bandwidth units.
+
+`--integral` overrides `f_method` before checking hardgap support. Nonzero-gap
+ODE calculations and `adapt=true` are rejected before opening any output file;
+use `adapt=false` and `--integral` (or `f_method=integral`). `hardgap=false`
+and `hardgap=true,boundary=0` retain their existing ungapped behavior.
+
+At each integral query with $x>1$, the interval must satisfy
+$b<\epsilon(x+1)<\epsilon(x)\le1$. In particular, for $1<x<2$ its upper
+edge is 1 and its lower edge is $b+(1-b)\Lambda^{1-x}$. The startup seed
+$f(1)=1/\Lambda$, or $E(1)=1$, is allowed despite the zero-width interval
+at $x=1$. Representative energies must be finite and inside the closed
+interval, strictly inside when the interval has positive spectral weight.
+An exact-zero-weight plateau may assign an endpoint, but a generalized inverse
+outside the interval is rejected, not clamped or replaced by a placeholder.
+Intervals that collapse at floating-point precision near $b$ are rejected;
+reduce `xmax` rather than artificially shifting their edges.
+
+The coefficient can grow even though the physical energy stays bounded. For a
+flat density, writing $C=(1-\Lambda^{-1})/\ln\Lambda$, the exact solution is
+
+$$
+E(x)=b+(1-b)\left[2-x+\frac{1-\Lambda^{1-x}}{\ln\Lambda}\right]
+\quad (1\le x\le2), \qquad
+f(x)=b\Lambda^{x-2}+(1-b)C \quad (x\ge2).
+$$
+
+If `max_abs` stops a nonzero-hardgap calculation before `xmax`, it is an error,
+not a successful partial table. The diagnostic reports `x_last`, `xmax`, and
+`max_abs`; increase `max_abs` or reduce the requested extent. The entire
+hardgap table is computed and validated in memory, then written to a unique
+sibling temporary file. Both writing and closing are checked before an atomic
+rename replaces `FSOL.dat` or `FSOLNEG.dat`. Calculation or publication failures
+leave the previous destination untouched and remove the temporary file.
+A destination symlink is replaced, not followed, so its target is unchanged.
+Atomic replacement does not promise durability across a system crash or power
+loss; the file and directory are not explicitly synchronized to disk.
+This is a bounded, finite-extent contract, not support for arbitrarily large
+`xmax`. Ungapped calculations retain their streaming output and historical
+`max_abs` stopping behavior.
 
 ## Representative-energy algorithms
 
@@ -86,7 +155,9 @@ $$
 E(x)=W^{-1}\left[\int_x^{x+1}W(\epsilon(x'))\,dx'\right].
 $$
 
-This follows by writing $\rho(E)dE/dx=dW(E)/dx=-w(x)$ and integrating from $x$ to infinity. It avoids propagating the representative energy as an initial-value problem.
+This follows from $\rho(E)dE/dx=dW(E)/dx=-w(x)$ and
+$d[\int_x^{x+1}W(\epsilon(x'))dx']/dx=-w(x)$, using the mesh accumulation-point
+limit. It avoids propagating the representative energy as an initial-value problem.
 
 The implementation normalizes $W$ by $W(1)$, evaluates the integral with GSL
 CQUAD, and obtains $W^{-1}$ by monotonic bisection. Normalization does not

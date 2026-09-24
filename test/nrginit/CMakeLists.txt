@@ -38,6 +38,16 @@ foreach(backend IN LISTS CHAIN_TEST_BACKENDS)
            COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/test_rkpw ${PROJECT_SOURCE_DIR} ${Mathematica_KERNEL_EXECUTABLE} chain_mapping)
   set_tests_properties(nrginit_mapping_${backend} PROPERTIES
     ENVIRONMENT "${TEST_BUILD_ENV};CHAIN_TEST_BACKEND=${backend}" LABELS chain-${backend})
+  foreach(suite dmft_empty hardgap_mapping)
+    add_test(NAME nrginit_${suite}_${backend}
+             COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/test_rkpw ${PROJECT_SOURCE_DIR} ${Mathematica_KERNEL_EXECUTABLE} ${suite})
+    set_tests_properties(nrginit_${suite}_${backend} PROPERTIES
+      ENVIRONMENT "${TEST_BUILD_ENV};CHAIN_TEST_BACKEND=${backend}" LABELS chain-${backend})
+  endforeach()
+  add_test(NAME nrginit_serialization_${backend}
+           COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/test_chain_serialization ${PROJECT_SOURCE_DIR} ${Mathematica_KERNEL_EXECUTABLE})
+  set_tests_properties(nrginit_serialization_${backend} PROPERTIES
+    ENVIRONMENT "${TEST_BUILD_ENV};CHAIN_TEST_BACKEND=${backend}" LABELS chain-${backend})
 endforeach()
 
 if(TEST_CHAIN_LEGACY)

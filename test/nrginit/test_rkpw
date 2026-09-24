@@ -5,7 +5,7 @@ source_dir=$1
 kernel=$2
 suite=${3:-rkpw}
 case "$suite" in
-  rkpw|chain_legacy|chain_defaults|chain_crosscheck|chain_mapping) ;;
+  rkpw|chain_legacy|chain_defaults|chain_crosscheck|chain_mapping|dmft_empty|hardgap_mapping) ;;
   *) printf 'Unknown initializer chain test: %s\n' "$suite" >&2; exit 1 ;;
 esac
 
