@@ -18,9 +18,12 @@ if(NOT SCIENTIFIC_NUMPY_RESULT STREQUAL "0")
     "Install with: \"${Python3_EXECUTABLE}\" -m pip install -r \"${CMAKE_CURRENT_SOURCE_DIR}/requirements.txt\"\n"
     "NumPy check output: ${SCIENTIFIC_NUMPY_VERSION}\n${SCIENTIFIC_NUMPY_ERROR}")
 endif()
+
 message(STATUS "Scientific tests: NumPy ${SCIENTIFIC_NUMPY_VERSION}")
 
+list(JOIN CHAIN_TEST_BACKENDS "," SCIENTIFIC_CHAIN_BACKENDS)
 set(SCIENTIFIC_TEST_ENV "${TEST_BUILD_ENV}"
+  "NRG_TEST_CHAIN_BACKENDS=${SCIENTIFIC_CHAIN_BACKENDS}"
   "OPENBLAS_NUM_THREADS=1"
   "MKL_NUM_THREADS=1"
   "OMP_NUM_THREADS=1"
@@ -80,3 +83,50 @@ if(TEST_SCIENTIFIC AND Mathematica_FOUND AND SYM_ALL)
     endforeach()
   endforeach()
 endif()
+
+# Independent nonflat finite-star qualification. No production/default backend changes.
+option(TEST_SCIENTIFIC_STAR_EXTENDED "Test both star unit conventions, temperatures and solver scales" OFF)
+foreach(backend IN LISTS CHAIN_TEST_BACKENDS)
+  set(star_frontends nrgchain runtime instantiate)
+  if(TEST_SCIENTIFIC AND Mathematica_FOUND AND SYM_ALL)
+    list(APPEND star_frontends nrginit)
+  endif()
+  foreach(frontend IN LISTS star_frontends)
+    foreach(D IN ITEMS 2 1)
+      foreach(temperature IN ITEMS 0.05 0.2)
+        foreach(mode IN ITEMS rescaled absolute)
+          set(star_tag "")
+          if(NOT (D EQUAL 2 AND temperature STREQUAL "0.05" AND mode STREQUAL "rescaled"))
+            if(NOT TEST_SCIENTIFIC_STAR_EXTENDED)
+              continue()
+            endif()
+            string(REPLACE "." "" temperature_tag "${temperature}")
+            set(star_tag "_D${D}_T${temperature_tag}_${mode}")
+          endif()
+          set(test_name "scientific_star_${frontend}${star_tag}_${backend}")
+          set(star_args)
+          set(star_labels "scientific;chain-${backend};chain-qualification")
+          if(frontend STREQUAL "nrgchain")
+            list(APPEND star_args --nrgchain $<TARGET_FILE:nrgchain>)
+          elseif(frontend STREQUAL "instantiate")
+            list(APPEND star_args --instantiate $<TARGET_FILE:instantiate>)
+          elseif(frontend STREQUAL "nrginit")
+            list(APPEND star_args --source "${PROJECT_SOURCE_DIR}" --kernel "${Mathematica_KERNEL_EXECUTABLE}")
+            list(APPEND star_labels chain-generation)
+          endif()
+          if(NOT star_tag STREQUAL "")
+            list(APPEND star_labels scientific-extended)
+          endif()
+          add_test(NAME ${test_name}
+            COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/validate_star.py"
+              --fixture "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/asymmetric_star"
+              --nrg $<TARGET_FILE:nrg> --backend ${backend} --lane ${frontend}
+              --D ${D} --temperature ${temperature} --mode ${mode} ${star_args}
+              --work-root "${CMAKE_CURRENT_BINARY_DIR}/runs/$<CONFIG>/${test_name}")
+          set_tests_properties(${test_name} PROPERTIES
+            LABELS "${star_labels}" TIMEOUT 900 PROCESSORS 1 ENVIRONMENT "${SCIENTIFIC_TEST_ENV}")
+        endforeach()
+      endforeach()
+    endforeach()
+  endforeach()
+endforeach()

@@ -5,6 +5,11 @@ model (SIAM) calculations with a separately constructed exact-diagonalization
 (ED) reference. It is distinct from the saved-output regression comparisons
 described in [`test/README.md`](../README.md).
 
+The separate [asymmetric finite-star qualification](STAR.md) exercises scalar
+chain frontends, a nontrivial seed, and a nonflat noninteracting Green function.
+It does not change the flat-SIAM fixtures, provenance, or reference assumptions
+documented below.
+
 ## Running Tests
 
 The suite requires Python >=3.10 and NumPy >=1.26,<3, in addition to the normal
@@ -24,7 +29,7 @@ python3 -m venv "$HOME/nrg-scientific-venv"
 cmake -S . -B build -DCMAKE_INSTALL_PREFIX="$HOME/nrgljubljana" \
   -DBuild_Tests=ON -DTEST_SCIENTIFIC=ON \
   -DPython3_EXECUTABLE="$HOME/nrg-scientific-venv/bin/python"
-cmake --build build --target nrg --parallel
+cmake --build build --target nrg nrgchain instantiate --parallel
 ctest --test-dir build -L '^scientific$' --output-on-failure --no-tests=error
 ```
 
@@ -35,7 +40,7 @@ build-tree library; installation is not required. For a multi-config generator,
 select the same configuration with `cmake --build build --config Release` and
 `ctest --test-dir build -C Release`, retaining the other options above.
 
-The 13 license-free CTest entries have the `scientific` label: one Python
+The flat-SIAM suite's 13 license-free CTest entries have the `scientific` label: one Python
 unit-test entry and 12 prepared-data NRG comparisons. These consume committed
 fixtures; they do not exercise chain generation or qualify a generation
 backend. The latter are three fixtures times two temperatures
@@ -339,7 +344,7 @@ cmake -S . -B build -DCMAKE_INSTALL_PREFIX="$HOME/nrgljubljana" \
   -DBuild_Tests=ON -DTEST_SCIENTIFIC=ON -DSYM_ALL=ON \
   -DTEST_CHAIN_LEGACY=OFF -DTEST_CHAIN_RKPW=ON \
   -DPython3_EXECUTABLE="$HOME/nrg-scientific-venv/bin/python"
-cmake --build build --target nrg --parallel
+cmake --build build --target nrg nrgchain instantiate --parallel
 ctest --test-dir build -R '^scientific_prepare_.*_rkpw$' \
   --output-on-failure --no-tests=error
 ```

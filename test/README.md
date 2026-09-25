@@ -134,6 +134,27 @@ ctest --test-dir build -R '^nrginit_(dmft_empty|hardgap_mapping|serialization)_(
   --output-on-failure --no-tests=error
 ```
 
+## Scalar Mapping Qualification
+
+The compact `scalar_chain_qualification_legacy` and
+`scalar_chain_qualification_rkpw` tests use precision-converged independent
+oracles for non-flat stars, with separate cutoff and finite-resolvent checks.
+`TEST_CHAIN_QUALIFICATION_EXTENDED=ON` enables an opt-in acceptance sweep,
+independent of `TEST_LONG`. Only RKPW hop index 19 of the exact `gap_large_lambda`
+case is advisory when it exceeds the unchanged `2e-12` target; all other
+hops/onsites, finite/positive checks, and reference convergence remain fatal.
+Legacy is unchanged. This provisional engineering target comes from earlier
+tests, not theory/papers or a demonstrated physics requirement. The exception
+is not a numerical fix, global tolerance relaxation, or `WILL_FAIL` inversion.
+See [the qualification contract and measured limit](CHAIN_QUALIFICATION.md)
+for `known_gap_hop` TSV rows and JSON `advisories`/`passed-with-advisories`.
+Platform rounding may meet the target without an advisory; success neither
+proves a universal `2e-12` bound nor recommends a default switch.
+
+The optional scientific suite adds [asymmetric finite-star frontend checks](scientific/STAR.md)
+with a nontrivial seed and a direct noninteracting impurity Green-function
+reference. These complement, rather than replace, ordinary golden regressions.
+
 ## Scientific Validation
 
 The separate [`scientific/` suite](scientific/README.md) compares untruncated

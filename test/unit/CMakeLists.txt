@@ -48,7 +48,40 @@ foreach(test ${all_tests})
     ${CMAKE_CURRENT_BINARY_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${PROJECT_BINARY_DIR}/tools/generated)
-  if(test_name STREQUAL "scalar_tridiag")
+  if(test_name STREQUAL "scalar_chain_qualification")
+    target_sources(${test_name} PRIVATE $<TARGET_OBJECTS:nrgchain_core>)
+    foreach(backend IN LISTS CHAIN_TEST_BACKENDS)
+      add_test(NAME ${gtest_test_name}scalar_chain_qualification_report_${backend}
+               COMMAND ${PERL_EXECUTABLE} ${PROJECT_SOURCE_DIR}/test/scripts/qualification-report.t
+                       $<TARGET_FILE:scalar_chain_qualification> ${backend})
+      set_tests_properties(${gtest_test_name}scalar_chain_qualification_report_${backend} PROPERTIES
+                           ENVIRONMENT "${TEST_BUILD_ENV}" LABELS "chain-${backend};chain-qualification" TIMEOUT 120)
+      foreach(tier compact extended)
+        if(tier STREQUAL "extended" AND NOT TEST_CHAIN_QUALIFICATION_EXTENDED)
+          continue()
+        endif()
+        set(qualification_name "${gtest_test_name}scalar_chain_qualification_${backend}")
+        set(qualification_args --backend ${backend})
+        set(qualification_labels "chain-${backend};chain-qualification")
+        if(tier STREQUAL "extended")
+          set(qualification_name "${gtest_test_name}scalar_chain_qualification_extended_${backend}")
+          list(APPEND qualification_args --extended)
+          list(APPEND qualification_labels chain-qualification-extended)
+          add_test(NAME ${gtest_test_name}scalar_chain_qualification_extended_report_${backend}
+                   COMMAND ${PERL_EXECUTABLE} ${PROJECT_SOURCE_DIR}/test/scripts/qualification-report.t
+                           $<TARGET_FILE:scalar_chain_qualification> ${backend} --extended)
+          set_tests_properties(${gtest_test_name}scalar_chain_qualification_extended_report_${backend} PROPERTIES
+                               ENVIRONMENT "${TEST_BUILD_ENV}" LABELS "${qualification_labels}" TIMEOUT 600)
+        endif()
+        set(qualification_work "${CMAKE_CURRENT_BINARY_DIR}/${test_dir}/${qualification_name}")
+        file(MAKE_DIRECTORY "${qualification_work}")
+        add_test(NAME ${qualification_name} COMMAND scalar_chain_qualification ${qualification_args}
+                 WORKING_DIRECTORY "${qualification_work}")
+        set_tests_properties(${qualification_name} PROPERTIES ENVIRONMENT "${TEST_BUILD_ENV}"
+                             LABELS "${qualification_labels}" TIMEOUT 600)
+      endforeach()
+    endforeach()
+  elseif(test_name STREQUAL "scalar_tridiag")
     add_test(NAME ${gtest_test_name}scalar_tridiag_params COMMAND scalar_tridiag --gtest_filter=ScalarTridiagParams.*
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${test_dir})
     set_tests_properties(${gtest_test_name}scalar_tridiag_params PROPERTIES

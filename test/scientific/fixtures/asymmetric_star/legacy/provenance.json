@@ -1,0 +1,43 @@
+{
+  "kernel_version": "13.3.0 for Linux x86 (64-bit) (June 3, 2023)",
+  "source_revision": "1676519a8afd9759e6f0f866f4723c59ebce80cd",
+  "initializer_sources_sha256": "4993a8631bf903e3f3d065dff270f6d30d435eadc2a10446f6e88a1316e7ef9d",
+  "initializer_source_files": {
+    "nrginit/basis.m": "76876153f9ae26cbffcde21eb57a14a65757372d48475911ce4fa861bb5fcc7a",
+    "nrginit/dmft.m": "948251fa389aa8c54bac25546e03106a09360d4640d4f6bf7c7662e8dfda2e96",
+    "nrginit/floquet.m": "ca7466bfee640d575a606eaa5689a9e9013843ffe56d5b4a08e77ed3940295d1",
+    "nrginit/hamiltonian.m": "fcc2faf6e4dd15978c17dcea2f34dfc5fce95b71001ea3b1cb19a07b15f2c9a2",
+    "nrginit/initial.m": "13d1fe02579a686e613b82052cfbb13c5b07375ddfe81a49be31a619f87a7a38",
+    "nrginit/initialparse.m": "a222fb9b87602ab4a3025cf5d471563ad022c8d8087f802b9b6599d16cadc98e",
+    "nrginit/misc.m": "4fff063d293717941f89ca25d56cf37462910557870834993ad50be1cb57268d",
+    "nrginit/models.m": "4db77142489b686b42066a5f89cbe5e3c03e2363794cdfb8e1a878b5feeb8a8c",
+    "nrginit/nrginit.m": "3f383efef49aa20c8990c26e494b4104881187192ed2df78d065a8e47af30fde",
+    "nrginit/operators.m": "979fe26d53e8366808ebab00c587de98674b88917c7b1cd3c1a7f39abe362084",
+    "nrginit/sneg.m": "2d69864c1195db79ccbf54b5383094dce5da9b42116445dde15f1eff4216888f",
+    "nrginit/sym.m": "dfaa4ed36e60e6cadf0e8649a77fd420ae0a28eed93840bfecd71efffe9eebd1",
+    "nrginit/test/unit_tests.m": "84c3401b08c8b12bcaadc76ac38757a442c29486b4dbd68706f89fa25afe1d7e",
+    "nrginit/wilson.m": "887c32950f102c28363b0758df572cf2f0528750e68f72f56820cc2d20bc44d8"
+  },
+  "source_hash_scope": "nrginit/**/*.m excluding paths with a mix* component; SHA256 of canonical source-hash map",
+  "preparation_script_sha256": "56fbdd2d1e1e3315be5e795708302d58b9d97fff7ca842b98f11b8452c1e4017",
+  "hook_sha256": "55316d3efc2e1b9cd17e598450faa3bb1aa326da9103f2be2c1dc2a4bd046ef0",
+  "entrypoint_sha256": "426c4b2e3ac4919ad680e98e2aaa10e04ac0a3bf4649e6b48b89fdd41badd1c8",
+  "import_check_sha256": "640bd3a2ad5869443f98208011fb49386dd5107036aeeec3907c53d6b8c4b997",
+  "parameters": "[extra]\neps=-0.17\nU=0\nGamma=0.5\nB=0\n\n[param]\nmodel=SIAM\nvariant=EPS\nsymtype=QS\nband=flat\nbandrescale=2\ndiscretization=Z\nLambda=2\nz=1\nNinit=1\nNmax=2\ntri=cpp\ntridiag_method=lanczos\nwilsonchain=legacy\nmMAX=1\nprec=80\ndata_has_rescaled_energies=false\npolarized=false\nsubsteps=false\nops=I A_d n_d\nspecd=A_d-A_d\nkeep=1024\nkeepenergy=-1\nkeepmin=0\nsafeguard=0\nfixeps=0\ndiag=dsyevd\ndiagratio=1\ndiag_mode=serial\nmult=blas\nstrategy=all\nlastall=true\nlastalloverride=false\ncalc0=true\nT=0.05\nfdmmats=true\nfdmexpv=true\nfdmexpvn=1\nfdm_cutoff=0\ncheckrho=true\nmats=64\nfinite=false\nfinitemats=false\ndmnrg=false\ndmnrgmats=false\ncfs=false\ncfsgt=false\ncfsls=false\nfdm=false\nfdmgt=false\nfdmls=false\nbroaden=false\nsavebins=false\nclip_tol_imag=0\nabsolute=false\nsilent=false\ndone=true\ndumpsubspaces=true\nreportdiagonal=256\nreportdiagonallast=false\ndumpscaled=false\ndumpabs=true\ndumpEscale=1\nprec_xy=17\nprec_custom=17\nprec_td=17\nwidth_custom=24\nwidth_td=24\npreccpp=2000\nadapt=false\nrescalexi=false\nnrgchain_tables_load=true\nhook_pre_lanczosinit=import_star.m\n\n",
+  "precision": 80,
+  "mMAX": 1,
+  "physical_input_files": {
+    "de_pos.dat": "7e10e0e20d0f44bd64efcf7d830fca1b57eb08ee37c6bce69be6780b37e24a4f",
+    "de_neg.dat": "b325be95f797714bda01a40ea4978d1c4d1deb9b7ca2699288dbd6d78ccd55e5",
+    "du_pos.dat": "0867f171c21f954a088204937d42d45b4bb01381287cbfb07211ffe98373b830",
+    "du_neg.dat": "1a6c1ed928724b9e0f76078681b349b00b4d4661153a54b7e0856434ad4ece08",
+    "theta.dat": "ff5c6dc0e53c85e867c860a92ac7302782418baf0e0717a58a5b15593add7721"
+  },
+  "kind": "cpp-seed",
+  "backend": "legacy",
+  "star_sha256": "092c2e322fa572c039728e87b4e4a9d0f3b305c54f3418538cebefe76ce9e988",
+  "star_file_sha256": "9e0e0ddcaa95789d9ef22bd6172fd82566bc8e7a72654879749f724207dde235",
+  "files": {
+    "data": "0a5831fb9bd92fe889d3dab25254ff30e1c288937b8080555c0c36c3a2d3b045"
+  }
+}

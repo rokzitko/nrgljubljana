@@ -240,6 +240,20 @@ candidates per enabled backend, each checked against ED in both modes at both
 temperatures. These tests additionally require Mathematica and `SYM_ALL` and
 never modify committed fixtures during `--check`.
 
+Scalar mapping qualification uses the `scalar_chain_qualification` target and
+independent `_legacy` / `_rkpw` CTest entries. Its compact cases run by default
+with those backends enabled. `-DTEST_CHAIN_QUALIFICATION_EXTENDED=ON` opts into
+the extended accuracy sweep, independently of `TEST_LONG`. Only RKPW hop index
+19 of the exact `gap_large_lambda` case is a non-blocking advisory; all other
+hops/onsites, finite/positive checks, and reference convergence remain fatal.
+Legacy is unchanged. The unchanged `2e-12` is a provisional engineering target
+reused from earlier tests, not a theoretical/paper bound or demonstrated physics
+requirement. Do not relax tolerances globally, use `WILL_FAIL`, or change
+production algorithms/defaults for this miss. Success neither proves a universal
+`2e-12` bound nor recommends a default switch. See
+[the numerical qualification guide](test/CHAIN_QUALIFICATION.md) for the exact
+case, advisory/report contract, and commands.
+
 ### Optional Core Checks
 
 Sanitizers:
