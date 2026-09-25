@@ -444,8 +444,10 @@ class TabulatedDensity {
     if (inside_lower < inside_upper) {
       for (auto interval = interval_index(inside_lower);
            interval + 1 < samples_.size() && samples_[interval].first < inside_upper; ++interval) {
-        const auto [left, value_left] = samples_[interval];
-        const auto [right, value_right] = samples_[interval + 1];
+        const auto left = samples_[interval].first;
+        const auto value_left = samples_[interval].second;
+        const auto right = samples_[interval + 1].first;
+        const auto value_right = samples_[interval + 1].second;
         if (value_left == 0.0 && value_right == 0.0) continue;
         const auto lo = std::max(inside_lower, left);
         const auto hi = std::min(inside_upper, right);
