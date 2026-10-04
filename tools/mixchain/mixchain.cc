@@ -30,6 +30,7 @@
 #include "chain.hpp"
 #include "chain_io.hpp"
 #include "chain_lanczos.hpp"
+#include "chain_rkpw.hpp"
 #include "load.hpp"
 #include "mesh.hpp"
 #include "parser.hpp"
@@ -167,7 +168,8 @@ struct Configuration {
   StarOptions star;
   bool mmax_from_nmax{};
   ChainOptions chain;
-  unsigned int preccpp{};
+  std::string tridiag_method; // 'lanczos' or 'rkpw'
+  unsigned int preccpp{};     // used by lanczos only
   bool discretization_files{}; // write the chain also as one file per matrix element, beside chain.dat
 };
 
@@ -228,13 +230,24 @@ void read_chain_configuration(const Params &P, Configuration &configuration) {
   if (!(std::isfinite(configuration.chain.nambu_tolerance) && configuration.chain.nambu_tolerance > 0.0))
     throw std::invalid_argument("nambu_tolerance must be a positive finite number.");
 
-  // As in nrgchain, in bits. It is rounded up to the precision ladder of precision.hpp. The default is the 200-digit
-  // rung: the recursion loses about Nmax*log10(Lambda) digits to cancellation, on top of the 16 of the star, and 200
-  // covers that far beyond any chain in use, while 800 costs a factor of twenty in the chain stage for nothing.
+  // As in nrgchain: block Lanczos in multiprecision arithmetic, or plane rotations in double precision.
+  configuration.tridiag_method = P.Pstr("tridiag_method", "lanczos");
+  if (configuration.tridiag_method != "lanczos" && configuration.tridiag_method != "rkpw")
+    throw std::invalid_argument("Unknown tridiag_method: " + configuration.tridiag_method
+                                + "; expected lanczos or rkpw.");
+
+  // As in nrgchain, in bits, and unused by rkpw. It is rounded up to the precision ladder of precision.hpp. The
+  // default is the 200-digit rung: the recursion loses about Nmax*log10(Lambda) digits to cancellation, on top of the
+  // 16 of the star, and 200 covers that far beyond any chain in use, while 800 costs a factor of twenty in the chain
+  // stage for nothing.
   const auto preccpp = P.Pint("preccpp", 664);
-  if (preccpp <= 10) throw std::invalid_argument("preccpp must be greater than 10.");
+  if (configuration.tridiag_method == "lanczos") {
+    if (preccpp <= 10) throw std::invalid_argument("preccpp must be greater than 10.");
+    resolve_precision(static_cast<unsigned int>(preccpp)); // fail before the star stage runs, not after it
+  } else if (preccpp < 0) {
+    throw std::invalid_argument("preccpp must be nonnegative.");
+  }
   configuration.preccpp = static_cast<unsigned int>(preccpp);
-  resolve_precision(configuration.preccpp); // fail before the star stage runs, not after it
 }
 
 Configuration read_configuration(const Params &P, const CommandLineOptions &command_line) {
@@ -266,8 +279,11 @@ void report_configuration(const Configuration &configuration, const CommandLineO
   if (builds_star(command_line.mode)) report_star_configuration(configuration, command_line, report);
   if (builds_chain(command_line.mode)) {
     report.value("Nmax", configuration.chain.Nmax);
-    report.value("preccpp", configuration.preccpp);
-    report.resolved("digits", resolve_precision(configuration.preccpp), "smallest precision rung covering preccpp");
+    report.value("tridiag_method", configuration.tridiag_method);
+    if (configuration.tridiag_method == "lanczos") {
+      report.value("preccpp", configuration.preccpp);
+      report.resolved("digits", resolve_precision(configuration.preccpp), "smallest precision rung covering preccpp");
+    }
     report.value("rank_tolerance", configuration.chain.rank_tolerance);
     report.value("discretization_files", configuration.discretization_files);
     report.value("chain_gauge", chain_gauge_name(configuration.chain.gauge));
@@ -429,10 +445,12 @@ void check_star_against_parameters(const Star<S> &star, const Params &P, const T
 }
 
 template<typename S>
-void report_chain(const Chain<S> &chain, const unsigned digits, const ChainFileHeader &header, std::ostream &out) {
-  const auto &d = chain.diagnostics;
-  out << "# chain: sites=" << chain.Nmax + 1 << " channels=" << chain.channels << " digits=" << digits
-      << " gauge=" << chain_gauge_name(chain.gauge) << std::endl;
+void report_chain(const Chain<S> &chain, const ChainFileHeader &header, std::ostream &out) {
+  const auto &d       = chain.diagnostics;
+  const bool lanczos = header.method == "lanczos";
+  out << "# chain: sites=" << chain.Nmax + 1 << " channels=" << chain.channels;
+  if (lanczos) out << " digits=" << header.digits;
+  out << " gauge=" << chain_gauge_name(chain.gauge) << " method=" << header.method << std::endl;
   if (chain.gauge == ChainGauge::nambu)
     out << "# the Nambu structure of the blocks holds to " << d.max_nambu_deviation
         << " of their largest element" << std::endl;
@@ -440,8 +458,10 @@ void report_chain(const Chain<S> &chain, const unsigned digits, const ChainFileH
   out << "# levels=" << d.levels << " coupled_levels=" << d.coupled_levels << " theta_rank=" << d.theta_rank
       << " theta_condition=" << d.theta_condition
       << " min_residual_condition=" << d.min_residual_condition << std::endl;
-  out << "# max_antihermitian=" << d.max_antihermitian << " max_reorthogonalization=" << d.max_reorthogonalization
-      << std::endl;
+  // What the Lanczos recursion had to repair; the rotations leave nothing of the kind.
+  if (lanczos)
+    out << "# max_antihermitian=" << d.max_antihermitian << " max_reorthogonalization=" << d.max_reorthogonalization
+        << std::endl;
   // From the site where the chain reaches the untabulated region of the input, its coefficients rest on the constant
   // continuation of the input rather than on data. Printed in the units of the input.
   if (const auto continued = first_continued_site(chain, header.untabulated_to - header.untabulated_from)) {
@@ -479,21 +499,28 @@ template<typename S0> void run_chain(const Configuration &configuration, const P
   if (!target.directory.empty()) std::cout << "# --- z=" << *target.z << " in " << target.directory.string() << "/" << std::endl;
   const auto star = load_star<S0>(star_file);
   check_star_against_parameters(star, P, target, star_file);
-  const auto digits     = resolve_precision(configuration.preccpp);
+  const bool lanczos    = configuration.tridiag_method == "lanczos";
   const auto chain_file = target.file(chain_default_filename);
-  const ChainFileHeader header{star.z, star.Lambda, star.bandrescale, digits,
+  const ChainFileHeader header{star.z,
+                               star.Lambda,
+                               star.bandrescale,
+                               lanczos ? resolve_precision(configuration.preccpp) : 0U,
                                star.untabulated_known ? star.untabulated_from : 0.0,
-                               star.untabulated_known ? star.untabulated_to : 0.0};
-  with_precision_like<S0>(configuration.preccpp, [&]<typename S>() {
-    const auto chain = build_chain<S>(star, configuration.chain);
-    report_chain(chain, digits, header, std::cout);
+                               star.untabulated_known ? star.untabulated_to : 0.0,
+                               configuration.tridiag_method};
+  const auto write = [&](const auto &chain) {
+    report_chain(chain, header, std::cout);
     save_chain(chain, header, chain_file);
     if (configuration.discretization_files) {
       save_chain_matrix_files(chain, header, target.directory);
       std::cout << "# matrix files written to " << (target.directory.empty() ? "." : target.directory.string())
                 << std::endl;
     }
-  });
+  };
+  if (lanczos)
+    with_precision_like<S0>(configuration.preccpp, [&]<typename S>() { write(build_chain<S>(star, configuration.chain)); });
+  else
+    write(build_chain_rkpw(star, configuration.chain));
   std::cout << "# chain written to " << chain_file << std::endl;
   std::cout << "# chain z=" << star.z << ": " << seconds_since(start) << " s" << std::endl;
 }

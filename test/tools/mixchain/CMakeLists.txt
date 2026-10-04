@@ -1,6 +1,6 @@
 find_package(Perl REQUIRED)
 
-# Only the two nrgchain comparisons select a scalar backend; mixchain's own method is unchanged.
+# The two nrgchain comparisons select the scalar backend of nrgchain; each runs both methods of mixchain against it.
 
 file(STRINGS simple_tests simple_tests)
 

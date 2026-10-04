@@ -11,8 +11,15 @@ grep -q "^  tridiag_method=$method$" nrgchain.err
 
 # The same flat band, 1/2 on [-1, 1], tabulated for mixchain.
 awk 'BEGIN { for (k = -100; k <= 100; k++) printf "%.17g 0.5\n", k / 100 }' >Gamma_11-re.dat
-{ cat param; printf '\ndiscretization_files=true\n'; } >param-mixchain
-mixchain -v param-mixchain >mixchain.log 2>&1
+for file in theta.dat xi.dat zeta.dat; do test -s "$file"; done
 
-for file in theta.dat xi.dat zeta.dat V11.dat T11.dat E11.dat; do test -s "$file"; done
-sh "$3/../compare_nrgchain.sh" 1e-12
+# Both methods of mixchain, each against the same nrgchain result.
+for mixchain_method in lanczos rkpw; do
+  rm -f V11.dat T11.dat E11.dat
+  { cat param; printf '\ndiscretization_files=true\ntridiag_method=%s\n' "$mixchain_method"; } >param-mixchain
+  mixchain -v param-mixchain >"mixchain-$mixchain_method.log" 2>&1
+  grep -q "^  tridiag_method=$mixchain_method$" "mixchain-$mixchain_method.log"
+  for file in V11.dat T11.dat E11.dat; do test -s "$file"; done
+  echo "mixchain tridiag_method=$mixchain_method"
+  sh "$3/../compare_nrgchain.sh" 1e-12
+done

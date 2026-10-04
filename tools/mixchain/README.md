@@ -104,7 +104,8 @@ is the same.
 | `allowed_error` | `1e-10` | star | Default relative tolerance of the integral method. |
 | `hermiticity_tolerance` | `1e-8` | star | Allowed deviation of the input from a Hermitian matrix. |
 | `Nmax` | required | chain | Last site of the chain, which has the sites `0..Nmax` and the hoppings `T_0..T_Nmax`. |
-| `preccpp` | `664` | chain | Precision of the chain stage in bits, as for `nrgchain`; rounded up to the ladder below. |
+| `tridiag_method` | `lanczos` | chain | `lanczos`, block Lanczos in multiprecision arithmetic, or `rkpw`, plane rotations in double precision. `rkpw` handles blocks of one channel so far. Temporary: `rkpw` will replace `lanczos`. |
+| `preccpp` | `664` | chain | Precision of `lanczos` in bits, as for `nrgchain`; rounded up to the ladder below. Unused by `rkpw`. |
 | `discretization_files` | `false` | chain | Also write the chain as one file per matrix element, beside `chain.dat`. |
 | `chain_gauge` | `polar` | chain | `polar` or `nambu`; see Gauge below. |
 | `nambu_tolerance` | `1e-8` | chain | How far a block may depart from the Nambu structure before `chain_gauge=nambu` refuses it. |
@@ -300,7 +301,8 @@ One row per matrix element. The second line is the header. With several blocks i
 | `Nmax` | Last site. |
 | `z`, `Lambda`, `bandrescale` | As in `star.dat`; $E_n$ and $T_n$ are written multiplied by `bandrescale`. |
 | `complex` | `1` if the coefficients are complex, `0` if real. |
-| `digits` | Decimal digits of the arithmetic the recursion ran in. |
+| `digits` | With `method=lanczos`, decimal digits of the arithmetic the recursion ran in. |
+| `method` | The `tridiag_method` the chain was built with. |
 
 | Column | Meaning |
 | --- | --- |
@@ -368,15 +370,15 @@ is `boundary` times `bandrescale`, and `mesh_weight` is `inactive` without `adap
 
 | Line | Meaning |
 | --- | --- |
-| `# chain: sites= channels= digits= gauge=` | Chain length `Nmax+1`, block dimension, decimal digits of the arithmetic, and the gauge the chain is written in. |
+| `# chain: sites= channels= digits= gauge= method=` | Chain length `Nmax+1`, block dimension, decimal digits of the arithmetic (`lanczos` only), the gauge the chain is written in, and `tridiag_method`. |
 | `# the Nambu structure of the blocks holds to d of their largest element` | With `chain_gauge=nambu`, how far the chain departs from $E(2,2)=-E(1,1)$ and $T(2,2)=-T(1,1)^*$. |
 | `# blocks: {1,3} {2}` | The blocks of the star, each mapped onto its own chain. Only with several blocks. |
 | `# levels= coupled_levels=` | Levels of the star, and those with nonzero coupling. Only the latter enter the chain: a block of size $s$ spans at most `coupled_levels/s` full sites. |
 | `theta_rank=` | Rank of $\Theta$: the number of combinations of the impurity orbitals that couple to the bath. |
 | `theta_condition=` | Smallest nonzero eigenvalue of $\Theta$ over its largest, the smallest over the blocks. |
 | `min_residual_condition=` | Smallest ratio of the nonzero eigenvalues of $R^\dagger R$ along the chain: how close a direction came to being counted as zero by `rank_tolerance`. |
-| `# max_antihermitian=` | Largest anti-Hermitian part removed from an on-site block $E_n$, relative to it: rounding at the working precision. |
-| `max_reorthogonalization=` | Largest component along earlier Lanczos blocks removed from a residual, relative to it: the loss of orthogonality that full reorthogonalization repairs. |
+| `# max_antihermitian=` | With `lanczos` only. Largest anti-Hermitian part removed from an on-site block $E_n$, relative to it: rounding at the working precision. |
+| `max_reorthogonalization=` | With `lanczos` only. Largest component along earlier Lanczos blocks removed from a residual, relative to it: the loss of orthogonality that full reorthogonalization repairs. |
 | `# from site n on, the chain samples \|omega\| < w, where Gamma is not tabulated (...)` | From that site on the coefficients rest on the constant continuation of the input rather than on data; extend the input grid to lower $\|\omega\|$, or lower `Nmax`. The region comes from the star (`untabulated` in its header) and is printed in the units of the input, as `a < \|omega\| < w` when the mesh accumulates at $a>0$. The site is the first whose hopping falls below the width of the region, so a mesh accumulating at or above the innermost tabulated frequency, at a gap edge, never reports it. |
 | `# Theta has rank r of N: ...` | $\Gamma$ is rank deficient over the whole band. The chain along the decoupled combinations is zero, which is exact. |
 | `# matrix files written to d` | With `discretization_files`, the directory the per-element files went to. |
