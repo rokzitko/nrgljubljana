@@ -29,6 +29,7 @@
 #include "branches.hpp"
 #include "chain.hpp"
 #include "chain_io.hpp"
+#include "chain_lanczos.hpp"
 #include "load.hpp"
 #include "mesh.hpp"
 #include "parser.hpp"

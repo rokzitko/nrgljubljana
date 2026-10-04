@@ -12,6 +12,7 @@
 #include <vector>
 
 #include <mixchain/chain_io.hpp>
+#include <mixchain/chain_lanczos.hpp>
 #include <mixchain/precision.hpp>
 
 using namespace NRG::MixChain;
