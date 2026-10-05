@@ -26,7 +26,7 @@ refreshed reference would otherwise absorb unnoticed.
 
 `TEST_CHAIN_LEGACY` and `TEST_CHAIN_RKPW` select the suffixed registrations (both default ON). Each has its own
 work directory and reruns both physical routes, without using another test's outputs. Only the scalar nrgchain or
-nrginit route selects the backend; mixchain's independent method is unchanged. The SC initializer route uses full
+nrginit route selects the backend; mixchain has a single method, plane rotations in double precision. The SC initializer route uses full
 `tri=old` or `tri=rkpw` with constant `bcsgap`, not a runtime star handoff. The registrations carry `chain-legacy`
 or `chain-rkpw` labels.
 
