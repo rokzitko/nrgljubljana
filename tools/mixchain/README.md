@@ -3,7 +3,8 @@
 `mixchain` maps a **matrix** hybridization function onto a Wilson chain with matrix coefficients. `adapt` and
 `nrgchain` treat a scalar hybridization function; `mixchain` treats the $N\times N$ Hermitian positive semidefinite
 case, in which the channels mix. Each eigenvalue branch of $\Gamma(\omega)$ is discretized logarithmically into a star
-Hamiltonian, and block Lanczos maps the star onto a chain. The method follows Liu et al. (2016).
+Hamiltonian, and plane rotations map the star onto a chain, in double precision. The discretization follows Liu et
+al. (2016).
 
 It works in two stages with a file between them: the star stage reads the components of $\Gamma$ and writes
 `star.dat`; the chain stage reads `star.dat` and writes `chain.dat`. The chain is written in its general matrix form,
@@ -104,11 +105,11 @@ is the same.
 | `allowed_error` | `1e-10` | star | Default relative tolerance of the integral method. |
 | `hermiticity_tolerance` | `1e-8` | star | Allowed deviation of the input from a Hermitian matrix. |
 | `Nmax` | required | chain | Last site of the chain, which has the sites `0..Nmax` and the hoppings `T_0..T_Nmax`. |
-| `preccpp` | `664` | chain | Precision of the chain stage in bits, as for `nrgchain`; rounded up to the ladder below. |
 | `discretization_files` | `false` | chain | Also write the chain as one file per matrix element, beside `chain.dat`. |
 | `chain_gauge` | `polar` | chain | `polar` or `nambu`; see Gauge below. |
 | `nambu_tolerance` | `1e-8` | chain | How far a block may depart from the Nambu structure before `chain_gauge=nambu` refuses it. |
-| `rank_tolerance` | `1e-20` | chain | Eigenvalue of a Gram matrix, relative to its largest, below which it counts as zero. |
+| `rank_tolerance` | `1e-20` | chain | Square of a singular value of a hopping or of $V$, relative to that of the largest, below which the direction counts as lost. |
+| `sensitivity_tolerance` | `1e-10` | chain | Relative change of the chain under a change of the star by one unit in the last place above which a site is reported as not determined by the star; see Sensitivity below. |
 
 `boundary` is a fraction of the rescaled band edge, as in `adapt`: a gap $\Delta$ in the units of the input with
 `bandrescale`$=D$ is `boundary`$=\Delta/D$. The `-v` report prints both values.
@@ -182,7 +183,7 @@ A branch without weight in some interval gives a level with vanishing coupling, 
 
 ## Chain stage
 
-Block Lanczos maps the star onto
+The star is mapped onto
 
 $$
 H = \sum_{ij}\left(V_{ij}\,d_i^\dagger f_{0j} + {\rm h.c.}\right)
@@ -193,21 +194,17 @@ $$
 with $N\times N$ blocks, in the polar gauge: $V$ and every $T_n$ Hermitian positive semidefinite, the matrix
 analogue of choosing $\xi_n>0$, and no preferred basis, so that a rotation of the channels rotates every block in the
 same way. Writing $H_{\rm bath}$ for the diagonal of the star energies and $A$ for the matrix with
-$A_{ki} = v_{k,i}^*$, so that $A^\dagger A = \Theta$,
+$A_{ki} = v_{k,i}^*$, so that $A^\dagger A = \Theta$, the chain is defined by orthonormal blocks $Q_n$ of bath
+states with
 
 $$
-V = \Theta^{1/2}, \qquad Q_0 = A\,\Theta^{-1/2},
+V = \Theta^{1/2}, \qquad A = Q_0 V, \qquad
+E_n = Q_n^\dagger H_{\rm bath} Q_n, \qquad T_n = Q_{n+1}^\dagger H_{\rm bath} Q_n,
 $$
 
-$$
-E_n = Q_n^\dagger H_{\rm bath} Q_n, \qquad
-R = H_{\rm bath}Q_n - Q_nE_n - Q_{n-1}T_{n-1}^\dagger, \qquad
-T_n = (R^\dagger R)^{1/2}, \qquad Q_{n+1} = R\,(R^\dagger R)^{-1/2}.
-$$
+and $H_{\rm bath}Q_n$ contained in the span of $Q_{n-1}$, $Q_n$ and $Q_{n+1}$.
 
-The residual is reorthogonalized against every earlier block.
-
-**Gauge.** Lanczos fixes each site only up to a unitary rotation $U_n$ of its $N$ orbitals; $V\to VU_0^\dagger$,
+**Gauge.** This fixes each site only up to a unitary rotation $U_n$ of its $N$ orbitals; $V\to VU_0^\dagger$,
 $E_n\to U_n^\dagger E_nU_n$ and $T_n\to U_{n+1}^\dagger T_nU_n$ describe the same bath. `chain_gauge` chooses the
 representative.
 
@@ -217,7 +214,7 @@ of the matrix is written. The files need to be properly renamed for futher use w
 `nambu` is for blocks of two channels read as particle and hole. A superconducting chain is stored in NRG Ljubljana
 as four numbers per site, $\xi = T(1,1)$, $\kappa = T(1,2)$, $\zeta = E(1,1)$ and $\Delta = E(1,2)$, and the rest is reconstructed
 from the Nambu structure $E(2,2) = -E(1,1)$, $T(2,2) = -T(1,1)^*$. The polar gauge does not have it: making $T_n$
-positive semidefinite absorbs the sign of the hole component into the Lanczos block, which turns a constant gap into
+positive semidefinite absorbs the sign of the hole component into the orbitals of the site, which turns a constant gap into
 one that alternates along the chain. Flipping the hole component at the even sites,
 $U_n = {\rm diag}(1,(-1)^{n+1})$, restores it.
 
@@ -231,26 +228,42 @@ by this convention rather than left free.
 $V(2,2) = -V(1,1)^*$ and the two relations above are checked against `nambu_tolerance`, the worst deviation is
 reported, and a chain that is not of this form is refused. The gauge is recorded in the header of `chain.dat`.
 
-**Precision.** The late coefficients fall off as $\Lambda^{-n/2}$, below the resolution of double precision, so the
-recursion runs in multiprecision arithmetic. The scalar type carries its digit count as a template parameter, so the
-precision is fixed at compile time, and the stage is instantiated on a ladder of 50, 200 and 800 decimal digits:
-`preccpp` bits select the smallest rung that covers them, and the `-v` report shows the result. Requests beyond 800
-digits are rejected. The result is written with 18 significant digits, as `nrgchain` writes `xi.dat`.
+**Method.** The Lanczos recursion would give this chain in exact arithmetic, but it loses the orthogonality of the
+$Q_n$ to rounding and is usable only in multiprecision arithmetic. The stage instead adds the levels of the star one
+at a time and restores the form of the chain with plane rotations, which are unitary transformations of the bath: no
+orthogonality is lost and double precision is enough. A block of one channel goes through the
+Rutishauser-Kahan-Pal-Walker rotations of Gragg and Harrod (1984), the routine `nrgchain` uses with
+`tridiag_method=rkpw`. A block of several channels is reduced to a band matrix by their generalization, Algorithm 1
+of Ammar and Gragg (1991), here with complex rotations and keeping only the leading `Nmax+2` blocks, since a later
+level changes those only through the rotations that chase it through them. The chain is then read off the band site
+by site, with one small singular value decomposition per site, which gives the polar gauge and decides the ranks.
 
-The default of 664 bits is the 200-digit rung. What the rung has to cover is the cancellation in the recursion, which
-costs about $N_{\rm max}\log_{10}\Lambda$ digits, on top of the 16 the star brings from double precision, so 200
-digits is far beyond any chain in use: measured on a superconducting bath at $\Lambda=2$, `Nmax=60`, and on a DMFT
-hybridization at $\Lambda=2.5$, `Nmax=33`, even the 50-digit rung reproduces all 18 written digits of every
-coefficient, while 800 digits costs a factor of twenty in the chain stage.
+The levels are handed to the rotations interval by interval from the band edge inwards, with the two frequency
+branches alternating, whatever their order in `star.dat`: the result does not depend on the order, but its rounding
+error does. On graded stars with two to four channels, real and complex, $\Lambda$ from 1.5 to 4 and up to 61 sites,
+the chain agrees with block Lanczos at 100 digits to $1.4\times10^{-14}$ or better, relative to the largest element
+of each hopping. The result is written with 18 significant digits, as `nrgchain` writes `xi.dat`.
 
-**Rank deficiency.** The inverses above are pseudo-inverses: an eigenvalue of $\Theta$ or of $R^\dagger R$ below
-`rank_tolerance` times the largest is set to zero, and so is a residual that is rounding altogether. When $\Gamma$ is
-rank deficient over the whole band, some combinations of the impurity orbitals do not couple to the bath; the stage
-reports the rank of $\Theta$, and the part of the chain along those combinations is zero, which is exact. When the
-rank of $T_n$ drops part-way down the chain, the Krylov space of the star is exhausted in some direction, for
-instance because too few levels carry weight; the chain is again zero in that direction from there on, but this is
-an artifact of the star, and a warning names the site. Both are recorded in the header of `chain.dat`. The star must
-have at least `channels*(Nmax+1)` levels.
+**Rank deficiency.** A direction of the coupling of a site to the next, or of the impurity to the first site, counts
+as lost when the square of its singular value is below `rank_tolerance` times the square of the largest, and all of
+them do when the largest is rounding. When $\Gamma$ is rank deficient over the whole band, some combinations of the
+impurity orbitals do not couple to the bath; the stage reports the rank of $\Theta$, and the part of the chain along
+those combinations is zero, which is exact. When the rank of $T_n$ drops part-way down the chain, the Krylov space of
+the star is exhausted in some direction, for instance because too few levels carry weight; the chain is again zero in
+that direction from there on, but this is an artifact of the star, and a warning names the site. Both are recorded in
+the header of `chain.dat`. The star must have at least `channels*(Nmax+2)` levels.
+
+**Sensitivity.** The star is stored in double precision, so each of its numbers is known to one unit in the last
+place at best. For most stars that moves the chain by rounding. Where the mesh accumulates at a finite energy, as at
+a gap edge, the levels close to it differ in digits that double precision does not hold, and the late sites of the
+chain, which are built from those differences, move by many orders of magnitude more. No method determines them
+better from such a star: multiprecision arithmetic would give the exact chain of numbers that are not exact. The
+stage measures this for every chain: it maps the star again with every energy and coupling moved by one unit in the
+last place, for four fixed random choices of direction, and compares the chains site by site, the hoppings relative
+to their largest element and the on-site blocks on the scale of their site. `max_star_sensitivity` is the largest
+change, and the first site where it exceeds `sensitivity_tolerance` is reported and recorded in `chain.dat` as
+`sensitive_from_site`. The measurement is made in the polar gauge whatever `chain_gauge` is, and it is an estimate
+from four samples, good to a factor of a few.
 
 ## Outputs
 
@@ -292,7 +305,7 @@ channels of the block its branch belongs to.
 ### `chain.dat`
 
 One row per matrix element. The second line is the header. With several blocks it is followed by the same
-`# blocks=` line as in `star.dat`; the next line holds the diagnostics of the recursion over the whole chain.
+`# blocks=` line as in `star.dat`; the next line holds the diagnostics of the whole chain.
 
 | Header key | Meaning |
 | --- | --- |
@@ -300,7 +313,6 @@ One row per matrix element. The second line is the header. With several blocks i
 | `Nmax` | Last site. |
 | `z`, `Lambda`, `bandrescale` | As in `star.dat`; $E_n$ and $T_n$ are written multiplied by `bandrescale`. |
 | `complex` | `1` if the coefficients are complex, `0` if real. |
-| `digits` | Decimal digits of the arithmetic the recursion ran in. |
 
 | Column | Meaning |
 | --- | --- |
@@ -335,7 +347,7 @@ standard error. With several blocks, a star diagnostic that belongs to one block
 ### Configuration (`-v`, standard error)
 
 `mixchain: configuration` is followed by every parameter as it is used. A derived value is shown as
-`auto -> value (reason)`: `mMAX` from `Nmax`, `digits` from `preccpp`, and `z` from `--Nz`. `boundary_in_input_units`
+`auto -> value (reason)`: `mMAX` from `Nmax`, and `z` from `--Nz`. `boundary_in_input_units`
 is `boundary` times `bandrescale`, and `mesh_weight` is `inactive` without `adapt`.
 
 ### Input
@@ -368,15 +380,15 @@ is `boundary` times `bandrescale`, and `mesh_weight` is `inactive` without `adap
 
 | Line | Meaning |
 | --- | --- |
-| `# chain: sites= channels= digits= gauge=` | Chain length `Nmax+1`, block dimension, decimal digits of the arithmetic, and the gauge the chain is written in. |
+| `# chain: sites= channels= gauge=` | Chain length `Nmax+1`, block dimension, and the gauge the chain is written in. |
 | `# the Nambu structure of the blocks holds to d of their largest element` | With `chain_gauge=nambu`, how far the chain departs from $E(2,2)=-E(1,1)$ and $T(2,2)=-T(1,1)^*$. |
 | `# blocks: {1,3} {2}` | The blocks of the star, each mapped onto its own chain. Only with several blocks. |
 | `# levels= coupled_levels=` | Levels of the star, and those with nonzero coupling. Only the latter enter the chain: a block of size $s$ spans at most `coupled_levels/s` full sites. |
 | `theta_rank=` | Rank of $\Theta$: the number of combinations of the impurity orbitals that couple to the bath. |
 | `theta_condition=` | Smallest nonzero eigenvalue of $\Theta$ over its largest, the smallest over the blocks. |
-| `min_residual_condition=` | Smallest ratio of the nonzero eigenvalues of $R^\dagger R$ along the chain: how close a direction came to being counted as zero by `rank_tolerance`. |
-| `# max_antihermitian=` | Largest anti-Hermitian part removed from an on-site block $E_n$, relative to it: rounding at the working precision. |
-| `max_reorthogonalization=` | Largest component along earlier Lanczos blocks removed from a residual, relative to it: the loss of orthogonality that full reorthogonalization repairs. |
+| `min_residual_condition=` | Smallest ratio of the squares of the smallest and the largest nonzero singular value of a hopping along the chain: how close a direction came to being counted as zero by `rank_tolerance`. |
+| `# max_star_sensitivity= at site n` | Largest relative change of the chain when the star changes by one unit in the last place, and where; see Sensitivity. Rounding, about 1e-15, for a mesh that accumulates at zero. |
+| `# from site n on, the chain is determined by the star only to t or worse (...)` | The first site where that change exceeds `sensitivity_tolerance`. The coefficients from there on are not reproducible beyond that precision; a smaller `Nmax` avoids it. |
 | `# from site n on, the chain samples \|omega\| < w, where Gamma is not tabulated (...)` | From that site on the coefficients rest on the constant continuation of the input rather than on data; extend the input grid to lower $\|\omega\|$, or lower `Nmax`. The region comes from the star (`untabulated` in its header) and is printed in the units of the input, as `a < \|omega\| < w` when the mesh accumulates at $a>0$. The site is the first whose hopping falls below the width of the region, so a mesh accumulating at or above the innermost tabulated frequency, at a gap edge, never reports it. |
 | `# Theta has rank r of N: ...` | $\Gamma$ is rank deficient over the whole band. The chain along the decoupled combinations is zero, which is exact. |
 | `# matrix files written to d` | With `discretization_files`, the directory the per-element files went to. |
@@ -384,7 +396,7 @@ is `boundary` times `bandrescale`, and `mesh_weight` is `inactive` without `adap
 
 `chain.dat` records the same quantities, plus `min_rank`, the smallest rank of a hopping, `rank_drop_site`, the first
 site where it falls below `theta_rank`, and `continued_from_site`, the first site that samples the untabulated
-region of the input (both `none` when they do not happen). With several blocks they are merged over the blocks: ranks and levels
+region of the input, and `sensitive_from_site`, the first site that exceeds `sensitivity_tolerance` (each `none` when it does not happen). With several blocks they are merged over the blocks: ranks and levels
 add up site by site, and the ratios of eigenvalues are taken within each block.
 
 `# Elapsed t s (CPU c s)` closes the log: the wall time, which the stage times add up to, and the CPU time.
@@ -417,6 +429,8 @@ the last site. The unit tests are in `test/unit/mixchain`.
 ## References
 
 - J.-G. Liu et al., *Physical Review B* **93**, 035102 (2016).
+- W. B. Gragg and W. J. Harrod, "The numerically stable reconstruction of Jacobi matrices from spectral data", *Numerische Mathematik* **44**, 317-335 (1984).
+- G. S. Ammar and W. B. Gragg, "O(n^2) reduction algorithms for the construction of a band matrix from spectral data", *SIAM Journal on Matrix Analysis and Applications* **12**, 426-431 (1991).
 - K. G. Wilson, "The renormalization group: Critical phenomena and the Kondo problem", *Reviews of Modern Physics* **47**, 773 (1975).
 - V. L. Campo and L. N. Oliveira, "Alternative discretization in the numerical renormalization-group method", *Physical Review B* **72**, 104432 (2005).
 - Rok Zitko, "Adaptive logarithmic discretization for numerical renormalization group methods", *Computer Physics Communications* **180**, 1271-1276 (2009).

@@ -12,13 +12,13 @@
 namespace NRG::MixChain {
 
 // The same shapes as NRG::EigenMatrix and NRG::EigenVector in c++/traits.hpp, but without the 'scalar' concept: the
-// block Lanczos stage instantiates these with a multiprecision scalar, which is neither a floating point type nor a
-// std::complex of one. A column vector must stay column-major.
+// reference chain of the unit tests instantiates these with a multiprecision scalar, which is neither a floating
+// point type nor a std::complex of one. A column vector must stay column-major.
 template<typename S> using Matrix = Eigen::Matrix<S, -1, -1, Eigen::RowMajor>;
 template<typename S> using Vector = Eigen::Matrix<S, -1, 1>;
 
-// Through Eigen's traits rather than by naming std::complex, so that the multiprecision scalars of the block
-// Lanczos stage are covered by the same definitions.
+// Through Eigen's traits rather than by naming std::complex, so that the multiprecision scalars of that reference
+// are covered by the same definitions.
 template<typename S> using real_type = typename Eigen::NumTraits<S>::Real;
 template<typename S> inline constexpr bool is_complex_v = Eigen::NumTraits<S>::IsComplex != 0;
 

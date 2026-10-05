@@ -12,13 +12,12 @@
 #include <vector>
 
 #include <mixchain/chain_io.hpp>
-#include <mixchain/precision.hpp>
 
 using namespace NRG::MixChain;
 
 namespace {
 
-using Real = WideReal<50>;
+using Real = double;
 
 // A star with arbitrary energies and couplings; nothing here depends on it being a discretization of anything.
 template<typename S0> Star<S0> arbitrary_star(const int channels, const int levels) {
@@ -63,7 +62,7 @@ Written parse(const std::string &text) {
 
 Written write(const Chain<Real> &chain, const double bandrescale) {
   std::ostringstream out;
-  save_chain(chain, ChainFileHeader{1.0, 2.0, bandrescale, 50}, out);
+  save_chain(chain, ChainFileHeader{1.0, 2.0, bandrescale}, out);
   return parse(out.str());
 }
 
@@ -72,7 +71,7 @@ Written write(const Chain<Real> &chain, const double bandrescale) {
 TEST(MixChainChainIO, the_chain_is_written_in_the_units_of_the_input) { // NOLINT
   // E_n and T_n carry bandrescale back, as nrgchain applies it to xi.dat and zeta.dat; V is invariant under the
   // rescaling of omega and Gamma and is written as it is.
-  const auto chain    = build_chain<Real>(arbitrary_star<double>(2, 12), [] {
+  const auto chain    = build_chain(arbitrary_star<double>(2, 12), [] {
     ChainOptions options;
     options.Nmax = 3;
     return options;
@@ -99,7 +98,7 @@ TEST(MixChainChainIO, the_chain_is_written_in_the_units_of_the_input) { // NOLIN
 }
 
 TEST(MixChainChainIO, the_site_where_the_chain_samples_the_untabulated_region_is_reported) { // NOLINT
-  const auto chain = build_chain<Real>(arbitrary_star<double>(2, 12), [] {
+  const auto chain = build_chain(arbitrary_star<double>(2, 12), [] {
     ChainOptions options;
     options.Nmax = 3;
     return options;
@@ -118,11 +117,11 @@ TEST(MixChainChainIO, the_site_where_the_chain_samples_the_untabulated_region_is
 
   for (const double from : {0.0, 0.5}) {
     std::ostringstream out;
-    save_chain(chain, ChainFileHeader{1.0, 2.0, 1.0, 50, from, from + width}, out);
+    save_chain(chain, ChainFileHeader{1.0, 2.0, 1.0, from, from + width}, out);
     EXPECT_NE(out.str().find("continued_from_site=2"), std::string::npos) << "from " << from;
   }
   std::ostringstream none;
-  save_chain(chain, ChainFileHeader{1.0, 2.0, 1.0, 50, 0.0, 0.0}, none);
+  save_chain(chain, ChainFileHeader{1.0, 2.0, 1.0, 0.0, 0.0}, none);
   EXPECT_NE(none.str().find("continued_from_site=none"), std::string::npos);
 }
 
@@ -136,8 +135,8 @@ TEST(MixChainChainIO, the_matrix_files_hold_what_chain_dat_holds) { // NOLINT
   std::filesystem::create_directories(directory);
 
   // Real: one column per row, in the units of chain.dat.
-  const auto chain  = build_chain<Real>(arbitrary_star<double>(2, 12), options);
-  const auto header = ChainFileHeader{1.0, 2.0, 2.5, 50, 0.0};
+  const auto chain  = build_chain(arbitrary_star<double>(2, 12), options);
+  const auto header = ChainFileHeader{1.0, 2.0, 2.5, 0.0};
   save_chain_matrix_files(chain, header, directory);
   const auto written = write(chain, header.bandrescale); // the same chain as chain.dat
 
@@ -161,7 +160,7 @@ TEST(MixChainChainIO, the_matrix_files_hold_what_chain_dat_holds) { // NOLINT
     }
 
   // Complex: the pair "Re Im".
-  const auto complex_chain = build_chain<WideComplex<50>>(arbitrary_star<std::complex<double>>(2, 12), options);
+  const auto complex_chain = build_chain(arbitrary_star<std::complex<double>>(2, 12), options);
   save_chain_matrix_files(complex_chain, header, directory);
   {
     std::ifstream file(directory / "T12.dat");
@@ -181,7 +180,7 @@ TEST(MixChainChainIO, the_matrix_files_hold_what_chain_dat_holds) { // NOLINT
 }
 
 TEST(MixChainChainIO, the_header_records_the_run) { // NOLINT
-  const auto chain = build_chain<Real>(arbitrary_star<double>(2, 12), [] {
+  const auto chain = build_chain(arbitrary_star<double>(2, 12), [] {
     ChainOptions options;
     options.Nmax = 3;
     return options;
@@ -189,7 +188,7 @@ TEST(MixChainChainIO, the_header_records_the_run) { // NOLINT
   const auto written = write(chain, 2.5);
   ASSERT_GE(written.comments.size(), 4U);
   EXPECT_EQ(written.comments[0], "# mixchain Wilson chain");
-  EXPECT_NE(written.comments[1].find("channels=2 Nmax=3 z=1 Lambda=2 bandrescale=2.5 complex=0 digits=50"),
+  EXPECT_NE(written.comments[1].find("channels=2 Nmax=3 z=1 Lambda=2 bandrescale=2.5 complex=0 gauge=polar"),
             std::string::npos)
     << written.comments[1];
   EXPECT_NE(written.comments[2].find("levels=12 coupled_levels=12 theta_rank=2"), std::string::npos)

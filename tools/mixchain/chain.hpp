@@ -1,21 +1,28 @@
 // Channel-mixing discretization for NRG
-// ** Block Lanczos: from the star to the Wilson chain
+// ** The Wilson chain: from the star to the chain by plane rotations
 
 #ifndef _mixchain_chain_hpp_
 #define _mixchain_chain_hpp_
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <limits>
 #include <numeric>
 #include <optional>
+#include <random>
+#include <set>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
 #include <Eigen/Dense>
 
+#include <star-to-chain.hpp>
+
+#include "band_chain.hpp"
 #include "blocks.hpp"
 #include "star.hpp"
 #include "types.hpp"
@@ -41,7 +48,7 @@ namespace NRG::MixChain {
 // block is the M x N matrix A with A[k,i] = conj(v_{k,i}), whose Gram matrix A^dag A = sum_k v_k v_k^dag is Theta.
 // Without the conjugation it would be the transpose of Theta, which for a complex Gamma is a different model.
 
-// The gauge the chain is written in. Lanczos fixes each site only up to a unitary rotation of its N orbitals, and the
+// The gauge the chain is written in. The star fixes each site only up to a unitary rotation of its N orbitals, and the
 // blocks of V, E_n and T_n transform together, so every gauge describes the same bath.
 //
 //   polar: V and every T_n Hermitian positive semidefinite, the matrix analogue of choosing xi_n > 0. Nothing is
@@ -50,8 +57,8 @@ namespace NRG::MixChain {
 //   nambu: for blocks of two channels read as (particle, hole). The consumer of a superconducting chain stores only
 //          xi = T(1,1), sckappa = T(1,2), zeta = E(1,1), scdelta = E(1,2) and reconstructs the rest from the Nambu
 //          structure, so the chain must be in the gauge where that structure holds: E(2,2) = -E(1,1) and
-//          T(2,2) = -conj(T(1,1)). The polar gauge is not: it absorbs the sign of the hole component into the Lanczos
-//          block, which turns a constant gap into one alternating along the chain. Flipping the hole component of
+//          T(2,2) = -conj(T(1,1)). The polar gauge is not: it absorbs the sign of the hole component into the orbitals
+//          of the site, which turns a constant gap into one alternating along the chain. Flipping the hole component of
 //          every second site, U_n = diag(1, (-1)^n), puts it back.
 enum class ChainGauge { polar, nambu };
 
@@ -69,22 +76,24 @@ struct ChainOptions {
   // The chain has the sites 0..Nmax, and one hopping per site, T_0..T_Nmax: the last leads out of the chain and is
   // there because the coefficient tables of nrg are indexed 0..Nmax, as nrgchain writes xi.dat and zeta.dat.
   unsigned int Nmax{0};
-  // An eigenvalue of a Gram matrix, of Theta or of R^dag R for a residual block, counts as zero when it is below this
-  // fraction of the largest one. Relative, so that it means the same at every precision.
+  // A direction of the coupling of a site to the next, or of the impurity to the first, counts as lost when the square
+  // of its singular value is below this fraction of the square of the largest: when the eigenvalue of the Gram matrix
+  // of the couplings is below this fraction of the largest one.
   double rank_tolerance{1e-20};
   ChainGauge gauge{ChainGauge::polar};
   // How far a block may depart from the Nambu structure before the nambu gauge refuses the chain, relative to the
   // largest element of that block.
   double nambu_tolerance{1e-8};
+  // The chain counts as no longer determined by the star from the first site that moves by more than this when every
+  // number of the star is changed by one unit in the last place; see star_sensitivity().
+  double sensitivity_tolerance{1e-10};
 };
 
 struct ChainDiagnostics {
   int theta_rank{};                 // the number of combinations of the impurity orbitals that couple to the bath
   double theta_condition{};         // the smallest nonzero eigenvalue of Theta over its largest; 0 if Theta is zero
-  double max_antihermitian{};       // the largest anti-Hermitian part removed from an on-site block, relative to it
-  double max_reorthogonalization{}; // the largest component along the earlier blocks removed from a residual, relative
-  // The smallest lambda_min/lambda_max over the nonzero eigenvalues of the Gram matrices R^dag R along the chain. It
-  // says how close a direction came to being counted as zero.
+  // The smallest ratio of the squares of the smallest and the largest nonzero singular value of a hopping along the
+  // chain. It says how close a direction came to being counted as zero.
   double min_residual_condition{1.0};
   int min_rank{};                            // the smallest rank of a hopping T_n, and never above theta_rank
   std::optional<unsigned int> rank_drop_site; // the first n at which the rank of T_n is below theta_rank
@@ -95,6 +104,13 @@ struct ChainDiagnostics {
   int coupled_levels{};
   // In the nambu gauge, the largest departure from the Nambu structure of a block, relative to its largest element.
   double max_nambu_deviation{};
+  // How far the chain moves when every number of the star is changed by one unit in the last place: the largest
+  // relative change of a block, the site where it occurs, and the first site where it exceeds sensitivity_tolerance.
+  // It is a property of the star, not of the method: a chain cannot be known better than this from a star in double
+  // precision. Filled in by the caller from star_sensitivity(); of the whole chain only.
+  double max_star_sensitivity{};
+  unsigned int max_star_sensitivity_site{};
+  std::optional<unsigned int> sensitive_from_site;
 };
 
 template<typename S> struct Chain {
@@ -109,230 +125,7 @@ template<typename S> struct Chain {
   std::vector<ChainDiagnostics> block_diagnostics; // one per block, in the order of 'blocks'
 };
 
-// A scalar of type To from one of type From, through its real and imaginary parts: between double and the wide
-// types of precision.hpp, in either direction. Converting a complex scalar to a real one would silently drop data,
-// so it is refused at compile time.
-template<typename To, typename From> To convert_scalar(const From &x) {
-  static_assert(is_complex_v<To> || !is_complex_v<From>, "a complex scalar cannot be converted to a real one");
-  const auto re = static_cast<real_type<To>>(Eigen::numext::real(x));
-  const auto im = static_cast<real_type<To>>(Eigen::numext::imag(x));
-  return make_scalar<To>(re, im);
-}
-
-// Eigen's cast converts between double and the wide types in both directions; the assertion keeps the guard of
-// convert_scalar().
-template<typename To, typename From> Matrix<To> convert_matrix(const Matrix<From> &m) {
-  static_assert(is_complex_v<To> || !is_complex_v<From>, "a complex matrix cannot be converted to a real one");
-  return m.template cast<To>();
-}
-
-// The star in the arithmetic of the recursion: the level energies, which are real, and the starting block A, with the
-// blocks and the branch label of every level, which says which block the level belongs to.
-template<typename S> struct WideStar {
-  std::vector<real_type<S>> energies; // E_k
-  Matrix<S> start;                    // A[k,i] = conj(v_{k,i})
-  Blocks blocks;                      // empty for a single block of all channels
-  std::vector<int> branches;          // the branch label of every level
-};
-
-template<typename S, typename StarScalar> auto to_wide(const Star<StarScalar> &star) {
-  static_assert(is_complex_v<S> || !is_complex_v<StarScalar>, "a complex star needs a complex chain");
-  const auto levels   = star.levels.size();
-  const auto channels = static_cast<Eigen::Index>(star.channels);
-
-  WideStar<S> wide;
-  wide.blocks = star.blocks;
-  wide.energies.reserve(levels);
-  wide.branches.reserve(levels);
-  wide.start = Matrix<S>::Zero(static_cast<Eigen::Index>(levels), channels);
-  for (std::size_t k = 0; k < levels; k++) {
-    const auto &level = star.levels[k];
-    wide.energies.push_back(static_cast<real_type<S>>(level.energy));
-    wide.branches.push_back(level.branch);
-    for (Eigen::Index i = 0; i < channels; i++)
-      wide.start(static_cast<Eigen::Index>(k), i) = convert_scalar<S>(Eigen::numext::conj(level.coupling(i)));
-  }
-  return wide;
-}
-
 namespace detail {
-
-// The square root of a Hermitian positive semidefinite matrix and its pseudo-inverse, with the number of eigenvalues
-// kept as nonzero and the ratio of the smallest kept one to the largest.
-template<typename S> struct HermitianRoot {
-  Matrix<S> root;
-  Matrix<S> inverse;
-  int rank{};
-  double condition{};
-};
-
-// The rank tolerance actually applied: the requested one, but never below what rounding alone produces in this
-// arithmetic. In double precision an exactly singular matrix still shows a smallest eigenvalue of about 1e-16 of the
-// largest, which a fixed tolerance of 1e-20 would take for a nonzero one; at 800 digits the requested tolerance
-// governs.
-template<typename S> double effective_tolerance(const double tolerance) {
-  const auto epsilon = static_cast<double>(std::numeric_limits<real_type<S>>::epsilon());
-  return std::max(tolerance, 1000.0 * epsilon);
-}
-
-// G^(1/2) and the pseudo-inverse G^(+1/2) from a single eigendecomposition, for the Gram matrix G of a block: Theta at
-// the start, where the root is the impurity coupling V and the inverse turns A into the first Lanczos block, and
-// R^dag R at every step, where the root is the hopping T_n and the inverse normalizes the residual R into the next
-// block.
-//
-// Eigenvalues below the tolerance times the largest are set to zero in both, so the directions they belong to drop
-// out of the next block and their part of the chain is zero from there on. A relative test cannot tell when every
-// direction is rounding, as when the Krylov space of a single channel runs out; so the largest eigenvalue is also
-// compared with 'scale', the squared norm of the block before its projection, H Q_n for a residual. Rounding makes
-// the residual of order epsilon times that norm, and a hopping that is really there is far above it. For Theta the
-// scale is zero: Theta is formed directly from the star, and is zero only when every coupling is.
-template<typename S> auto hermitian_root(const Matrix<S> &gram, const real_type<S> &scale, const double tolerance) {
-  using std::sqrt; // for double; the wide types are found by argument-dependent lookup
-  const auto n = gram.rows();
-  // G is Hermitian mathematically, but its (i,j) and (j,i) elements are different sums.
-  const ColumnMajor<S> symmetric = (make_scalar<S>(0.5, 0) * (gram + gram.adjoint())).eval();
-  Eigen::SelfAdjointEigenSolver<ColumnMajor<S>> solver(symmetric);
-  if (solver.info() != Eigen::Success)
-    throw std::runtime_error("Diagonalization of a Gram matrix failed in the block Lanczos recursion.");
-
-  const auto &lambda      = solver.eigenvalues(); // real and ascending
-  const auto largest      = lambda(n - 1);
-  const auto epsilon      = std::numeric_limits<real_type<S>>::epsilon();
-  const auto rounding     = real_type<S>(1000) * epsilon;
-  const bool all_rounding = !(largest > 0) || largest <= rounding * rounding * scale;
-  const auto threshold    = real_type<S>(effective_tolerance<S>(tolerance)) * largest;
-
-  Vector<real_type<S>> roots          = Vector<real_type<S>>::Zero(n);
-  Vector<real_type<S>> inverse_roots  = Vector<real_type<S>>::Zero(n);
-  HermitianRoot<S> result;
-  if (!all_rounding) {
-    for (Eigen::Index i = 0; i < n; i++) {
-      if (lambda(i) < threshold) continue;
-      if (result.rank == 0) result.condition = static_cast<double>(lambda(i) / largest); // the smallest one kept
-      roots(i)         = sqrt(lambda(i));
-      inverse_roots(i) = 1 / roots(i);
-      result.rank++;
-    }
-  }
-  const auto &U = solver.eigenvectors();
-  // The root becomes V or T_n, which are Hermitian; the product U diag U^dag is so only up to rounding.
-  const Matrix<S> root = U * roots.template cast<S>().asDiagonal() * U.adjoint();
-  result.root          = make_scalar<S>(0.5, 0) * (root + root.adjoint());
-  result.inverse       = U * inverse_roots.template cast<S>().asDiagonal() * U.adjoint();
-  return result;
-}
-
-// The component of R along the earlier Lanczos blocks, sum_m Q_m (Q_m^dag R).
-template<typename S> Matrix<S> component_along(const Matrix<S> &residual, const std::vector<Matrix<S>> &blocks) {
-  Matrix<S> component = Matrix<S>::Zero(residual.rows(), residual.cols());
-  for (const auto &block : blocks) component += block * (block.adjoint() * residual);
-  return component;
-}
-
-} // namespace detail
-
-namespace detail {
-
-// Block Lanczos from the star to the chain, in the polar gauge:
-//
-//   start:   Theta = A^dag A,   V = Theta^(1/2),   Q_0 = A Theta^(-1/2),
-//   site n:  E_n = Q_n^dag H Q_n,
-//            R = H Q_n - Q_n E_n - Q_{n-1} T_{n-1}^dag,   then reorthogonalized against every earlier block,
-//            T_n = (R^dag R)^(1/2),   Q_{n+1} = R (R^dag R)^(-1/2).
-//
-// H is the bath Hamiltonian, diagonal in the star levels. The recursion runs to n = Nmax, so it produces the sites
-// 0..Nmax and the hoppings T_0..T_Nmax: one hopping per site, the last leading out of the chain. That is the length
-// nrg reads, and what nrgchain writes into xi.dat and zeta.dat.
-//
-// Every block is kept, because the reorthogonalization needs them all. 'lanczos_blocks', if given, receives
-// Q_0..Q_{Nmax+1}, which only a test has a use for: stacked side by side they are the unitary that maps the star
-// onto the chain.
-//
-// The star is taken as a single block; build_chain() splits it first.
-template<typename S>
-Chain<S> block_lanczos(const WideStar<S> &star, const ChainOptions &options, std::vector<Matrix<S>> *lanczos_blocks) {
-  using std::sqrt; // for double; the wide types are found by argument-dependent lookup
-  const auto levels   = star.start.rows();
-  const auto channels = star.start.cols();
-  if (channels < 1) throw std::invalid_argument("The star has no channels.");
-  if (options.Nmax < 1) throw std::invalid_argument("Nmax must be greater than 0.");
-  // The sites 0..Nmax and the hopping out of the last one span a Krylov space of dimension channels*(Nmax+2), which
-  // the star must be able to hold. Levels with vanishing coupling can make the space that is actually reached smaller
-  // still; that shows up as a drop in the rank of a hopping, rank_drop_site in the diagnostics.
-  const auto needed = channels * static_cast<Eigen::Index>(options.Nmax + 2);
-  if (levels < needed)
-    throw std::invalid_argument("The star has " + std::to_string(levels) + " levels, but a chain of "
-                                + std::to_string(options.Nmax + 1) + " sites with " + std::to_string(channels)
-                                + " channels needs at least " + std::to_string(needed)
-                                + ", one block more than the sites, for the hopping out of the last site"
-                                + ". Increase mMAX or decrease Nmax.");
-
-  Chain<S> chain;
-  chain.channels = static_cast<int>(channels);
-  chain.Nmax     = options.Nmax;
-  chain.E.reserve(options.Nmax + 1);
-  chain.T.reserve(options.Nmax + 1);
-  auto &diagnostics  = chain.diagnostics;
-  diagnostics.levels = static_cast<int>(levels);
-  for (Eigen::Index k = 0; k < levels; k++)
-    if ((star.start.row(k).array() != S(0)).any()) diagnostics.coupled_levels++;
-
-  // The energies are real, but a same-type product with the blocks needs them in S.
-  Vector<S> energies(levels);
-  for (Eigen::Index k = 0; k < levels; k++) energies(k) = make_scalar<S>(star.energies[static_cast<std::size_t>(k)], 0);
-
-  const Matrix<S> theta = star.start.adjoint() * star.start;
-  const auto start      = detail::hermitian_root<S>(theta, real_type<S>(0), options.rank_tolerance);
-  chain.V                     = start.root;
-  diagnostics.theta_rank      = start.rank;
-  diagnostics.theta_condition = start.condition;
-  diagnostics.min_rank        = start.rank;
-
-  std::vector<Matrix<S>> blocks;
-  blocks.reserve(options.Nmax + 2);
-  blocks.push_back(star.start * start.inverse);
-
-  const auto half = make_scalar<S>(0.5, 0);
-  for (unsigned int n = 0; n <= options.Nmax; n++) {
-    const Matrix<S> hq = energies.asDiagonal() * blocks[n];
-
-    // E_n is Hermitian mathematically, but its (i,j) and (j,i) elements are different sums.
-    const Matrix<S> onsite    = blocks[n].adjoint() * hq;
-    const Matrix<S> hermitian = half * (onsite + onsite.adjoint());
-    const auto onsite_norm    = hermitian.norm();
-    if (onsite_norm > 0)
-      diagnostics.max_antihermitian =
-        std::max(diagnostics.max_antihermitian, static_cast<double>((onsite - hermitian).norm() / onsite_norm));
-    chain.E.push_back(hermitian);
-
-    Matrix<S> residual = hq - blocks[n] * chain.E[n];
-    if (n > 0) residual -= blocks[n - 1] * chain.T[n - 1].adjoint();
-
-    // Full reorthogonalization. The three-term recurrence is orthogonal to the earlier blocks only up to rounding, and
-    // the loss accumulates along the chain. A second pass is made when the first removed a large part of the
-    // residual, which is when a single classical Gram-Schmidt pass is known to be insufficient ("twice is enough",
-    // Kahan and Parlett).
-    const auto before    = residual.squaredNorm();
-    const Matrix<S> once = detail::component_along(residual, blocks);
-    residual -= once;
-    if (before > 0)
-      diagnostics.max_reorthogonalization =
-        std::max(diagnostics.max_reorthogonalization, static_cast<double>(sqrt(once.squaredNorm() / before)));
-    if (residual.squaredNorm() < before / 2) residual -= detail::component_along(residual, blocks);
-
-    const Matrix<S> gram = residual.adjoint() * residual;
-    const auto step      = detail::hermitian_root<S>(gram, hq.squaredNorm(), options.rank_tolerance);
-    if (step.rank > 0)
-      diagnostics.min_residual_condition = std::min(diagnostics.min_residual_condition, step.condition);
-    diagnostics.min_rank = std::min(diagnostics.min_rank, step.rank);
-    diagnostics.hopping_ranks.push_back(step.rank);
-    if (step.rank < diagnostics.theta_rank && !diagnostics.rank_drop_site) diagnostics.rank_drop_site = n;
-    chain.T.push_back(step.root);
-    blocks.push_back(residual * step.inverse);
-  }
-  if (lanczos_blocks) *lanczos_blocks = std::move(blocks);
-  return chain;
-}
 
 // The diagnostics of the whole chain from those of its blocks. Ranks add up site by site; the ratios of eigenvalues
 // are taken within each block, since comparing eigenvalues across independent blocks means nothing.
@@ -350,8 +143,6 @@ inline ChainDiagnostics merge_diagnostics(const std::vector<ChainDiagnostics> &p
       any_rank               = true;
     }
     merged.min_residual_condition  = std::min(merged.min_residual_condition, part.min_residual_condition);
-    merged.max_antihermitian       = std::max(merged.max_antihermitian, part.max_antihermitian);
-    merged.max_reorthogonalization = std::max(merged.max_reorthogonalization, part.max_reorthogonalization);
   }
   merged.min_rank = merged.theta_rank;
   for (unsigned int n = 0; n < hoppings; n++) {
@@ -417,93 +208,6 @@ template<typename S> void apply_nambu_gauge(Chain<S> &chain, const double tolera
 
 } // namespace detail
 
-// The chain of a star: block Lanczos for each of its blocks, assembled into N x N blocks with exact zeros between
-// channels of different blocks. With a single block this is block_lanczos() itself.
-//
-// The levels are given to the blocks by their branch labels, not by where their couplings are nonzero, so that every
-// block receives its levels with vanishing coupling as well and has 2*size*(mMAX+1) levels, in proportion to its size
-// exactly as the whole star. Within a block the levels keep their order in the star.
-//
-// 'lanczos_blocks', if given, receives Q_0..Q_{Nmax+1} of the whole star: the blocks of the parts, placed at the rows
-// of their levels and the columns of their channels.
-template<typename S>
-auto build_chain(const WideStar<S> &star, const ChainOptions &options,
-                 std::vector<Matrix<S>> *lanczos_blocks = nullptr) {
-  const auto levels   = star.start.rows();
-  const auto channels = static_cast<int>(star.start.cols());
-  if (star.blocks.size() <= 1) {
-    auto chain = detail::block_lanczos(star, options, lanczos_blocks);
-    if (star.blocks.empty()) {
-      chain.blocks.emplace_back(static_cast<std::size_t>(channels));
-      std::iota(chain.blocks.front().begin(), chain.blocks.front().end(), 0);
-    } else {
-      chain.blocks = star.blocks;
-    }
-    chain.block_diagnostics = {chain.diagnostics};
-    if (options.gauge == ChainGauge::nambu) detail::apply_nambu_gauge(chain, options.nambu_tolerance);
-    return chain;
-  }
-  if (star.branches.size() != static_cast<std::size_t>(levels))
-    throw std::invalid_argument("A star with blocks needs the branch label of every level.");
-
-  Chain<S> chain;
-  chain.channels = channels;
-  chain.Nmax     = options.Nmax;
-  chain.blocks   = star.blocks;
-  chain.V        = Matrix<S>::Zero(channels, channels);
-  chain.E.assign(options.Nmax + 1, Matrix<S>::Zero(channels, channels));
-  chain.T.assign(options.Nmax + 1, Matrix<S>::Zero(channels, channels));
-  if (lanczos_blocks) lanczos_blocks->assign(options.Nmax + 2, Matrix<S>::Zero(levels, channels));
-
-  int offset = 0; // the first branch label of the current block
-  for (const auto &block : star.blocks) {
-    const auto size = static_cast<Eigen::Index>(block.size());
-    std::vector<Eigen::Index> rows; // the levels of this block, in their order in the star
-    for (Eigen::Index k = 0; k < levels; k++) {
-      const auto branch = star.branches[static_cast<std::size_t>(k)];
-      if (branch >= offset && branch < offset + size) rows.push_back(k);
-    }
-
-    WideStar<S> part;
-    part.start = Matrix<S>(static_cast<Eigen::Index>(rows.size()), size);
-    part.energies.reserve(rows.size());
-    for (std::size_t r = 0; r < rows.size(); r++) {
-      part.energies.push_back(star.energies[static_cast<std::size_t>(rows[r])]);
-      for (Eigen::Index i = 0; i < size; i++)
-        part.start(static_cast<Eigen::Index>(r), i) = star.start(rows[r], block[static_cast<std::size_t>(i)]);
-    }
-
-    std::vector<Matrix<S>> part_blocks;
-    const auto piece = detail::block_lanczos(part, options, lanczos_blocks ? &part_blocks : nullptr);
-
-    const auto place = [&block, size](Matrix<S> &target, const Matrix<S> &source) {
-      for (Eigen::Index i = 0; i < size; i++)
-        for (Eigen::Index j = 0; j < size; j++)
-          target(block[static_cast<std::size_t>(i)], block[static_cast<std::size_t>(j)]) = source(i, j);
-    };
-    place(chain.V, piece.V);
-    for (unsigned int n = 0; n <= options.Nmax; n++) place(chain.E[n], piece.E[n]);
-    for (unsigned int n = 0; n <= options.Nmax; n++) place(chain.T[n], piece.T[n]);
-    if (lanczos_blocks)
-      for (unsigned int n = 0; n <= options.Nmax + 1; n++)
-        for (std::size_t r = 0; r < rows.size(); r++)
-          for (Eigen::Index i = 0; i < size; i++)
-            (*lanczos_blocks)[n](rows[r], block[static_cast<std::size_t>(i)]) =
-              part_blocks[n](static_cast<Eigen::Index>(r), i);
-
-    chain.block_diagnostics.push_back(piece.diagnostics);
-    offset += static_cast<int>(size);
-  }
-  chain.diagnostics = detail::merge_diagnostics(chain.block_diagnostics, options.Nmax + 1);
-  if (options.gauge == ChainGauge::nambu) detail::apply_nambu_gauge(chain, options.nambu_tolerance);
-  return chain;
-}
-
-// The same from a star in double precision, widened to S first.
-template<typename S, typename StarScalar> auto build_chain(const Star<StarScalar> &star, const ChainOptions &options) {
-  return build_chain<S>(to_wide<S>(star), options);
-}
-
 // The first site from which the chain samples the untabulated region of the input, the star's
 // untabulated_from < |omega| < untabulated_to above the accumulation point of the mesh. The chain resolves ever
 // smaller distances from the accumulation point as it goes; the scale of a site is taken as the norm of its hopping,
@@ -516,21 +220,372 @@ template<typename S> std::optional<unsigned int> first_continued_site(const Chai
   return std::nullopt;
 }
 
-// The chain in another arithmetic: narrowing the result of the recursion to double for writing it out, or widening
-// it in the tests.
-template<typename To, typename From> auto convert_chain(const Chain<From> &chain) {
-  Chain<To> result;
-  result.channels    = chain.channels;
-  result.Nmax        = chain.Nmax;
-  result.V           = convert_matrix<To>(chain.V);
-  result.blocks      = chain.blocks;
-  result.gauge       = chain.gauge;
-  result.diagnostics = chain.diagnostics;
-  result.block_diagnostics = chain.block_diagnostics;
-  result.E.reserve(chain.E.size());
-  result.T.reserve(chain.T.size());
-  for (const auto &block : chain.E) result.E.push_back(convert_matrix<To>(block));
-  for (const auto &block : chain.T) result.T.push_back(convert_matrix<To>(block));
+// FROM THE STAR TO THE CHAIN
+//
+// The chain is built by adding the levels of the star one at a time and restoring the form of the chain with plane
+// rotations. The Lanczos recursion gives the same chain in exact arithmetic, but loses the orthogonality of its
+// vectors to rounding and needs multiprecision arithmetic to be usable. The rotations are unitary transformations of
+// the bath, so nothing is lost to cancellation and double precision is enough.
+//
+// A block of one channel is the scalar problem, and goes through scalar_star_to_chain() of the nrg library, the
+// Rutishauser-Kahan-Pal-Walker rotations that nrgchain uses. A block of several channels is reduced to a band matrix
+// by band_star_to_chain(), and the chain is then read off that band in a second stage, which is where the ranks are
+// decided and the polar gauge is fixed.
+
+namespace detail {
+
+// The levels of a block in the order the rotations take them: interval by interval from the band edge inwards, the
+// two frequency branches alternating. Levels without an interval index keep the order they came in.
+template<typename S0> void sort_for_insertion(std::vector<const StarLevel<S0> *> &levels) {
+  std::stable_sort(levels.begin(), levels.end(), [](const StarLevel<S0> *a, const StarLevel<S0> *b) {
+    const auto key = [](const StarLevel<S0> *level) {
+      return std::tuple(level->m, level->sign != Sign::POS, level->branch);
+    };
+    return key(a) < key(b);
+  });
+}
+
+// The chain of one channel: xi[n] couples the sites n and n+1.
+struct ScalarBlockChain {
+  double V{};
+  std::vector<double> zeta, xi; // Nmax+1 of each, zero beyond the support of the star
+  ChainDiagnostics diagnostics;
+};
+
+// 'levels' are those of the block, 'channel' the one channel it has.
+//
+// The levels are handed over interval by interval from the band edge inwards, with the two frequency branches
+// alternating, whatever their order in the star: the result does not depend on the order mathematically, but its
+// rounding error does, and this is the order that keeps it small at the end of the chain. Levels that carry no
+// interval index, as in a star that was not produced by the star stage, keep the order they came in.
+template<typename S0>
+ScalarBlockChain scalar_block_chain(std::vector<const StarLevel<S0> *> levels, const Eigen::Index channel,
+                                    const ChainOptions &options) {
+  using std::abs;
+  const auto sites  = static_cast<std::size_t>(options.Nmax) + 1;
+  const auto needed = sites + 1;
+  if (levels.size() < needed)
+    throw std::invalid_argument("The star has " + std::to_string(levels.size()) + " levels, but a chain of "
+                                + std::to_string(sites) + " sites with one channel needs at least "
+                                + std::to_string(needed)
+                                + ", one block more than the sites, for the hopping out of the last site"
+                                + ". Increase mMAX or decrease Nmax.");
+
+  ScalarBlockChain result;
+  result.zeta.assign(sites, 0.0);
+  result.xi.assign(sites, 0.0);
+  auto &diagnostics  = result.diagnostics;
+  diagnostics.levels = static_cast<int>(levels.size());
+
+  std::erase_if(levels, [channel](const StarLevel<S0> *level) { return abs(level->coupling(channel)) == 0.0; });
+  diagnostics.coupled_levels = static_cast<int>(levels.size());
+  sort_for_insertion(levels);
+
+  std::vector<NRG::StarPoint> points;
+  points.reserve(levels.size());
+  std::set<double> energies; // levels of the same energy are one pole of the hybridization
+  double largest = 0.0;
+  for (const auto *level : levels) {
+    points.push_back({level->energy, abs(level->coupling(channel))});
+    energies.insert(level->energy);
+    largest = std::max(largest, points.back().amplitude);
+  }
+  const auto support = energies.size();
+
+  diagnostics.hopping_ranks.assign(sites, 0);
+  if (support == 0) return result; // nothing couples: Theta is zero, and so is the chain
+  diagnostics.theta_rank      = 1;
+  diagnostics.theta_condition = 1.0;
+
+  // V^2 = Theta = sum_k |v_k|^2, relative to the largest term so that the squares neither overflow nor underflow.
+  double sum = 0.0;
+  for (const auto &point : points) sum += (point.amplitude / largest) * (point.amplitude / largest);
+  result.V = largest * std::sqrt(sum);
+
+  // A star with fewer poles than the chain has sites ends early: the hopping out of its last site is exactly zero,
+  // and so is everything beyond.
+  const auto count = std::min(sites, support);
+  const auto chain = NRG::scalar_star_to_chain(points, count);
+  std::copy(chain.zeta.begin(), chain.zeta.end(), result.zeta.begin());
+  std::copy(chain.xi.begin(), chain.xi.end(), result.xi.begin());
+
+  diagnostics.min_rank = 1;
+  for (std::size_t n = 0; n < sites; n++) {
+    const auto rank              = result.xi[n] > 0.0 ? 1 : 0;
+    diagnostics.hopping_ranks[n] = rank;
+    diagnostics.min_rank         = std::min(diagnostics.min_rank, rank);
+    if (rank == 0 && !diagnostics.rank_drop_site) diagnostics.rank_drop_site = static_cast<unsigned int>(n);
+  }
+  return result;
+}
+
+// The chain of one block with its own channels 0..p-1.
+template<typename S0> struct BlockChain {
+  Matrix<S0> V;
+  std::vector<Matrix<S0>> E, T; // Nmax+1 of each
+  ChainDiagnostics diagnostics;
+};
+
+// THE SECOND STAGE
+//
+// band_star_to_chain() decides no rank. Where Theta is singular, or the Krylov space of the star runs out in some
+// direction, a pivot of the band is rounding and the rows after it come in no particular order. The band is still a
+// unitary transformation of the star, exact to rounding, and site s of the chain lies within its first s+1 blocks; so
+// the chain can be read off the kept band, site by site.
+//
+// M is the kept band as a dense Hermitian matrix. At every step there are the rows not yet given to a site, their
+// coupling C to the previous site (at the start the block R, the coupling to the impurity), and an isometry Phi that
+// says where the orbitals of the previous site sit among the channels (at the start the identity):
+//
+//   C = Q [R_1; 0]      Householder QR over the rows that couple to the site, and M -> Q^dag M Q on those rows,
+//   R_1 = U S X^dag     the rank r counts the singular values that are not zero by rank_tolerance,
+//   M -> U^dag M U      on the first rows, of which the first r are the new site,
+//   Phi' = Phi X_r      hopping Phi' S Phi'^dag, on-site block Phi' M[site, site] Phi'^dag.
+//
+// The hopping is Hermitian positive semidefinite, which is the polar gauge of chain.hpp, and for a hopping of lower
+// rank it is the pseudo-inverse convention: the chain is zero along the directions that
+// are lost, from there on. The rows that are left over stay among those not yet given to a site, where a later site
+// may still reach them through M. With full rank throughout, Q is trivial and a step is the SVD of one block.
+//
+// A singular value counts as zero when its square is below rank_tolerance times the square of the largest, as an
+// eigenvalue of the Gram matrix of the couplings would; and all of them do when the largest is rounding on the
+// scale of the bath Hamiltonian applied to the site.
+template<typename S0>
+BlockChain<S0> matrix_block_chain(std::vector<const StarLevel<S0> *> levels, const Block &block,
+                                  const ChainOptions &options) {
+  using Dense = Eigen::Matrix<S0, Eigen::Dynamic, Eigen::Dynamic>;
+  const auto p      = static_cast<Eigen::Index>(block.size());
+  const auto sites  = static_cast<std::size_t>(options.Nmax) + 1;
+  const auto needed = static_cast<std::size_t>(p) * (sites + 1);
+  if (levels.size() < needed)
+    throw std::invalid_argument("The star has " + std::to_string(levels.size()) + " levels, but a chain of "
+                                + std::to_string(sites) + " sites with " + std::to_string(p)
+                                + " channels needs at least " + std::to_string(needed)
+                                + ", one block more than the sites, for the hopping out of the last site"
+                                + ". Increase mMAX or decrease Nmax.");
+
+  BlockChain<S0> result;
+  result.V = Matrix<S0>::Zero(p, p);
+  result.E.assign(sites, Matrix<S0>::Zero(p, p));
+  result.T.assign(sites, Matrix<S0>::Zero(p, p));
+  auto &diagnostics  = result.diagnostics;
+  diagnostics.levels = static_cast<int>(levels.size());
+  diagnostics.hopping_ranks.assign(sites, 0);
+
+  // A level without coupling would pass through the rotations untouched and take a row of the band.
+  std::erase_if(levels, [&block](const StarLevel<S0> *level) {
+    for (const auto channel : block)
+      if (level->coupling(channel) != S0(0)) return false;
+    return true;
+  });
+  diagnostics.coupled_levels = static_cast<int>(levels.size());
+  sort_for_insertion(levels);
+
+  std::vector<double> energies;
+  energies.reserve(levels.size());
+  Matrix<S0> start(static_cast<Eigen::Index>(levels.size()), p);
+  for (std::size_t k = 0; k < levels.size(); k++) {
+    energies.push_back(levels[k]->energy);
+    for (Eigen::Index i = 0; i < p; i++)
+      start(static_cast<Eigen::Index>(k), i) = Eigen::numext::conj(levels[k]->coupling(block[static_cast<std::size_t>(i)]));
+  }
+  const auto band = band_star_to_chain(energies, start, sites + 1);
+  const auto rows = static_cast<Eigen::Index>(band.rows);
+
+  Dense M = Dense::Zero(rows, rows);
+  Dense C = Dense::Zero(rows, p);
+  for (Eigen::Index i = 0; i < rows; i++) {
+    for (Eigen::Index j = 0; j < rows; j++) {
+      const auto si = i / p, sj = j / p;
+      if (si == sj) M(i, j) = band.E[static_cast<std::size_t>(si)](i % p, j % p);
+      if (si == sj + 1) M(i, j) = band.T[static_cast<std::size_t>(sj)](i % p, j % p);
+      if (sj == si + 1) M(i, j) = Eigen::numext::conj(band.T[static_cast<std::size_t>(si)](j % p, i % p));
+    }
+    if (i < p) C.row(i) = band.R.row(i);
+  }
+
+  const auto epsilon = std::numeric_limits<double>::epsilon();
+  Dense Phi          = Dense::Identity(p, p);
+  Eigen::Index first = 0; // the first row not yet given to a site
+  double scale       = 0.0; // the norm of the bath Hamiltonian applied to the previous site; nothing for the impurity
+  for (std::size_t step = 0; step <= sites; step++) { // step 0 gives V and site 0, step n+1 gives T_n and site n+1
+    const auto rest     = rows - first;
+    const auto previous = C.cols();
+    Eigen::Index window = 0; // the rows that couple to the previous site are the first 'window' of the rest
+    for (Eigen::Index i = 0; i < C.rows(); i++)
+      if ((C.row(i).array() != S0(0)).any()) window = i + 1;
+
+    Eigen::Index rank = 0;
+    Dense Phi_new     = Dense::Zero(p, 0);
+    Dense hopping     = Dense::Zero(p, p);
+    if (window > 0 && previous > 0) {
+      Eigen::HouseholderQR<Dense> qr(Dense(C.topRows(window)));
+      const Dense Q = qr.householderQ();
+      M.block(first, first, window, rest).applyOnTheLeft(Q.adjoint());
+      M.block(first, first, rest, window).applyOnTheRight(Q);
+      const auto k   = std::min(window, previous);
+      const Dense R1 = qr.matrixQR().topRows(k).template triangularView<Eigen::Upper>();
+      Eigen::JacobiSVD<Dense> svd(R1, Eigen::ComputeFullU | Eigen::ComputeFullV);
+      const auto &sigma = svd.singularValues();
+      if (sigma(0) > 0.0 && sigma(0) > 1000.0 * epsilon * scale)
+        for (Eigen::Index i = 0; i < k; i++)
+          if ((sigma(i) / sigma(0)) * (sigma(i) / sigma(0)) >= options.rank_tolerance) rank++;
+      const Dense U = svd.matrixU();
+      M.block(first, first, k, rest).applyOnTheLeft(U.adjoint());
+      M.block(first, first, rest, k).applyOnTheRight(U);
+
+      Phi_new = Phi * svd.matrixV().leftCols(rank);
+      hopping = Phi_new * sigma.head(rank).template cast<S0>().asDiagonal() * Phi_new.adjoint();
+      hopping = (make_scalar<S0>(0.5, 0) * (hopping + hopping.adjoint())).eval();
+      if (rank > 0) {
+        const auto condition = (sigma(rank - 1) / sigma(0)) * (sigma(rank - 1) / sigma(0));
+        if (step == 0)
+          diagnostics.theta_condition = condition;
+        else
+          diagnostics.min_residual_condition = std::min(diagnostics.min_residual_condition, condition);
+      }
+    }
+
+    if (step == 0) {
+      result.V               = hopping;
+      diagnostics.theta_rank = static_cast<int>(rank);
+      diagnostics.min_rank   = static_cast<int>(rank);
+    } else {
+      const auto n = step - 1;
+      result.T[n]  = hopping;
+      diagnostics.hopping_ranks[n] = static_cast<int>(rank);
+      diagnostics.min_rank         = std::min(diagnostics.min_rank, static_cast<int>(rank));
+      if (static_cast<int>(rank) < diagnostics.theta_rank && !diagnostics.rank_drop_site)
+        diagnostics.rank_drop_site = static_cast<unsigned int>(n);
+    }
+
+    if (step < sites && rank > 0) {
+      const Dense onsite = Phi_new * M.block(first, first, rank, rank) * Phi_new.adjoint();
+      result.E[step]     = make_scalar<S0>(0.5, 0) * (onsite + onsite.adjoint());
+      scale              = M.block(0, first, rows, rank).norm();
+      C                  = M.block(first + rank, first, rest - rank, rank);
+    } else {
+      C = Dense::Zero(rest - rank, 0);
+    }
+    first += rank;
+    Phi = Phi_new;
+  }
+  return result;
+}
+
+} // namespace detail
+
+// The chain of a star, in the arithmetic of the star: each block mapped onto a chain of its own, with exact zeros
+// between channels of different blocks.
+//
+// The levels are given to the blocks by their branch labels, not by where their couplings are nonzero, so that every
+// block receives its levels with vanishing coupling as well and has 2*size*(mMAX+1) levels, in proportion to its size
+// exactly as the whole star.
+template<typename S0> Chain<S0> build_chain(const Star<S0> &star, const ChainOptions &options) {
+  const auto channels = static_cast<Eigen::Index>(star.channels);
+  if (channels < 1) throw std::invalid_argument("The star has no channels.");
+  if (options.Nmax < 1) throw std::invalid_argument("Nmax must be greater than 0.");
+
+  Chain<S0> chain;
+  chain.channels = star.channels;
+  chain.Nmax     = options.Nmax;
+  chain.blocks   = star.blocks;
+  if (chain.blocks.empty()) { // a single block of all channels
+    chain.blocks.emplace_back(static_cast<std::size_t>(channels));
+    std::iota(chain.blocks.front().begin(), chain.blocks.front().end(), 0);
+  }
+  chain.V = Matrix<S0>::Zero(channels, channels);
+  chain.E.assign(options.Nmax + 1, Matrix<S0>::Zero(channels, channels));
+  chain.T.assign(options.Nmax + 1, Matrix<S0>::Zero(channels, channels));
+
+  int offset = 0; // the first branch label of the current block
+  for (const auto &block : chain.blocks) {
+    const auto size = static_cast<int>(block.size());
+
+    std::vector<const StarLevel<S0> *> levels;
+    for (const auto &level : star.levels)
+      if (chain.blocks.size() == 1 || (level.branch >= offset && level.branch < offset + size))
+        levels.push_back(&level);
+
+    if (size == 1) {
+      const auto channel = static_cast<Eigen::Index>(block.front());
+      const auto piece   = detail::scalar_block_chain(std::move(levels), channel, options);
+      chain.V(channel, channel) = make_scalar<S0>(piece.V, 0);
+      for (unsigned int n = 0; n <= options.Nmax; n++) {
+        chain.E[n](channel, channel) = make_scalar<S0>(piece.zeta[n], 0);
+        chain.T[n](channel, channel) = make_scalar<S0>(piece.xi[n], 0);
+      }
+      chain.block_diagnostics.push_back(piece.diagnostics);
+    } else {
+      const auto piece = detail::matrix_block_chain(std::move(levels), block, options);
+      const auto place = [&block, size](Matrix<S0> &target, const Matrix<S0> &source) {
+        for (int i = 0; i < size; i++)
+          for (int j = 0; j < size; j++)
+            target(block[static_cast<std::size_t>(i)], block[static_cast<std::size_t>(j)]) = source(i, j);
+      };
+      place(chain.V, piece.V);
+      for (unsigned int n = 0; n <= options.Nmax; n++) place(chain.E[n], piece.E[n]);
+      for (unsigned int n = 0; n <= options.Nmax; n++) place(chain.T[n], piece.T[n]);
+      chain.block_diagnostics.push_back(piece.diagnostics);
+    }
+    offset += size;
+  }
+  chain.diagnostics = detail::merge_diagnostics(chain.block_diagnostics, options.Nmax + 1);
+  if (options.gauge == ChainGauge::nambu) detail::apply_nambu_gauge(chain, options.nambu_tolerance);
+  return chain;
+}
+
+// THE SENSITIVITY OF THE CHAIN TO THE STAR
+//
+// The star is stored in double precision, so each of its numbers is known to one unit in the last place at best. For
+// most stars that moves the chain by rounding. Where the mesh accumulates at a finite energy, as at a gap edge, the
+// levels close to it differ in digits that double precision does not hold, and the late sites of the chain, which are
+// built from those differences, move by many orders of magnitude more. No method can determine them better from such
+// a star, in whatever arithmetic it runs: multiprecision would give the exact chain of numbers that are not exact.
+//
+// This measures it: the chain is built again from the star with every energy and coupling moved by one unit in the
+// last place, up or down at random, for a few fixed choices, and compared site by site, the hoppings relative to
+// their largest element and the on-site blocks on the scale of their site. Always in the polar gauge.
+struct StarSensitivity {
+  double largest{};
+  unsigned int largest_site{};
+  std::optional<unsigned int> from_site; // the first site above the tolerance
+};
+
+template<typename S0> StarSensitivity star_sensitivity(const Star<S0> &star, ChainOptions options) {
+  options.gauge = ChainGauge::polar;
+  const auto size      = [](const Matrix<S0> &m) { return m.size() ? m.cwiseAbs().maxCoeff() : 0.0; };
+  const auto reference = build_chain(star, options);
+  std::vector<double> moved(options.Nmax + 1, 0.0);
+  for (const unsigned int seed : {1U, 2U, 3U, 4U}) {
+    std::mt19937 generator(seed);
+    const auto nudge = [&generator](const double x) { return std::nextafter(x, generator() % 2 ? 2.0 * x : 0.0); };
+    auto other       = star;
+    for (auto &level : other.levels) {
+      level.energy = nudge(level.energy);
+      for (Eigen::Index i = 0; i < level.coupling.size(); i++) {
+        if constexpr (is_complex_v<S0>)
+          level.coupling(i) = S0(nudge(level.coupling(i).real()), nudge(level.coupling(i).imag()));
+        else
+          level.coupling(i) = nudge(level.coupling(i));
+      }
+    }
+    const auto chain = build_chain(other, options);
+    for (unsigned int n = 0; n <= options.Nmax; n++) {
+      const auto hopping = size(reference.T[n]);
+      const auto local   = std::max({size(reference.E[n]), hopping, n > 0 ? size(reference.T[n - 1]) : 0.0});
+      if (hopping > 0.0) moved[n] = std::max(moved[n], size(chain.T[n] - reference.T[n]) / hopping);
+      if (local > 0.0) moved[n] = std::max(moved[n], size(chain.E[n] - reference.E[n]) / local);
+    }
+  }
+  StarSensitivity result;
+  for (unsigned int n = 0; n <= options.Nmax; n++) {
+    if (moved[n] > result.largest) {
+      result.largest      = moved[n];
+      result.largest_site = n;
+    }
+    if (moved[n] > options.sensitivity_tolerance && !result.from_site) result.from_site = n;
+  }
   return result;
 }
 

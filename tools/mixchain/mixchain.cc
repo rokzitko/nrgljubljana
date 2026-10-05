@@ -32,7 +32,6 @@
 #include "load.hpp"
 #include "mesh.hpp"
 #include "parser.hpp"
-#include "precision.hpp"
 #include "star.hpp"
 #include "star_io.hpp"
 #include "types.hpp"
@@ -166,7 +165,6 @@ struct Configuration {
   StarOptions star;
   bool mmax_from_nmax{};
   ChainOptions chain;
-  unsigned int preccpp{};
   bool discretization_files{}; // write the chain also as one file per matrix element, beside chain.dat
 };
 
@@ -220,20 +218,16 @@ void read_chain_configuration(const Params &P, Configuration &configuration) {
   if (!(std::isfinite(configuration.chain.rank_tolerance) && configuration.chain.rank_tolerance > 0.0))
     throw std::invalid_argument("rank_tolerance must be a positive finite number.");
 
+  configuration.chain.sensitivity_tolerance = P.P("sensitivity_tolerance", 1e-10);
+  if (!(std::isfinite(configuration.chain.sensitivity_tolerance) && configuration.chain.sensitivity_tolerance > 0.0))
+    throw std::invalid_argument("sensitivity_tolerance must be a positive finite number.");
+
   configuration.discretization_files = P.Pbool("discretization_files", false);
 
   configuration.chain.gauge = chain_gauge_from_string(P.Pstr("chain_gauge", "polar"));
   configuration.chain.nambu_tolerance = P.P("nambu_tolerance", 1e-8);
   if (!(std::isfinite(configuration.chain.nambu_tolerance) && configuration.chain.nambu_tolerance > 0.0))
     throw std::invalid_argument("nambu_tolerance must be a positive finite number.");
-
-  // As in nrgchain, in bits. It is rounded up to the precision ladder of precision.hpp. The default is the 200-digit
-  // rung: the recursion loses about Nmax*log10(Lambda) digits to cancellation, on top of the 16 of the star, and 200
-  // covers that far beyond any chain in use, while 800 costs a factor of twenty in the chain stage for nothing.
-  const auto preccpp = P.Pint("preccpp", 664);
-  if (preccpp <= 10) throw std::invalid_argument("preccpp must be greater than 10.");
-  configuration.preccpp = static_cast<unsigned int>(preccpp);
-  resolve_precision(configuration.preccpp); // fail before the star stage runs, not after it
 }
 
 Configuration read_configuration(const Params &P, const CommandLineOptions &command_line) {
@@ -265,9 +259,8 @@ void report_configuration(const Configuration &configuration, const CommandLineO
   if (builds_star(command_line.mode)) report_star_configuration(configuration, command_line, report);
   if (builds_chain(command_line.mode)) {
     report.value("Nmax", configuration.chain.Nmax);
-    report.value("preccpp", configuration.preccpp);
-    report.resolved("digits", resolve_precision(configuration.preccpp), "smallest precision rung covering preccpp");
     report.value("rank_tolerance", configuration.chain.rank_tolerance);
+    report.value("sensitivity_tolerance", configuration.chain.sensitivity_tolerance);
     report.value("discretization_files", configuration.discretization_files);
     report.value("chain_gauge", chain_gauge_name(configuration.chain.gauge));
     if (configuration.chain.gauge == ChainGauge::nambu)
@@ -428,9 +421,10 @@ void check_star_against_parameters(const Star<S> &star, const Params &P, const T
 }
 
 template<typename S>
-void report_chain(const Chain<S> &chain, const unsigned digits, const ChainFileHeader &header, std::ostream &out) {
+void report_chain(const Chain<S> &chain, const ChainFileHeader &header, const double sensitivity_tolerance,
+                  std::ostream &out) {
   const auto &d = chain.diagnostics;
-  out << "# chain: sites=" << chain.Nmax + 1 << " channels=" << chain.channels << " digits=" << digits
+  out << "# chain: sites=" << chain.Nmax + 1 << " channels=" << chain.channels
       << " gauge=" << chain_gauge_name(chain.gauge) << std::endl;
   if (chain.gauge == ChainGauge::nambu)
     out << "# the Nambu structure of the blocks holds to " << d.max_nambu_deviation
@@ -439,8 +433,6 @@ void report_chain(const Chain<S> &chain, const unsigned digits, const ChainFileH
   out << "# levels=" << d.levels << " coupled_levels=" << d.coupled_levels << " theta_rank=" << d.theta_rank
       << " theta_condition=" << d.theta_condition
       << " min_residual_condition=" << d.min_residual_condition << std::endl;
-  out << "# max_antihermitian=" << d.max_antihermitian << " max_reorthogonalization=" << d.max_reorthogonalization
-      << std::endl;
   // From the site where the chain reaches the untabulated region of the input, its coefficients rest on the constant
   // continuation of the input rather than on data. Printed in the units of the input.
   if (const auto continued = first_continued_site(chain, header.untabulated_to - header.untabulated_from)) {
@@ -449,6 +441,15 @@ void report_chain(const Chain<S> &chain, const unsigned digits, const ChainFileH
     out << "|omega| < " << header.untabulated_to * header.bandrescale
         << ", where Gamma is not tabulated (extend the input grid to lower |omega|, or lower Nmax)" << std::endl;
   }
+  // How well a star in double precision determines the chain at all.
+  out << "# max_star_sensitivity=" << d.max_star_sensitivity << " at site " << d.max_star_sensitivity_site << std::endl;
+  if (d.sensitive_from_site)
+    out << "# from site " << *d.sensitive_from_site << " on, the chain is determined by the star only to "
+        << sensitivity_tolerance << " or worse (" << d.max_star_sensitivity << " at site "
+        << d.max_star_sensitivity_site << "):" << std::endl
+        << "# levels near an accumulation point of the mesh at a finite energy are not resolved in double precision."
+        << std::endl
+        << "# The coefficients from there on are not reproducible beyond that; a smaller Nmax avoids it." << std::endl;
   // A Theta of lower rank is a property of Gamma, and the chain is exact for it; a drop further down is not.
   if (d.theta_rank < chain.channels) {
     const auto decoupled = chain.channels - d.theta_rank;
@@ -478,21 +479,22 @@ template<typename S0> void run_chain(const Configuration &configuration, const P
   if (!target.directory.empty()) std::cout << "# --- z=" << *target.z << " in " << target.directory.string() << "/" << std::endl;
   const auto star = load_star<S0>(star_file);
   check_star_against_parameters(star, P, target, star_file);
-  const auto digits     = resolve_precision(configuration.preccpp);
   const auto chain_file = target.file(chain_default_filename);
-  const ChainFileHeader header{star.z, star.Lambda, star.bandrescale, digits,
+  const ChainFileHeader header{star.z, star.Lambda, star.bandrescale,
                                star.untabulated_known ? star.untabulated_from : 0.0,
                                star.untabulated_known ? star.untabulated_to : 0.0};
-  with_precision_like<S0>(configuration.preccpp, [&]<typename S>() {
-    const auto chain = build_chain<S>(star, configuration.chain);
-    report_chain(chain, digits, header, std::cout);
-    save_chain(chain, header, chain_file);
-    if (configuration.discretization_files) {
-      save_chain_matrix_files(chain, header, target.directory);
-      std::cout << "# matrix files written to " << (target.directory.empty() ? "." : target.directory.string())
-                << std::endl;
-    }
-  });
+  auto chain             = build_chain(star, configuration.chain);
+  const auto sensitivity = star_sensitivity(star, configuration.chain);
+  chain.diagnostics.max_star_sensitivity      = sensitivity.largest;
+  chain.diagnostics.max_star_sensitivity_site = sensitivity.largest_site;
+  chain.diagnostics.sensitive_from_site       = sensitivity.from_site;
+  report_chain(chain, header, configuration.chain.sensitivity_tolerance, std::cout);
+  save_chain(chain, header, chain_file);
+  if (configuration.discretization_files) {
+    save_chain_matrix_files(chain, header, target.directory);
+    std::cout << "# matrix files written to " << (target.directory.empty() ? "." : target.directory.string())
+              << std::endl;
+  }
   std::cout << "# chain written to " << chain_file << std::endl;
   std::cout << "# chain z=" << star.z << ": " << seconds_since(start) << " s" << std::endl;
 }
