@@ -35,8 +35,15 @@ namespace {
 
 // The target of the scalar chain qualification.
 constexpr double budget = 2e-12;
-// How far beyond the one-ulp sensitivity of the reference an ill-conditioned case may be.
-constexpr double sensitivity_margin = 10.0;
+// How far beyond the one-ulp sensitivity of the reference an ill-conditioned case may be. The rotations are backward
+// stable: their result is the exact chain of a star that differs from the given one by a modest multiple of rounding,
+// not by one unit in the last place, since every level passes through as many rotations as the band has rows. So the
+// error is that sensitivity times a factor of order ten that depends on the compiler and the architecture; the margin
+// leaves room for it while still failing on a loss of orders of magnitude.
+constexpr double sensitivity_margin = 100.0;
+// The sensitivity is the largest over this many random choices of direction; a single one scatters by a factor of a
+// few from site to site.
+constexpr unsigned int sensitivity_samples = 4;
 // The two precisions of the reference must agree to this.
 constexpr double reference_agreement = 1e-30;
 
@@ -109,8 +116,8 @@ template<typename S0> Star<S0> star_of(const Case &c) {
 }
 
 // The same star with every number moved by one unit in the last place, up or down.
-template<typename S0> Star<S0> one_ulp_away(Star<S0> star) {
-  std::mt19937 generator(20261005);
+template<typename S0> Star<S0> one_ulp_away(Star<S0> star, const unsigned int seed) {
+  std::mt19937 generator(seed);
   const auto nudge = [&generator](const double x) { return std::nextafter(x, generator() % 2 ? 2.0 * x : 0.0); };
   for (auto &level : star.levels) {
     level.energy = nudge(level.energy);
@@ -226,8 +233,11 @@ template<typename S0> void qualify(const Case &c) {
   }
 
   // Ill-conditioned: how far the exact chain moves when the star changes by one unit in the last place.
-  const auto moved       = convert_chain<S0>(lanczos<S0, low_digits>(one_ulp_away(star), c.nmax));
-  const auto sensitivity = errors(moved, reference).worst();
+  double sensitivity = 0.0;
+  for (unsigned int seed = 1; seed <= sensitivity_samples; seed++) {
+    const auto moved = convert_chain<S0>(lanczos<S0, low_digits>(one_ulp_away(star, seed), c.nmax));
+    sensitivity      = std::max(sensitivity, errors(moved, reference).worst());
+  }
   const auto allowed     = std::max(budget, sensitivity_margin * sensitivity);
   std::printf("  one-ulp sensitivity %.1e\n", sensitivity);
   if (e.worst() > budget)
