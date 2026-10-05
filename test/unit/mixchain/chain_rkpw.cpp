@@ -18,7 +18,8 @@ using namespace NRG::MixChain;
 namespace {
 
 // The reference: block Lanczos at 50 digits, on the same star.
-using Real = WideReal<50>;
+using Real    = WideReal<50>;
+using Complex = WideComplex<50>;
 
 // The target of the scalar chain qualification, test/CHAIN_QUALIFICATION.md.
 constexpr double budget = 2e-12;
@@ -48,16 +49,49 @@ GammaInput<double> input_of(const std::function<Matrix<double>(double)> &positiv
 }
 
 Star<double> star_of(const std::function<Matrix<double>(double)> &positive,
-                     const std::function<Matrix<double>(double)> &negative, const unsigned int mmax) {
+                     const std::function<Matrix<double>(double)> &negative, const unsigned int mmax,
+                     const bool split = true) {
   StarOptions options;
-  options.Lambda = NRG::Tools::LambdaCache(lambda_value);
-  options.z      = 1.0;
-  options.mMAX   = mmax;
+  options.Lambda       = NRG::Tools::LambdaCache(lambda_value);
+  options.z            = 1.0;
+  options.mMAX         = mmax;
+  options.split_blocks = split;
   return build_star(input_of(positive, negative), options);
 }
 
-Star<double> star_of(const std::function<Matrix<double>(double)> &gamma, const unsigned int mmax) {
-  return star_of(gamma, gamma, mmax);
+Star<double> star_of(const std::function<Matrix<double>(double)> &gamma, const unsigned int mmax,
+                     const bool split = true) {
+  return star_of(gamma, gamma, mmax, split);
+}
+
+template<typename S> double largest(const Matrix<S> &m) { return m.cwiseAbs().maxCoeff(); }
+
+// The whole chain against block Lanczos at 50 digits on the same star: V and the hoppings relative to their largest
+// element, the on-site blocks on the scale of their site.
+template<typename S0> void expect_matches_lanczos(const Chain<S0> &chain, const Star<S0> &star, const double tolerance) {
+  const auto reference = [&] {
+    if constexpr (is_complex_v<S0>)
+      return convert_chain<S0>(build_chain<Complex>(star, [&] {
+        ChainOptions options;
+        options.Nmax = chain.Nmax;
+        return options;
+      }()));
+    else
+      return convert_chain<S0>(build_chain<Real>(star, [&] {
+        ChainOptions options;
+        options.Nmax = chain.Nmax;
+        return options;
+      }()));
+  }();
+  EXPECT_EQ(chain.diagnostics.theta_rank, reference.diagnostics.theta_rank);
+  EXPECT_EQ(chain.diagnostics.hopping_ranks, reference.diagnostics.hopping_ranks);
+  EXPECT_LT(largest<S0>(chain.V - reference.V), tolerance * largest(reference.V));
+  for (unsigned int n = 0; n <= chain.Nmax; n++) {
+    const auto hopping = largest(reference.T[n]);
+    const auto scale   = std::max({largest(reference.E[n]), hopping, n > 0 ? largest(reference.T[n - 1]) : 0.0});
+    EXPECT_LE(largest<S0>(chain.T[n] - reference.T[n]), tolerance * hopping) << "site " << n;
+    EXPECT_LE(largest<S0>(chain.E[n] - reference.E[n]), tolerance * scale) << "site " << n;
+  }
 }
 
 std::function<Matrix<double>(double)> scalar(const std::function<double(double)> &density) {
@@ -306,12 +340,295 @@ TEST(MixChainRkpw, rejects_what_it_cannot_map) { // NOLINT
   EXPECT_THROW(build_chain_rkpw(arbitrary_star<double>(1, 4), chain_options(3)), std::invalid_argument);
   EXPECT_NO_THROW(build_chain_rkpw(arbitrary_star<double>(1, 5), chain_options(3)));
   EXPECT_THROW(build_chain_rkpw(arbitrary_star<double>(1, 12), chain_options(0)), std::invalid_argument);
-  // Blocks of several channels are not handled yet.
-  EXPECT_THROW(build_chain_rkpw(arbitrary_star<double>(2, 12), chain_options(3)), std::invalid_argument);
+  // With 2 channels, 2*(4+1) = 10 levels.
+  EXPECT_THROW(build_chain_rkpw(arbitrary_star<double>(2, 9), chain_options(3)), std::invalid_argument);
+  EXPECT_NO_THROW(build_chain_rkpw(arbitrary_star<double>(2, 10), chain_options(3)));
   // The nambu gauge needs blocks of two channels, as with block Lanczos.
   auto options  = chain_options(3);
   options.gauge = ChainGauge::nambu;
   EXPECT_THROW(build_chain_rkpw(arbitrary_star<double>(1, 12), options), std::invalid_argument);
+}
+
+// BLOCKS OF SEVERAL CHANNELS
+
+TEST(MixChainRkpw, arbitrary_stars_of_several_channels_match_the_multiprecision_chain) { // NOLINT
+  for (const int channels : {2, 3, 4}) {
+    const auto real = arbitrary_star<double>(channels, 24 * channels);
+    expect_matches_lanczos(build_chain_rkpw(real, chain_options(8)), real, budget);
+    const auto complex = arbitrary_star<std::complex<double>>(channels, 24 * channels);
+    expect_matches_lanczos(build_chain_rkpw(complex, chain_options(8)), complex, budget);
+  }
+}
+
+TEST(MixChainRkpw, a_gamma_with_turning_eigenvectors_matches_the_multiprecision_chain) { // NOLINT
+  // Two bands of different shape, mixed by an angle that depends on the frequency and differs between the branches.
+  const auto gamma = [](const double shift) {
+    return [shift](const double omega) {
+      const auto angle = 0.4 + shift + 0.8 * omega;
+      Matrix<double> u(2, 2);
+      u << std::cos(angle), -std::sin(angle), std::sin(angle), std::cos(angle);
+      return Matrix<double>(u * diagonal_of(0.7 - 0.2 * omega, 0.2 + 0.3 * omega * omega) * u.transpose());
+    };
+  };
+  for (const auto &[mmax, nmax] : {std::pair{40U, 12U}, std::pair{100U, 40U}}) {
+    const auto star = star_of(gamma(0.0), gamma(0.5), mmax);
+    ASSERT_EQ(star.blocks.size(), 1U);
+    expect_matches_lanczos(build_chain_rkpw(star, chain_options(nmax)), star, budget);
+  }
+}
+
+TEST(MixChainRkpw, degenerate_flat_band_gives_the_scalar_chain_times_the_identity) { // NOLINT
+  // Kept whole: the two branches of every interval share their energy.
+  const auto star =
+    star_of([](const double) { return Matrix<double>(0.3 * Matrix<double>::Identity(2, 2)); }, 80, false);
+  const auto chain = build_chain_rkpw(star, chain_options(12));
+  for (unsigned int n = 0; n <= chain.Nmax; n++) {
+    const auto xi = flat_band_xi(static_cast<int>(n));
+    EXPECT_LT(largest<double>(chain.T[n] - xi * Matrix<double>::Identity(2, 2)), 1e-13 * xi) << "site " << n;
+    EXPECT_LT(largest(chain.E[n]), 1e-13 * xi) << "site " << n;
+  }
+}
+
+TEST(MixChainRkpw, is_covariant_under_a_constant_rotation) { // NOLINT
+  const auto densities = [](const double omega) { return diagonal_of(0.5 + 0.1 * omega, 0.2 + 0.05 * omega); };
+  Matrix<double> u(2, 2);
+  u << std::cos(0.7), -std::sin(0.7), std::sin(0.7), std::cos(0.7);
+
+  const auto plain   = build_chain_rkpw(star_of(densities, 40, false), chain_options(8));
+  const auto rotated = build_chain_rkpw(
+    star_of([&](const double omega) { return Matrix<double>(u * densities(omega) * u.transpose()); }, 40),
+    chain_options(8));
+  // Every block rotates with U; the polar gauge involves no preferred basis.
+  EXPECT_LT(largest<double>(rotated.V - u * plain.V * u.transpose()), 1e-11);
+  for (unsigned int n = 0; n <= plain.Nmax; n++) {
+    EXPECT_LT(largest<double>(rotated.E[n] - u * plain.E[n] * u.transpose()), 1e-11) << "site " << n;
+    EXPECT_LT(largest<double>(rotated.T[n] - u * plain.T[n] * u.transpose()), 1e-11) << "site " << n;
+  }
+}
+
+TEST(MixChainRkpw, a_diagonal_gamma_kept_whole_gives_independent_scalar_chains) { // NOLINT
+  const auto first  = [](const double omega) { return 0.8 - 0.1 * omega; };
+  const auto second = [](const double omega) { return 0.3 + 0.1 * omega; };
+  const auto joint  = build_chain_rkpw(
+    star_of([&](const double omega) { return diagonal_of(first(omega), second(omega)); }, 40, false), chain_options(8));
+  ASSERT_EQ(joint.blocks.size(), 1U);
+
+  for (const auto &[density, channel] : {std::pair{std::function<double(double)>(first), 0},
+                                         std::pair{std::function<double(double)>(second), 1}}) {
+    const auto alone = build_chain_rkpw(star_of(scalar(density), 40), chain_options(8));
+    for (unsigned int n = 0; n <= joint.Nmax; n++) {
+      const auto xi = alone.T[n](0, 0);
+      EXPECT_NEAR(joint.T[n](channel, channel), xi, 1e-12 * xi) << "site " << n;
+      EXPECT_LT(std::abs(joint.T[n](0, 1)), 1e-13 * xi) << "site " << n; // the channels stay decoupled
+      EXPECT_NEAR(joint.E[n](channel, channel), alone.E[n](0, 0), 1e-12) << "site " << n;
+      EXPECT_LT(std::abs(joint.E[n](0, 1)), 1e-13) << "site " << n;
+    }
+  }
+}
+
+TEST(MixChainRkpw, a_singular_theta_gives_a_zero_chain_for_the_decoupled_combination) { // NOLINT
+  // Every coupling is c_k (1, i): the chiral case, where Theta has rank 1 of 2. Along u = (1, i)/sqrt(2) the chain is
+  // that of the scalar star with couplings c_k, with V scaled by sqrt(2): every block is the scalar one times the
+  // projector u u^dag.
+  const auto scalar_star = arbitrary_star<double>(1, 12);
+  Star<std::complex<double>> star;
+  star.channels = 2;
+  for (const auto &scalar_level : scalar_star.levels) {
+    StarLevel<std::complex<double>> level;
+    level.energy   = scalar_level.energy;
+    level.coupling = Vector<std::complex<double>>(2);
+    level.coupling << std::complex<double>(scalar_level.coupling(0), 0.0), std::complex<double>(0.0, scalar_level.coupling(0));
+    star.levels.push_back(level);
+  }
+  Matrix<std::complex<double>> projector(2, 2);
+  projector << 0.5, std::complex<double>(0.0, -0.5), std::complex<double>(0.0, 0.5), 0.5;
+
+  const auto reference = build_chain_rkpw(scalar_star, chain_options(4));
+  const auto chain     = build_chain_rkpw(star, chain_options(4));
+  EXPECT_EQ(chain.diagnostics.theta_rank, 1);
+  EXPECT_EQ(chain.diagnostics.min_rank, 1);
+  EXPECT_FALSE(chain.diagnostics.rank_drop_site.has_value());
+  using M = Matrix<std::complex<double>>;
+  EXPECT_LT(largest<std::complex<double>>(chain.V - M(std::sqrt(2.0) * reference.V(0, 0) * projector)), 1e-13);
+  for (unsigned int n = 0; n <= chain.Nmax; n++) {
+    EXPECT_LT(largest<std::complex<double>>(chain.E[n] - M(reference.E[n](0, 0) * projector)), 1e-13) << "site " << n;
+    EXPECT_LT(largest<std::complex<double>>(chain.T[n] - M(reference.T[n](0, 0) * projector)), 1e-13) << "site " << n;
+  }
+}
+
+TEST(MixChainRkpw, a_rank_drop_mid_chain_continues_with_zeros) { // NOLINT
+  // A diagonal star kept whole: channel 0 has 12 levels, channel 1 only 2, so the Krylov space of channel 1 runs out
+  // after two sites. The hopping T_1 has rank 1, and the chain of channel 1 is zero from site 2 on. The band matrix of
+  // the rotations does not show this by itself; the second stage restores it. Also for the same star turned by a
+  // constant angle, where no element is exactly zero.
+  const auto first  = arbitrary_star<double>(1, 12);
+  const auto second = arbitrary_star<double>(1, 2);
+  Star<double> star;
+  star.channels = 2;
+  for (const auto &[part, channel] : {std::pair{&first, 0}, std::pair{&second, 1}})
+    for (const auto &scalar_level : part->levels) {
+      StarLevel<double> level;
+      level.energy            = scalar_level.energy;
+      level.coupling          = Vector<double>::Zero(2);
+      level.coupling(channel) = scalar_level.coupling(0);
+      star.levels.push_back(level);
+    }
+  Matrix<double> u(2, 2);
+  u << std::cos(0.7), -std::sin(0.7), std::sin(0.7), std::cos(0.7);
+  auto turned = star;
+  for (auto &level : turned.levels) level.coupling = (u * level.coupling).eval();
+
+  const auto alone_first = build_chain_rkpw(first, chain_options(4));
+  auto second_padded     = second; // padded with levels without coupling, so that a chain can be asked for at all
+  for (int k = 0; k < 2; k++) {
+    StarLevel<double> level;
+    level.energy   = 0.9 * std::pow(3.0, -k);
+    level.coupling = Vector<double>::Zero(1);
+    second_padded.levels.push_back(level);
+  }
+  const auto alone_second = build_chain_rkpw(second_padded, chain_options(1));
+
+  for (const bool rotate : {false, true}) {
+    const auto chain = build_chain_rkpw(rotate ? turned : star, chain_options(4));
+    EXPECT_EQ(chain.diagnostics.theta_rank, 2);
+    EXPECT_EQ(chain.diagnostics.hopping_ranks, (std::vector<int>{2, 1, 1, 1, 1}));
+    EXPECT_EQ(chain.diagnostics.min_rank, 1);
+    ASSERT_TRUE(chain.diagnostics.rank_drop_site.has_value());
+    EXPECT_EQ(*chain.diagnostics.rank_drop_site, 1U);
+    const Matrix<double> back = rotate ? Matrix<double>(u.transpose()) : Matrix<double>(Matrix<double>::Identity(2, 2));
+    for (unsigned int n = 0; n <= chain.Nmax; n++) {
+      const Matrix<double> onsite  = back * chain.E[n] * back.transpose();
+      const Matrix<double> hopping = back * chain.T[n] * back.transpose();
+      EXPECT_NEAR(onsite(0, 0), alone_first.E[n](0, 0), 1e-13) << "site " << n;
+      EXPECT_NEAR(onsite(1, 1), n <= 1 ? alone_second.E[n](0, 0) : 0.0, 1e-13) << "site " << n;
+      EXPECT_LT(std::abs(onsite(0, 1)), 1e-13) << "site " << n;
+      EXPECT_NEAR(hopping(0, 0), alone_first.T[n](0, 0), 1e-13) << "site " << n;
+      EXPECT_NEAR(hopping(1, 1), n == 0 ? alone_second.T[0](0, 0) : 0.0, 1e-13) << "site " << n;
+      EXPECT_LT(std::abs(hopping(0, 1)), 1e-13) << "site " << n;
+    }
+    expect_matches_lanczos(chain, rotate ? turned : star, 1e-12);
+  }
+}
+
+TEST(MixChainRkpw, a_star_with_too_few_coupled_levels_ends_early) { // NOLINT
+  // 7 of the 12 levels couple: three full sites of two channels and one orbital of the fourth.
+  auto star = arbitrary_star<double>(2, 12);
+  for (std::size_t k = 7; k < 12; k++) star.levels[k].coupling.setZero();
+  const auto chain = build_chain_rkpw(star, chain_options(4));
+  EXPECT_EQ(chain.diagnostics.coupled_levels, 7);
+  EXPECT_EQ(chain.diagnostics.hopping_ranks, (std::vector<int>{2, 2, 1, 0, 0}));
+  ASSERT_TRUE(chain.diagnostics.rank_drop_site.has_value());
+  EXPECT_EQ(*chain.diagnostics.rank_drop_site, 2U);
+  EXPECT_EQ(largest(chain.T[3]), 0.0);
+  EXPECT_EQ(largest(chain.E[4]), 0.0);
+  expect_matches_lanczos(chain, star, 1e-12);
+}
+
+TEST(MixChainRkpw, a_weak_channel_below_the_rank_tolerance_counts_as_decoupled) { // NOLINT
+  // The eigenvalues of Theta are 25 orders of magnitude apart, below the rank tolerance of 1e-20.
+  const auto whole = build_chain_rkpw(star_of([](const double) { return diagonal_of(0.3, 0.3e-25); }, 40, false),
+                                      chain_options(8));
+  EXPECT_EQ(whole.diagnostics.theta_rank, 1);
+  EXPECT_EQ(whole.V(1, 1), 0.0);
+  for (unsigned int n = 0; n <= whole.Nmax; n++) EXPECT_EQ(whole.T[n](1, 1), 0.0);
+}
+
+TEST(MixChainRkpw, blocks_are_placed_in_their_channels) { // NOLINT
+  // Channels 1 and 3 are coupled, channel 2 is on its own.
+  GammaInput<std::complex<double>> input;
+  input.channels = 3;
+  for (int k = 0; k <= 100; k++) {
+    const auto omega = 0.01 * k;
+    Matrix<std::complex<double>> m = Matrix<std::complex<double>>::Zero(3, 3);
+    m(0, 0) = 0.5 + 0.2 * omega;
+    m(1, 1) = 0.3 + omega * omega;
+    m(2, 2) = 0.4 - 0.1 * omega;
+    m(0, 2) = std::complex<double>(0.1 * omega, 0.05);
+    m(2, 0) = std::conj(m(0, 2));
+    for (auto *branch : {&input.pos, &input.neg}) {
+      branch->omega.push_back(omega);
+      branch->gamma.push_back(m);
+    }
+  }
+  StarOptions options;
+  options.Lambda = NRG::Tools::LambdaCache(lambda_value);
+  options.z      = 1.0;
+  options.mMAX   = 20;
+  const auto star = build_star(input, options);
+  ASSERT_EQ(star.blocks, (Blocks{{0, 2}, {1}}));
+
+  const auto chain = build_chain_rkpw(star, chain_options(6));
+  EXPECT_EQ(chain.blocks, star.blocks);
+  const auto zero  = std::complex<double>(0.0, 0.0);
+  const auto check = [&zero](const Matrix<std::complex<double>> &m) {
+    for (const int i : {0, 2}) {
+      EXPECT_EQ(m(i, 1), zero);
+      EXPECT_EQ(m(1, i), zero);
+    }
+    EXPECT_EQ(m(1, 1).imag(), 0.0);
+  };
+  check(chain.V);
+  for (const auto &block : chain.E) check(block);
+  for (const auto &block : chain.T) check(block);
+  expect_matches_lanczos(chain, star, budget);
+}
+
+TEST(MixChainRkpw, the_nambu_gauge_puts_the_blocks_into_the_nambu_structure) { // NOLINT
+  // A Nambu-symmetric bath: the normal part is flat and equal for the particle and the hole, and the anomalous part
+  // is odd in omega.
+  const double rho = 0.3, anomalous = 0.1;
+  const auto block = [](const double diagonal, const double offdiagonal) {
+    Matrix<double> m(2, 2);
+    m << diagonal, offdiagonal, offdiagonal, diagonal;
+    return m;
+  };
+  const auto star = star_of([&](const double) { return block(rho, anomalous); },
+                            [&](const double) { return block(rho, -anomalous); }, 40);
+  ASSERT_EQ(star.blocks.size(), 1U);
+
+  auto options     = chain_options(8);
+  const auto polar = build_chain_rkpw(star, options);
+  options.gauge    = ChainGauge::nambu;
+  const auto nambu = build_chain_rkpw(star, options);
+  EXPECT_EQ(nambu.gauge, ChainGauge::nambu);
+  EXPECT_LT(nambu.diagnostics.max_nambu_deviation, 1e-11);
+  EXPECT_LT(std::abs(nambu.V(1, 1) + nambu.V(0, 0)), 1e-13);
+  for (unsigned int n = 0; n <= nambu.Nmax; n++) {
+    const auto scale = largest(polar.T[n]);
+    EXPECT_LT(std::abs(nambu.E[n](1, 1) + nambu.E[n](0, 0)), 1e-11 * scale) << "site " << n;
+    EXPECT_LT(std::abs(nambu.T[n](1, 1) + nambu.T[n](0, 0)), 1e-11 * scale) << "site " << n;
+    EXPECT_EQ(nambu.T[n](0, 0), polar.T[n](0, 0)) << "site " << n; // the gauge only flips signs
+    EXPECT_EQ(nambu.T[n](1, 1), -polar.T[n](1, 1)) << "site " << n;
+  }
+  expect_matches_lanczos(polar, star, budget);
+  // A generic 2x2 star is one block, but its chain has no Nambu structure.
+  EXPECT_THROW(build_chain_rkpw(arbitrary_star<double>(2, 12), [] {
+    auto refused  = chain_options(3);
+    refused.gauge = ChainGauge::nambu;
+    return refused;
+  }()), std::runtime_error);
+}
+
+TEST(MixChainRkpw, real_data_in_complex_arithmetic_stays_real) { // NOLINT
+  const auto real = arbitrary_star<double>(2, 24);
+  Star<std::complex<double>> star;
+  star.channels = 2;
+  for (const auto &real_level : real.levels) {
+    StarLevel<std::complex<double>> level;
+    level.energy   = real_level.energy;
+    level.coupling = real_level.coupling.cast<std::complex<double>>();
+    star.levels.push_back(level);
+  }
+  const auto chain    = build_chain_rkpw(star, chain_options(5));
+  const auto expected = build_chain_rkpw(real, chain_options(5));
+  const auto check    = [](const Matrix<std::complex<double>> &m, const Matrix<double> &reference) {
+    EXPECT_LT(largest<std::complex<double>>(m - reference.cast<std::complex<double>>()), 1e-13);
+  };
+  check(chain.V, expected.V);
+  for (unsigned int n = 0; n <= chain.Nmax; n++) {
+    check(chain.E[n], expected.E[n]);
+    check(chain.T[n], expected.T[n]);
+  }
 }
 
 int main(int argc, char **argv) {

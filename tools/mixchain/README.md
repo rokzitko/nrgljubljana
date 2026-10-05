@@ -104,7 +104,7 @@ is the same.
 | `allowed_error` | `1e-10` | star | Default relative tolerance of the integral method. |
 | `hermiticity_tolerance` | `1e-8` | star | Allowed deviation of the input from a Hermitian matrix. |
 | `Nmax` | required | chain | Last site of the chain, which has the sites `0..Nmax` and the hoppings `T_0..T_Nmax`. |
-| `tridiag_method` | `lanczos` | chain | `lanczos`, block Lanczos in multiprecision arithmetic, or `rkpw`, plane rotations in double precision. `rkpw` handles blocks of one channel so far. Temporary: `rkpw` will replace `lanczos`. |
+| `tridiag_method` | `lanczos` | chain | `lanczos`, block Lanczos in multiprecision arithmetic, or `rkpw`, plane rotations in double precision. Temporary: `rkpw` will replace `lanczos`. |
 | `preccpp` | `664` | chain | Precision of `lanczos` in bits, as for `nrgchain`; rounded up to the ladder below. Unused by `rkpw`. |
 | `discretization_files` | `false` | chain | Also write the chain as one file per matrix element, beside `chain.dat`. |
 | `chain_gauge` | `polar` | chain | `polar` or `nambu`; see Gauge below. |
