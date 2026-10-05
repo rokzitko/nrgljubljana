@@ -110,6 +110,7 @@ is the same.
 | `chain_gauge` | `polar` | chain | `polar` or `nambu`; see Gauge below. |
 | `nambu_tolerance` | `1e-8` | chain | How far a block may depart from the Nambu structure before `chain_gauge=nambu` refuses it. |
 | `rank_tolerance` | `1e-20` | chain | Eigenvalue of a Gram matrix, relative to its largest, below which it counts as zero. |
+| `sensitivity_tolerance` | `1e-10` | chain | Relative change of the chain under a change of the star by one unit in the last place above which a site is reported as not determined by the star; see Sensitivity below. |
 
 `boundary` is a fraction of the rescaled band edge, as in `adapt`: a gap $\Delta$ in the units of the input with
 `bandrescale`$=D$ is `boundary`$=\Delta/D$. The `-v` report prints both values.
@@ -253,6 +254,18 @@ instance because too few levels carry weight; the chain is again zero in that di
 an artifact of the star, and a warning names the site. Both are recorded in the header of `chain.dat`. The star must
 have at least `channels*(Nmax+1)` levels.
 
+**Sensitivity.** The star is stored in double precision, so each of its numbers is known to one unit in the last
+place at best. For most stars that moves the chain by rounding. Where the mesh accumulates at a finite energy, as at
+a gap edge, the levels close to it differ in digits that double precision does not hold, and the late sites of the
+chain, which are built from those differences, move by many orders of magnitude more. No method determines them
+better from such a star: multiprecision arithmetic then gives the exact chain of numbers that are not exact. The
+stage measures this for every chain: it maps the star again with every energy and coupling moved by one unit in the
+last place, for four fixed random choices of direction, and compares the chains site by site, the hoppings relative
+to their largest element and the on-site blocks on the scale of their site. `max_star_sensitivity` is the largest
+change, and the first site where it exceeds `sensitivity_tolerance` is reported and recorded in `chain.dat` as
+`sensitive_from_site`. The measurement uses the rotations and the polar gauge whatever `tridiag_method` and
+`chain_gauge` are, and it is an estimate from four samples, good to a factor of a few.
+
 ## Outputs
 
 Both files are written to the working directory, or to `i/` for $z_i$ with `--Nz`.
@@ -379,6 +392,8 @@ is `boundary` times `bandrescale`, and `mesh_weight` is `inactive` without `adap
 | `min_residual_condition=` | Smallest ratio of the nonzero eigenvalues of $R^\dagger R$ along the chain: how close a direction came to being counted as zero by `rank_tolerance`. |
 | `# max_antihermitian=` | With `lanczos` only. Largest anti-Hermitian part removed from an on-site block $E_n$, relative to it: rounding at the working precision. |
 | `max_reorthogonalization=` | With `lanczos` only. Largest component along earlier Lanczos blocks removed from a residual, relative to it: the loss of orthogonality that full reorthogonalization repairs. |
+| `# max_star_sensitivity= at site n` | Largest relative change of the chain when the star changes by one unit in the last place, and where; see Sensitivity. Rounding, about 1e-15, for a mesh that accumulates at zero. |
+| `# from site n on, the chain is determined by the star only to t or worse (...)` | The first site where that change exceeds `sensitivity_tolerance`. The coefficients from there on are not reproducible beyond that precision, with either method; a smaller `Nmax` avoids it. |
 | `# from site n on, the chain samples \|omega\| < w, where Gamma is not tabulated (...)` | From that site on the coefficients rest on the constant continuation of the input rather than on data; extend the input grid to lower $\|\omega\|$, or lower `Nmax`. The region comes from the star (`untabulated` in its header) and is printed in the units of the input, as `a < \|omega\| < w` when the mesh accumulates at $a>0$. The site is the first whose hopping falls below the width of the region, so a mesh accumulating at or above the innermost tabulated frequency, at a gap edge, never reports it. |
 | `# Theta has rank r of N: ...` | $\Gamma$ is rank deficient over the whole band. The chain along the decoupled combinations is zero, which is exact. |
 | `# matrix files written to d` | With `discretization_files`, the directory the per-element files went to. |
@@ -386,7 +401,7 @@ is `boundary` times `bandrescale`, and `mesh_weight` is `inactive` without `adap
 
 `chain.dat` records the same quantities, plus `min_rank`, the smallest rank of a hopping, `rank_drop_site`, the first
 site where it falls below `theta_rank`, and `continued_from_site`, the first site that samples the untabulated
-region of the input (both `none` when they do not happen). With several blocks they are merged over the blocks: ranks and levels
+region of the input, and `sensitive_from_site`, the first site that exceeds `sensitivity_tolerance` (each `none` when it does not happen). With several blocks they are merged over the blocks: ranks and levels
 add up site by site, and the ratios of eigenvalues are taken within each block.
 
 `# Elapsed t s (CPU c s)` closes the log: the wall time, which the stage times add up to, and the CPU time.

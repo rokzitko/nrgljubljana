@@ -127,7 +127,9 @@ template<typename S> void save_chain(const Chain<S> &chain, const ChainFileHeade
       << (continued ? std::to_string(*continued) : std::string("none"))
       << " theta_condition=" << d.theta_condition << " max_antihermitian=" << d.max_antihermitian
       << " max_reorthogonalization=" << d.max_reorthogonalization
-      << " min_residual_condition=" << d.min_residual_condition << std::endl;
+      << " min_residual_condition=" << d.min_residual_condition << " max_star_sensitivity=" << d.max_star_sensitivity
+      << " sensitive_from_site="
+      << (d.sensitive_from_site ? std::to_string(*d.sensitive_from_site) : std::string("none")) << std::endl;
   out << (is_complex_v<S> ? "# block n i j Re Im" : "# block n i j value") << std::endl;
 
   // The recursion runs in the rescaled band; E_n and T_n are written in the units of the input. V is invariant under

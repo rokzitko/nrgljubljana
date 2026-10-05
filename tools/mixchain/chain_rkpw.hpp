@@ -9,6 +9,8 @@
 #include <cstddef>
 #include <limits>
 #include <numeric>
+#include <optional>
+#include <random>
 #include <set>
 #include <stdexcept>
 #include <string>
@@ -334,6 +336,61 @@ template<typename S0> Chain<S0> build_chain_rkpw(const Star<S0> &star, const Cha
   chain.diagnostics = detail::merge_diagnostics(chain.block_diagnostics, options.Nmax + 1);
   if (options.gauge == ChainGauge::nambu) detail::apply_nambu_gauge(chain, options.nambu_tolerance);
   return chain;
+}
+
+// THE SENSITIVITY OF THE CHAIN TO THE STAR
+//
+// The star is stored in double precision, so each of its numbers is known to one unit in the last place at best. For
+// most stars that moves the chain by rounding. Where the mesh accumulates at a finite energy, as at a gap edge, the
+// levels close to it differ in digits that double precision does not hold, and the late sites of the chain, which are
+// built from those differences, move by many orders of magnitude more. No method can determine them better from such
+// a star, in whatever arithmetic it runs: multiprecision then gives the exact chain of numbers that are not exact.
+//
+// This measures it: the chain is built again from the star with every energy and coupling moved by one unit in the
+// last place, up or down at random, for a few fixed choices, and compared site by site, the hoppings relative to
+// their largest element and the on-site blocks on the scale of their site. Always with the rotations, which cost
+// next to nothing, and in the polar gauge.
+struct StarSensitivity {
+  double largest{};
+  unsigned int largest_site{};
+  std::optional<unsigned int> from_site; // the first site above the tolerance
+};
+
+template<typename S0> StarSensitivity star_sensitivity(const Star<S0> &star, ChainOptions options) {
+  options.gauge = ChainGauge::polar;
+  const auto size      = [](const Matrix<S0> &m) { return m.size() ? m.cwiseAbs().maxCoeff() : 0.0; };
+  const auto reference = build_chain_rkpw(star, options);
+  std::vector<double> moved(options.Nmax + 1, 0.0);
+  for (const unsigned int seed : {1U, 2U, 3U, 4U}) {
+    std::mt19937 generator(seed);
+    const auto nudge = [&generator](const double x) { return std::nextafter(x, generator() % 2 ? 2.0 * x : 0.0); };
+    auto other       = star;
+    for (auto &level : other.levels) {
+      level.energy = nudge(level.energy);
+      for (Eigen::Index i = 0; i < level.coupling.size(); i++) {
+        if constexpr (is_complex_v<S0>)
+          level.coupling(i) = S0(nudge(level.coupling(i).real()), nudge(level.coupling(i).imag()));
+        else
+          level.coupling(i) = nudge(level.coupling(i));
+      }
+    }
+    const auto chain = build_chain_rkpw(other, options);
+    for (unsigned int n = 0; n <= options.Nmax; n++) {
+      const auto hopping = size(reference.T[n]);
+      const auto local   = std::max({size(reference.E[n]), hopping, n > 0 ? size(reference.T[n - 1]) : 0.0});
+      if (hopping > 0.0) moved[n] = std::max(moved[n], size(chain.T[n] - reference.T[n]) / hopping);
+      if (local > 0.0) moved[n] = std::max(moved[n], size(chain.E[n] - reference.E[n]) / local);
+    }
+  }
+  StarSensitivity result;
+  for (unsigned int n = 0; n <= options.Nmax; n++) {
+    if (moved[n] > result.largest) {
+      result.largest      = moved[n];
+      result.largest_site = n;
+    }
+    if (moved[n] > options.sensitivity_tolerance && !result.from_site) result.from_site = n;
+  }
+  return result;
 }
 
 } // namespace NRG::MixChain

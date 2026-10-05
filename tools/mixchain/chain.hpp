@@ -76,6 +76,9 @@ struct ChainOptions {
   // How far a block may depart from the Nambu structure before the nambu gauge refuses the chain, relative to the
   // largest element of that block.
   double nambu_tolerance{1e-8};
+  // The chain counts as no longer determined by the star from the first site that moves by more than this when every
+  // number of the star is changed by one unit in the last place; see star_sensitivity() in chain_rkpw.hpp.
+  double sensitivity_tolerance{1e-10};
 };
 
 struct ChainDiagnostics {
@@ -95,6 +98,13 @@ struct ChainDiagnostics {
   int coupled_levels{};
   // In the nambu gauge, the largest departure from the Nambu structure of a block, relative to its largest element.
   double max_nambu_deviation{};
+  // How far the chain moves when every number of the star is changed by one unit in the last place: the largest
+  // relative change of a block, the site where it occurs, and the first site where it exceeds sensitivity_tolerance.
+  // It is a property of the star, not of the method: a chain cannot be known better than this from a star in double
+  // precision. Filled in by the caller from star_sensitivity(); of the whole chain only.
+  double max_star_sensitivity{};
+  unsigned int max_star_sensitivity_site{};
+  std::optional<unsigned int> sensitive_from_site;
 };
 
 template<typename S> struct Chain {

@@ -223,6 +223,10 @@ void read_chain_configuration(const Params &P, Configuration &configuration) {
   if (!(std::isfinite(configuration.chain.rank_tolerance) && configuration.chain.rank_tolerance > 0.0))
     throw std::invalid_argument("rank_tolerance must be a positive finite number.");
 
+  configuration.chain.sensitivity_tolerance = P.P("sensitivity_tolerance", 1e-10);
+  if (!(std::isfinite(configuration.chain.sensitivity_tolerance) && configuration.chain.sensitivity_tolerance > 0.0))
+    throw std::invalid_argument("sensitivity_tolerance must be a positive finite number.");
+
   configuration.discretization_files = P.Pbool("discretization_files", false);
 
   configuration.chain.gauge = chain_gauge_from_string(P.Pstr("chain_gauge", "polar"));
@@ -285,6 +289,7 @@ void report_configuration(const Configuration &configuration, const CommandLineO
       report.resolved("digits", resolve_precision(configuration.preccpp), "smallest precision rung covering preccpp");
     }
     report.value("rank_tolerance", configuration.chain.rank_tolerance);
+    report.value("sensitivity_tolerance", configuration.chain.sensitivity_tolerance);
     report.value("discretization_files", configuration.discretization_files);
     report.value("chain_gauge", chain_gauge_name(configuration.chain.gauge));
     if (configuration.chain.gauge == ChainGauge::nambu)
@@ -445,7 +450,8 @@ void check_star_against_parameters(const Star<S> &star, const Params &P, const T
 }
 
 template<typename S>
-void report_chain(const Chain<S> &chain, const ChainFileHeader &header, std::ostream &out) {
+void report_chain(const Chain<S> &chain, const ChainFileHeader &header, const double sensitivity_tolerance,
+                  std::ostream &out) {
   const auto &d       = chain.diagnostics;
   const bool lanczos = header.method == "lanczos";
   out << "# chain: sites=" << chain.Nmax + 1 << " channels=" << chain.channels;
@@ -470,6 +476,15 @@ void report_chain(const Chain<S> &chain, const ChainFileHeader &header, std::ost
     out << "|omega| < " << header.untabulated_to * header.bandrescale
         << ", where Gamma is not tabulated (extend the input grid to lower |omega|, or lower Nmax)" << std::endl;
   }
+  // How well a star in double precision determines the chain at all. A property of the star, whatever the method.
+  out << "# max_star_sensitivity=" << d.max_star_sensitivity << " at site " << d.max_star_sensitivity_site << std::endl;
+  if (d.sensitive_from_site)
+    out << "# from site " << *d.sensitive_from_site << " on, the chain is determined by the star only to "
+        << sensitivity_tolerance << " or worse (" << d.max_star_sensitivity << " at site "
+        << d.max_star_sensitivity_site << "):" << std::endl
+        << "# levels near an accumulation point of the mesh at a finite energy are not resolved in double precision."
+        << std::endl
+        << "# The coefficients from there on are not reproducible beyond that; a smaller Nmax avoids it." << std::endl;
   // A Theta of lower rank is a property of Gamma, and the chain is exact for it; a drop further down is not.
   if (d.theta_rank < chain.channels) {
     const auto decoupled = chain.channels - d.theta_rank;
@@ -508,8 +523,12 @@ template<typename S0> void run_chain(const Configuration &configuration, const P
                                star.untabulated_known ? star.untabulated_from : 0.0,
                                star.untabulated_known ? star.untabulated_to : 0.0,
                                configuration.tridiag_method};
-  const auto write = [&](const auto &chain) {
-    report_chain(chain, header, std::cout);
+  const auto sensitivity = star_sensitivity(star, configuration.chain);
+  const auto write       = [&](auto chain) {
+    chain.diagnostics.max_star_sensitivity      = sensitivity.largest;
+    chain.diagnostics.max_star_sensitivity_site = sensitivity.largest_site;
+    chain.diagnostics.sensitive_from_site       = sensitivity.from_site;
+    report_chain(chain, header, configuration.chain.sensitivity_tolerance, std::cout);
     save_chain(chain, header, chain_file);
     if (configuration.discretization_files) {
       save_chain_matrix_files(chain, header, target.directory);

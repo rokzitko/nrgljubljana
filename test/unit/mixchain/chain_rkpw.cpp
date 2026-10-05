@@ -631,6 +631,44 @@ TEST(MixChainRkpw, real_data_in_complex_arithmetic_stays_real) { // NOLINT
   }
 }
 
+// THE SENSITIVITY TO THE STAR
+
+TEST(MixChainRkpw, a_star_accumulating_at_zero_determines_its_chain_to_rounding) { // NOLINT
+  const auto sensitivity = star_sensitivity(arbitrary_star<double>(2, 60), chain_options(10));
+  EXPECT_GT(sensitivity.largest, 0.0);
+  EXPECT_LT(sensitivity.largest, 1e-12);
+  EXPECT_FALSE(sensitivity.from_site.has_value());
+}
+
+TEST(MixChainRkpw, a_star_accumulating_at_a_gap_edge_does_not_determine_its_late_sites) { // NOLINT
+  // Levels at +-(0.3 + 0.7 * 2^-m): close to the edge they differ in digits that double precision does not hold.
+  Star<double> star;
+  star.channels = 1;
+  for (int m = 0; m <= 60; m++)
+    for (const double sign : {1.0, -1.0}) {
+      StarLevel<double> level;
+      level.m        = m;
+      level.sign     = sign > 0 ? Sign::POS : Sign::NEG;
+      level.energy   = sign * (0.3 + 0.7 * std::pow(2.0, -m) * (1.0 + 0.1 * std::sin(m)));
+      level.coupling = Vector<double>::Constant(1, std::pow(2.0, -0.5 * m) * (sign > 0 ? 1.0 : 0.8));
+      star.levels.push_back(level);
+    }
+  auto options                  = chain_options(30);
+  options.sensitivity_tolerance = 1e-12;
+  const auto sensitivity        = star_sensitivity(star, options);
+  EXPECT_GT(sensitivity.largest, 1e-12);
+  ASSERT_TRUE(sensitivity.from_site.has_value());
+  EXPECT_GT(*sensitivity.from_site, 5U); // the first sites are still determined
+  EXPECT_LE(*sensitivity.from_site, sensitivity.largest_site);
+
+  // A tolerance above what is found reports no site.
+  options.sensitivity_tolerance = 2.0 * sensitivity.largest;
+  EXPECT_FALSE(star_sensitivity(star, options).from_site.has_value());
+  // The nambu gauge of the options is not applied: the measurement is made in the polar gauge.
+  options.gauge = ChainGauge::nambu;
+  EXPECT_NO_THROW(star_sensitivity(star, options));
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS(); // NOLINT
