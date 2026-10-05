@@ -40,14 +40,12 @@ namespace NRG::MixChain {
 //   z, Lambda    the discretization the star was built with
 //   bandrescale  the band rescaling that was applied to Gamma when it was read
 //   complex      1 if the coefficients are complex, 0 if real. It fixes the number of columns.
-//   digits       with method=lanczos, the decimal digits of the arithmetic the recursion ran in
 //   gauge        'polar', where V and every T_n are Hermitian positive semidefinite, or 'nambu', where the hole
 //                component of every second site is flipped so that each block has the Nambu structure
-//   method       'lanczos', block Lanczos in multiprecision arithmetic, or 'rkpw', plane rotations in double
 //
 // When the star has more than one block, the header is followed by the blocks line of the star file, as in
 // "# blocks= {1,3} {2}": each block was mapped onto a chain of its own, and every element between channels of
-// different blocks is exactly zero. The next line holds the diagnostics of the recursion over the whole chain.
+// different blocks is exactly zero. The next line holds the diagnostics of the whole chain.
 // Columns of a data row:
 //
 //   block  V, E or T
@@ -63,9 +61,7 @@ namespace NRG::MixChain {
 // same factor, and what nrg expects, since its SCALE(N) carries bandrescale as well. V needs no factor: rescaling
 // omega and Gamma leaves the integral of Gamma, hence Theta and V, unchanged.
 //
-// The Lanczos recursion runs in multiprecision because the late coefficients fall off as Lambda^(-n/2), but the
-// result is written as double with 18 significant digits, as nrgchain writes xi.dat: the extra digits are needed to
-// get the recursion right, not to use its result.
+// The values are written with 18 significant digits, as nrgchain writes xi.dat.
 //
 // V is in the normalization of the input: V^2 = Theta = int Gamma domega, whatever Gamma was given. With the
 // convention of the dos file of adapt, where Gamma is pi times the spectral function, that is pi sum_k V_k V_k^dag
@@ -79,18 +75,16 @@ struct ChainFileHeader {
   double z{};
   double Lambda{};
   double bandrescale{1.0};
-  unsigned digits{};
   // The untabulated region of the input as the star records it, untabulated_from < |omega| < untabulated_to in the
   // rescaled band; empty (from == to) when there is none or it is not known.
   double untabulated_from{};
   double untabulated_to{};
-  std::string method{"lanczos"};
 };
 
 namespace detail {
 
-// One element as double: its value, or its real and imaginary parts. Works for double, std::complex<double> and the
-// wide types alike, so a chain can be written in whatever arithmetic it was computed in.
+// One element as double: its value, or its real and imaginary parts. Also for a scalar wider than double, as the
+// reference chain of the tests has.
 template<typename S> void write_element(std::ostream &out, const S &x) {
   out << " " << static_cast<double>(Eigen::numext::real(x));
   if constexpr (is_complex_v<S>) out << " " << static_cast<double>(Eigen::numext::imag(x));
@@ -117,22 +111,19 @@ template<typename S> void save_chain(const Chain<S> &chain, const ChainFileHeade
   out << "# mixchain Wilson chain" << std::endl;
   out << "# channels=" << chain.channels << " Nmax=" << chain.Nmax << " z=" << header.z << " Lambda=" << header.Lambda
       << " bandrescale=" << header.bandrescale << " complex=" << (is_complex_v<S> ? 1 : 0)
-      << (header.method == "lanczos" ? " digits=" + std::to_string(header.digits) : std::string())
-      << " gauge=" << chain_gauge_name(chain.gauge) << " method=" << header.method << std::endl;
+      << " gauge=" << chain_gauge_name(chain.gauge) << std::endl;
   if (chain.blocks.size() > 1) out << "# blocks= " << blocks_name(chain.blocks) << std::endl;
   out << "# levels=" << d.levels << " coupled_levels=" << d.coupled_levels << " theta_rank=" << d.theta_rank
       << " min_rank=" << d.min_rank << " rank_drop_site="
       << (d.rank_drop_site ? std::to_string(*d.rank_drop_site) : std::string("none"))
       << " continued_from_site="
       << (continued ? std::to_string(*continued) : std::string("none"))
-      << " theta_condition=" << d.theta_condition << " max_antihermitian=" << d.max_antihermitian
-      << " max_reorthogonalization=" << d.max_reorthogonalization
-      << " min_residual_condition=" << d.min_residual_condition << " max_star_sensitivity=" << d.max_star_sensitivity
+      << " theta_condition=" << d.theta_condition << " min_residual_condition=" << d.min_residual_condition << " max_star_sensitivity=" << d.max_star_sensitivity
       << " sensitive_from_site="
       << (d.sensitive_from_site ? std::to_string(*d.sensitive_from_site) : std::string("none")) << std::endl;
   out << (is_complex_v<S> ? "# block n i j Re Im" : "# block n i j value") << std::endl;
 
-  // The recursion runs in the rescaled band; E_n and T_n are written in the units of the input. V is invariant under
+  // The chain is built in the rescaled band; E_n and T_n are written in the units of the input. V is invariant under
   // the rescaling and is written as it is.
   detail::write_block(out, "V", 0, chain.V);
   for (unsigned int n = 0; n < chain.E.size(); n++) detail::write_block(out, "E", n, chain.E[n], header.bandrescale);

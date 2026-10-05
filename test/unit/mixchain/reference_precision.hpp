@@ -1,8 +1,8 @@
 // Channel-mixing discretization for NRG
-// ** Multiprecision arithmetic for the block Lanczos step
+// ** Reference for the tests: multiprecision arithmetic for the block Lanczos of reference_lanczos.hpp
 
-#ifndef _mixchain_precision_hpp_
-#define _mixchain_precision_hpp_
+#ifndef _mixchain_test_reference_precision_hpp_
+#define _mixchain_test_reference_precision_hpp_
 
 #include <cmath>
 #include <cstddef>
@@ -15,7 +15,7 @@
 #include <boost/multiprecision/eigen.hpp>
 #include <boost/version.hpp>
 
-#include "types.hpp"
+#include <mixchain/types.hpp>
 
 namespace NRG::MixChain {
 

@@ -14,15 +14,8 @@ adapt --integral N param-nrgchain
 nrgchain -v param-nrgchain 2>nrgchain.err
 grep -q "^  tridiag_method=$method$" nrgchain.err
 
-for file in theta.dat xi.dat zeta.dat; do test -s "$file"; done
+{ cat param; printf '\ndiscretization_files=true\n'; } >param-mixchain
+mixchain -v param-mixchain >mixchain.log 2>&1
 
-# Both methods of mixchain, each against the same nrgchain result.
-for mixchain_method in lanczos rkpw; do
-  rm -f V11.dat T11.dat E11.dat
-  { cat param; printf '\ndiscretization_files=true\ntridiag_method=%s\n' "$mixchain_method"; } >param-mixchain
-  mixchain -v param-mixchain >"mixchain-$mixchain_method.log" 2>&1
-  grep -q "^  tridiag_method=$mixchain_method$" "mixchain-$mixchain_method.log"
-  for file in V11.dat T11.dat E11.dat; do test -s "$file"; done
-  echo "mixchain tridiag_method=$mixchain_method"
-  sh "$3/../compare_nrgchain.sh" 1e-6
-done
+for file in theta.dat xi.dat zeta.dat V11.dat T11.dat E11.dat; do test -s "$file"; done
+sh "$3/../compare_nrgchain.sh" 1e-6

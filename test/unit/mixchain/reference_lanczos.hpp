@@ -1,8 +1,11 @@
 // Channel-mixing discretization for NRG
-// ** Block Lanczos: from the star to the Wilson chain, in multiprecision arithmetic
+// ** Reference for the tests: block Lanczos from the star to the Wilson chain, in multiprecision arithmetic
+//
+// What the tool used before it turned to plane rotations. It is kept as an independent way to the same chain: with
+// full reorthogonalization and enough digits it gives the exact chain of the star it is handed.
 
-#ifndef _mixchain_chain_lanczos_hpp_
-#define _mixchain_chain_lanczos_hpp_
+#ifndef _mixchain_test_reference_lanczos_hpp_
+#define _mixchain_test_reference_lanczos_hpp_
 
 #include <algorithm>
 #include <cstddef>
@@ -15,10 +18,10 @@
 
 #include <Eigen/Dense>
 
-#include "blocks.hpp"
-#include "chain.hpp"
-#include "star.hpp"
-#include "types.hpp"
+#include <mixchain/blocks.hpp>
+#include <mixchain/chain.hpp>
+#include <mixchain/star.hpp>
+#include <mixchain/types.hpp>
 
 namespace NRG::MixChain {
 
@@ -161,7 +164,7 @@ namespace detail {
 // Q_0..Q_{Nmax+1}, which only a test has a use for: stacked side by side they are the unitary that maps the star
 // onto the chain.
 //
-// The star is taken as a single block; build_chain() splits it first.
+// The star is taken as a single block; build_chain_lanczos() splits it first.
 template<typename S>
 Chain<S> block_lanczos(const WideStar<S> &star, const ChainOptions &options, std::vector<Matrix<S>> *lanczos_blocks) {
   using std::sqrt; // for double; the wide types are found by argument-dependent lookup
@@ -212,10 +215,6 @@ Chain<S> block_lanczos(const WideStar<S> &star, const ChainOptions &options, std
     // E_n is Hermitian mathematically, but its (i,j) and (j,i) elements are different sums.
     const Matrix<S> onsite    = blocks[n].adjoint() * hq;
     const Matrix<S> hermitian = half * (onsite + onsite.adjoint());
-    const auto onsite_norm    = hermitian.norm();
-    if (onsite_norm > 0)
-      diagnostics.max_antihermitian =
-        std::max(diagnostics.max_antihermitian, static_cast<double>((onsite - hermitian).norm() / onsite_norm));
     chain.E.push_back(hermitian);
 
     Matrix<S> residual = hq - blocks[n] * chain.E[n];
@@ -228,9 +227,6 @@ Chain<S> block_lanczos(const WideStar<S> &star, const ChainOptions &options, std
     const auto before    = residual.squaredNorm();
     const Matrix<S> once = detail::component_along(residual, blocks);
     residual -= once;
-    if (before > 0)
-      diagnostics.max_reorthogonalization =
-        std::max(diagnostics.max_reorthogonalization, static_cast<double>(sqrt(once.squaredNorm() / before)));
     if (residual.squaredNorm() < before / 2) residual -= detail::component_along(residual, blocks);
 
     const Matrix<S> gram = residual.adjoint() * residual;
@@ -259,7 +255,7 @@ Chain<S> block_lanczos(const WideStar<S> &star, const ChainOptions &options, std
 // 'lanczos_blocks', if given, receives Q_0..Q_{Nmax+1} of the whole star: the blocks of the parts, placed at the rows
 // of their levels and the columns of their channels.
 template<typename S>
-auto build_chain(const WideStar<S> &star, const ChainOptions &options,
+auto build_chain_lanczos(const WideStar<S> &star, const ChainOptions &options,
                  std::vector<Matrix<S>> *lanczos_blocks = nullptr) {
   const auto levels   = star.start.rows();
   const auto channels = static_cast<int>(star.start.cols());
@@ -332,8 +328,8 @@ auto build_chain(const WideStar<S> &star, const ChainOptions &options,
 }
 
 // The same from a star in double precision, widened to S first.
-template<typename S, typename StarScalar> auto build_chain(const Star<StarScalar> &star, const ChainOptions &options) {
-  return build_chain<S>(to_wide<S>(star), options);
+template<typename S, typename StarScalar> auto build_chain_lanczos(const Star<StarScalar> &star, const ChainOptions &options) {
+  return build_chain_lanczos<S>(to_wide<S>(star), options);
 }
 
 // The chain in another arithmetic: narrowing the result of the recursion to double for writing it out, or widening

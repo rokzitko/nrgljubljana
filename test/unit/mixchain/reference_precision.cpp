@@ -7,7 +7,7 @@
 
 #include <Eigen/Dense>
 
-#include <mixchain/precision.hpp>
+#include "reference_precision.hpp"
 #include <mixchain/types.hpp>
 
 using namespace NRG::MixChain;
@@ -34,7 +34,7 @@ template<typename S> double square_root_residual(const S &offdiagonal) {
 
 } // namespace
 
-TEST(MixChainPrecision, resolves_a_request_to_the_smallest_rung_that_covers_it) { // NOLINT
+TEST(MixChainReferencePrecision, resolves_a_request_to_the_smallest_rung_that_covers_it) { // NOLINT
   EXPECT_EQ(resolve_precision(100), 50U);  // 31 digits
   EXPECT_EQ(resolve_precision(166), 50U);  // 50 digits exactly
   EXPECT_EQ(resolve_precision(167), 200U); // just past the first rung
@@ -42,14 +42,14 @@ TEST(MixChainPrecision, resolves_a_request_to_the_smallest_rung_that_covers_it) 
   EXPECT_EQ(resolve_precision(2000), 800U); // the default preccpp of nrgchain, 603 digits
 }
 
-TEST(MixChainPrecision, converts_between_bits_and_digits) { // NOLINT
+TEST(MixChainReferencePrecision, converts_between_bits_and_digits) { // NOLINT
   EXPECT_EQ(digits_for_bits(2000), 603U);
   EXPECT_GE(bits_for_digits(800), 2657U);
   // Every rung must be reachable by some request, or it would be dead code.
   for (const auto rung : precision_ladder) EXPECT_EQ(resolve_precision(bits_for_digits(rung)), rung);
 }
 
-TEST(MixChainPrecision, rejects_a_request_it_cannot_serve) { // NOLINT
+TEST(MixChainReferencePrecision, rejects_a_request_it_cannot_serve) { // NOLINT
   EXPECT_THROW(resolve_precision(10), std::invalid_argument);  // the guard of nrgchain
   EXPECT_THROW(resolve_precision(0), std::invalid_argument);
   EXPECT_THROW(resolve_precision(4000), std::invalid_argument); // beyond the top rung
@@ -61,7 +61,7 @@ TEST(MixChainPrecision, rejects_a_request_it_cannot_serve) { // NOLINT
   }
 }
 
-TEST(MixChainPrecision, dispatches_to_a_real_and_to_a_complex_type) { // NOLINT
+TEST(MixChainReferencePrecision, dispatches_to_a_real_and_to_a_complex_type) { // NOLINT
   for (const bool complex_data : {false, true}) {
     const auto is_complex = with_precision(2000, complex_data, []<typename S>() {
       return static_cast<bool>(Eigen::NumTraits<S>::IsComplex);
@@ -70,7 +70,7 @@ TEST(MixChainPrecision, dispatches_to_a_real_and_to_a_complex_type) { // NOLINT
   }
 }
 
-TEST(MixChainPrecision, carries_far_more_precision_than_double) { // NOLINT
+TEST(MixChainReferencePrecision, carries_far_more_precision_than_double) { // NOLINT
   // The dispatch compiles both branches whatever the flag says at run time, so the body must be valid for a real and
   // for a complex scalar alike: the off-diagonal element is assembled with make_scalar rather than written as S(re, im).
   const auto residual =
@@ -87,7 +87,7 @@ TEST(MixChainPrecision, carries_far_more_precision_than_double) { // NOLINT
   EXPECT_LT(deep, 1e-300);
 }
 
-TEST(MixChainPrecision, the_scalar_traits_cover_the_multiprecision_types) { // NOLINT
+TEST(MixChainReferencePrecision, the_scalar_traits_cover_the_multiprecision_types) { // NOLINT
   static_assert(!is_complex_v<WideReal<50>>);
   static_assert(is_complex_v<WideComplex<50>>);
   static_assert(!is_complex_v<double>);

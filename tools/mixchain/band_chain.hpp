@@ -45,7 +45,7 @@ namespace NRG::MixChain {
 // kept blocks are those of the full reduction.
 //
 // The result does not depend on the order of the levels mathematically, but its rounding error does; see
-// chain_rkpw.hpp for the order to hand them over in.
+// chain.hpp for the order to hand them over in.
 //
 // Nothing is decided about ranks here. A level without coupling passes through untouched and takes a row of the band,
 // so the caller removes those; a pivot that is zero when the entry to annihilate is not is an exact exchange of the

@@ -12,15 +12,14 @@
 #include <Eigen/Dense>
 
 #include <mixchain/chain.hpp>
-#include <mixchain/chain_lanczos.hpp>
-#include <mixchain/chain_rkpw.hpp>
-#include <mixchain/precision.hpp>
+#include "reference_lanczos.hpp"
+#include "reference_precision.hpp"
 
 using namespace NRG::MixChain;
 
 // QUALIFICATION OF THE ROTATIONS FOR SEVERAL CHANNELS
 //
-// How accurate tridiag_method=rkpw is on stars of the kind the tool is used for, over a spread of parameters. The
+// How accurate the chain stage is on stars of the kind the tool is used for, over a spread of parameters. The
 // stars are built here as lists of levels, not by the star stage, so that only the mapping to the chain is tested:
 // the rotations in double precision and block Lanczos in multiprecision see the same numbers. The scalar counterpart
 // is test/unit/nrgchain/scalar_chain_qualification.cpp, described in test/CHAIN_QUALIFICATION.md.
@@ -131,7 +130,7 @@ using Wide = std::conditional_t<is_complex_v<S0>, WideComplex<Digits>, WideReal<
 template<typename S0, unsigned Digits> auto lanczos(const Star<S0> &star, const unsigned int nmax) {
   ChainOptions options;
   options.Nmax = nmax;
-  return build_chain<Wide<S0, Digits>>(star, options);
+  return build_chain_lanczos<Wide<S0, Digits>>(star, options);
 }
 
 template<typename S> auto largest(const Matrix<S> &m) { return m.cwiseAbs().maxCoeff(); }
@@ -205,7 +204,7 @@ template<typename S0> void qualify(const Case &c) {
 
   ChainOptions options;
   options.Nmax     = c.nmax;
-  const auto chain = build_chain_rkpw(star, options);
+  const auto chain = build_chain(star, options);
   EXPECT_EQ(chain.diagnostics.theta_rank, c.channels);
   EXPECT_FALSE(chain.diagnostics.rank_drop_site.has_value());
   for (unsigned int n = 0; n <= c.nmax; n++) {
