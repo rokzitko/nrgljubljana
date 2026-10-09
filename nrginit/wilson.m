@@ -43,25 +43,11 @@ If[TRI == "cpp",
   ];
 ];
 RKPW = TRI == "rkpw" || (MemberQ[{"cpp", "none"}, TRI] && TRIDIAGMETHOD == "rkpw");
-If[TRI == "old",
-  defaultprec = 1000;
-  dothelanczos = dothelanczosold;
-];
-If[TRI == "cpp",
-  defaultprec = 30; (* Should do... *)
-  dothelanczos = dothelanczosold;
-];
-If[TRI == "none",
-  defaultprec = 30;
-  dothelanczos = dothelanczosold;
-];
-If[TRI == "manual" || TRI == "manual_nambu" || TRI == "manual_nambu_new",
-  defaultprec = 30; (* Should be enough *)
-  dothelanczos = loaddiscretizationtables;
-];
-If[RKPW,
-  defaultprec = 30; (* Upstream discretization still uses arbitrary precision. *)
-  dothelanczos = dothelanczosrkpw;
+defaultprec = If[TRI == "old", 1000, 30]; (* Upstream discretization still uses arbitrary precision. *)
+dothelanczos = Which[
+  RKPW, dothelanczosrkpw,
+  MemberQ[{"manual", "manual_nambu", "manual_nambu_new"}, TRI], loaddiscretizationtables,
+  True, dothelanczosold
 ];
 If[option["GENERATE_TEMPLATE"],
   dothelanczos = None;
@@ -174,10 +160,9 @@ If[paramexists["mMAX"], mMAX = ToExpression @ param["mMAX"]];
 MyVPrint[2,"mMAX=", mMAX];
 If[mMAX <= 0 || mMAX >= 999, MyError["Error."]];
 
-(* Override DISCNMAX in the case where the full tridiagonalisation
-   is performed in the C++ part of the code. *)
+(* cpp/none need only the initial-cluster prefix: Ninit + 1 coefficient
+   entries (indices 0 through Ninit), still using the full star set by mMAX. *)
 If[TRI == "cpp" || TRI == "none",
-  (* NOTE: we need to compute Ninit diagonalisation coefficients. *)
   TRUEDISCNMAX = DISCNMAX;
   DISCNMAX = Ninit;
 ];
@@ -256,10 +241,6 @@ If[BAND == "dmft",   (* Run an external module! *)
   timestart["dmft"];
   loadmodule["dmft.m", True]; (* Must supply df, dfminus and thetaCh. *)
   timeadd["dmft"];
-];
-
-If[BAND == "nambu",
-  0; (* Do nothing here *)
 ];
 
 (*
@@ -353,30 +334,23 @@ inittheta0ch[] := Module[{},
   Scan[ If[Negative @ theta0Ch[#], MyError["thetaCh negative"]]&, Range[COEFCHANNELS]];
 ];
 
-(* COMMON CODE: the Lanczos diagonalization proper. de[] must be defined on
-input. de[a, i] is the integral of the hybridisation function of channel 'a'
-multiplied by energy, divided by the integral of the hybridization function
-only: see Eq. (21) in Bulla et al. JPCM 9 10463 (1997). (Also denoted as
+(* COMMON CODE: initialize the scalar star for both reconstruction backends.
+de[] and deminus[] must be defined on input. For Yoshida discretization,
+de[a, m] is the energy-weighted hybridisation integral of channel 'a' in
+shell m divided by its mass: see Eq. (21) in Bulla et al. JPCM 9 10463 (1997). (Also denoted as
 \Epsilon_n!) See also M. Sindel, PhD dissertation (2004), Appendix A:
 "Derivation of the NRG-Equations" and Eqs. (15)-(17) in R. Bulla, Th.
 Pruschke, A. C. Hewson, "Anderson impurity in pseudo-gap Fermi systems",
 JPCM 9 10463 (1997). *)
 
-(* Epsilon_n are sort of average energies in individual discretization
-intervals!! *)
-
 lanczosinit[] := Module[{},
-  (* The algorithm used is a transcription of the procedure described by Kan
+  (* The legacy recursion below follows the procedure described by Kan
   Chen and C. Jayaprakash in "X-ray-edge singularities with nonconstant
   density of states: A renormalization-group approach", Phys. Rev. B 52,
   14436 (1995). Hereafter referenced as CJ. *)
 
-  (* We are considering H_c=\sum_{m=0}^{\infty} \Lambda^{-m} (s_m a_m^\dag
-  a_m-t_m b_m^\dag d_b). Since \Lambda^{-m} has been factored out, we divide
-  coefficients de[], deminus[] by this factor. ds, dt are thus order 1 ! *)
-
-  (* The minus sign in the definition of H_c is to be taken into account
-  in the definition of deminus[] !! cf. dmft.m *)
+  (* The signed star energies are de[a, m] and -deminus[a, m]. Their decay
+     with shell index is already included; no Lambda rescaling is applied here. *)
 
   demem[a_, m_]      := demem[a, m]      = setpr @ de[a, m];
   deminusmem[a_, m_] := deminusmem[a, m] = setpr @ deminus[a, m];
@@ -385,8 +359,8 @@ lanczosinit[] := Module[{},
 
   (* Definition: f_n=\sum_m (u_{nm} a_m + v_{nm} b_m). Eq. (12) in CJ. *)
 
-  (* The following lines are the same for all discretization schemes, since
-  they are determined by the discretization points only. *)
+  (* Initialize amplitudes from shell masses, independently of the energy
+     discretization scheme. *)
 
   du[a_][-1, m_] = 0;
   dv[a_][-1, m_] = 0;

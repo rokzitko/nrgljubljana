@@ -174,22 +174,14 @@ getgamma[] := Module[{},
   checkisgammareal[];
 ];
 
-checkisxxintnumeric[] := Module[{},
-    If[!NumericQ[xxintN[aa] /. kk->-0.1], MyError["xxintN not numeric."]];
-    If[!NumericQ[xxintP[aa] /. kk->0.1],  MyError["xxintP not numeric."]];
-];
-
-checkisxxint0numeric[] := Module[{},
-  If[!NumericQ[xxint0[aa] /. kk -> 10^-16], MyError["xxint0 not numeric."]];
-];
-
 xxint[] := Module[{},
   xxintN[aa] = Integrate[xxN, kk]; (* Indefinite integrals! *)
   xxintP[aa] = Integrate[xxP, kk];
-  checkisxxintnumeric[];
+  If[!NumericQ[xxintN[aa] /. kk->-0.1], MyError["xxintN not numeric."]];
+  If[!NumericQ[xxintP[aa] /. kk->0.1],  MyError["xxintP not numeric."]];
   If[TABULATED,
     xxint0[aa] = Integrate[xx0, kk];
-    checkisxxint0numeric[];
+    If[!NumericQ[xxint0[aa] /. kk -> 10^-16], MyError["xxint0 not numeric."]];
   ];
 ];
 
