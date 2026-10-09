@@ -25,7 +25,7 @@ expectError[label_, expression_, fragment_] := Module[{result},
 close[x_, y_, tolerance_:10^-13] := Max[Abs[Flatten[x - y]]] < tolerance;
 
 loadWilson[pairs_] := Module[{},
-  ClearAll[data, de, deminus, df, dfminus, eps, thetaCh, demem, deminusmem, diagA, zeta,
+  ClearAll[data, de, deminus, df, dfminus, eps, thetaCh, demem, deminusmem, zeta,
     du0, dv0, uvrescalefactor, xitable, zetatable, eptable, emtable, u0ptable, u0mtable,
     scdelta, sckappa, scdeltatable, sckappatable, i, m];
   listkeywords["param"] = First /@ pairs;

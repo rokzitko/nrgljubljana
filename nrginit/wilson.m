@@ -14,18 +14,14 @@ If[HARDGAP && HARDGAPBOUNDARY > 0 && (BAND != "asymode" || paramdefaultbool["ada
 (* ---- Tridiagonalisation approach (parameter "tri" in param file):
 old - direct use of the recursion relations
 rkpw - unsquared Rutishauser/Gragg-Harrod scalar reconstruction (machine arithmetic)
-sc - as above, but extended for superconducting hosts with arbitrary DOS
-     and even-frequency pairing function
-sc2 - as above, but for fully general pairing function
 cpp - tridiagonalisation performed in the C++ part of the code
-orth - recursion relations + orthogonality requirements
 none - don't output the coeffcient table
 manual - load the discretization tables from a file
-manual_namnu - as above, for the superconducting case
+manual_nambu, manual_nambu_new - as above, for the superconducting case
 *)
 
 TRI = paramdefault["tri", "old"];
-If[!MemberQ[{"old", "rkpw", "sc", "sc2", "cpp", "orth", "none", "nambu",
+If[!MemberQ[{"old", "rkpw", "cpp", "none",
     "manual", "manual_nambu", "manual_nambu_new"}, TRI],
   MyError["Unknown tri backend: ", TRI];
 ];
@@ -51,18 +47,6 @@ If[TRI == "old",
   defaultprec = 1000;
   dothelanczos = dothelanczosold;
 ];
-If[TRI == "sc",
-  defaultprec = 1000;
-  dothelanczos = dothelanczossc;
-];
-If[TRI == "sc2",
-  defaultprec = 1000;
-  dothelanczos = dothelanczossc2;
-];
-If[TRI == "orth",
-  defaultprec = 50;
-  dothelanczos = dothelanczosorth;
-];
 If[TRI == "cpp",
   defaultprec = 30; (* Should do... *)
   dothelanczos = dothelanczosold;
@@ -70,10 +54,6 @@ If[TRI == "cpp",
 If[TRI == "none",
   defaultprec = 30;
   dothelanczos = dothelanczosold;
-];
-If[TRI == "nambu",
-  defaultprec = 30; (* ?? *)
-  dothelanczos = dothelanczosnambu;
 ];
 If[TRI == "manual" || TRI == "manual_nambu" || TRI == "manual_nambu_new",
   defaultprec = 30; (* Should be enough *)
@@ -401,11 +381,6 @@ lanczosinit[] := Module[{},
   demem[a_, m_]      := demem[a, m]      = setpr @ de[a, m];
   deminusmem[a_, m_] := deminusmem[a, m] = setpr @ deminus[a, m];
 
-  (* Diagonal matrix A in the CJ paper. *)
-  diagA[a_] := diagA[a] =
-    setpr @ Join[Table[de[a, m],       {m, 0, mMAX}],
-                 Table[-deminus[a, m], {m, 0, mMAX}]];
-
   ClearAll[dzeta, xi2, xi, du, dv];
 
   (* Definition: f_n=\sum_m (u_{nm} a_m + v_{nm} b_m). Eq. (12) in CJ. *)
@@ -455,21 +430,6 @@ lanczosinit[] := Module[{},
     ];
     uvrescalefactor[a_] := MyError["Unknown band index."]; (* bug trap *)
   ];
-];
-
-dothelanczosnambu[] := Module[{},
-  MyAssert[COEFCHANNELS == 2];
-  (* For single-channel problems: *)
-  (* a=1 spin up *)
-  (* a=2 spin down *)
-
-  dzeta[a_][m_] := 000;
-  xi[a_][m_] := 000;
-
-  sckappa[a_][n_] := 0;
-  scdelta[a_][n_] := 000;
-
-  (* Read thetaCh from file *)
 ];
 
 dothelanczosold[] := Module[{},
@@ -617,310 +577,6 @@ dothelanczosrkpw[] := Module[{a, poles, coefficients, symmetric, n},
      remain the high-precision normalized amplitudes used by star output. *)
 ];
 
-(* Calculation of Wilson chain coefficients: ** superconducting host with
-EVEN-frequency pairing function ** *)
-(* Based on the work by Oliver Bodensiek, 2008 *)
-dothelanczossc[] := Module[{},
-  (* CONVENTION:
-  f_{n,alpha} = U_{n alpha, m beta} a_{m,beta} + V_{n alpha, m beta} b_{m,beta},
-  a_{m,beta} = U_{n alpha, m beta} f_{n,alpha},
-  b_{m,beta} = U_{n alpha, m beta} f_{n,alpha}.
-  *)
-
-  duMAT[_, _, _][-1, _] = 0;
-  dvMAT[_, _, _][-1, _] = 0;
-
-  (* f_{0,alpha} = 1/\sqrt{theta_0} \sum_n (\gamma_n^+ a_{n,alpha}
-                                           +\gamma_n^- b_{n,alpha}).
-     Recall that du[], dv[] are defined to be gamma^{+-}_n/sqrt{theta_0},
-     and that gamma^+=df, gamma^-=dfminus. See lanczsosinit[].
-  *)
-
-  duMAT[a_, alpha_, beta_][0, m_] := du[a][0, m] KroneckerDelta[alpha, beta];
-  dvMAT[a_, alpha_, beta_][0, m_] := dv[a][0, m] KroneckerDelta[alpha, beta];
-
-  (* deMAT are hybridisation matrices: diagonal contains hybridisation
-  coefficients (de/deminus), out-of-diagonal coefficients are pairing
-  coefficients. (2,2) component has inverted sign, since f f^\dag = -f^\dag
-  f + 1. *)
-
-  deplusMAT[a_, 1, 1][m_]  := deplusMAT[a, 1, 1][m]  = +setpr @ de[a, m];
-  deplusMAT[a_, 2, 2][m_]  := deplusMAT[a, 2, 2][m]  = -setpr @ de[a, m];
-  deplusMAT[a_, 1, 2][m_]  := deplusMAT[a, 1, 2][m]  = +setpr @ dg[a, m];
-  deplusMAT[a_, 2, 1][m_]  := deplusMAT[a, 2, 1][m]  = +setpr @ dg[a, m];
-
-  (* We define deminus[]/dgminus[] to be positive quantities, while in the
-  Nambu matrix formalism we use absolute quantities, therefore in deminusMAT
-  matrices we need to flip the sign of 1,1 and 2,2 components as compared to
-  deplusMAT! *)
-
-  deminusMAT[a_, 1, 1][m_] := deminusMAT[a, 1, 1][m] = -setpr @ deminus[a, m];
-  deminusMAT[a_, 2, 2][m_] := deminusMAT[a, 2, 2][m] = +setpr @ deminus[a, m];
-  deminusMAT[a_, 1, 2][m_] := deminusMAT[a, 1, 2][m] = +setpr @ dgminus[a, m];
-  deminusMAT[a_, 2, 1][m_] := deminusMAT[a, 2, 1][m] = +setpr @ dgminus[a, m];
-
-  (* dzeta is the on-site energy matrix; diagonal components are the
-    on-site energy (note that the sign of 2,2 component is inverted), while
-    the off-diagonal component is the on-site electron pairing. *)
-
-  dzetaMAT[a_, alpha_, beta_][n_] := dzetaMAT[a, alpha, beta][n] =
-    Sum[
-      (duMAT[a, alpha, mu][n,m] deplusMAT [a, mu, nu][m] duMAT[a, beta, nu][n, m] +
-       dvMAT[a, alpha, mu][n,m] deminusMAT[a, mu, nu][m] dvMAT[a, beta, nu][n, m]),
-    {mu, 2}, {nu, 2}, {m, 0, mMAX}];
-
-  (* Auxiliary matrix M *)
-
-  dmMAT[a_, alpha_, beta_][n_, m_] := dmMAT[a, alpha, beta][n, m] =
-    Sum[
-      duMAT[a, beta, mu][n, m] deplusMAT[a, alpha, mu][m] -
-      dzetaMAT[a, mu, beta][n] duMAT[a, mu, alpha][n, m],
-    {mu, 1, 2}] - xiMAT[a, beta][n-1] duMAT[a, beta, alpha][n-1,m];
-
-  (* Auxiliary matrix N *)
-
-  dnMAT[a_, alpha_, beta_][n_, m_] := dnMAT[a, alpha, beta][n, m] =
-    Sum[
-      dvMAT[a, beta, mu][n, m] deminusMAT[a, alpha, mu][m] -
-      dzetaMAT[a, mu, beta][n] dvMAT[a, mu, alpha][n, m],
-    {mu, 1, 2}] - xiMAT[a, beta][n-1] dvMAT[a, beta, alpha][n-1,m];
-
-  (* Hopping matrix, assumed to be diagonal, thus we only keep track of a
-     single index alpha. *)
-
-  xiMAT[a_, 1][n_] := xiMAT[a, alpha][n] = +Sqrt[xi2MAT[a, 1][n]];
-  xiMAT[a_, 2][n_] := xiMAT[a, alpha][n] = -Sqrt[xi2MAT[a, 2][n]];
-  xi2MAT[a_, alpha_][-1] := 0;
-  xi2MAT[a_, alpha_][n_] := xi2MAT[a, alpha][n] =
-    Sum[
-      Sum[(dmMAT[a, mu, alpha][n, m])^2 + (dnMAT[a, mu, alpha][n, m])^2, {mu, 1, 2}],
-    {m, 0, mMAX}];
-
-  (* Recursion for U and V matrixes *)
-
-  duMAT[a_, alpha_, beta_][n_, m_] := duMAT[a, alpha, beta][n, m] =
-   (
-    Sum[
-       deplusMAT[a, beta, mu][m]      duMAT[a, alpha, mu  ][n - 1, m] -
-       dzetaMAT[a, mu, alpha][n - 1]  duMAT[a, mu,    beta][n - 1, m],
-    {mu, 2}] - xiMAT[a, alpha][n - 2] duMAT[a, alpha, beta][n - 2, m]
-   )/xiMAT[a, alpha][n - 1];
-
- dvMAT[a_, alpha_, beta_][n_, m_] := dvMAT[a, alpha, beta][n, m] =
-   (
-    Sum[
-       deminusMAT[a, beta, mu][m]     dvMAT[a, alpha, mu  ][n - 1, m] -
-       dzetaMAT[a, mu, alpha][n - 1]  dvMAT[a, mu,    beta][n - 1, m],
-    {mu, 2}] - xiMAT[a, alpha][n - 2] dvMAT[a, alpha, beta][n - 2, m]
-   )/xiMAT[a, alpha][n - 1];
-
-  (* Extract required components *)
-  xi[a_][n_] := xi[a][n] = xiMAT[a, 1][n];
-  dzeta[a_][n_] := dzeta[a][n] = dzetaMAT[a, 1, 1][n];
-  scdelta[a_][n_] := scdelta[a][n] = dzetaMAT[a, 1, 2][n];
-  sckappa[a_][n_] := sckappa[a][n] = 0;
-];
-
-(* Calculation of Wilson chain coefficients: ** superconducting host
-with arbitrary (even/odd) pairing function frequency dependence ** *)
-dothelanczossc2[] := Module[{},
-  (* CONVENTION:
-  f_{n,alpha} = U_{n alpha, m beta} a_{m,beta} + V_{n alpha, m beta} b_{m,beta},
-  a_{m,beta} = U_{n alpha, m beta} f_{n,alpha},
-  b_{m,beta} = U_{n alpha, m beta} f_{n,alpha}.
-  *)
-
-  duMAT[_, _, _][-1, _] = 0;
-  dvMAT[_, _, _][-1, _] = 0;
-
-  (* f_{0,alpha} = 1/\sqrt{theta_0} \sum_n (\gamma_n^+ a_{n,alpha}
-                                           +\gamma_n^- b_{n,alpha}).
-     Recall that du[], dv[] are defined to be gamma^{+-}_n/sqrt{theta_0},
-     and that gamma^+=df, gamma^-=dfminus. See lanczsosinit[].
-  *)
-
-  duMAT[a_, alpha_, beta_][0, m_] := du[a][0, m] KroneckerDelta[alpha, beta];
-  dvMAT[a_, alpha_, beta_][0, m_] := dv[a][0, m] KroneckerDelta[alpha, beta];
-
-  (* deMAT are hybridisation matrices: diagonal contains hybridisation
-  coefficients (de/deminus), out-of-diagonal coefficients are pairing
-  coefficients. (2,2) component has inverted sign, since f f^\dag = -f^\dag
-  f + 1. *)
-
-  deplusMAT[a_, 1, 1][m_]  := deplusMAT[a, 1, 1][m]  = +setpr @ de[a, m];
-  deplusMAT[a_, 2, 2][m_]  := deplusMAT[a, 2, 2][m]  = -setpr @ de[a, m];
-  deplusMAT[a_, 1, 2][m_]  := deplusMAT[a, 1, 2][m]  = +setpr @ dg[a, m];
-  deplusMAT[a_, 2, 1][m_]  := deplusMAT[a, 2, 1][m]  = +setpr @ dg[a, m];
-
-  (* We define deminus[]/dgminus[] to be positive quantities, while in the
-  Nambu matrix formalism we use absolute quantities, therefore in deminusMAT
-  matrices we need to flip the sign of 1,1 and 2,2 components as compared to
-  deplusMAT! *)
-
-  deminusMAT[a_, 1, 1][m_] := deminusMAT[a, 1, 1][m] = -setpr @ deminus[a, m];
-  deminusMAT[a_, 2, 2][m_] := deminusMAT[a, 2, 2][m] = +setpr @ deminus[a, m];
-  deminusMAT[a_, 1, 2][m_] := deminusMAT[a, 1, 2][m] = +setpr @ dgminus[a, m];
-  deminusMAT[a_, 2, 1][m_] := deminusMAT[a, 2, 1][m] = +setpr @ dgminus[a, m];
-
-  (* dzeta is the on-site energy matrix; diagonal components are the
-    on-site energy (note that the sign of 2,2 component is inverted), while
-    the off-diagonal component is the on-site electron pairing. *)
-
-  dzetaMAT[a_, alpha_, beta_][n_] := dzetaMAT[a, alpha, beta][n] =
-    Sum[
-      (duMAT[a, alpha, mu][n,m] deplusMAT [a, mu, nu][m] duMAT[a, beta, nu][n, m] +
-       dvMAT[a, alpha, mu][n,m] deminusMAT[a, mu, nu][m] dvMAT[a, beta, nu][n, m]),
-    {mu, 2}, {nu, 2}, {m, 0, mMAX}];
-
-  (* Auxiliary matrix M *)
-
-  dmMAT[a_, alpha_, beta_][n_, m_] := dmMAT[a, alpha, beta][n, m] =
-    Sum[
-      duMAT[a, beta, mu][n, m]  deplusMAT[a, alpha, mu][m] -
-      dzetaMAT[a, mu, beta][n]  duMAT[a, mu, alpha][n, m] -
-      xiMAT[a, mu, beta][n-1]   duMAT[a, mu, alpha][n-1,m],
-    {mu, 1, 2}] ;
-
-  (* Auxiliary matrix N *)
-
-  dnMAT[a_, alpha_, beta_][n_, m_] := dnMAT[a, alpha, beta][n, m] =
-    Sum[
-      dvMAT[a, beta, mu][n, m] deminusMAT[a, alpha, mu][m] -
-      dzetaMAT[a, mu, beta][n] dvMAT[a, mu, alpha][n, m] -
-      xiMAT[a, mu, beta][n-1]  dvMAT[a, mu, alpha][n-1,m],
-    {mu, 1, 2}] ;
-
-  (* Hopping matrix, assumed to be diagonal, thus we only keep track of a
-     single index alpha. *)
-
-  xiMAT[_, _, _][-1] := 0;
-  xiMAT[a_, 1, 2][n_] := xiMAT[a, 1, 2][n] = Sqrt[s2[a][n]];
-  xiMAT[a_, 2, 1][n_] := xiMAT[a, 2, 1][n] = Sqrt[s2[a][n]];
-  xiMAT[a_, 1, 1][n_] := xiMAT[a, 1, 1][n] = +Sqrt[t2[a][n]];
-  xiMAT[a_, 2, 2][n_] := xiMAT[a, 2, 2][n] = -Sqrt[t2[a][n]];
-
-  t2[a_][n_] := (t2s2[a][n] - s2mt2[a][n])/2;
-  s2[a_][n_] := (t2s2[a][n] + s2mt2[a][n])/2;
-
-  xiINV[a_][n_] := xiINV[a][n] = Inverse[
-    {{xiMAT[a, 1, 1][n], xiMAT[a, 1, 2][n]},
-     {xiMAT[a, 2, 1][n], xiMAT[a, 2, 2][n]}}
-  ];
-
-  xiINVMAT[a_, alpha_, beta_][n_] := xiINVMAT[a, alpha, beta][n] = xiINV[a][n] [[alpha, beta]];
-
-  (* t2s2 = t^2+s^2, i.e. diagonal element of the hopping matrix squared *)
-  t2s2[a_][n_] := t2s2[a][n] =
-    Sum[
-      Sum[(dmMAT[a, mu, 1][n, m])^2 +
-          (dnMAT[a, mu, 1][n, m])^2,    {mu, 1, 2}],
-      {m, 0, mMAX}];
-
-  (* s2mt2 = s^2-t^2, i.e. the out-of-diagonal element of the (t.sigma_x.t) matrix,
-      where t is the hopping matrix and sigma_x is the Pauli matrix x. *)
-  s2mt2[a_][n_] := s2mt2[a][n] =
-    Sum[dmMAT[a, 1, 1][n, m] dmMAT[a, 2, 2][n, m] +
-        dmMAT[a, 2, 1][n, m] dmMAT[a, 1, 2][n, m] +
-        dnMAT[a, 1, 1][n, m] dnMAT[a, 2, 2][n, m] +
-        dnMAT[a, 2, 1][n, m] dnMAT[a, 1, 2][n, m],
-    {m, 0, mMAX}];
-
-  (* Recursion for U and V matrixes *)
-
-  duMAT[a_, tau_, beta_][n_, m_] := duMAT[a, tau, beta][n, m] =
-   Sum[ xiINVMAT[a, tau, alpha][n-1] *
-    Sum[
-       deplusMAT[a, beta, mu][m]      duMAT[a, alpha, mu  ][n - 1, m] -
-       dzetaMAT[a, mu, alpha][n - 1]  duMAT[a, mu,    beta][n - 1, m] -
-       xiMAT[a, mu, alpha][n - 2]     duMAT[a, mu,    beta][n - 2, m],
-    {mu, 2}],
-   {alpha, 2}];
-
-  dvMAT[a_, tau_, beta_][n_, m_] := dvMAT[a, tau, beta][n, m] =
-   Sum[ xiINVMAT[a, tau, alpha][n-1] *
-    Sum[
-       deminusMAT[a, beta, mu][m]     dvMAT[a, alpha, mu  ][n - 1, m] -
-       dzetaMAT[a, mu, alpha][n - 1]  dvMAT[a, mu,    beta][n - 1, m] -
-       xiMAT[a, mu, alpha][n - 2]     dvMAT[a, mu,    beta][n - 2, m],
-    {mu, 2}],
-   {alpha, 2}];
-
-  (* Extract required components *)
-  xi[a_][n_] := xi[a][n] = xiMAT[a, 1, 1][n];
-  sckappa[a_][n_] := sckappa[a][n] = xiMAT[a, 1, 2][n];
-  dzeta[a_][n_] := dzeta[a][n] = dzetaMAT[a, 1, 1][n];
-  scdelta[a_][n_] := scdelta[a][n] = dzetaMAT[a, 1, 2][n];
-];
-
-dothelanczosorth[] := Module[{},
-  (* Eq. (18) in CJ. *)
-  dzeta[a_][n_] :=
-  dzeta[a][n] = Sum[(demem[a, m] du[a][n, m]^2 - deminusmem[a, m] dv[a][n, m]^2),
-    {m, 0, mMAX}];
-
-  (* Eq. (17) in CJ. *)
-  xi[a_][n_] := xi[a][n] = Sqrt[xi2[a][n]];
-  xi2[a_][-1] := 0;
-  xi2[a_][n_] := xi2[a][n] = Module[{},
-    MyPrint[n];
-    (* This is an appropriate point to perform the rescaling. See revise[] below. *)
-    revise[a][n];
-    Sum[(demem[a, m]^2 du[a][n, m]^2 + deminusmem[a, m]^2 dv[a][n, m]^2),
-      {m, 0, mMAX}] - xi2[a][n - 1] - dzeta[a][n]^2
-  ];
-
-  (* Eq. (15) in CJ. *)
-  duexpr[a_][n_, m_] := ((demem[a, m] - dzeta[a][n - 1]) du[a][n - 1, m] -
-      xi[a][n - 2] du[a][n - 2, m])/xi[a][n - 1];
-  du[a_][n_, m_] /; m >= Quotient[n, 2] := du[a][n, m] = duexpr[a][n, m];
-
-  (* Eq. (16) in CJ. *)
-  dvexpr[a_][n_, m_] := ((-deminusmem[a, m] - dzeta[a][n - 1]) dv[a][n - 1, m] -
-    xi[a][n - 2] dv[a][n - 2, m])/xi[a][n - 1];
-  dv[a_][n_, m_] /; m >= Quotient[n, 2] := dv[a][n, m] = dvexpr[a][n, m];
-
-  (* Orthogonality equations, Eq.(22) in CJ *)
-  eqlhs[a_][n_, j_] := Join[ Table[du[a][j, m], {m, 0, Quotient[n, 2]-1}],
-                             Table[dv[a][j, m], {m, 0, Quotient[n, 2]-1}] ];
-  eqrhs[a_][n_, j_] := Sum[-du[a][n, m] du[a][j, m], {m, Quotient[n, 2], mMAX}] +
-                       Sum[-dv[a][n, m] dv[a][j, m], {m, Quotient[n, 2], mMAX}];
-
-  solsys2[a_][n_] := solsys2[a][n] = Module[{lhs, rhs, sol},
-    lhs = Table[eqlhs[a][n, j], {j, 0, 2*Quotient[n, 2]-1}];
-    rhs = Table[eqrhs[a][n, j], {j, 0, 2*Quotient[n, 2]-1}];
-    sol = LinearSolve[lhs][rhs];
-    sol
-  ];
-
-  du[a_][n_, m_] /; m < Quotient[n, 2] :=
-    du[a][n, m] = solsys2[a][n] [[ 1+m ]] ;
-  dv[a_][n_, m_] /; m < Quotient[n, 2] :=
-    dv[a][n, m] = solsys2[a][n] [[ 1+m+Quotient[n,2] ]];
-
-  (* Vector U in the CJ paper. *)
-  Uvec[a_][n_] := Join[Table[du[a][n, m], {m, 0, mMAX}],
-                       Table[dv[a][n, m], {m, 0, mMAX}]];
-  normn[a_][n_] := Uvec[a][n] . Uvec[a][n];
-
-  (* Reduce roundoff error by renormalizing du and dv. *)
-  revise[a_][n_] := Module[{alpha, m},
-    alpha = 1/Sqrt[normn[a][n]];
-    For[m = 0, m <= mMAX, m++,
-      du[a][n,m] = setpr[ alpha du[a][n,m] ];
-      dv[a][n,m] = setpr[ alpha dv[a][n,m] ];
-    ];
-    xi[a][n-1] = (diagA[a] Uvec[a][n-1]).Uvec[a][n];
-    xi2[a][n-1] = (xi[a][n-1])^2;
-  ];
-
-  (* Trigger calculation at this point! This is important to ensure that
-     the coefficient renormalizations are done properly. *)
-  For[a = 1, a <= COEFCHANNELS, a++,
-    Table[xi[a][i], {i, 0, DISCNMAX}];
-  ];
-  MyPrint["Lanczos done."];
-];
-
 (* Added 12.9.2012 *)
 (* Removed discfaktor[n] on 21 Sep 2016 *)
 loaddiscretizationtables[] := Module[{imp1,imp2},
@@ -1028,7 +684,6 @@ If[DY,
     de[a_, 0] = (1 + LAMBDA^-Z)/2;
     de[a_, m_] = (1 + LAMBDA^-1)/2 LAMBDA^(1-Z-m);
     deminus = de; (* p-h symmetric *)
-    dg[_, _] = dgminus[_, _] = paramdefaultnum["bcsgap2", "0"];
   ];
 
   (* Evaluated in lanczos-Yoshida.nb *)

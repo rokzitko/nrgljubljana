@@ -56,7 +56,7 @@ for my $backend (qw(legacy rkpw)) {
     }
 }
 for my $text ("[extra]\ntri=old\n", "[param]\n[extra]\n[param]\n", "[param]\ntri=old\n tri = old\n",
-              "[param]\ntridiag_method=lanczos\ntridiag_method=rkpw\n", "[param]\ntri=sc\n") {
+              "[param]\ntridiag_method=lanczos\ntridiag_method=rkpw\n", "[param]\ntri=unsupported\n") {
     stage('rkpw', 'initializer', $text, 0);
 }
 stage('unknown', 'tool', "[param]\n", 0);

@@ -95,7 +95,7 @@ from the exported star data. With `tri=cpp` and the default
 `tridiag_method=lanczos`, the initializer keeps its old high-precision seed
 recursion. `tri=none` also honors `tridiag_method=rkpw` for the `Ninit` seed,
 without changing its existing coefficient-table output policy.
-`tridiag_method` does not override an explicit `tri=old`, `orth`, or `rkpw`.
+`tridiag_method` does not override an explicit `tri=old` or `rkpw`.
 Unknown `tri` or `tridiag_method` strings are initialization errors, even when
 the runtime-method setting would otherwise be unused.
 
@@ -150,7 +150,7 @@ zero, and numerical breakdown are errors. Scaled norms avoid unnecessarily
 squaring tiny amplitudes or tail hoppings, but representability still limits
 how deep a chain can go. RKPW does not silently retry in arbitrary precision.
 Independent scalar channels are supported. Matrix, Nambu, rung, and `pol2x2`
-chains are not. The existing `sc` and `sc2` algorithms are unchanged.
+chains are not.
 
 ### Constant pairing in superconducting symmetries
 
@@ -238,7 +238,7 @@ For normal scalar `band=dmft` with `discretization=Y` or `C`, an exactly
 zero shell mass keeps its table slot and zero amplitude but receives the
 finite inert midpoint `(km[m+1]+km[m])/2`, avoiding division by zero.
 There is no small-weight cutoff. This applies to `wilsonchain=legacy` and
-`tri=old`, `orth`, `rkpw`, `cpp`, or `none`; it does not extend
+`tri=old`, `rkpw`, `cpp`, or `none`; it does not extend
 superconducting, matrix/Nambu, rung, or `pol2x2` support or waive finite-star
 support limits.
 

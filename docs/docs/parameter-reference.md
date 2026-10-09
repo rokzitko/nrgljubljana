@@ -151,12 +151,11 @@ Builds made without the extended symmetry sets support only a subset. Complex
 | `floquet` | boolean | `false` | Generate input for Floquet quasi-energies; runtime use also requires `[extra] Omega` and `ops=m`. See [Floquet model construction](floquet-nrginit.md). |
 | `data_has_rescaled_energies` | boolean | `true` | Compatibility switch for the seed-energy convention in `data`. |
 
-Recognized `tri` values are `old`, `sc`, `sc2`, `orth`, `rkpw`, `cpp`, `none`,
-`nambu`, `manual`, `manual_nambu`, and `manual_nambu_new`. Manual methods need
+Recognized `tri` values are `old`, `rkpw`, `cpp`, `none`, `manual`,
+`manual_nambu`, and `manual_nambu_new`. Manual methods need
 coefficient files in the working directory. `none` intentionally emits no
 coefficient table and is only useful for an external hand-off; its direct
-`data` output is not runnable by the normal runtime. `nambu` is currently a
-zero-filled placeholder rather than a production tridiagonalization method.
+`data` output is not runnable by the normal runtime.
 Automatic `Nmax` derivation stops with an error if the requested scale would
 require a value greater than `998`.
 
@@ -166,7 +165,7 @@ kernel at runtime. These are distinct selectors. `tri` still defaults to
 `old`, and the C++ backend still defaults to `lanczos`. The initializer also
 uses RKPW for the `Ninit` seed with `tri=cpp`/`none` and
 `tridiag_method=rkpw`; this setting does not override an explicit
-`tri=old`, `orth`, or `rkpw`. Upstream discretization retains its separate
+`tri=old` or `rkpw`. Upstream discretization retains its separate
 arbitrary-precision arithmetic. Test-suite backend options do not change
 these production defaults. For the runtime path:
 
@@ -239,10 +238,10 @@ The `nambu` band branch is currently a placeholder. `asymode`, `adapt`, and
 requires `polarized=true` and `SPU1` or `QSZ`. `band=dmft` requires a `[dmft]`
 block containing either `gamma=<value>` or `run=<path>` and can additionally
 use `[dmft] discchecksum=<value>`. Normal DMFT chains require
-`discretization=Y` or `C`, and the superconducting DMFT path requires `Y`.
+`discretization=Y` or `C`.
 Exactly zero-mass shells in normal scalar DMFT `Y`/`C` retain zero amplitudes
 and finite, inert midpoint energies, avoiding division by zero. This applies
-to `wilsonchain=legacy` with `tri=old`, `orth`, `rkpw`, `cpp`, or `none`, not
+to `wilsonchain=legacy` with `tri=old`, `rkpw`, `cpp`, or `none`, not
 superconducting, matrix, Nambu, rung, or `pol2x2` constructions. Nonzero shell
 weights are not clipped to zero.
 

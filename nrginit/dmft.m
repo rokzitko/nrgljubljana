@@ -58,12 +58,6 @@ dumpcheckpos[msg_, x_] := Module[{},
     MyError["Coefficient is negative."];
   ];
 ];
-dumpcheck[msg_, x_] := Module[{},
-  MyPrintForm[msg <> "[``][``]=``", aa, m, c10 @ x];
-  If[Element[x, Reals] =!= True,
-    MyError["Coefficient is not a real number."];
-  ];
-];
 
 (* Interpolation order for tabulated hybridization functions. Mathematica
 default is 3. A more conservative choice would be to use ORDER = 1 in order
@@ -120,14 +114,13 @@ dmftinterpolating[l_List] := Module[{lprec, l3, x3, Tneg, Tpos,
 
 getdmftgamma[] := Module[{},
   dmftgamma = 0; (* GLOBAL! *)
-  dmftscdelta = 0; (* GLOBAL! *)
 
   (* A) Define hybridization using parameter gamma in [dmft] block ... *)
   If[paramexists["gamma", "dmft"],
     dmftgamma = param["gamma", "dmft"];
   ];
 
-  (* B) ... or load an external module to determine "dmftgamma" and "dmftscdelta". *)
+  (* B) ... or load an external module to determine "dmftgamma". *)
   If[paramexists["run", "dmft"],
     fn = param["run", "dmft"];
     Print["Setting hybridisation using script ", fn];
@@ -231,7 +224,7 @@ Module[{emptyShellQ},
      energy. Sign tests numeric zero without a small-weight cutoff. SC/Nambu
      and matrix/rung constructions keep their existing validation. *)
   emptyShellQ[weight_] := TrueQ[!isSC[] && !POL2x2 && !RUNGS && WILSONCHAIN == "legacy" &&
-    MemberQ[{"old", "orth", "rkpw", "cpp", "none"}, TRI]] && NumberQ[weight] && Sign[weight] === 0;
+    MemberQ[{"old", "rkpw", "cpp", "none"}, TRI]] && NumberQ[weight] && Sign[weight] === 0;
 
   getdmftgamma[];
   getgamma[];
@@ -313,45 +306,6 @@ Module[{emptyShellQ},
   (* bug trap *)
   de[___] := MyError["oops dmft e"];
   df[___] := MyError["oops dmft f"];
-];
-
-(* Superconductivity. *)
-dosc[] := Module[{},
-  If[!(Head[dmftscdelta] == List && Length[dmftscdelta] == COEFCHANNELS),
-    MyError["dmft.m error: dmftscdelta must be tabulated!"];
-  ];
-  If[!DY, MyError["dmft.m error: Only discretization=Y is supported!"]];
-
-  For[aa = 1, aa <= COEFCHANNELS, aa++,
-    l1 = dmftgamma[[aa]];
-    l2 = dmftscdelta[[aa]];
-    If[Length[l1] != Length[l2],
-      MyError["dmft.m error: gamma and scdelta should be defined on the same grid!"];
-    ];
-    l3 = l1 * l2;
-    l3[[All, 1]] = l1[[All,1]];
-    
-    scdeltaTAB[aa] = dmftinterpolating @ l3;
-    scdeltaP[aa] = scdeltaTAB[aa] [[2]];
-    scdeltaN[aa] = scdeltaTAB[aa] [[3]];
-
-    {xx0, xxP, xxN} = scdeltaTAB[aa] [[{1,2,3}]];
-
-    xxint[];
-
-    For[m = 0, m <= mMAX, m++,
-      dg[aa, m] = Re @ setprec[ intP[aa][km[m+1], km[m]]/df[aa, m] ];
-      dgminus[aa, m] = Re @ setprec[ intN[aa][-km[m], -km[m+1]]/dfminus[aa, m] ];
-      dumpcheck["dg+", dg[aa, m]];
-      dumpcheck["dg-", dgminus[aa, m]];
-    ];
-  ];
-];
-
-If[isSPSU2[], 
-  dosc[], 
-(* else *)
-  dg[___] := MyError["oops dmft g"];
 ];
 
 MyPrint["dmft.m done"];
