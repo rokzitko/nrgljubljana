@@ -35,10 +35,8 @@ class GslErrorHandlerGuard {
   GslErrorHandlerGuard(const GslErrorHandlerGuard &) = delete;
   GslErrorHandlerGuard &operator=(const GslErrorHandlerGuard &) = delete;
   ~GslErrorHandlerGuard() {
-    if (previous)
-      gsl_set_error_handler(previous);
-    else
-      gsl_set_error_handler_off();
+    // nullptr denotes GSL's default aborting handler, not the disabled handler.
+    gsl_set_error_handler(previous);
   }
 };
 

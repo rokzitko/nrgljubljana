@@ -1,6 +1,11 @@
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/generated/common)
 configure_file(common/version.hpp.in generated/common/version.hpp @ONLY)
 
+add_subdirectory(numerics)
+if(NRGLJUBLJANA_NUMERICS_BUILD_TESTS)
+  enable_testing()
+endif()
+
 macro(add_tool exec_name)
   add_executable(${exec_name} ${exec_name}/${exec_name}.cc)
 

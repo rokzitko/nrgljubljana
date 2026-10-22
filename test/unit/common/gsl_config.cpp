@@ -17,7 +17,36 @@ using NRG::Tools::GslErrorPolicy;
 using NRG::Tools::InterpolationMethod;
 using NRG::Tools::QagRule;
 
+struct DefaultGslHandler {
+  gsl_error_handler_t *previous = gsl_set_error_handler(nullptr);
+  ~DefaultGslHandler() { gsl_set_error_handler(previous); }
+};
+
 } // namespace
+
+TEST(GslConfig, error_handler_guard_restores_default_handler_on_success) { // NOLINT
+  const DefaultGslHandler restore;
+  {
+    const NRG::Tools::GslErrorHandlerGuard outer;
+    const auto disabled_handler = gsl_set_error_handler_off();
+    EXPECT_NE(disabled_handler, nullptr);
+    {
+      const NRG::Tools::GslErrorHandlerGuard inner;
+    }
+    EXPECT_EQ(gsl_set_error_handler_off(), disabled_handler);
+  }
+  EXPECT_EQ(gsl_set_error_handler(nullptr), nullptr);
+}
+
+TEST(GslConfig, error_handler_guard_restores_default_handler_on_exception) { // NOLINT
+  const DefaultGslHandler restore;
+  EXPECT_THROW(([] {
+    const NRG::Tools::GslErrorHandlerGuard outer;
+    const NRG::Tools::GslErrorHandlerGuard inner;
+    throw std::runtime_error("Test guard unwinding.");
+  })(), std::runtime_error);
+  EXPECT_EQ(gsl_set_error_handler(nullptr), nullptr);
+}
 
 TEST(GslConfig, interpolation_methods_parse_map_and_report_minimum_sizes) { // NOLINT
   struct interpolation_case {

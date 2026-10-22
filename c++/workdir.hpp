@@ -80,7 +80,14 @@ class Workdir {
   public:
    Workdir(const std::string &dir, const WorkdirMode mode, const bool quiet = false) :
      workdir(create(dir, mode)), remove_at_exit(mode == WorkdirMode::unique_temporary), lock_fd(acquire_lock(workdir, mode)) {
-     if (!quiet) std::cout << "workdir=" << workdir << std::endl << std::endl;
+     try {
+       if (!quiet) std::cout << "workdir=" << workdir << std::endl << std::endl;
+     } catch (...) {
+       // The destructor will not run if logging fails. Avoid streams during cleanup.
+       if (remove_at_exit) static_cast<void>(rmdir(workdir.c_str())); // newly created, still empty
+       if (lock_fd != -1) close(lock_fd);
+       throw;
+     }
    }
    explicit Workdir(const std::string &dir, const bool quiet = false) : Workdir(dir, WorkdirMode::unique_temporary, quiet) {}
    explicit Workdir() : Workdir(default_workdir, true) {} // defaulted version (for testing purposes)

@@ -2,11 +2,16 @@
 #include <filesystem>
 #include <iostream>
 #include <memory>
+#include <mutex>
 #include <ostream>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <system_error>
 #include <stdexcept>
+#include <exception>
+#include <boost/io/ios_state.hpp>
+#include <gmp.h>
 
 #include "nrg-general.hpp"
 
@@ -53,12 +58,45 @@ void run_nrg_master(const std::string &dir) {
 }
 
 void run_nrg_master(const std::string &dir, const WorkdirMode mode) {
+  std::ostringstream diagnostics;
+  if (!prepare_parallel_runtime(diagnostics))
+    throw std::runtime_error("NRG numerical runtime validation failed:\n" + diagnostics.str());
   auto workdir = set_workdir(dir, mode);
   clear_done_marker();
   if (complex_data())
     run_nrg_master_impl<std::complex<double>>(std::move(workdir));
   else
     run_nrg_master_impl<double>(std::move(workdir));
+}
+
+void run_nrg(const std::string &calculation_directory, const std::string &scratch_directory) {
+  static std::mutex invocation_mutex;
+  const std::lock_guard lock(invocation_mutex);
+  if (calculation_directory.empty()) throw std::invalid_argument("NRG calculation_directory must not be empty");
+  if (!std::filesystem::path(scratch_directory).is_absolute())
+    throw std::invalid_argument("NRG scratch_directory must be an absolute path");
+  if (!std::filesystem::is_directory(scratch_directory))
+    throw std::invalid_argument("NRG scratch_directory must be an existing directory");
+
+  struct SavedState {
+    const mp_bitcnt_t precision = mpf_get_default_prec();
+    boost::io::ios_base_all_saver cout_format{std::cout}, cerr_format{std::cerr};
+    boost::io::ios_fill_saver cout_fill{std::cout}, cerr_fill{std::cerr};
+    ~SavedState() { mpf_set_default_prec(precision); }
+  } saved_state;
+
+  const auto original_directory = std::filesystem::current_path();
+  try {
+    std::filesystem::current_path(calculation_directory);
+    run_nrg_master(scratch_directory);
+  } catch (...) {
+    std::error_code ec;
+    std::filesystem::current_path(original_directory, ec);
+    if (ec)
+      std::throw_with_nested(std::filesystem::filesystem_error("Can't restore caller's current directory", original_directory, ec));
+    throw;
+  }
+  std::filesystem::current_path(original_directory);
 }
 
 template<scalar S>

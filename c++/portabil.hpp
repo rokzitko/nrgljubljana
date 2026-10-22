@@ -15,7 +15,7 @@
 #include <string>
 #include <optional>
 #include <cmath> // isfinite
-#include <cstdlib> // exit, atol
+#include <cstdlib> // atol
 #include <complex>
 
 #define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
@@ -46,11 +46,12 @@ inline int isfinite(std::complex<double> z) { return (std::isfinite(z.real()) &&
 template <typename T> 
 inline T finite_test_fnc(T x, const char *file, const int line) {
   if (!my_isfinite(x)) {
-    std::cout << "#### EXITING DUE TO FAILED ASSERTION." << std::endl;
-    std::cout << "File " << file << ", line " << line << "." << std::endl;
-    std::cout << "Finiteness assertion" << std::endl;
+    std::stringstream message;
+    message << "#### EXITING DUE TO FAILED ASSERTION." << std::endl;
+    message << "File " << file << ", line " << line << "." << std::endl;
+    message << "Finiteness assertion" << std::endl;
     print_trace();
-    exit(1);
+    throw std::runtime_error(message.str());
   }
   return x;
 }
@@ -68,26 +69,28 @@ inline T finite_test_fnc(T x, const char *file, const int line) {
   } while(0)
 
 // Assert a==b
-#define my_assert_equal(a, b)                                                                                                                        \
+#define my_assert_equal(a, b)                                                                                                                         \
   do {                                                                                                                                               \
-    if (!(a == b)) {                                                                                                                                 \
-      std::cout << "#### EXITING DUE TO FAILED ASSERTION." << std::endl;                                                                                       \
-      std::cout << "File " << __FILE__ << ", line " << __LINE__ << "." << std::endl;                                                                           \
-      std::cout << #a << "=" << a << std::endl;                                                                                                                \
-      std::cout << #b << "=" << b << std::endl;                                                                                                                \
-      std::cout << "Exiting." << std::endl;                                                                                                                    \
+    if (!((a) == (b))) {                                                                                                                              \
+      std::stringstream my_assert_o;                                                                                                                 \
+      my_assert_o << "#### EXITING DUE TO FAILED ASSERTION." << std::endl;                                                                             \
+      my_assert_o << "File " << __FILE__ << ", line " << __LINE__ << "." << std::endl;                                                                  \
+      my_assert_o << #a << "=" << (a) << std::endl;                                                                                                    \
+      my_assert_o << #b << "=" << (b) << std::endl;                                                                                                    \
+      my_assert_o << "Exiting." << std::endl;                                                                                                         \
       print_trace();                                                                                                                                 \
-      exit(1);                                                                                                                                       \
+      throw std::runtime_error(my_assert_o.str());                                                                                                    \
     }                                                                                                                                                \
   } while (0)
 
-#define my_assert_not_reached()                                                                                                                      \
+#define my_assert_not_reached()                                                                                                                       \
   do {                                                                                                                                               \
-    std::cout << "#### EXITING DUE TO FAILED ASSERTION." << std::endl;                                                                                         \
-    std::cout << "File " << __FILE__ << ", line " << __LINE__ << "." << std::endl;                                                                             \
-    std::cout << "Should never be reached." << std::endl;                                                                                                      \
+    std::stringstream my_assert_o;                                                                                                                   \
+    my_assert_o << "#### EXITING DUE TO FAILED ASSERTION." << std::endl;                                                                               \
+    my_assert_o << "File " << __FILE__ << ", line " << __LINE__ << "." << std::endl;                                                                    \
+    my_assert_o << "Should never be reached." << std::endl;                                                                                           \
     print_trace();                                                                                                                                   \
-    exit(1);                                                                                                                                         \
+    throw std::runtime_error(my_assert_o.str());                                                                                                      \
   } while (0)
 
 // Workaround
