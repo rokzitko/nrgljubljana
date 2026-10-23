@@ -48,6 +48,12 @@ double integrate(const Table &table) {
   return finite_result(steffen(table).integral());
 }
 
+double integrate_range(const Table &table, const double lower, const double upper) {
+  if (!std::isfinite(lower) || !std::isfinite(upper) || lower > upper)
+    throw std::invalid_argument("Integration bounds must be finite and ordered.");
+  return finite_result(Integ::integrate_signed_clipped(steffen(table), lower, upper));
+}
+
 double integrate_moment(const Table &table, const unsigned moment) {
   if (moment > static_cast<unsigned>(std::numeric_limits<int>::max()))
     throw std::invalid_argument("Moment must fit in a nonnegative int.");

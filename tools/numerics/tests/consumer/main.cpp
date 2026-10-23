@@ -6,6 +6,7 @@ int main() {
   const NRG::Numerics::Table dos{{-1.0, 0.0, 1.0}, {0.5, 0.5, 0.5}};
   const NRG::Numerics::Table sigma{{0.0}, {0.0}};
   const auto result = NRG::Numerics::lattice(dos, sigma, sigma, 0.0, 0.1);
+  const auto spectrum = NRG::Numerics::broaden({{{0.1, -1.0}}}, {0.1}, {.alpha = 0.4, .temperature = 0.2});
   return std::abs(NRG::Numerics::integrate(dos) - 1.0) < 1e-14
-           && std::abs(result.real.y[0]) < 1e-14 && result.spectral.y[0] > 0.0 ? 0 : 1;
+           && std::abs(result.real.y[0]) < 1e-14 && result.spectral.y[0] > 0.0 && spectrum.y[0] < 0.0 ? 0 : 1;
 }

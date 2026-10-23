@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.25...3.31)
-project(nrgljubljana_numerics VERSION 1.0.0 LANGUAGES CXX)
+project(nrgljubljana_numerics VERSION 1.1.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
@@ -10,7 +10,7 @@ if(NOT TARGET Boost::headers)
   find_package(Boost REQUIRED)
 endif()
 
-add_library(nrgljubljana_numerics src/numerics.cpp)
+add_library(nrgljubljana_numerics src/numerics.cpp src/broadening.cpp)
 add_library(nrgljubljana::numerics ALIAS nrgljubljana_numerics)
 target_compile_features(nrgljubljana_numerics PUBLIC cxx_std_20)
 target_include_directories(nrgljubljana_numerics PUBLIC
@@ -44,6 +44,19 @@ if(NRGLJUBLJANA_NUMERICS_BUILD_TESTS)
   foreach(test IN ITEMS integration resample kk lattice validation gsl_handler)
     add_test(NAME numerics.${test} COMMAND nrgljubljana_numerics_tests ${test})
   endforeach()
+  add_executable(nrgljubljana_broadening_tests tests/broadening.cpp)
+  target_link_libraries(nrgljubljana_broadening_tests PRIVATE nrgljubljana::numerics GSL::gsl Threads::Threads)
+  foreach(test IN ITEMS kernels averaging convolution parser validation concurrency)
+    add_test(NAME numerics.broadening.${test} COMMAND nrgljubljana_broadening_tests ${test})
+  endforeach()
+  set_tests_properties(numerics.broadening.concurrency PROPERTIES ENVIRONMENT "OMP_NUM_THREADS=invalid")
+  set(NRGLJUBLJANA_NUMERICS_BROADEN_CLI "" CACHE FILEPATH "Optional independent broaden CLI for parity testing")
+  if(NRGLJUBLJANA_NUMERICS_BROADEN_CLI)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    add_test(NAME numerics.broadening.cli_parity
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/broadening_cli.py
+        $<TARGET_FILE:nrgljubljana_broadening_tests> ${NRGLJUBLJANA_NUMERICS_BROADEN_CLI})
+  endif()
 endif()
 
 set(numerics_package_dir "${CMAKE_INSTALL_LIBDIR}/cmake/nrgljubljana_numerics")
@@ -57,6 +70,7 @@ install(TARGETS nrgljubljana_numerics EXPORT nrgljubljana_numericsTargets
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(FILES include/nrgljubljana/numerics.hpp DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/nrgljubljana)
+install(FILES README.md DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/doc/nrgljubljana_numerics)
 install(EXPORT nrgljubljana_numericsTargets NAMESPACE nrgljubljana::
   DESTINATION "${numerics_package_dir}")
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/nrgljubljana_numericsConfig.cmake"

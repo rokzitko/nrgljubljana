@@ -42,6 +42,7 @@
 #include "../common/tabulated_density.hpp"
 #include "matrix_evaluator.hpp"
 #include "nrgchain.hpp"
+#include "workflow.hpp"
 
 namespace {
 
@@ -593,9 +594,11 @@ ResolvedNrgChainConfiguration resolve_nrgchain_configuration(
   return config;
 }
 
-NrgChainInvocation make_nrgchain_invocation(const Options &options, const NrgChainTableMode mode) {
+NrgChainInvocation make_nrgchain_invocation(const Options &options, const NrgChainTableMode mode,
+                                           const std::optional<unsigned> resolved_nmax = std::nullopt) {
   // Keep reporting and core execution on the same parser output and mode.
   auto parameters = read_nrgchain_parameters(options.param_filename);
+  if (resolved_nmax) parameters["Nmax"] = std::to_string(*resolved_nmax);
   auto configuration = resolve_nrgchain_configuration(parameters, mode);
   if (!options.wilson_only && configuration.rescalexi)
     throw std::invalid_argument("rescalexi=true is not supported for full instantiation or --diag-seed-only: "
@@ -1076,9 +1079,9 @@ void run_diag_seed_only(const Options &options) {
   std::cout << "E_gs=" << std::setprecision(18) << seed.ground_energy << '\n';
 }
 
-void run_full_instantiation(const Options &options) {
+double run_full_instantiation(const Options &options, const std::optional<unsigned> resolved_nmax = std::nullopt) {
   auto sections = parse_param_sections(options.param_filename);
-  const auto nrgchain = make_nrgchain_invocation(options, NrgChainTableMode::Calculate);
+  const auto nrgchain = make_nrgchain_invocation(options, NrgChainTableMode::Calculate, resolved_nmax);
   report_configuration(options, nrgchain);
   const auto data_destination = std::filesystem::absolute("data");
   NRG::Workdir staging_workdir(data_destination.parent_path().string(), true);
@@ -1087,6 +1090,20 @@ void run_full_instantiation(const Options &options) {
   if (options.generate_temporaries)
     write_staged_param_section_files(sections, options.param_filename, staging_dir, legacy_artifacts);
   auto params = make_instantiate_params(options.param_filename, staging_dir);
+  if (resolved_nmax) {
+    if (params->symtype.value() != "QS" || params->polarized || params->pol2x2 || params->rungs || params->substeps || params->floquet)
+      throw std::invalid_argument("Workflow instantiate supports only real, one-channel, unpolarized QS templates "
+                                  "without pol2x2, rungs, substeps or Floquet mode.");
+    if (params->tri == "cpp")
+      throw std::invalid_argument("Workflow instantiate supplies Wilson coefficients; tri=cpp is not supported.");
+    const auto template_file = resolve_template_file(options.template_dir, "data.in");
+    if (NRG::complex_data(template_file.string()))
+      throw std::invalid_argument("Workflow instantiate does not support complex templates.");
+    std::ifstream input(template_file);
+    const auto header = NRG::read_data_header(input);
+    if (header.symtype != "QS" || header.channels != 1)
+      throw std::invalid_argument("Workflow instantiate requires a one-channel QS data.in template.");
+  }
 
   const auto wilson = NRG::Tools::NrgChain::calculate_from_params(
       nrgchain.parameters, nrgchain.configuration.mode, staging_dir);
@@ -1094,7 +1111,7 @@ void run_full_instantiation(const Options &options) {
     throw std::runtime_error("Only single-channel Wilson generation is supported in this instantiate slice.");
   if (options.generate_temporaries) write_wilson_channel(wilson.channels.front(), 1, staging_dir);
 
-  const auto nmax = parse_size_t_value(param_value(sections, "param", "Nmax"), "Nmax");
+  const auto nmax = resolved_nmax ? *resolved_nmax : parse_size_t_value(param_value(sections, "param", "Nmax"), "Nmax");
   const auto polarized = params->polarized.value();
   if (polarized) throw std::runtime_error("Spin-polarized coefficient tables are not supported in this instantiate slice.");
 
@@ -1127,6 +1144,7 @@ void run_full_instantiation(const Options &options) {
   publish_file(staged_data, data_destination);
 
   std::cout << "E_gs=" << std::setprecision(18) << seed.ground_energy << '\n';
+  return seed.ground_energy;
 }
 
 void run_wilson_only(const Options &options) {
@@ -1140,6 +1158,16 @@ void run_wilson_only(const Options &options) {
 
 } // namespace
 
+double NRG::Workflow::detail::instantiate(const std::string &parameter_file, const std::string &template_directory,
+                                         const unsigned nmax) {
+  if (nmax < 1 || nmax > 998) throw std::invalid_argument("Workflow nmax must be a resolved value in [1,998].");
+  Options options;
+  options.param_filename = parameter_file;
+  options.template_dir = template_directory;
+  return run_full_instantiation(options, nmax);
+}
+
+#ifndef NRG_INSTANTIATE_NO_MAIN
 int main(int argc, char *argv[]) {
   if (NRG::Tools::report_version_if_requested(argc, argv, "instantiate")) return EXIT_SUCCESS;
   try {
@@ -1159,3 +1187,4 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 }
+#endif

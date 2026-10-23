@@ -43,13 +43,18 @@ inline auto parse_parameter_int(const std::string_view value, const std::string_
 
 inline bool find_block(std::ifstream &stream, const std::string &name) {
   const std::string target = "[" + name + "]";
+  if (stream.bad() || (stream.fail() && !stream.eof()))
+    throw std::runtime_error("Error reading parameter input.");
   stream.clear();
   stream.seekg(0, std::ios::beg);
+  if (!stream) throw std::runtime_error("Error seeking parameter input.");
   while (stream) {
     std::string line;
     std::getline(stream, line);
     if (stream && target == line) break;
   }
+  if (stream.bad() || (stream.fail() && !stream.eof()))
+    throw std::runtime_error("Error reading parameter input.");
   return bool(stream);
 }
 
@@ -69,6 +74,8 @@ void parse_key_value_block(std::ifstream &stream, Map &params) {
     const auto value   = trim_whitespace(line.substr(pos_eq + 1));
     params.insert_or_assign(keyword, value);
   }
+  if (stream.bad() || (stream.fail() && !stream.eof()))
+    throw std::runtime_error("Error reading parameter input.");
 }
 
 template<typename Map, typename T, typename Converter>

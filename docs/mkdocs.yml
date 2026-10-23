@@ -8,6 +8,7 @@ nav:
     - Getting started: getting-started.md
     - Input and configuration: input-and-configuration.md
     - nrginit workflow: nrginit-workflow.md
+    - Native solver workflow: solver-workflow.md
     - Parallelism: parallelism.md
   - Floquet NRG:
     - Formalism and conventions: floquet-formalism.md

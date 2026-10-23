@@ -50,6 +50,12 @@ literal syntax recommended for reproducible runs.
 
 ## Ownership And Diagnostics
 
+The preparation tools' shared parameter-block reader distinguishes a missing
+`[param]` block (which retains tool defaults) from seek/read failures (which
+throw). `adapt`, including native workflow discretization, requires a regular
+parameter file; directories and other nonregular inputs are rejected. Symlinks
+to regular files remain supported.
+
 Settings such as `model`, `band`, `Nmax`, `Tmin`, `U`, and `Gamma` are read by
 `nrginit` but are not runtime parameters. When these keys are in `[param]`,
 `nrg` prints them under `Unused settings`; values in `[extra]` are instead

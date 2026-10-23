@@ -18,7 +18,35 @@ double integrate_fermi(const Table &, double temperature,
 Table resample(const Table &, const std::vector<double> &grid);
 Table kramers_kronig(const Table &);
 Lattice lattice(const Table &dos, const Table &re_sigma, const Table &im_sigma,
-                double mu, double clip_sigma, unsigned moment = 0);
+                 double mu, double clip_sigma, unsigned moment = 0);
+
+struct SpectrumBin { double frequency; double weight; };
+using SpectrumBins = std::vector<SpectrumBin>;
+enum class SpectrumLayout { real_pairs, complex_real, complex_imaginary };
+enum class BroadeningKernel {
+  hybrid_output_frequency, hybrid_peak_frequency, gaussian
+};
+struct BroadeningOptions {
+  double alpha;
+  double temperature;
+  double omega0_ratio = 1e-9;
+  BroadeningKernel kernel = BroadeningKernel::hybrid_output_frequency;
+  double accumulation = 0;
+  double filter_low = 0;
+  double filter_high = std::numeric_limits<double>::max();
+  bool keep_nonnegative = true;
+  bool keep_negative = true;
+  std::optional<double> final_gaussian_gamma;
+  std::optional<double> final_derfd_gamma;
+  std::size_t jobs = 1;
+};
+SpectrumBins load_spectrum_bins(const std::string &,
+                               SpectrumLayout = SpectrumLayout::real_pairs);
+Table broaden(const std::vector<SpectrumBins> &, const std::vector<double> &mesh,
+              const BroadeningOptions &);
+Table broaden_files(const std::vector<std::string> &, const std::vector<double> &mesh,
+                    const BroadeningOptions &,
+                    SpectrumLayout = SpectrumLayout::real_pairs);
 }
 ```
 
@@ -32,7 +60,7 @@ transform algorithm. The implementation uses the library interface of
 
 ## Numerical Contract
 
-- Input coordinates and values must be finite, grids strictly increasing,
+- Table coordinates and values must be finite, grids strictly increasing,
   domain widths finite, and x/y lengths equal. Inputs are never sorted or
   modified. Interpolation requires at least three points.
 - `integrate_abs` integrates the absolute value of the represented cubic,
@@ -75,7 +103,10 @@ Errors propagate as standard C++ exceptions, including invalid arguments,
 out-of-domain requests, numerical overflow, and quadrature failure. Existing
 KK validation sometimes throws `std::runtime_error` for malformed meshes.
 Nonfinite numerical outputs are rejected. The library does not print, exit,
-read environment worker settings, or perform file I/O.
+read environment worker settings, launch subprocesses, parse CLI arguments, or
+change the working directory. **`load_spectrum_bins` and `broaden_files` are the
+explicit exceptions to the no-file-I/O contract:** they only read the named
+binary inputs. All other entry points, including `broaden`, work in memory.
 
 GSL operations use the shared `NRG::Tools::GslErrorHandlerGuard`, which restores
 the previous process-global handler on success and exceptions, including the
@@ -85,6 +116,71 @@ that shared mechanism rather than concurrently changing GSL's global handler.
 Analytic transforms need no GSL handler changes after interpolation setup.
 Each call prepares its own interpolant; there is currently no public cache or
 `PreparedDos` object.
+
+## Broadening Contract
+
+Broadening shares `tools/broaden/broadening_core.hpp` with the CLI, including
+exact-key averaging, filtering, `std::transform_reduce` accumulation and final
+convolution. Primary kernel formulas remain in `c++/broadening.hpp`, also used
+by the solver. The native implementation does not include the CLI header and
+never accesses or changes the GSL error handler. Calls own all mutable state;
+independent calls and `jobs > 1` are supported, with the same per-destination
+arithmetic regardless of worker count. `jobs` defaults to 1, not an environment
+setting. The CLI retains its existing options, defaults and reporting.
+
+- Binary files contain native-endian, native-representation `double` records,
+  without a header: pairs `(frequency, weight)` for `real_pairs`, or triplets
+  `(frequency, real, imaginary)` for either complex layout. The selected
+  component becomes the signed weight. Record lengths and **all components**,
+  including the unselected component, are validated. Truncation, failed I/O,
+  nonfinite values and invalid layouts throw; empty files are valid.
+- Loading preserves input order and duplicates. Broadening accepts unsorted
+  bins, signed weights and empty individual contributions, but the outer list
+  of spectra or filenames must be nonempty. In list order, and then record
+  order, weights are added to a `std::map<double,double>` keyed by exact
+  frequency. Each accumulated value is divided **once** by the number of
+  contributions, including empty ones. No per-file normalization, tolerance
+  coalescing, positive-weight clipping or total-weight normalization occurs.
+- The caller supplies a nonempty, finite, strictly increasing destination mesh,
+  retained exactly in `Table::x`. One- and two-point meshes are allowed.
+  Hybrid kernels reject zero destination frequencies instead of producing a
+  log-Gaussian NaN; Gaussian broadening accepts zero. Zero-frequency input bins
+  are valid for every kernel.
+- `alpha`, `temperature`, `omega0_ratio`, and each supplied final gamma must be
+  finite and positive, as must the products `omega0_ratio*temperature` and
+  `gamma*temperature`. `accumulation` must be finite, `jobs >= 1`, and filters
+  must satisfy finite `0 <= filter_low <= filter_high`. Nonfinite accumulated
+  weights or numerical results throw rather than returning NaNs or infinities.
+- Filters zero weights with `abs(frequency) < filter_low` or
+  `abs(frequency) > filter_high`, retaining both boundary values. Sign filters
+  operate on the **frequency**, never the weight; zero is nonnegative. Setting
+  both sign flags false is allowed and yields zero on ordinary valid meshes.
+- `hybrid_output_frequency` is the default CLI crossover. The alternative
+  `hybrid_peak_frequency` corresponds to `-n`; it is a kernel choice, not a
+  post-hoc normalization. Both use `omega0 = omega0_ratio*temperature` and the
+  CLI accumulation-point shift only in the logarithmic term. `gaussian` matches
+  `-g`, using width `alpha` (standard deviation `alpha/sqrt(2)`) and ignoring
+  accumulation in its kernel.
+- Final Gaussian (`-f`) and derivative-of-Fermi (`-x`) passes use
+  `sigma = gamma*temperature`. The Gaussian's standard deviation is `sigma`;
+  the other kernel is `1 / (2*sigma*(1+cosh((x-y)/sigma)))`. When both are set,
+  Gaussian runs first. Each pass snapshots its input, sums **interior** source
+  points using the exact legacy cell width
+  `(mesh[j+1]+mesh[j])/2 - (mesh[j-1]+mesh[j])/2`, and does **not** normalize the
+  kernel sum. Endpoints remain untouched. Only destinations satisfying strict
+  `abs(w) < 100*sigma` are convolved; the source points have no cutoff.
+
+Equivalent to the existing script command
+`broaden -x gamma -L mesh basename Nz alpha T 1e-9`, with an already loaded mesh:
+
+```cpp
+NRG::Numerics::BroadeningOptions options{.alpha = alpha, .temperature = T};
+options.final_derfd_gamma = gamma;
+auto spectrum = NRG::Numerics::broaden_files(filenames_in_z_order, mesh, options);
+```
+
+Pass paths explicitly, for example `{"1/spec.bin", "2/spec.bin"}`. The API
+neither constructs numbered directories nor loads a mesh from a text file.
 
 ## Build And Test
 
@@ -109,10 +205,22 @@ private CLI headers use POSIX headers; Linux is the supported/tested platform.
 `BUILD_SHARED_LIBS=ON` selects a shared library instead of the default static
 library. Strict floating-point flags are applied privately to the library.
 
-The six CTest groups cover flat/linear and cubic integration oracles, absolute
+The original six CTest groups cover flat/linear and cubic integration oracles, absolute
 interpolant roots, finite/zero-temperature Fermi integrals, Steffen resampling,
 KK sign/parity/endpoints, lattice moments and far-field cancellation, malformed
 input, clipping, and GSL handler restoration including concurrent calls.
+Six additional broadening groups cover independent kernel/convolution oracles,
+signed symmetry, exact-key averaging and its rounding order, all binary layouts,
+malformed records/options/meshes, empty contributions, cutoff boundaries,
+unmodified endpoints, final-pass order, and repeated/concurrent calls.
+
+Optionally set
+`-DNRGLJUBLJANA_NUMERICS_BROADEN_CLI=/absolute/path/to/broaden` to add CLI parity
+testing (requires Python 3). The harness alone launches subprocesses, in fresh
+temporary directories, and compares ten signed cases at 1, 3 and 20 workers.
+An existing pre-extraction executable can serve as an independent oracle;
+the numerical library itself never launches a CLI. No root CMake linkage
+change is needed for `broaden`, which uses the shared header directly.
 
 ## Consume
 

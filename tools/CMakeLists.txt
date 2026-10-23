@@ -43,6 +43,7 @@ target_compile_features(nrgchain_core PRIVATE cxx_std_20)
 target_compile_options(nrgchain_core PRIVATE ${NRG_CXX_OPT})
 nrgljubljana_apply_strict_floating_point(nrgchain_core)
 target_compile_definitions(nrgchain_core PRIVATE NRGCHAIN_NO_MAIN)
+set_target_properties(nrgchain_core PROPERTIES POSITION_INDEPENDENT_CODE ON CXX_VISIBILITY_PRESET hidden)
 target_include_directories(nrgchain_core PRIVATE
                      $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/generated>
                      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/nrgchain>
@@ -72,3 +73,5 @@ target_link_libraries(instantiate PRIVATE nrgljubljana_c)
 
 # Additional source file for 'matrix' tool
 target_sources(matrix PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/matrix/parser.cc)
+
+add_subdirectory(solver_workflow)

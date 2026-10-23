@@ -24,6 +24,7 @@
 #include <cerrno>
 #include <cstdio>
 #include <system_error>
+#include <filesystem>
 #include <unistd.h>
 
 #include "../common/gsl_config.hpp"
@@ -81,6 +82,7 @@ class Adapt {
    NRG::Tools::InterpolationMethod density_interpolation = NRG::Tools::InterpolationMethod::linear;
    FMethod f_method = FMethod::ODE;                   // Method for calculating representative energies.
    CquadOptions cquad_options;                        // Optional controls for the integral method.
+   std::filesystem::path output_directory;            // Empty means the original CLI output filenames.
    NRG::Tools::CumulativeWeight cumulative;           // normalized W(omega) and its generalized inverse
    RepresentativeEnergy representative_energy;        // integral method, built in the constructor
     double intA; // intA=int_0^1 rho(w) dw.
@@ -188,7 +190,7 @@ class Adapt {
 
    // returns the g(xmax)/[A/rho(0)] ratio and vecg
    auto shoot_g() {
-     const std::string filename_g = "GSOL" + std::string(sign == Sign::POS ? "" : "NEG") + ".dat";
+     const auto filename_g = (output_directory / g_fn(sign)).string();
      std::ofstream OUTG;
      safe_open(OUTG, filename_g);
      std::cout << "#  A=" << A << std::endl;
@@ -213,6 +215,8 @@ class Adapt {
      const auto ratio  = y / factor;
      std::cout << "#  x_last=" << x << " " << "g_last/factor=" << ratio << std::endl;
      std::cout << "#  eps_last=" << y * mesh.Lambda.power(2 - x) << " max_error=" << max_error << std::endl;
+     OUTG.close();
+     if (!OUTG) throw std::runtime_error("Error writing " + filename_g);
      return std::make_pair(ratio, vecg);
    }
     void init_A() {
@@ -382,8 +386,9 @@ class Adapt {
          const Sign &sign_,
          std::optional<double> flat_gamma_ = std::nullopt,
          const bool force_integral = false,
-         const CquadOptions &cquad_options_ = {})
-     : P(P_), sign(sign_), flat_gamma(flat_gamma_), cquad_options(cquad_options_) {
+         const CquadOptions &cquad_options_ = {},
+         const std::filesystem::path &output_directory_ = {})
+     : P(P_), sign(sign_), flat_gamma(flat_gamma_), cquad_options(cquad_options_), output_directory(output_directory_) {
      set_parameters();
      representative_energy = RepresentativeEnergy(mesh, cumulative, cquad_options, allowed_error, max_error,
                                                  NRG::Tools::WarnToCerr{"adapt: warning: "});
@@ -404,7 +409,7 @@ class Adapt {
                                    "use adapt=false and --integral (or f_method=integral).");
      report_parameters();
    }
-   auto g_fn(const Sign &sign_) { return "GSOL" + (sign_ == Sign::POS ? ""s : "NEG"s) + ".dat"; }
+   std::string g_fn(const Sign &sign_) { return "GSOL" + (sign_ == Sign::POS ? ""s : "NEG"s) + ".dat"; }
    auto f_fn(const Sign &sign_) { return "FSOL" + (sign_ == Sign::POS ? ""s : "NEG"s) + ".dat"; }
    void load_or_calc_g() {
      const auto vecg = P.Pbool("loadg", false) ? load_g(g_fn(sign)) : calc_g();
@@ -421,7 +426,8 @@ class Adapt {
    }
    void calc_f() {
      std::ofstream OUTF;
-     safe_open(OUTF, f_fn(sign));
+     const auto filename = (output_directory / f_fn(sign)).string();
+     safe_open(OUTF, filename);
      rho(1); // NECESSARY!
      double dx = dx_fine; // initial step size
      // Initial conditions
@@ -440,6 +446,8 @@ class Adapt {
          std::cout<< "***** Terminating!" << std::endl;
        }
      } while (x < xmax && std::abs(y) <= max_abs);
+     OUTF.close();
+     if (!OUTF) throw std::runtime_error("Error writing " + filename);
    }
    void calc_f_integral() {
      const NRG::Tools::GslErrorHandlerGuard error_handler;
@@ -457,7 +465,8 @@ class Adapt {
      const bool bounded_hardgap = mesh.hardgap && mesh.boundary > 0.0;
      std::ofstream OUTF;
      std::ostringstream buffer;
-     if (!bounded_hardgap) safe_open(OUTF, f_fn(sign));
+     const auto filename = (output_directory / f_fn(sign)).string();
+     if (!bounded_hardgap) safe_open(OUTF, filename);
      // Do not replace an existing hardgap table until the requested extent has been validated.
      std::ostream &out = bounded_hardgap ? static_cast<std::ostream &>(buffer) : OUTF;
      out << std::setprecision(16);
@@ -490,7 +499,6 @@ class Adapt {
      } while (x < xmax && std::abs(y) <= max_abs);
      if (bounded_hardgap) {
        const auto contents = buffer.str();
-       const auto filename = f_fn(sign);
        auto temporary = filename + ".tmp.XXXXXX";
        const int fd = ::mkstemp(temporary.data());
        if (fd == -1)
@@ -513,6 +521,9 @@ class Adapt {
          std::remove(temporary.c_str());
          throw;
        }
+     } else {
+       OUTF.close();
+       if (!OUTF) throw std::runtime_error("Error writing " + filename);
      }
    }
    void run() {

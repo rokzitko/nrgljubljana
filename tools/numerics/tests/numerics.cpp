@@ -45,6 +45,12 @@ void rejects(Function function) {
 
 void integration() {
   near(integrate(flat), 1.0);
+  near(integrate_range(flat, -0.5, 0.5), 0.5);
+  near(integrate_range(flat, -2, 2), 1.0);
+  near(integrate_range(flat, 2, 3), 0.0);
+  near(integrate_range(flat, 0, 0), 0.0);
+  rejects<std::invalid_argument>([] { integrate_range(flat, 1, -1); });
+  rejects<std::invalid_argument>([] { integrate_range(flat, 0, infinity); });
   near(integrate_moment(flat, 0), 1.0);
   near(integrate_moment(flat, 1), 0.0);
   near(integrate_moment(flat, 2), 1.0 / 3.0);

@@ -8,6 +8,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <filesystem>
 #include <stdexcept>
 
 #include <parse_bool.hpp>
@@ -20,6 +21,8 @@ class Params : public std::map<std::string, std::string> {
  private:
  public:
    Params(const std::string &filename) {
+      if (!std::filesystem::is_regular_file(filename))
+        throw std::runtime_error("Parameter input must be a regular file: " + filename);
       std::ifstream F;
       safe_open(F, filename);
       if (NRG::Tools::find_block(F, "param")) { NRG::Tools::parse_key_value_block(F, *this); }

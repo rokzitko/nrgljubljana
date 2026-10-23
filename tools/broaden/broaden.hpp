@@ -37,7 +37,7 @@
 
 #include <range/v3/all.hpp>
 
-#include "broadening.hpp"
+#include "broadening_core.hpp"
 #include "misc.hpp"
 #include "basicio.hpp"
 
@@ -48,105 +48,16 @@
 
 namespace NRG::Broaden {
 
-const double R_1_SQRT2PI = 1.0 / std::sqrt(2.0 * M_PI); // sqrt not constexpr on all platforms (yet)
-
 using std::abs; // important!!
 using std::size_t;
+using Core::convolve;
+using Core::gaussian_kernel;
+using Core::derfd_kernel;
 
 inline std::string tostring(const int i) {
   std::ostringstream S;
   S << i;
   return S.str();
-}
-
-inline double gaussian_kernel(const double x, const double y, const double sigma) {
-  const auto d = (x - y) / sigma;
-  return R_1_SQRT2PI * std::exp(-d * d / 2.0) / sigma;
-}
-
-// Derivative of the Fermi-Dirac function: -d/dw f_FD(x-y) with effective temperature sigma.
-inline double derfd_kernel(const double x, const double y, const double sigma) {
-  const auto d = (x - y) / sigma;
-  return 1.0 / ((1.0 + std::cosh(d)) * 2.0 * sigma);
-}
-
-template<typename FNC>
-void for_each_index(const size_t count, const size_t requested_workers, FNC &&calculate) {
-  if (count == 0) return;
-  if (requested_workers == 0) throw std::invalid_argument("Worker count must be positive.");
-  const auto worker_count = std::min(count, requested_workers);
-  if (worker_count == 1) {
-    for (size_t index = 0; index < count; ++index) calculate(index);
-    return;
-  }
-
-  std::atomic<size_t> next_index{0};
-  std::atomic<bool> stopped{false};
-  std::exception_ptr failure;
-  auto failure_index = std::numeric_limits<size_t>::max();
-  std::mutex failure_mutex;
-  auto run_worker = [&] {
-    while (!stopped.load(std::memory_order_relaxed)) {
-      const auto index = next_index.fetch_add(1, std::memory_order_relaxed);
-      if (index >= count) break;
-      try {
-        calculate(index);
-      } catch (...) {
-        {
-          const std::lock_guard lock(failure_mutex);
-          if (!failure || index < failure_index) {
-            failure = std::current_exception();
-            failure_index = index;
-          }
-        }
-        stopped.store(true, std::memory_order_relaxed);
-      }
-    }
-  };
-
-  std::vector<std::thread> workers;
-  workers.reserve(worker_count);
-  try {
-    for (size_t worker = 0; worker < worker_count; ++worker) workers.emplace_back(run_worker);
-  } catch (...) {
-    stopped.store(true, std::memory_order_relaxed);
-    for (auto &worker : workers) worker.join();
-    throw;
-  }
-  for (auto &worker : workers) worker.join();
-  if (failure) std::rethrow_exception(failure);
-}
-
-template<typename S, typename T, typename FNC>
-void convolve(const std::vector<S> &mesh, std::vector<T> &a, const double sigma, 
-              const size_t jobs, FNC kernel, const double cutoff_ratio = 100) {
-  const auto nr_mesh = mesh.size();
-  if (nr_mesh == 0) throw std::runtime_error("Output mesh is empty.");
-  if (sigma <= 0.0) throw std::invalid_argument("Convolution width must be greater than 0.");
-  auto b(a); // source
-  for_each_index(nr_mesh, jobs, [&](const size_t i) {
-    if (i == 0 || i + 1 == nr_mesh) {
-      a[i] = b[i];
-      return;
-    }
-    const auto x = mesh[i];
-    if (std::abs(x) < cutoff_ratio * sigma) {
-      auto sum = 0.0;
-      auto sum_kernel = 0.0;
-      for (auto j = 1; j < nr_mesh - 1; j++) {
-        const auto y     = mesh[j];
-        const auto width = (mesh[j + 1] + mesh[j]) / 2.0 - (mesh[j - 1] + mesh[j]) / 2.0;
-        const auto kw    = kernel(x, y, sigma) * width;
-        assert(std::isfinite(kw));
-        sum += b[j] * kw;
-        sum_kernel += kw;
-      }
-      a[i] = sum;
-    } else {
-      // High temperatures: convolution not necessary
-      a[i] = b[i];
-    }
-  });
 }
 
 template<typename S, typename T>
@@ -558,39 +469,23 @@ class Broaden {
    // Combine data from all NRG runs (z-averaging).
    void merge() {
      const auto cols = 1 + nrcol; // number of elements in a line
-     // Sum weight corresponding to equal frequencies.  Map of (frequency,weight) pairs is used for this purpose.
-     for (auto i = 1; i <= Nz; i++) {
-       for (auto l = 0; l < buffers[i].size()/cols; l++) {
-         auto freq  = buffers[i][cols * l];
-         auto value = buffers[i][cols * l + col];
-         spec[freq] += value;
-       }
+      // Sum weight corresponding to equal frequencies.  Map of (frequency,weight) pairs is used for this purpose.
+      for (auto i = 1; i <= Nz; i++) {
+        Core::accumulate(spec, buffers[i].size()/cols,
+                         [&](const size_t l) { return buffers[i][cols * l]; },
+                         [&](const size_t l) { return buffers[i][cols * l + col]; });
      }
      nr_spec = spec.size();
       if (verbose) { std::cerr << nr_spec << " unique frequencies." << std::endl; }
      // Normalize weight by 1/Nz, determine total weight, and store the (frequency,weight) data in the form of linear
      // vectors for faster access in the ensuing calculations.
-     auto sum = 0.0;
-     for (auto & I : spec) {
-       const auto weight = (I.second /= Nz); // Normalize weight on the fly
-       const auto freq   = I.first;
-       vfreq.push_back(freq);
-       vspec.push_back(weight);
-       sum += weight;
-     }
+      const auto sum = Core::average(spec, Nz, vfreq, vspec);
       if (verbose) { std::cerr << "Total weight=" << sum << std::endl; }
      assert(vfreq.size() == nr_spec && vspec.size() == nr_spec);
    }
 
-   void filter() {
-     for (auto j = 0; j < nr_spec; j++) {
-       if (std::abs(vfreq[j]) < filterlow) { vspec[j] = 0.0; }
-       if (std::abs(vfreq[j]) > filterhigh) { vspec[j] = 0.0; }
-     }
-     for (auto j = 0; j < nr_spec; j++) {
-       if (!keeppositive && vfreq[j] >= 0) { vspec[j] = 0.0; }
-       if (!keepnegative && vfreq[j] < 0) { vspec[j] = 0.0; }
-     }
+    void filter() {
+      Core::filter(vfreq, vspec, filterlow, filterhigh, keeppositive, keepnegative);
    }
 
    void integrals_for_sumrules() {
@@ -628,27 +523,17 @@ class Broaden {
 
     // e - output energy
     // ept - energy of the delta peak (data point)
-    auto bfnc(const double e, const double ept) const {
-      if (gaussian) {
-        return NRG::Broadening::gaussian(e, ept, alpha);
-      } else {
-        const auto mode = normalization ? NRG::Broadening::CrossoverMode::peak_frequency
-                                        : NRG::Broadening::CrossoverMode::output_frequency;
-        return NRG::Broadening::hybrid_kernel(e, ept, alpha, omega0, mode, accumulation);
-      }
+     auto bfnc(const double e, const double ept) const {
+       const auto mode = normalization ? NRG::Broadening::CrossoverMode::peak_frequency
+                                       : NRG::Broadening::CrossoverMode::output_frequency;
+       return Core::kernel(e, ept, alpha, omega0, gaussian, mode, accumulation);
     }
 
    vec broaden(const vec &mesh_) {
       if (verbose) { std::cerr << "Broadening. Number of mesh points = " << mesh_.size() << std::endl; }
-     vec result(mesh_.size());
-     for_each_index(mesh_.size(), jobs, [&](const size_t index) {
-       const auto m = mesh_[index];
-       result[index] = std::transform_reduce(vspec.begin(), vspec.end(), vfreq.begin(), 0.0, std::plus<>(),
-                                             [this,m](const auto weight, const auto freq) {
-                                               return weight * bfnc(m, freq);
-                                             });
-     });
-     return result;
+      const auto mode = normalization ? NRG::Broadening::CrossoverMode::peak_frequency
+                                      : NRG::Broadening::CrossoverMode::output_frequency;
+      return Core::broaden(vfreq, vspec, mesh_, alpha, omega0, gaussian, mode, accumulation, jobs);
    }
    
    // Cumulative spectrum

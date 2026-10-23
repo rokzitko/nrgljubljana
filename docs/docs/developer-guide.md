@@ -28,6 +28,7 @@ These files define most of the runtime vocabulary and the main orchestration flo
 Useful companion pages in this documentation set:
 
 - [Input and configuration](input-and-configuration.md)
+- [Native solver workflow](solver-workflow.md)
 - [Runtime flow](runtime-flow.md)
 - [Iteration engine](iteration-engine.md)
 - [Data structures](data-structures.md)

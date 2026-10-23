@@ -1,6 +1,10 @@
 #ifndef NRGLJUBLJANA_NUMERICS_HPP
 #define NRGLJUBLJANA_NUMERICS_HPP
 
+#include <cstddef>
+#include <limits>
+#include <optional>
+#include <string>
 #include <vector>
 
 namespace NRG::Numerics {
@@ -18,10 +22,14 @@ struct Lattice {
 // Interpolated tables require at least three finite points with matching x/y
 // sizes, strictly increasing x, and finite domain width. Interpolation is
 // always Steffen. Signed ordinates are supported except for the physical DOS.
-// Failures throw standard C++ exceptions; no CLI parsing, file I/O, or exits.
+// Failures throw standard C++ exceptions; no CLI parsing or exits. Only the
+// explicitly named spectrum-loading functions below perform file I/O.
 
 // Integrate the represented interpolant over its full tabulated domain.
 double integrate(const Table &table);
+
+// Integrate over [lower,upper], clipped to the represented table domain.
+double integrate_range(const Table &table, double lower, double upper);
 
 // Weight the represented interpolant, not the tabulated knots, by x^moment.
 double integrate_moment(const Table &table, unsigned moment);
@@ -58,6 +66,45 @@ Table kramers_kronig(const Table &table);
 // fit in int, as required by hilb; large degrees may exhaust memory or overflow.
 Lattice lattice(const Table &dos, const Table &re_sigma, const Table &im_sigma, double mu, double clip_sigma,
                 unsigned moment = 0);
+
+struct SpectrumBin { double frequency; double weight; };
+using SpectrumBins = std::vector<SpectrumBin>;
+enum class SpectrumLayout { real_pairs, complex_real, complex_imaginary };
+enum class BroadeningKernel { hybrid_output_frequency, hybrid_peak_frequency, gaussian };
+
+struct BroadeningOptions {
+  double alpha;
+  double temperature;
+  double omega0_ratio = 1e-9;
+  BroadeningKernel kernel = BroadeningKernel::hybrid_output_frequency;
+  double accumulation = 0;
+  double filter_low = 0;
+  double filter_high = std::numeric_limits<double>::max();
+  bool keep_nonnegative = true;
+  bool keep_negative = true;
+  std::optional<double> final_gaussian_gamma;
+  std::optional<double> final_derfd_gamma;
+  std::size_t jobs = 1;
+};
+
+// Native-endian binary doubles: (frequency,weight) or (frequency,real,imag).
+// Validate whole records and all components, selecting the requested weight.
+// Empty files are valid. No sorting, coalescing, or normalization on loading.
+SpectrumBins load_spectrum_bins(const std::string &, SpectrumLayout = SpectrumLayout::real_pairs);
+
+// Exact-key map averaging in input order, divided once by the outer size
+// (which must be nonzero, including empty contributions). Signed weights and
+// unsorted duplicate bins are supported. The explicit mesh must be nonempty,
+// finite and strictly increasing; hybrid kernels reject zero destinations.
+// All options must be finite; alpha, temperature, omega0_ratio, optional gamma
+// and their width products must be positive. Require 0<=filter_low<=filter_high
+// and jobs>=1. Filters include both boundaries and classify zero as nonnegative.
+// Final passes use sigma=gamma*temperature, Gaussian then derivative of Fermi,
+// interior source cell widths, unchanged endpoints, and |destination|<100*sigma.
+// No normalization, clipping, environment access, logging, cwd or GSL changes.
+Table broaden(const std::vector<SpectrumBins> &, const std::vector<double> &mesh, const BroadeningOptions &);
+Table broaden_files(const std::vector<std::string> &, const std::vector<double> &mesh, const BroadeningOptions &,
+                    SpectrumLayout = SpectrumLayout::real_pairs);
 
 } // namespace NRG::Numerics
 

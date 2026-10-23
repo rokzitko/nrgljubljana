@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.25)
+project(workflow_consumer LANGUAGES CXX)
+find_package(nrgljubljana_workflow CONFIG REQUIRED)
+add_executable(consumer main.cc)
+target_link_libraries(consumer PRIVATE nrgljubljana::workflow)

@@ -1,0 +1,14 @@
+@PACKAGE_INIT@
+include("${CMAKE_CURRENT_LIST_DIR}/nrgljubljana-workflow-targets.cmake")
+# This is a private shared-library dependency, not an interface link requirement.
+# It supplies the linker's rpath-link directory without exposing core headers/deps.
+set_and_check(_workflow_core "${PACKAGE_PREFIX_DIR}/@CMAKE_INSTALL_LIBDIR@/nrgljubljana/workflow/$<TARGET_FILE_NAME:nrgljubljana_c>")
+get_target_property(_workflow_configs nrgljubljana::workflow IMPORTED_CONFIGURATIONS)
+foreach(_workflow_config IN LISTS _workflow_configs)
+  set_property(TARGET nrgljubljana::workflow PROPERTY
+    IMPORTED_LINK_DEPENDENT_LIBRARIES_${_workflow_config} "${_workflow_core}")
+endforeach()
+unset(_workflow_core)
+unset(_workflow_configs)
+unset(_workflow_config)
+check_required_components(nrgljubljana_workflow)
