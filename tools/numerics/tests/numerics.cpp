@@ -196,9 +196,9 @@ void validation() {
   for (const auto &grid : std::vector<std::vector<double>>{{}, {nan}, {infinity}, {0.0, 0.0}, {0.5, -0.5}})
     rejects([&] { resample(flat, grid); });
   for (const auto temperature : {-1.0, infinity, nan}) rejects([&] { integrate_fermi(flat, temperature); });
-  for (const auto &[epsabs, epsrel] : std::vector<std::pair<double, double>>{
+  for (const auto &tolerances : std::vector<std::pair<double, double>>{
          {-1.0, 1e-9}, {1e-10, -1.0}, {nan, 1e-9}, {1e-10, nan}, {infinity, 1e-9}, {1e-10, infinity}, {0.0, 0.0}, {0.0, 1e-17}})
-    rejects([&] { integrate_fermi(flat, 0.0, epsabs, epsrel); });
+    rejects([&] { integrate_fermi(flat, 0.0, tolerances.first, tolerances.second); });
   rejects([] { kramers_kronig(flat); }); // Odd point count, even though symmetric.
   rejects([] { kramers_kronig({{-2.0, -1.0, 0.5, 2.0}, {1.0, 1.0, 1.0, 1.0}}); });
   rejects([] { kramers_kronig({{-2.0, -1.0, 1.0, 3.0}, {1.0, 1.0, 1.0, 1.0}}); });

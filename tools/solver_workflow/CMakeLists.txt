@@ -46,10 +46,12 @@ if(NRGLJUBLJANA_BUILD_TESTS_ENABLED)
   enable_testing()
   add_executable(workflow_contract tests/contract.cc)
   target_link_libraries(workflow_contract PRIVATE nrgljubljana::workflow gmp gsl project_warnings Boost::headers fmt::fmt-header-only)
+  target_link_libraries(workflow_contract PRIVATE $<$<BOOL:${ASAN}>:asan> $<$<BOOL:${UBSAN}>:ubsan>)
   target_include_directories(workflow_contract PRIVATE ${PROJECT_SOURCE_DIR}/c++)
   add_test(NAME solver_workflow_contract COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/contract.py
     --driver $<TARGET_FILE:workflow_contract> --tools ${PROJECT_BINARY_DIR}/tools
     --template ${PROJECT_SOURCE_DIR}/test/mixchain+nrgrun/templates/QS
     --temporary-parent ${CMAKE_CURRENT_BINARY_DIR})
   set_tests_properties(solver_workflow_contract PROPERTIES TIMEOUT 180 ENVIRONMENT "OMP_NUM_THREADS=1;MKL_NUM_THREADS=1")
+  add_test(NAME solver_workflow_comparator COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_contract.py)
 endif()

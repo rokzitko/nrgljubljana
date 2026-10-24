@@ -117,6 +117,7 @@ jobs:
             ${{ env.CONDA_BLD_PATH }}/**/work/build/Testing/Temporary/LastTest.log
             ${{ env.CONDA_BLD_PATH }}/**/work/build/Testing/Temporary/LastTestsFailed.log
             ${{ env.CONDA_BLD_PATH }}/**/work/build/test/**/log
+            ${{ env.CONDA_BLD_PATH }}/**/work/build/tools/solver_workflow/workflow-mismatch-*/
           if-no-files-found: ignore
 
       - name: Upload conda packages

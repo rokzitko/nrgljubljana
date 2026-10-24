@@ -311,6 +311,7 @@ jobs:
           build/test/**/log
           build/test/scientific/runs/
           build/scientific-results.xml
+          build/tools/solver_workflow/workflow-mismatch-*/
         if-no-files-found: ignore
 
     - name: ccache statistics

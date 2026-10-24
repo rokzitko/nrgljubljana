@@ -1,6 +1,7 @@
 """CLI/native comparisons run only on disposable copies of templates and inputs."""
 
 import argparse
+import difflib
 from pathlib import Path
 import shutil
 import subprocess
@@ -12,6 +13,23 @@ def run(command, directory):
     if result.returncode:
         raise RuntimeError(f"{command} failed ({result.returncode}):\n{result.stdout}")
     return result.stdout
+
+
+def compare_files(native, reference, temporary_parent):
+    native_bytes, reference_bytes = native.read_bytes(), reference.read_bytes()
+    if native_bytes == reference_bytes:
+        return
+    # Keep evidence outside the disposable fixture tree, even after unwinding.
+    artifacts = Path(tempfile.mkdtemp(prefix="workflow-mismatch-", dir=temporary_parent))
+    (artifacts / "native").write_bytes(native_bytes)
+    (artifacts / "reference").write_bytes(reference_bytes)
+    diff = "".join(difflib.unified_diff(
+        reference_bytes.decode(errors="replace").splitlines(keepends=True),
+        native_bytes.decode(errors="replace").splitlines(keepends=True),
+        fromfile=str(reference), tofile=str(native)))
+    (artifacts / "diff.log").write_text(diff)
+    preview = "".join(diff.splitlines(keepends=True)[:80])
+    raise AssertionError(f"Native/reference mismatch: {native}\nSaved files and full diff: {artifacts}\n{preview}")
 
 
 def main():
@@ -97,7 +115,7 @@ data_has_rescaled_energies=false
         for name in ("A", "B"):
             for filename in ("FSOL.dat", "FSOLNEG.dat", "data"):
                 native, cli = root / name / filename, root / ("cli-" + name) / filename
-                assert native.read_bytes() == cli.read_bytes(), f"Native/CLI mismatch: {name}/{filename}"
+                compare_files(native, cli, args.temporary_parent)
             # Preparation must not leak intermediate chains or staging directories.
             assert not list((root / name).glob("xi*.dat"))
             assert not list((root / name).glob("theta*.dat"))
@@ -105,7 +123,7 @@ data_has_rescaled_energies=false
                 if path.is_dir():
                     assert path.relative_to(root) in before, f"Staging directory leaked: {path}"
         run([str(tools / "adapt"), "P", "ode-param"], root / "cli-A")
-        assert (a / "FSOL-ode.dat").read_bytes() == (root / "cli-A/FSOL.dat").read_bytes()
+        compare_files(a / "FSOL-ode.dat", root / "cli-A/FSOL.dat", args.temporary_parent)
         lines = (a / "data").read_text().splitlines()
         energy = float(lines[lines.index("e") + 1])
         assert energy == float((a / "result").read_text()), "Result does not match generated ground energy"
@@ -123,7 +141,7 @@ data_has_rescaled_energies=false
             shutil.copyfile(a / "Delta.dat", installed / "Delta.dat")
             run([args.consumer, str(installed), str(root / "scratch")], host)
             assert (installed / "DONE").is_file()
-            assert (installed / "data").read_bytes() == (a / "data").read_bytes()
+            compare_files(installed / "data", a / "data", args.temporary_parent)
             assert list((root / "scratch").iterdir()) == []
             assert list(host.iterdir()) == []
         if args.current_input:
@@ -146,7 +164,7 @@ data_has_rescaled_energies=false
             run([str(tools / "instantiate")], reference)
             run([args.consumer, str(current), str(root / "scratch"), "--prepare-only", str(args.nmax)], host)
             for filename in ("FSOL.dat", "FSOLNEG.dat", "data"):
-                assert (current / filename).read_bytes() == (reference / filename).read_bytes(), filename
+                compare_files(current / filename, reference / filename, args.temporary_parent)
             assert (current / "param").read_bytes() == original_param
             assert sorted(path.name for path in current.iterdir()) == ["Delta.dat", "FSOL.dat", "FSOLNEG.dat", "data", "param", "template"]
             assert list(host.iterdir()) == []

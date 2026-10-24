@@ -114,7 +114,7 @@ TEST_F(Embedding, CleansWorkdirWhenLoggingThrows) {
       std::cout.clear();
     }
     EXPECT_EQ(message, "injected output failure");
-    EXPECT_EQ(output.observed_directory, mode == WorkdirMode::unique_temporary ? calculation : original_directory);
+    EXPECT_TRUE(fs::equivalent(output.observed_directory, mode == WorkdirMode::unique_temporary ? calculation : original_directory));
     EXPECT_EQ(fs::current_path(), original_directory);
     EXPECT_TRUE(fs::is_empty(scratch));
     EXPECT_TRUE(fs::exists(checkpoint / "keep"));
@@ -165,7 +165,9 @@ TEST_F(Embedding, RestoresStateAndCleansScratchAfterFailure) {
 
   std::ofstream(fs::path(root.get()) / "DONE") << "outside calculation";
   std::ofstream(scratch / "keep") << "host scratch file";
-  for (const auto &directory : {calculation, fs::relative(calculation, original_directory)}) {
+  const auto alias = fs::path(root.get()) / "calculation-alias";
+  fs::create_directory_symlink(calculation, alias);
+  for (const auto &directory : {calculation, fs::relative(calculation, original_directory), alias}) {
     output.mutated = false;
     std::ofstream(calculation / "DONE") << "stale";
     try {
@@ -175,7 +177,7 @@ TEST_F(Embedding, RestoresStateAndCleansScratchAfterFailure) {
       EXPECT_EQ(std::string(error.what()), "Can't load initial data.");
     }
     EXPECT_TRUE(output.mutated);
-    EXPECT_EQ(output.observed_directory, calculation);
+    EXPECT_TRUE(fs::equivalent(output.observed_directory, calculation));
     EXPECT_EQ(fs::current_path(), original_directory);
     EXPECT_EQ(mpf_get_default_prec(), host_precision);
     EXPECT_EQ(std::cout.flags(), std::ios::hex | std::ios::fixed);
