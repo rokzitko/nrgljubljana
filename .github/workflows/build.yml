@@ -382,6 +382,17 @@ jobs:
       run: |
         ctest --test-dir build -j2 --output-on-failure --timeout "${NRGLJUBLJANA_CTEST_TIMEOUT_SECONDS}" --no-tests=error
 
+    - name: Upload sanitizer test logs
+      uses: actions/upload-artifact@v7
+      if: failure()
+      with:
+        name: test-logs-sanitizers
+        path: |
+          build/Testing/Temporary/LastTest.log
+          build/Testing/Temporary/LastTestsFailed.log
+          build/tools/solver_workflow/workflow-mismatch-*/
+        if-no-files-found: ignore
+
   analysis:
     runs-on: ubuntu-22.04
 

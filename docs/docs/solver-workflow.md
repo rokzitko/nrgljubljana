@@ -5,7 +5,7 @@ sequential solver entry point. Its only public header is
 `<nrgljubljana/solver_workflow.hpp>`, in namespace `NRG::Workflow`. It invokes the
 existing discretizer, initializer, chain generator and `NRG::run_nrg` directly;
 it does not invoke executables, simulate `main`, or parse diagnostic output.
-The standalone tools and their numerical formulas/defaults remain unchanged.
+The native and standalone paths share the same numerical formulas and defaults.
 
 ## Consumer Setup
 
@@ -91,6 +91,11 @@ load/save settings retain their existing tool semantics. Ordinary ungapped
 FSOL interpolation continues to hold its last value beyond the tabulated
 `xmax`; it is not truncated at that point. Existing hard-gap extent checks are
 unchanged.
+
+Both initializer paths fix each real seed eigenvector's sign by making its
+first largest-magnitude component positive and normalize exact zeros to positive
+zero. All operator blocks use this same basis. This removes arbitrary LAPACK
+sign differences, not backend rounding or rotations within degenerate subspaces.
 
 Unsupported template symmetries, complex or multichannel templates, polarized
 or 2x2 spin coefficients, rungs, substeps, Floquet mode, `tri=cpp`, rescaled

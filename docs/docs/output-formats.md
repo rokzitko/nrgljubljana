@@ -446,6 +446,15 @@ it, parse it as a result format, or assume that generated files are portable
 between incompatible releases. Keep the original `param` and regenerate
 `data` when generation-locked settings change.
 
+The C++ `instantiate` tool and native workflow API choose each real seed
+eigenvector's sign so its first largest-magnitude component is positive; exact
+zero components become positive zero. All generated operator blocks and optional
+`vec*` artifacts use that basis, in both full and `--diag-seed-only` modes.
+Energies, normalization, layouts and physical observables are unchanged. This
+convention does not resolve rotations within degenerate subspaces or guarantee
+bitwise agreement between numerical backends. It does not change Mathematica's
+eigenvectors or the iterative solver's eigenvectors.
+
 The opt-in scalar RKPW backend (`tri=rkpw`, or `tri=cpp` with
 `tridiag_method=rkpw`) preserves coefficient-block layouts, indices, and
 units. Its reconstructed coefficients have machine precision; printing more

@@ -2,8 +2,10 @@
 
 import argparse
 import difflib
+import math
 from pathlib import Path
 import shutil
+import struct
 import subprocess
 import tempfile
 
@@ -108,7 +110,21 @@ data_has_rescaled_energies=false
             param.write_text(param.read_text().replace("Nmax=0", f"Nmax={nmax}"))
             for branch in ("P", "N"):
                 run([str(tools / "adapt"), "--integral", branch, "inputs/solver.param"], directory)
-            run([str(tools / "instantiate"), "--param", "inputs/solver.param", "--template-dir", "template"], directory)
+            command = [str(tools / "instantiate"), "--param", "inputs/solver.param", "--template-dir", "template"]
+            run(command + ["--generate-temporaries"], directory)
+            vectors = {path.name: path.read_bytes() for path in directory.glob("vec.*")}
+            assert vectors, "Missing seed eigenvectors"
+            for data in vectors.values():
+                rows, cols = struct.unpack_from("=II", data)
+                values = struct.unpack_from(f"={rows * cols}d", data, 8)
+                for row in range(rows):
+                    vector = values[row * cols:(row + 1) * cols]
+                    assert max(vector, key=abs) > 0, "Noncanonical seed eigenvector sign"
+                    assert all(math.copysign(1.0, value) > 0 for value in vector if value == 0)
+            for filename in vectors:
+                (directory / filename).unlink()
+            run(command + ["--diag-seed-only"], directory)
+            assert vectors == {path.name: path.read_bytes() for path in directory.glob("vec.*")}, "Seed modes disagree"
 
         before = {path.relative_to(root) for path in root.rglob("*")}
         run([args.driver, str(root)], host)

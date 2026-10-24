@@ -4,6 +4,13 @@
 selected Wilson-chain backend. `--diag-seed-only` stops after generating and
 diagonalizing the seed; `--wilson-only` generates chain files without a seed.
 
+Seed-producing modes fix each real eigenvector's sign by making its first
+largest-magnitude component positive. Exact zero components are written as
+positive zero. The same vectors are used for all operator transformations and
+optional `vec*` files, including through the native workflow API. This removes
+arbitrary LAPACK sign choices without changing energies or physical observables;
+it does not fix rotations within degenerate eigenspaces or backend rounding.
+
 ## Scalar Star Inputs
 
 Wilson generation uses the shared [`nrgchain` pipeline](../nrgchain/README.md),

@@ -41,6 +41,7 @@
 #include "../common/parser.hpp"
 #include "../common/tabulated_density.hpp"
 #include "matrix_evaluator.hpp"
+#include "seed_eigenvectors.hpp"
 #include "nrgchain.hpp"
 #include "workflow.hpp"
 
@@ -831,6 +832,7 @@ SeedData read_seed_data(DataTemplateReader &data_in, const size_t subspaces, NRG
     }
 
     auto raw = NRG::diagonalise_dsyev(matrix);
+    NRG::Spawn::canonicalize_seed_eigenvectors(raw.vec);
     for (auto &value : raw.val) value *= seed.factor;
     if (!raw.val.empty()) seed.smallest = std::min(seed.smallest, raw.val.front());
 
