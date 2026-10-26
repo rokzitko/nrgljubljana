@@ -335,6 +335,23 @@ loss of precision far from the tabulated support. Ambiguous cancellation in
 the moments is resolved with wider or exact arithmetic before the result is
 narrowed to the public numeric type.
 
+The exact far-field tier, `exact_global_moment`, prepares each interval
+polynomial in the normalized global coordinate
+`t = (E-Emin)/(Emax-Emin)` using exact-rational affine Horner substitution.
+It then computes successive moments from exact endpoint-power integrals of
+`t^(k+j)`, rather than repeatedly expanding the kth global power in each local
+coordinate. Native/wide accumulation, promotion and fallback thresholds, and
+tail-convergence criteria are unchanged. Physical H1 still directly transforms
+the energy-weighted polynomial; it never subtracts mass from `z*H0`.
+
+For `N` intervals, at most `d` coefficients per interval, and `K` moments,
+exact-tier arithmetic work is `O(N*d^2 + N*K*d)` instead of `O(N*d*K^2)`.
+Its auxiliary cache storage is `O(N*d+N)` instead of `O(N*K)`, in addition to
+the unchanged `O(K)` moment prefix. These counts exclude rational bit-size
+growth and do not promise a speedup for every high-degree input. The cache
+still grows the same moment prefix under a mutex; polynomial copies share it,
+while a newly energy-weighted polynomial starts with a fresh cache.
+
 This path performs no adaptive quadrature and allocates no GSL integration
 workspace. Explicit QAG threshold, tolerance, workspace, quadrature-rule, and
 error-policy options are therefore silently ignored. The transform still

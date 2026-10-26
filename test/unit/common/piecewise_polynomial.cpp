@@ -4,6 +4,7 @@
 #include <cmath>
 #include <complex>
 #include <fstream>
+#include <future>
 #include <limits>
 #include <map>
 #include <optional>
@@ -19,6 +20,37 @@ namespace {
 
 using NRG::Tools::CauchyEndpointPolicy;
 using NRG::Tools::PiecewisePolynomial;
+using Rational = boost::multiprecision::cpp_rational;
+
+template <typename Scalar>
+auto slow_exact_global_moment(const PiecewisePolynomial<Scalar> &polynomial, const std::size_t order) {
+  const Rational left{polynomial.lower_bound()};
+  const Rational width = Rational{polynomial.upper_bound()} - left;
+  std::pair<Rational, Rational> result;
+  for (std::size_t interval = 0; interval < polynomial.interval_count(); ++interval) {
+    // Convert endpoints before subtraction, retaining their exact binary64 differences.
+    const Rational a = (Rational{polynomial.knots()[interval]} - left) / width;
+    const Rational b = (Rational{polynomial.knots()[interval + 1]} - Rational{polynomial.knots()[interval]}) / width;
+    std::vector<Rational> powers{Rational{1}};
+    for (std::size_t exponent = 0; exponent < order; ++exponent) {
+      std::vector<Rational> next(powers.size() + 1);
+      for (std::size_t power = 0; power < powers.size(); ++power) {
+        next[power] += a * powers[power];
+        next[power + 1] += b * powers[power];
+      }
+      powers = std::move(next);
+    }
+    for (std::size_t local = 0; local < polynomial.coefficients()[interval].size(); ++local) {
+      const std::complex<double> coefficient{polynomial.coefficients()[interval][local]};
+      for (std::size_t power = 0; power < powers.size(); ++power) {
+        const Rational factor = b * powers[power] / (local + power + 1);
+        result.first += Rational{coefficient.real()} * factor;
+        result.second += Rational{coefficient.imag()} * factor;
+      }
+    }
+  }
+  return result;
+}
 
 void expect_complex_near(const std::complex<double> actual, const std::complex<double> expected, const double tolerance) {
   EXPECT_NEAR(actual.real(), expected.real(), tolerance);
@@ -299,6 +331,109 @@ TEST(PiecewisePolynomial, rejects_domains_whose_width_overflows) { // NOLINT
   const auto maximum = std::numeric_limits<double>::max();
   EXPECT_THROW((PiecewisePolynomial<double>{{-maximum, maximum}, {{1.0}}}), std::invalid_argument);
   EXPECT_THROW((PiecewisePolynomial<double>{{-maximum, 0.0, maximum}, {{1.0}, {1.0}}}), std::invalid_argument);
+}
+
+TEST(PiecewisePolynomial, exact_global_moments_match_local_expansion_and_preserve_cache_prefix) { // NOLINT
+  const std::vector<double> knots{-2.1, -1.3, -0.05, 0.6, 1.9, 4.2};
+  EXPECT_NE(Rational{knots.back()} - Rational{knots.front()}, Rational{knots.back() - knots.front()});
+  const auto check = [](const auto &polynomial) {
+    const auto copy = polynomial;
+    const auto cache = polynomial.far_moment_cache();
+    EXPECT_EQ(copy.far_moment_cache(), cache);
+    ASSERT_TRUE(cache->exact_moments.empty());
+    for (const std::size_t order : {8, 2, 12, 0, 11, 1, 10, 3, 9, 4, 7, 5, 6, 12, 8, 44, 12}) {
+      SCOPED_TRACE(order);
+      const auto expected_size = std::max(cache->exact_moments.size(), order + 1);
+      EXPECT_EQ(NRG::Tools::detail::exact_global_moment(copy, order), slow_exact_global_moment(polynomial, order));
+      ASSERT_EQ(cache->exact_moments.size(), expected_size);
+    }
+    const auto prefix = cache->exact_moments;
+    const auto weighted = copy.multiply_by_monomial(2);
+    EXPECT_NE(weighted.far_moment_cache(), cache);
+    ASSERT_TRUE(weighted.far_moment_cache()->exact_moments.empty());
+    for (std::size_t order = 0; order <= 12; ++order) {
+      SCOPED_TRACE(order);
+      EXPECT_EQ(NRG::Tools::detail::exact_global_moment(polynomial, order), prefix[order]);
+      EXPECT_EQ(NRG::Tools::detail::exact_global_moment(weighted, order), slow_exact_global_moment(weighted, order));
+    }
+    EXPECT_EQ(cache->exact_moments, prefix);
+    EXPECT_EQ(weighted.far_moment_cache()->exact_moments.size(), 13U);
+  };
+  check(PiecewisePolynomial<double>{knots,
+    {{0.3, -1.1, 0.7, -0.2}, {0.0}, {-0.4, 0.9}, {2.1, -3.2, 0.6}, {-0.8, 0.1, 1.7, -0.3, 0.05}}});
+  check(PiecewisePolynomial<std::complex<double>>{knots,
+    {{{0.3, -0.7}, {-1.1, 0.2}, {0.7, 1.3}}, {{0.0, 0.0}}, {{-0.4, 0.8}, {0.9, -0.6}},
+     {{2.1, 0.5}, {-3.2, 1.1}, {0.6, -0.2}}, {{-0.8, 1.2}, {0.1, -0.3}, {1.7, 0.4}, {-0.3, -0.9}}}});
+}
+
+TEST(PiecewisePolynomial, exact_global_moments_retain_zero_and_tiny_nonzero_mass) { // NOLINT
+  for (const double residual : {0.0, std::ldexp(1.0, -100)}) {
+    SCOPED_TRACE(residual);
+    // The residual is a separate stored coefficient, not an increment rounded away from 1.
+    const PiecewisePolynomial<double> polynomial{
+      {-1.3, -0.2, 0.7, 2.4, 3.1}, std::vector<std::vector<double>>(4, {-1.0, 2.0, residual})};
+    const auto mass = NRG::Tools::detail::exact_global_moment(polynomial, 0);
+    EXPECT_EQ(mass.first, Rational{residual} / 3);
+    EXPECT_EQ(mass.second, 0);
+    EXPECT_NE(slow_exact_global_moment(polynomial, 1).first, 0);
+    for (std::size_t order = 0; order <= 12; ++order) {
+      SCOPED_TRACE(order);
+      EXPECT_EQ(NRG::Tools::detail::exact_global_moment(polynomial, order), slow_exact_global_moment(polynomial, order));
+    }
+  }
+}
+
+TEST(PiecewisePolynomial, exact_global_moments_handle_extreme_intervals_and_high_degree) { // NOLINT
+  const PiecewisePolynomial<double> narrow{
+    {-1.0, 0.0, std::numeric_limits<double>::denorm_min(), 1.0},
+    {{0.5}, {0.25, -0.5, 0.125, 0.0625}, {0.75, -0.25}}};
+  const PiecewisePolynomial<double> high_degree{
+    {-2.0, -0.1, 0.8, 3.0},
+    {{1.0, -2.0, 4.0, -8.0, 16.0, -32.0, 64.0, -128.0, 256.0}, {0.25}, {-1.0, 2.0, -0.5}}};
+  for (const auto &polynomial : {narrow, high_degree})
+    for (const std::size_t order : {0, 5, 2, 8}) {
+      SCOPED_TRACE(order);
+      EXPECT_EQ(NRG::Tools::detail::exact_global_moment(polynomial, order), slow_exact_global_moment(polynomial, order));
+    }
+  const double tiny = std::numeric_limits<double>::denorm_min();
+  const PiecewisePolynomial<std::complex<double>> imaginary_mass{
+    {-1.0, 1.0}, {{{0.0, -1.0}, {0.0, 2.0}, {0.0, tiny}}}};
+  const auto mass = NRG::Tools::detail::exact_global_moment(imaginary_mass, 0);
+  EXPECT_EQ(mass.first, 0);
+  EXPECT_EQ(mass.second, Rational{tiny} / 3);
+  EXPECT_NE(mass.second, 0);
+  EXPECT_EQ(NRG::Tools::detail::exact_global_moment(imaginary_mass, 8), slow_exact_global_moment(imaginary_mass, 8));
+}
+
+TEST(PiecewisePolynomial, exact_global_moments_support_concurrent_cold_shared_cache_requests) { // NOLINT
+  const PiecewisePolynomial<std::complex<double>> polynomial{
+    {-1.7, -0.4, 0.2, 1.3, 3.8},
+    {{{0.4, -0.7}, {1.1, 0.3}}, {{-0.2, 0.9}, {0.5, -1.3}, {0.1, 0.2}},
+     {{1.4, -0.6}}, {{-0.3, 0.8}, {0.2, 0.4}}}};
+  const auto cache = polynomial.far_moment_cache();
+  ASSERT_TRUE(cache->exact_moments.empty());
+  std::vector<std::future<std::pair<Rational, Rational>>> pending;
+  pending.reserve(3);
+  std::promise<void> start;
+  const auto ready = start.get_future().share();
+  for (const std::size_t order : {8, 2, 12})
+    pending.push_back(std::async(std::launch::async, [polynomial, order, ready] {
+      ready.wait();
+      return NRG::Tools::detail::exact_global_moment(polynomial, order);
+    }));
+  start.set_value();
+  std::size_t index = 0;
+  for (const std::size_t order : {8, 2, 12}) {
+    SCOPED_TRACE(order);
+    EXPECT_EQ(pending[index++].get(), slow_exact_global_moment(polynomial, order));
+  }
+  const auto prefix = cache->exact_moments;
+  ASSERT_EQ(prefix.size(), 13U);
+  for (std::size_t order = 0; order <= 12; ++order) {
+    SCOPED_TRACE(order);
+    EXPECT_EQ(NRG::Tools::detail::exact_global_moment(polynomial, order), slow_exact_global_moment(polynomial, order));
+  }
+  EXPECT_EQ(cache->exact_moments, prefix);
 }
 
 TEST(PiecewisePolynomial, matches_stored_multiprecision_transform_references) { // NOLINT

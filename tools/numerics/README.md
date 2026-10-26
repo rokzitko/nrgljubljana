@@ -120,6 +120,15 @@ Analytic transforms need no GSL handler changes after interpolation setup.
 Each call prepares its own interpolant; there is currently no public cache or
 `PreparedDos` object.
 
+For exact far-field moments, the shared `exact_global_moment` kernel prepares
+interval polynomials in normalized global `t` using exact-rational affine
+Horner substitution, then integrates powers of `t` at exact interval endpoints.
+Only this exact tier changes: native/wide accumulation, promotion and fallback
+thresholds, tail convergence, and direct physical H1 weighting remain unchanged;
+there is no `z*H0-mass` subtraction. See the
+[analytic Hilbert algorithm](../hilb/README.md#analytic-tabulated-algorithm)
+for the arithmetic and cache-storage bounds, not a universal high-degree speedup.
+
 ## Explicit Workers
 
 The original exported `kramers_kronig(table)` and six-argument `lattice(...)`
@@ -144,7 +153,9 @@ semantics. Lattice prepares and energy-weights the DOS exactly once per call,
 then uses the index-worker helper shared with broadening in
 `tools/common/parallel.hpp`. Workers write fixed output slots, never reduce
 across frequencies, and retain each point's arithmetic and output ordering.
-The shared polynomial's lazy far-field moment caches are mutex-protected.
+The shared polynomial's lazy far-field moment caches grow the same moment
+prefixes under a mutex. Polynomial copies share their cache; newly
+energy-weighted polynomials start with a fresh cache.
 Results are exactly equal across worker counts for the same build and inputs.
 
 All started workers are joined before returning or propagating a computation
@@ -259,6 +270,16 @@ Six additional broadening groups cover independent kernel/convolution oracles,
 signed symmetry, exact-key averaging and its rounding order, all binary layouts,
 malformed records/options/meshes, empty contributions, cutoff boundaries,
 unmodified endpoints, final-pass order, and repeated/concurrent calls.
+
+The exact far-field cache optimization passed 42 focused upstream tests,
+including new exact-rational moment oracles at order 44, narrow
+denormal-width intervals, complex coefficients, concurrent cold shared-cache
+requests, and stored 400-digit transform references. On the retained DMFT TEST1
+snapshot 13 (2,601 DOS knots and 6,290 frequencies), cold eight-worker H1 fell
+from 217.650 s to 20.010 s through this library and from 218.069 s to 19.988 s
+through the installed `hilb` CLI. Each path's output files were byte-identical
+to its pre-optimization baseline; the native consumer's 32 non-solver groups
+also passed. These timings are workload-specific, not a high-degree guarantee.
 
 Optionally set
 `-DNRGLJUBLJANA_NUMERICS_BROADEN_CLI=/absolute/path/to/broaden` to add CLI parity

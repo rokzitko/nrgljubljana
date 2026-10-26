@@ -223,7 +223,10 @@ struct PiecewiseFarMomentCache {
   std::vector<std::pair<PiecewiseWideFloat, PiecewiseWideFloat>> moments;
   std::vector<std::vector<PiecewiseWideFloat>> powers;
   std::vector<std::pair<PiecewiseExactRational, PiecewiseExactRational>> exact_moments;
-  std::vector<std::vector<PiecewiseExactRational>> exact_powers;
+  std::vector<PiecewiseExactRational> exact_knots;
+  // t_i^m after m>0 cached moments; initialized to t_i before computing order zero.
+  std::vector<PiecewiseExactRational> exact_endpoint_powers;
+  std::vector<std::vector<std::pair<PiecewiseExactRational, PiecewiseExactRational>>> exact_coefficients;
 };
 
 template <typename Scalar>
@@ -1240,44 +1243,65 @@ template <typename Scalar>
 inline auto exact_global_moment(const PiecewisePolynomial<Scalar> &polynomial, const std::size_t expansion) {
   const auto cache = polynomial.far_moment_cache();
   const std::lock_guard lock(cache->mutex);
-  if (cache->exact_powers.empty())
-    cache->exact_powers.assign(polynomial.interval_count(), std::vector<ExactRational>{ExactRational{1}});
-  const auto global_left = polynomial.lower_bound();
-  const auto global_width = exact_rational(polynomial.upper_bound()) - exact_rational(global_left);
+  if (expansion < cache->exact_moments.size()) return cache->exact_moments[expansion];
+  if (cache->exact_coefficients.empty()) {
+    const auto global_left = exact_rational(polynomial.lower_bound());
+    const ExactRational global_width = exact_rational(polynomial.upper_bound()) - global_left;
+    std::vector<ExactRational> knots;
+    knots.reserve(polynomial.knots().size());
+    for (const auto knot : polynomial.knots()) knots.push_back((exact_rational(knot) - global_left) / global_width);
+    std::vector<std::vector<std::pair<ExactRational, ExactRational>>> coefficients;
+    coefficients.reserve(polynomial.interval_count());
+    for (std::size_t interval = 0; interval < polynomial.interval_count(); ++interval) {
+      // Rewrite p(u) in global t=(E-L)/(R-L): u=(t-a)/b. Exact arithmetic
+      // avoids cancellation from the potentially large global coefficients.
+      const ExactRational scale = 1 / (knots[interval + 1] - knots[interval]);
+      const ExactRational shift = -knots[interval] * scale;
+      std::vector<std::pair<ExactRational, ExactRational>> global;
+      for (auto power = polynomial.coefficients()[interval].size(); power-- > 0;) {
+        std::vector<std::pair<ExactRational, ExactRational>> next(global.size() + 1);
+        for (std::size_t j = 0; j < global.size(); ++j) {
+          next[j].first += shift * global[j].first;
+          next[j + 1].first += scale * global[j].first;
+          next[j].second += shift * global[j].second;
+          next[j + 1].second += scale * global[j].second;
+        }
+        const auto coefficient = polynomial_scalar_as_complex(polynomial.coefficients()[interval][power]);
+        next[0].first += exact_rational(coefficient.real());
+        next[0].second += exact_rational(coefficient.imag());
+        global = std::move(next);
+      }
+      coefficients.push_back(std::move(global));
+    }
+    auto powers = knots;
+    cache->exact_knots = std::move(knots);
+    cache->exact_endpoint_powers = std::move(powers);
+    cache->exact_coefficients = std::move(coefficients);
+  }
   while (cache->exact_moments.size() <= expansion) {
+    const auto order = cache->exact_moments.size();
+    auto powers = cache->exact_endpoint_powers;
+    if (order)
+      for (std::size_t i = 0; i < powers.size(); ++i) powers[i] *= cache->exact_knots[i];
     ExactRational real;
     ExactRational imaginary;
     for (std::size_t interval = 0; interval < polynomial.interval_count(); ++interval) {
-      const auto width_fraction = (exact_rational(polynomial.knots()[interval + 1])
-                                   - exact_rational(polynomial.knots()[interval]))
-                                  / global_width;
-      const auto &power_coefficients = cache->exact_powers[interval];
-      for (std::size_t global_power = 0; global_power < power_coefficients.size(); ++global_power) {
-        for (std::size_t local_power = 0; local_power < polynomial.coefficients()[interval].size(); ++local_power) {
-          const auto coefficient = polynomial_scalar_as_complex(polynomial.coefficients()[interval][local_power]);
-          const auto factor = width_fraction * power_coefficients[global_power]
-                              / (local_power + global_power + 1);
-          real += exact_rational(coefficient.real()) * factor;
-          imaginary += exact_rational(coefficient.imag()) * factor;
-        }
+      auto left_power = powers[interval], right_power = powers[interval + 1];
+      ExactRational interval_real, interval_imaginary;
+      const auto &coefficients = cache->exact_coefficients[interval];
+      for (std::size_t j = 0; j < coefficients.size(); ++j) {
+        const ExactRational factor = (right_power - left_power) / (order + j + 1);
+        interval_real += coefficients[j].first * factor;
+        interval_imaginary += coefficients[j].second * factor;
+        left_power *= cache->exact_knots[interval];
+        right_power *= cache->exact_knots[interval + 1];
       }
+      // Reduce locally before adding intervals with different coefficient denominators.
+      real += interval_real;
+      imaginary += interval_imaginary;
     }
     cache->exact_moments.emplace_back(std::move(real), std::move(imaginary));
-
-    for (std::size_t interval = 0; interval < polynomial.interval_count(); ++interval) {
-      const auto left_fraction = (exact_rational(polynomial.knots()[interval]) - exact_rational(global_left))
-                                 / global_width;
-      const auto width_fraction = (exact_rational(polynomial.knots()[interval + 1])
-                                   - exact_rational(polynomial.knots()[interval]))
-                                  / global_width;
-      const auto &power_coefficients = cache->exact_powers[interval];
-      std::vector<ExactRational> next_power(power_coefficients.size() + 1);
-      for (std::size_t coefficient = 0; coefficient < power_coefficients.size(); ++coefficient) {
-        next_power[coefficient] += left_fraction * power_coefficients[coefficient];
-        next_power[coefficient + 1] += width_fraction * power_coefficients[coefficient];
-      }
-      cache->exact_powers[interval] = std::move(next_power);
-    }
+    cache->exact_endpoint_powers = std::move(powers);
   }
   return cache->exact_moments[expansion];
 }
