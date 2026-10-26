@@ -1,18 +1,25 @@
 #include <nrgljubljana/numerics.hpp>
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <complex>
+#include <condition_variable>
 #include <future>
 #include <iostream>
 #include <limits>
+#include <mutex>
 #include <numbers>
+#include <set>
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
 #include <gsl/gsl_errno.h>
+
+#include "../../common/parallel.hpp"
 
 namespace {
 using namespace NRG::Numerics;
@@ -31,6 +38,15 @@ void near(const double value, const double expected, const double atol = 1e-13, 
     std::cerr << "actual=" << value << " expected=" << expected << '\n';
     throw std::runtime_error("Numerical oracle mismatch.");
   }
+}
+
+void same(const Table &actual, const Table &expected) {
+  check(actual.x == expected.x && actual.y == expected.y, "Worker count changed table coordinates or values.");
+}
+
+void same(const Lattice &actual, const Lattice &expected) {
+  same(actual.real, expected.real);
+  same(actual.spectral, expected.spectral);
 }
 
 template <typename Exception = std::exception, typename Function>
@@ -177,6 +193,85 @@ void lattice_oracles() {
   for (const auto value : zero.spectral.y) near(value, 0.0);
 }
 
+void parallel() {
+  const auto caller = std::this_thread::get_id();
+  for (const std::size_t jobs : {1, 3}) {
+    std::mutex mutex;
+    std::condition_variable ready;
+    std::set<std::thread::id> threads;
+    std::vector<unsigned> visits(8, 0);
+    NRG::Tools::for_each_index(visits.size(), jobs, [&](const std::size_t index) {
+      std::unique_lock lock(mutex);
+      ++visits.at(index);
+      const auto thread = std::this_thread::get_id();
+      if (jobs == 1) check(thread == caller, "One worker must run on the calling thread.");
+      if (threads.insert(thread).second && jobs > 1) {
+        // Hold each worker's first task until all workers have actually started.
+        ready.notify_all();
+        check(ready.wait_for(lock, std::chrono::seconds(2), [&] { return threads.size() >= jobs; }),
+              "Parallel dispatch did not start all requested workers.");
+      }
+    });
+    check(threads.size() == jobs, "Unexpected number of execution threads.");
+    check(std::all_of(visits.begin(), visits.end(), [](const auto count) { return count == 1; }),
+          "Each index must execute exactly once.");
+  }
+
+  // Bind the shipped signatures explicitly: adding a defaulted jobs parameter
+  // instead of retaining these overloads would break external consumers.
+  Table (*serial_kk)(const Table &) = &kramers_kronig;
+  Lattice (*serial_lattice)(const Table &, const Table &, const Table &, double, double, unsigned) = &lattice;
+  const std::vector<std::size_t> counts{1, 2, 3, 8, std::numeric_limits<std::size_t>::max()};
+  const std::vector<double> grid{-3, -2, -1, -0.5, -0.1, -0.01, 0.01, 0.1, 0.5, 1, 2, 3};
+  const std::vector<Table> inputs{
+    {grid, std::vector<double>(grid.size(), -1.0)},
+    {grid, grid},
+    {grid, std::vector<double>(grid.size(), 0.0)},
+    {grid, {-0.2, 0.4, -0.1, -1.2, -0.7, 0.3, 0.6, -0.4, -0.3, 0.8, 0.1, -0.5}},
+    {{-2.0, -1.0, 1.0, 2.0 + 1e-10}, {-0.5, 0.7, -0.2, 0.3}}
+  };
+  for (const auto &input : inputs) {
+    const auto expected = serial_kk(input);
+    check(expected.x == input.x, "KK changed the input grid.");
+    for (const auto jobs : counts) same(kramers_kronig(input, jobs), expected);
+  }
+
+  // Mix near- and far-field points so workers share the lazy moment caches.
+  const Table real_sigma{{-1e12, -1e6, -3, -1, -0.4, 0, 0.4, 1, 3, 1e6, 1e12},
+                         {0, 0, 0.3, -0.1, 0, 0, 0, -0.2, 0.1, 0, 0}};
+  const Table imag_sigma{real_sigma.x, {-0.25, -0.1, -0.2, 0, 0.25, -1e-8, 0, -0.1, -0.2, -0.1, -0.25}};
+  const std::vector<Table> densities{
+    flat,
+    {{-1.0, 0.0, 1.0}, {0.4, 0.5, 0.6}},
+    {{-2.0, -0.7, 0.0, 0.3, 1.4, 3.0}, {0.1, 0.4, 1.2, 0.9, 0.2, 0.3}},
+    {{0.0, 1.0, 2.0}, {2.0, 2.0, 2.0}},
+    {flat.x, {0.0, 0.0, 0.0}}
+  };
+  for (const auto &dos : densities) {
+    for (unsigned moment = 0; moment <= 2; ++moment) {
+      for (const auto clip : {0.05, std::sqrt(std::numeric_limits<double>::min())}) {
+        const auto expected = serial_lattice(dos, real_sigma, imag_sigma, 0.13, clip, moment);
+        check(expected.real.x == real_sigma.x && expected.spectral.x == real_sigma.x, "Lattice changed the input grid.");
+        for (const auto jobs : counts) same(lattice(dos, real_sigma, imag_sigma, 0.13, clip, moment, jobs), expected);
+      }
+    }
+  }
+  const Table sigma{{-0.4, 0.0, 0.4}, {0.0, 0.0, 0.0}};
+  const auto odd = serial_lattice(flat, sigma, sigma, 0.0, 0.02, 1);
+  check(odd.spectral.y.front() < 0.0 && odd.spectral.y.back() > 0.0, "Odd moment lost signed spectral weight.");
+  const Table one{{0.0}, {0.0}};
+  const Table far_imag{{0.0}, {-0.25}};
+  const auto far = serial_lattice(flat, one, far_imag, 1e12, 0.01, 1);
+  const std::complex<double> z{1e12, 0.25};
+  const auto far_expected = 1.0 / (3.0 * z * z);
+  near(far.real.y[0], far_expected.real(), 0.0, 2e-14);
+  near(far.spectral.y[0], -far_expected.imag() / pi, 0.0, 2e-14);
+  for (const auto jobs : counts) {
+    same(lattice(flat, sigma, sigma, 0.0, 0.02, 1, jobs), odd);
+    same(lattice(flat, one, far_imag, 1e12, 0.01, 1, jobs), far);
+  }
+}
+
 void validation() {
   const std::vector<Table> bad_tables{
     {}, {{0.0}, {1.0}}, {{0.0, 1.0}, {1.0, 1.0}}, {{0.0, 1.0, 2.0}, {1.0, 1.0}},
@@ -192,6 +287,8 @@ void validation() {
     rejects([&] { resample(table, {0.0}); });
     rejects([&] { kramers_kronig(table); });
     rejects([&] { lattice(table, flat, flat, 0.0, 0.1); });
+    rejects([&] { kramers_kronig(table, 3); });
+    rejects([&] { lattice(table, flat, flat, 0.0, 0.1, 0, 3); });
   }
   for (const auto &grid : std::vector<std::vector<double>>{{}, {nan}, {infinity}, {0.0, 0.0}, {0.5, -0.5}})
     rejects([&] { resample(flat, grid); });
@@ -212,6 +309,21 @@ void validation() {
   rejects([] { lattice(flat, flat, {{-1.0, 0.0, 1.0 + 1e-14}, {0.0, 0.0, 0.0}}, 0.0, 0.1); });
   rejects([] { lattice(flat, flat, flat, 0.0, 0.1, std::numeric_limits<unsigned>::max()); });
   rejects([] { lattice(flat, {{1e308}, {0.0}}, {{1e308}, {0.0}}, 1e308, 0.1); });
+
+  const Table kk_input{{-2.0, -1.0, 1.0, 2.0}, {1.0, 1.0, 1.0, 1.0}};
+  rejects<std::invalid_argument>([&] { kramers_kronig(kk_input, 0); });
+  rejects<std::invalid_argument>([] { lattice(flat, flat, flat, 0.0, 0.1, 0, 0); });
+  for (const auto jobs : {1, 2, 3, 8, 20}) {
+    rejects([&] { kramers_kronig(flat, jobs); });
+    rejects([&] { kramers_kronig({{-2.0, -1.0, 0.5, 2.0}, kk_input.y}, jobs); });
+    rejects([&] { kramers_kronig({{-2.0, -1.0, 1.0, 3.0}, kk_input.y}, jobs); });
+    for (const auto &grid : std::vector<std::vector<double>>{{}, {nan}, {infinity}, {0.0, 0.0}, {0.5, -0.5}}) {
+      const Table sigma{grid, std::vector<double>(grid.size(), 0.0)};
+      rejects<std::invalid_argument>([&] { lattice(flat, sigma, sigma, 0.0, 0.1, 0, jobs); });
+    }
+    rejects<std::invalid_argument>([&] { lattice(flat, flat, {{-1.0, 0.0, 1.0 + 1e-14}, flat.y}, 0.0, 0.1, 0, jobs); });
+    rejects<std::invalid_argument>([&] { lattice(flat, flat, flat, 0.0, 0.1, std::numeric_limits<unsigned>::max(), jobs); });
+  }
 }
 
 void custom_gsl_handler(const char *, const char *, int, int) {}
@@ -242,10 +354,51 @@ void gsl_handler() {
     rejects([] { integrate({{0.0, 1.0, 2.0}, {-1e308, 1e308, 0.0}}); });
     restored();
 
+    const Table kk_input{{-2, -1, -0.1, 0.1, 1, 2}, {-0.2, 0.4, -1.0, -0.7, 0.1, 0.3}};
+    const Table sigma{{-1e12, -10, -0.4, 0, 0.4, 10, 1e12}, {0, 0, 0, 0, 0, 0, 0}};
+    const auto expected_kk = kramers_kronig(kk_input);
+    std::vector<Lattice> expected_lattice;
+    for (unsigned moment = 0; moment <= 2; ++moment)
+      expected_lattice.push_back(lattice(flat, sigma, sigma, 0.0, 0.02, moment));
+    restored();
+    for (const auto jobs : {1, 2, 3, 8, 20}) {
+      rejects<std::invalid_argument>([&] { kramers_kronig(kk_input, 0); });
+      restored();
+      rejects<std::invalid_argument>([] { lattice(flat, flat, flat, 0.0, 0.1, 0, 0); });
+      restored();
+      // Fail during interpolation setup, while the GSL guard is active.
+      rejects([&] { kramers_kronig({{-2, -1, 1, 2}, {-1e308, 1e308, 0, 0}}, jobs); });
+      restored();
+      rejects([&] { lattice({{0, 1e-100, 2e-100}, {0, 1e308, 0}}, sigma, sigma, 0.0, 0.1, 0, jobs); });
+      restored();
+      // Valid interpolants, but individual worker computations overflow.
+      rejects<std::overflow_error>([&] {
+        kramers_kronig({{-1, -1 + 1e-12, 1 - 1e-12, 1}, {1e307, 1e307, 1e307, 1e307}}, jobs);
+      });
+      restored();
+      rejects<std::overflow_error>([&] { lattice({flat.x, {1e308, 1e308, 1e308}}, sigma, sigma, 0.0, 0.1, 0, jobs); });
+      restored();
+      rejects<std::invalid_argument>([&] {
+        lattice(flat, {{0, 1, 2}, {1e308, 1e308, -1e308}}, {{0, 1, 2}, {0, 0, 0}}, 1e308, 0.1, 0, jobs);
+      });
+      restored();
+      same(kramers_kronig(kk_input, jobs), expected_kk);
+      same(lattice(flat, sigma, sigma, 0.0, 0.02, 1, jobs), expected_lattice[1]);
+      restored();
+    }
+
     std::vector<std::future<void>> workers;
-    for (int i = 0; i < 4; ++i)
-      workers.push_back(std::async(std::launch::async, [] {
-        for (int iteration = 0; iteration < 4; ++iteration) near(integrate_fermi(flat, 0.1), 0.5);
+    for (const auto jobs : {1, 2, 3, 8, 20})
+      workers.push_back(std::async(std::launch::async, [&, jobs] {
+        for (int iteration = 0; iteration < 4; ++iteration) {
+          near(integrate_fermi(flat, 0.1), 0.5);
+          same(kramers_kronig(kk_input, jobs), expected_kk);
+          for (unsigned moment = 0; moment <= 2; ++moment)
+            same(lattice(flat, sigma, sigma, 0.0, 0.02, moment, jobs), expected_lattice[moment]);
+          rejects<std::invalid_argument>([&] {
+            lattice(flat, {{0, 1, 2}, {1e308, 1e308, -1e308}}, {{0, 1, 2}, {0, 0, 0}}, 1e308, 0.1, 0, jobs);
+          });
+        }
       }));
     for (auto &worker : workers) worker.get();
     restored();
@@ -262,6 +415,7 @@ int main(const int argc, char **argv) {
     else if (name == "resample") resampling();
     else if (name == "kk") kk();
     else if (name == "lattice") lattice_oracles();
+    else if (name == "parallel") parallel();
     else if (name == "validation") validation();
     else if (name == "gsl_handler") gsl_handler();
     else throw std::runtime_error("Unknown test: " + name);

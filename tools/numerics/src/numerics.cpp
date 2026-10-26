@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "../../common/gsl_piecewise_polynomial.hpp"
+#include "../../common/parallel.hpp"
 #include "../../hilb/hilb.hpp"
 #include "../../integ/integ.hpp"
 #include "../../kk/kk.hpp"
@@ -95,6 +96,11 @@ Table resample(const Table &table, const std::vector<double> &grid) {
 }
 
 Table kramers_kronig(const Table &table) {
+  return kramers_kronig(table, 1);
+}
+
+Table kramers_kronig(const Table &table, const std::size_t jobs) {
+  if (jobs == 0) throw std::invalid_argument("Worker count must be positive.");
   // The CLI library constructor sorts its input. Reject unsorted data first.
   validate_table(table);
   KK::XYFUNC input;
@@ -103,16 +109,22 @@ Table kramers_kronig(const Table &table) {
   KK::NumericalOptions options;
   options.interpolation = Tools::InterpolationMethod::steffen;
   options.algorithm = KK::Algorithm::analytic;
-  options.jobs = 1;
+  options.jobs = jobs;
   const KK::KK transform(std::move(input), options);
   Table result{table.x, {}};
   result.y.reserve(table.x.size());
-  for (const auto x : table.x) result.y.push_back(finite_result(transform.calc(x)));
+  for (const auto &point : transform.calc(table.x)) result.y.push_back(finite_result(point.second));
   return result;
 }
 
 Lattice lattice(const Table &dos, const Table &re_sigma, const Table &im_sigma, const double mu, const double clip_sigma,
                 const unsigned moment) {
+  return lattice(dos, re_sigma, im_sigma, mu, clip_sigma, moment, 1);
+}
+
+Lattice lattice(const Table &dos, const Table &re_sigma, const Table &im_sigma, const double mu, const double clip_sigma,
+                const unsigned moment, const std::size_t jobs) {
+  if (jobs == 0) throw std::invalid_argument("Worker count must be positive.");
   validate_table(re_sigma);
   validate_table(im_sigma);
   if (re_sigma.x != im_sigma.x) throw std::invalid_argument("Self-energy frequency grids must match exactly.");
@@ -129,15 +141,15 @@ Lattice lattice(const Table &dos, const Table &re_sigma, const Table &im_sigma, 
   const auto weighted_density = density.multiply_by_monomial(moment);
   const auto bandwidth = Hilb::bandwidth(dos.x);
   Lattice result{{re_sigma.x, {}}, {re_sigma.x, {}}};
-  result.real.y.reserve(re_sigma.x.size());
-  result.spectral.y.reserve(re_sigma.x.size());
-  for (std::size_t i = 0; i < re_sigma.x.size(); ++i) {
+  result.real.y.resize(re_sigma.x.size());
+  result.spectral.y.resize(re_sigma.x.size());
+  Tools::for_each_index(re_sigma.x.size(), jobs, [&](const std::size_t i) {
     const std::complex<double> z{re_sigma.x[i] + mu - re_sigma.y[i], std::max(-im_sigma.y[i], clip_sigma)};
     Hilb::validate_hilbert_transform_argument(bandwidth, z, static_cast<int>(moment));
     const auto green = Tools::cauchy_transform(weighted_density, z);
-    result.real.y.push_back(finite_result(green.real()));
-    result.spectral.y.push_back(finite_result(-green.imag() / std::numbers::pi));
-  }
+    result.real.y[i] = finite_result(green.real());
+    result.spectral.y[i] = finite_result(-green.imag() / std::numbers::pi);
+  });
   return result;
 }
 

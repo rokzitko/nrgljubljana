@@ -1,6 +1,6 @@
 # Native DMFT Numerics
 
-`nrgljubljana_numerics` is a small C++20 library, independent of the scientific
+`nrgljubljana_numerics` 1.2.0 is a small C++20 library, independent of the scientific
 solver. Its public header is `include/nrgljubljana/numerics.hpp`; the namespace
 is `NRG::Numerics`. Only standard-library types cross the public interface.
 
@@ -17,8 +17,11 @@ double integrate_fermi(const Table &, double temperature,
                        double epsabs = 1e-10, double epsrel = 1e-9);
 Table resample(const Table &, const std::vector<double> &grid);
 Table kramers_kronig(const Table &);
+Table kramers_kronig(const Table &, std::size_t jobs);
 Lattice lattice(const Table &dos, const Table &re_sigma, const Table &im_sigma,
                  double mu, double clip_sigma, unsigned moment = 0);
+Lattice lattice(const Table &dos, const Table &re_sigma, const Table &im_sigma,
+                 double mu, double clip_sigma, unsigned moment, std::size_t jobs);
 
 struct SpectrumBin { double frequency; double weight; };
 using SpectrumBins = std::vector<SpectrumBin>;
@@ -117,6 +120,39 @@ Analytic transforms need no GSL handler changes after interpolation setup.
 Each call prepares its own interpolant; there is currently no public cache or
 `PreparedDos` object.
 
+## Explicit Workers
+
+The original exported `kramers_kronig(table)` and six-argument `lattice(...)`
+signatures are retained and delegate to one worker. Version 1.2.0 adds overloads
+with an explicit, nondefaulted `std::size_t jobs` argument:
+
+```cpp
+auto real = NRG::Numerics::kramers_kronig(imaginary, jobs);
+auto green = NRG::Numerics::lattice(dos, re_sigma, im_sigma, mu, clip_sigma, 0, jobs);
+auto first_moment = NRG::Numerics::lattice(dos, re_sigma, im_sigma, mu, clip_sigma, 1, jobs);
+```
+
+`jobs` must be positive; zero throws `std::invalid_argument`. Workers are capped
+by the number of output points. One worker runs the original per-point math on
+the calling thread. The library never reads `OMP_NUM_THREADS` or other worker
+environment settings; applications must resolve their policy and pass it
+explicitly. The existing `BroadeningOptions::jobs` follows the same policy.
+
+KK uses the existing analytic Steffen grid transform with
+`KK::NumericalOptions::jobs`, including the unchanged subtracted endpoint
+semantics. Lattice prepares and energy-weights the DOS exactly once per call,
+then uses the index-worker helper shared with broadening in
+`tools/common/parallel.hpp`. Workers write fixed output slots, never reduce
+across frequencies, and retain each point's arithmetic and output ordering.
+The shared polynomial's lazy far-field moment caches are mutex-protected.
+Results are exactly equal across worker counts for the same build and inputs.
+
+All started workers are joined before returning or propagating a computation
+or thread-launch exception. Independent calls can run concurrently. GSL setup
+finishes and restores its handler before analytic workers start; no parent
+GSL guard is held around worker calls. External code changing GSL's global
+handler must still cooperate through the shared guard described above.
+
 ## Broadening Contract
 
 Broadening shares `tools/broaden/broadening_core.hpp` with the CLI, including
@@ -205,10 +241,20 @@ private CLI headers use POSIX headers; Linux is the supported/tested platform.
 `BUILD_SHARED_LIBS=ON` selects a shared library instead of the default static
 library. Strict floating-point flags are applied privately to the library.
 
-The original six CTest groups cover flat/linear and cubic integration oracles, absolute
+Seven core CTest groups cover flat/linear and cubic integration oracles, absolute
 interpolant roots, finite/zero-temperature Fermi integrals, Steffen resampling,
 KK sign/parity/endpoints, lattice moments and far-field cancellation, malformed
 input, clipping, and GSL handler restoration including concurrent calls.
+The `numerics.parallel` group checks exact serial/parallel equality at 1, 2, 3,
+8 and more workers than output points, including KK endpoints and nonlinear
+asymmetric ordinates, lattice moments 0/1/2, signed odd moments, asymmetric and
+zero DOS, clipping, single-point output and far-field cancellation. Validation
+rejects zero workers and malformed grids. Handler tests cover interpolation
+and worker failures followed by successful calls, and concurrent transforms
+under custom, default and disabled GSL handlers. Parallel and handler tests run
+with an invalid `OMP_NUM_THREADS` setting to check environment independence;
+they have a timeout to catch hangs. Thread-launch failure cleanup is shared
+with the existing worker implementations, not fault-injected by these tests.
 Six additional broadening groups cover independent kernel/convolution oracles,
 signed symmetry, exact-key averaging and its rounding order, all binary layouts,
 malformed records/options/meshes, empty contributions, cutoff boundaries,

@@ -3,24 +3,22 @@
 #define NRG_TOOLS_BROADENING_CORE_HPP
 
 #include <algorithm>
-#include <atomic>
 #include <cmath>
 #include <cstddef>
-#include <exception>
 #include <functional>
 #include <limits>
 #include <map>
-#include <mutex>
 #include <numeric>
 #include <stdexcept>
-#include <thread>
 #include <vector>
 
 #include "../../c++/broadening.hpp"
+#include "../common/parallel.hpp"
 
 namespace NRG::Broaden::Core {
 
 using std::size_t;
+using NRG::Tools::for_each_index;
 inline const double R_1_SQRT2PI = 1.0 / std::sqrt(2.0 * M_PI);
 
 inline double gaussian_kernel(const double x, const double y, const double sigma) {
@@ -32,53 +30,6 @@ inline double gaussian_kernel(const double x, const double y, const double sigma
 inline double derfd_kernel(const double x, const double y, const double sigma) {
   const auto d = (x - y) / sigma;
   return 1.0 / ((1.0 + std::cosh(d)) * 2.0 * sigma);
-}
-
-template<typename FNC>
-void for_each_index(const size_t count, const size_t requested_workers, FNC &&calculate) {
-  if (count == 0) return;
-  if (requested_workers == 0) throw std::invalid_argument("Worker count must be positive.");
-  const auto worker_count = std::min(count, requested_workers);
-  if (worker_count == 1) {
-    for (size_t index = 0; index < count; ++index) calculate(index);
-    return;
-  }
-
-  std::atomic<size_t> next_index{0};
-  std::atomic<bool> stopped{false};
-  std::exception_ptr failure;
-  auto failure_index = std::numeric_limits<size_t>::max();
-  std::mutex failure_mutex;
-  auto run_worker = [&] {
-    while (!stopped.load(std::memory_order_relaxed)) {
-      const auto index = next_index.fetch_add(1, std::memory_order_relaxed);
-      if (index >= count) break;
-      try {
-        calculate(index);
-      } catch (...) {
-        {
-          const std::lock_guard lock(failure_mutex);
-          if (!failure || index < failure_index) {
-            failure = std::current_exception();
-            failure_index = index;
-          }
-        }
-        stopped.store(true, std::memory_order_relaxed);
-      }
-    }
-  };
-
-  std::vector<std::thread> workers;
-  workers.reserve(worker_count);
-  try {
-    for (size_t worker = 0; worker < worker_count; ++worker) workers.emplace_back(run_worker);
-  } catch (...) {
-    stopped.store(true, std::memory_order_relaxed);
-    for (auto &worker : workers) worker.join();
-    throw;
-  }
-  for (auto &worker : workers) worker.join();
-  if (failure) std::rethrow_exception(failure);
 }
 
 template<typename Frequency, typename Weight>

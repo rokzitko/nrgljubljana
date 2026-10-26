@@ -54,6 +54,9 @@ Table resample(const Table &table, const std::vector<double> &grid);
 // 1e-8); ordinates need not have parity. Output uses the input mesh, including
 // endpoints, where K_sub(w) = integral (S(E)-S(w))/(E-w) dE / pi is returned.
 Table kramers_kronig(const Table &table);
+// Explicit workers, capped by output points; jobs=0 throws. The original
+// overload uses one worker. Neither overload reads environment settings.
+Table kramers_kronig(const Table &table, std::size_t jobs);
 
 // G_n(w) = integral E^moment * DOS(E)/(z(w)-E) dE over the DOS domain,
 // z(w) = w + mu - ReSigma(w) + i*max(-ImSigma(w), clip_sigma).
@@ -66,6 +69,10 @@ Table kramers_kronig(const Table &table);
 // fit in int, as required by hilb; large degrees may exhaust memory or overflow.
 Lattice lattice(const Table &dos, const Table &re_sigma, const Table &im_sigma, double mu, double clip_sigma,
                 unsigned moment = 0);
+// Same worker contract as KK. Prepare the weighted DOS once per call and
+// parallelize output frequencies only, preserving each point's arithmetic.
+Lattice lattice(const Table &dos, const Table &re_sigma, const Table &im_sigma, double mu, double clip_sigma,
+                unsigned moment, std::size_t jobs);
 
 struct SpectrumBin { double frequency; double weight; };
 using SpectrumBins = std::vector<SpectrumBin>;
