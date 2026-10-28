@@ -264,7 +264,11 @@ unsigned resolve_chain_length(const std::map<std::string, std::string> &param_se
     std::istringstream input(text);
     input.imbue(std::locale::classic());
     double value = 0;
-    if (!std::regex_match(text, number) || !(input >> value) || !std::isfinite(value))
+    const bool decimal = std::regex_match(text, number);
+    if (decimal) input >> value;
+    // libc++ sets failbit for underflow, even for representable subnormals or a value rounded to the minimum normal.
+    const bool underflow = input.fail() && input.eof() && !input.bad() && std::abs(value) <= std::numeric_limits<double>::min();
+    if (!decimal || (input.fail() && !underflow) || !std::isfinite(value))
       throw std::runtime_error(name + " must be a finite number: " + text);
     if (value == 0 && text.substr(0, text.find_first_of("eE")).find_first_of("123456789") != std::string::npos)
       throw std::runtime_error("Numeric underflow in " + name);

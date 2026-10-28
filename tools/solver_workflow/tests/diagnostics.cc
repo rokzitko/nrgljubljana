@@ -107,13 +107,19 @@ struct StreamState {
   struct stat status {};
   StreamState(std::ostream &stream_, int fd_) : stream(stream_), fd(fd_) {
     require(::fstat(fd, &status) == 0, "Cannot inspect stream descriptor");
+    require(descriptor_flags != -1 && status_flags != -1 && offset != -1, "Cannot snapshot stream descriptor");
   }
   void check(bool silent) const {
     require(stream.flags() == flags && stream.precision() == precision && stream.width() == width && stream.fill() == fill &&
             stream.rdbuf() == buffer && stream.rdstate() == state && stream.exceptions() == exceptions, "C++ stream state leaked");
     struct stat after {};
-    require(::fstat(fd, &after) == 0 && after.st_dev == status.st_dev && after.st_ino == status.st_ino &&
-            ::fcntl(fd, F_GETFD) == descriptor_flags && ::fcntl(fd, F_GETFL) == status_flags, "Stream descriptor changed");
+    require(::fstat(fd, &after) == 0, "Cannot inspect restored stream descriptor");
+    require(after.st_dev == status.st_dev && after.st_ino == status.st_ino, "Stream destination changed for fd " + std::to_string(fd));
+    const int after_descriptor_flags = ::fcntl(fd, F_GETFD), after_status_flags = ::fcntl(fd, F_GETFL);
+    require(after_descriptor_flags == descriptor_flags, "Descriptor flags changed for fd " + std::to_string(fd) + ": " +
+            std::to_string(descriptor_flags) + " -> " + std::to_string(after_descriptor_flags));
+    require(after_status_flags == status_flags, "Status flags changed for fd " + std::to_string(fd) + ": " +
+            std::to_string(status_flags) + " -> " + std::to_string(after_status_flags));
     if (silent) require(::lseek(fd, 0, SEEK_CUR) == offset, "Diagnostics leaked to host stream");
   }
 };
@@ -159,6 +165,9 @@ int main(int argc, char **argv) {
     const auto relative = fs::relative(calculation, original).string();
     std::ofstream(calculation / "param") << "[param]\nLambda=2\ndos=missing-density.dat\n";
     const HostStreams host;
+    // Darwin exposes first-write history through F_GETFL; establish it before taking snapshots.
+    emit("host-setup");
+    flush();
     std::cout.precision(5);
     std::cerr.precision(3);
     std::cout.width(7);

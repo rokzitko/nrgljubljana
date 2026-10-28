@@ -165,6 +165,12 @@ coefficient table and is only useful for an external hand-off; its direct
 Automatic `Nmax` derivation stops with an error if the requested scale would
 require a value greater than `998`.
 
+The [native workflow](solver-workflow.md) helper `resolve_chain_length` parses
+scalar inputs as decimal tokens in the classic locale. Finite nonzero subnormal
+values are accepted; overflow and nonzero values that round to zero are rejected.
+Literal zero remains zero even with an extreme exponent, such as `0e-9999`;
+parameter-specific positivity rules still apply.
+
 `tri=rkpw` opts into scalar RKPW tridiagonalization in Mathematica;
 `tri=cpp` with `tridiag_method=rkpw` instead opts into the shared C++ scalar
 kernel at runtime. These are distinct selectors. `tri` still defaults to

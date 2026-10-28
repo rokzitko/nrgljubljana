@@ -194,7 +194,7 @@ jobs:
     - name: Install homebrew dependencies (clang)
       if: ${{ contains(matrix.os, 'macos') && contains(matrix.cxx, 'clang') }}
       run: |
-        brew install ccache llvm gcc boost boost-mpi hdf5 libomp open-mpi openblas gsl gmp
+        brew install ccache llvm gcc boost boost-mpi eigen hdf5 libomp open-mpi openblas gsl gmp
 
     - name: Assert Apple Silicon runner
       if: ${{ matrix.require_arm64 == true }}

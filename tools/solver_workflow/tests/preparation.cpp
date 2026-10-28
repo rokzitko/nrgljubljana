@@ -154,11 +154,16 @@ void chain_validation() {
   resolves("Tmin=+.15625E+0\n" + y_scale, 3);
   resolves("Tmin=15625.e-5\n" + y_scale, 3);
   resolves("Tmin= \t.15625\t\r\n" + y_scale, 3);
+  // A zero ratio isolates scalar conversion, including underflow rounded to the minimum normal.
+  for (const auto &value : {number(std::numeric_limits<double>::denorm_min()), std::string("2.2250738585072012e-308"),
+                            std::string("2.2250738585072013e-308"), number(std::numeric_limits<double>::max())})
+    for (const auto *sign : {"", "-"})
+      resolves("Nmax=7\nTmin_ratio=0\nT=" + std::string(sign) + value + '\n', 7);
   for (const auto *name : {"Tmin", "T", "Tmin_ratio", "Lambda", "z", "bandrescale"}) {
     const std::string key = name;
     const std::string rest = key == "Tmin" ? "" : key == "T" ? "Nmax=7\nTmin_ratio=1\n" :
                              key == "Tmin_ratio" ? "Nmax=7\nT=1\n" : "Tmin=1e-3\n";
-    for (const auto *value : {"", "nan", "NaN", "Inf", "-inf", "0x1", "1/2", "1 0", "1e", ".", "1 # comment",
+    for (const auto *value : {"", "nan", "NaN", "Inf", "-inf", "0x1", "1/2", "1 0", "1e", "0e", "0junk", ".", "1 # comment",
                               "EPS", "ZZZ", "1e9999", "-1e9999"})
       rejects_chain(rest + key + '=' + value + '\n', key + " must be a finite number");
     for (const auto *value : {"1e-9999", "-1e-9999"})
