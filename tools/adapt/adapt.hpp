@@ -32,6 +32,7 @@
 #include "../common/log_mesh.hpp"
 #include "../common/cumulative_weight.hpp"
 #include "../common/representative_energy.hpp"
+#include "../common/adapt_parameters.hpp"
 
 using namespace std;
 using namespace std::string_literals;
@@ -341,46 +342,24 @@ class Adapt {
    }
    void set_parameters(const int PREC = 16) {
      std::cout << std::setprecision(PREC);
-     mesh.Lambda = LAMBDA(P.P("Lambda", 2.0));
-     if (!(mesh.Lambda > 1.0)) throw std::invalid_argument("Lambda must be greater than 1.");
-      mesh.adapt = P.Pbool("adapt", false); // Enable adaptable g(x)? Default is false!!
-      mesh.hardgap  = P.Pbool("hardgap", false); // Exclude an interval around omega=0 ?
-      mesh.boundary = P.P("boundary", 0.0);      // The boundary of the exclusion interval.
-      if (mesh.hardgap && !(mesh.boundary >= 0.0 && mesh.boundary < 1.0))
-        throw std::invalid_argument("boundary must be in [0,1) when hardgap=true.");
-      bandrescale = P.P("bandrescale", 1.0); // band rescaling parameter
-      if (!(std::isfinite(bandrescale) && bandrescale > 0.0))
-        throw std::invalid_argument("bandrescale must be positive and finite.");
-      density_interpolation = NRG::Tools::parse_density_interpolation_method(
-        P.Pstr("density_interpolation", "linear"));
-     xmax = P.P("xmax", 30); // Integrate over [1..xmax]
-     if (!(xmax > 1)) throw std::invalid_argument("xmax must be greater than 1.");
-     xfine = P.P("xfine", 5); // Fine stepsize integral [1..xfine]
-     if (!(xfine > 1)) throw std::invalid_argument("xfine must be greater than 1.");
-     output_step = P.P("outputstep", 1.0 / 64.0); // Stepsize for output file
-     if (!std::isfinite(output_step) || output_step <= 0.0 || output_step > 1.0)
-       throw std::invalid_argument("outputstep must be finite and in the range (0, 1].");
-      dx_fine       = P.P("dx_fine", 1e-5);        // Integration stepsize in [1..xfine]
-      dx_fast       = P.P("dx_fast", 1e-4);        // Integration stepsize in [xfine..xmax]
-      if (!(dx_fine > 0.0 && dx_fast > 0.0))
-        throw std::invalid_argument("dx_fine and dx_fast must be positive and finite.");
-      allowed_error = P.P("allowed_error", 1e-10); // error control for adaptable stepsize
-     if (!(std::isfinite(allowed_error) && allowed_error > 0.0))
-       throw std::invalid_argument("allowed_error must be positive and finite.");
-      max_subdiv    = P.Pint("max_subdiv", 10);    // maximum nr of integ. step subdivisions
-      if (max_subdiv < 0) throw std::invalid_argument("max_subdiv must be nonnegative.");
-      if (!(dx_fine * pow(0.5, max_subdiv) > DBL_EPSILON)) {
-        throw std::invalid_argument("dx_fine and max_subdiv imply a sub-step below machine precision.");
-      }
-      max_abs = P.P("max_abs", 100.0); // Maximal |f(x)|
-      if (!(max_abs > 0.0)) throw std::invalid_argument("max_abs must be greater than 0.");
-      convergence_eps = P.P("secant_eps", 1e-4);
-      if (!(convergence_eps > 0.0)) throw std::invalid_argument("secant_eps must be positive and finite.");
-      const auto secant_factor = P.P("secant_factor", 1e-7);
-      if (!(secant_factor > 0.0)) throw std::invalid_argument("secant_factor must be positive and finite.");
-      factor0         = 1.0 + secant_factor;
-      max_iter        = P.Pint("secant_max_iter", 10);
-      if (max_iter <= 0) throw std::invalid_argument("secant_max_iter must be positive.");
+     const auto config = NRG::Tools::resolve_adapt_parameters(P);
+     mesh.Lambda = LAMBDA(config.Lambda);
+     mesh.adapt = config.adapt;
+     mesh.hardgap = config.hardgap;
+     mesh.boundary = config.boundary;
+     bandrescale = config.bandrescale;
+     density_interpolation = config.density_interpolation;
+     xmax = config.xmax;
+     xfine = config.xfine;
+     output_step = config.output_step;
+     dx_fine = config.dx_fine;
+     dx_fast = config.dx_fast;
+     allowed_error = config.allowed_error;
+     max_subdiv = config.max_subdiv;
+     max_abs = config.max_abs;
+     convergence_eps = config.convergence_eps;
+     factor0 = config.factor0;
+     max_iter = config.max_iter;
    }
    Adapt(const Params &P_,
          const Sign &sign_,
@@ -404,9 +383,7 @@ class Adapt {
          throw std::invalid_argument("f_method must be either 'ode' or 'integral'.");
        }
      }
-     if (mesh.hardgap && mesh.boundary > 0.0 && (mesh.adapt || f_method != FMethod::INTEGRAL))
-       throw std::invalid_argument("Nonzero hardgap supports only a fixed mesh and the integral method; "
-                                   "use adapt=false and --integral (or f_method=integral).");
+     NRG::Tools::validate_adapt_method(mesh.adapt, mesh.hardgap, mesh.boundary, f_method == FMethod::INTEGRAL);
      report_parameters();
    }
    std::string g_fn(const Sign &sign_) { return "GSOL" + (sign_ == Sign::POS ? ""s : "NEG"s) + ".dat"; }

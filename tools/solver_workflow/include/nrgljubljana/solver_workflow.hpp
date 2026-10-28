@@ -5,6 +5,8 @@
 
 namespace NRG::Workflow {
 
+inline constexpr unsigned workflow_api_version = 2;
+
 enum class Branch { positive, negative };
 
 struct DiscretizationOptions {
@@ -17,6 +19,7 @@ struct DiscretizationOptions {
 // Existing calculation directory required. Relative input paths are resolved there.
 // integral=true overrides f_method; false retains the parameter/CLI default.
 void discretize(const DiscretizationOptions &);
+void discretize(const DiscretizationOptions &, const std::string &diagnostic_file);
 
 struct InitializerOptions {
   std::string calculation_directory;
@@ -33,8 +36,17 @@ struct InitializerResult {
 // nmax is required, already resolved by the caller, in [1,998]. The solver's
 // parameter file is never modified. data_file is the absolute published path.
 InitializerResult instantiate(const InitializerOptions &);
+InitializerResult instantiate(const InitializerOptions &, const std::string &diagnostic_file);
 
 void solve(const std::string &calculation_directory, const std::string &absolute_scratch_directory);
+void solve(const std::string &calculation_directory, const std::string &absolute_scratch_directory, const std::string &diagnostic_file);
+
+// A nonempty diagnostic_file exclusively creates a combined stdout/stderr log
+// (C and C++), resolved against calculation_directory before any CWD change.
+// Its parent must exist; existing files/symlinks are rejected, never truncated.
+// Empty paths and the original overloads retain the caller's stream routing.
+// Redirection is process-wide, scoped inside the workflow guard, and restored
+// on success and exceptions. It does not make concurrent host I/O safe.
 
 // Calls are serialized, not generally thread-safe. The host must not overlap
 // other solver/GSL operations, changes to GMP defaults or stream formatting, or

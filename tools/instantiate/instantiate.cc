@@ -528,7 +528,9 @@ ResolvedNrgChainConfiguration resolve_nrgchain_configuration(
   };
   auto boolean = [&text](const std::string_view key, const bool default_value) {
     const auto *value = text(key);
-    return value ? NRG::parse_bool(*value) : default_value;
+    if (!value) return default_value;
+    try { return NRG::parse_bool(*value); }
+    catch (const std::runtime_error &error) { throw std::runtime_error(std::string(key) + ": " + error.what()); }
   };
   auto string = [&text](const std::string_view key, std::string default_value) {
     const auto *value = text(key);
@@ -595,18 +597,31 @@ ResolvedNrgChainConfiguration resolve_nrgchain_configuration(
   return config;
 }
 
+void validate_instantiation_configuration(const ResolvedNrgChainConfiguration &configuration, bool wilson_only) {
+  if (!wilson_only && configuration.rescalexi)
+    throw std::invalid_argument("rescalexi=true is not supported for full instantiation or --diag-seed-only: "
+                                "seed generation requires unrescaled Wilson coefficients. "
+                                "Use rescalexi=false (the default), or --wilson-only for rescaled chain output.");
+  if (!configuration.tridiagonalize)
+    throw std::invalid_argument("instantiate requires nrgchain_tridiag=true.");
+}
+
+void validate_workflow_nmax(unsigned nmax) {
+  if (nmax < 1 || nmax > 998) throw std::invalid_argument("Workflow nmax must be a resolved value in [1,998].");
+}
+
+void validate_workflow_tri(const std::string &tri) {
+  if (tri == "cpp")
+    throw std::invalid_argument("Workflow instantiate supplies Wilson coefficients; tri=cpp is not supported.");
+}
+
 NrgChainInvocation make_nrgchain_invocation(const Options &options, const NrgChainTableMode mode,
                                            const std::optional<unsigned> resolved_nmax = std::nullopt) {
   // Keep reporting and core execution on the same parser output and mode.
   auto parameters = read_nrgchain_parameters(options.param_filename);
   if (resolved_nmax) parameters["Nmax"] = std::to_string(*resolved_nmax);
   auto configuration = resolve_nrgchain_configuration(parameters, mode);
-  if (!options.wilson_only && configuration.rescalexi)
-    throw std::invalid_argument("rescalexi=true is not supported for full instantiation or --diag-seed-only: "
-                                "seed generation requires unrescaled Wilson coefficients. "
-                                "Use rescalexi=false (the default), or --wilson-only for rescaled chain output.");
-  if (!configuration.tridiagonalize)
-    throw std::invalid_argument("instantiate requires nrgchain_tridiag=true.");
+  validate_instantiation_configuration(configuration, options.wilson_only);
   return {std::move(parameters), std::move(configuration)};
 }
 
@@ -1096,8 +1111,7 @@ double run_full_instantiation(const Options &options, const std::optional<unsign
     if (params->symtype.value() != "QS" || params->polarized || params->pol2x2 || params->rungs || params->substeps || params->floquet)
       throw std::invalid_argument("Workflow instantiate supports only real, one-channel, unpolarized QS templates "
                                   "without pol2x2, rungs, substeps or Floquet mode.");
-    if (params->tri == "cpp")
-      throw std::invalid_argument("Workflow instantiate supplies Wilson coefficients; tri=cpp is not supported.");
+    validate_workflow_tri(params->tri.value());
     const auto template_file = resolve_template_file(options.template_dir, "data.in");
     if (NRG::complex_data(template_file.string()))
       throw std::invalid_argument("Workflow instantiate does not support complex templates.");
@@ -1160,9 +1174,25 @@ void run_wilson_only(const Options &options) {
 
 } // namespace
 
+namespace NRG::Workflow::detail {
+
+// Parameter-only entrypoint: reuse the initializer resolver, not Params (which
+// reads files and allocates a work directory) or the stateful nrgchain engine.
+void validate_initializer_parameters(const std::map<std::string, std::string> &parameters) {
+  const auto configuration = resolve_nrgchain_configuration(parameters, NrgChainTableMode::Calculate);
+  validate_workflow_nmax(configuration.Nmax);
+  validate_instantiation_configuration(configuration, false);
+  if (configuration.tables_load)
+    throw std::invalid_argument("Workflow preparation does not support nrgchain_tables_load=true.");
+  const auto tri = parameters.find("tri");
+  validate_workflow_tri(tri == parameters.end() ? "old" : tri->second);
+}
+
+} // namespace NRG::Workflow::detail
+
 double NRG::Workflow::detail::instantiate(const std::string &parameter_file, const std::string &template_directory,
                                          const unsigned nmax) {
-  if (nmax < 1 || nmax > 998) throw std::invalid_argument("Workflow nmax must be a resolved value in [1,998].");
+  validate_workflow_nmax(nmax);
   Options options;
   options.param_filename = parameter_file;
   options.template_dir = template_directory;

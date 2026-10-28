@@ -660,6 +660,12 @@ matrix-construction diagnostics, `eAt` for diagonalization, and `fr` for
 irreducible operator recalculation. Logging text is diagnostic and not a
 machine-readable interface.
 
+The [native workflow diagnostic-file overloads](solver-workflow.md#diagnostic-routing)
+route console output to an exclusively created combined stdout/stderr log.
+The filename is an API argument, not a `param` key or environment variable;
+relative names are calculation-directory-relative. Routing does not change
+`log`, `logall`, `silent`, or any physical-output parameter.
+
 ### Eigensolvers And Backends
 
 `diag=default` selects `dsyevd` for real data and `zheevd` for complex data.

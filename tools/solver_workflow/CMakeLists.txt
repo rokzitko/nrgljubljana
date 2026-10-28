@@ -1,4 +1,4 @@
-add_library(nrgljubljana_workflow SHARED workflow.cc discretize.cc ../instantiate/instantiate.cc
+add_library(nrgljubljana_workflow SHARED workflow.cc discretize.cc preparation.cc ../instantiate/instantiate.cc
   $<TARGET_OBJECTS:nrgchain_core>)
 add_library(nrgljubljana::workflow ALIAS nrgljubljana_workflow)
 target_compile_features(nrgljubljana_workflow PUBLIC cxx_std_20)
@@ -16,6 +16,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif()
 set_target_properties(nrgljubljana_workflow PROPERTIES
   EXPORT_NAME workflow VERSION ${PROJECT_VERSION}
+  WORKFLOW_API_VERSION 2 EXPORT_PROPERTIES WORKFLOW_API_VERSION
   BUILD_RPATH "${PROJECT_BINARY_DIR}/c++"
   INSTALL_RPATH "$ORIGIN/nrgljubljana/workflow")
 
@@ -33,7 +34,7 @@ install(TARGETS nrgljubljana_workflow EXPORT nrgljubljana-workflow-targets
 # Keep the matching core private: no installed internal headers or old core package lookup.
 install(FILES $<TARGET_FILE:nrgljubljana_c>
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/nrgljubljana/workflow COMPONENT workflow)
-install(FILES include/nrgljubljana/solver_workflow.hpp
+install(FILES include/nrgljubljana/solver_workflow.hpp include/nrgljubljana/solver_preparation.hpp
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/nrgljubljana COMPONENT workflow)
 install(EXPORT nrgljubljana-workflow-targets NAMESPACE nrgljubljana::
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/nrgljubljana_workflow COMPONENT workflow)
@@ -44,6 +45,27 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nrgljubljana_workflowConfig.cmake
 if(NRGLJUBLJANA_BUILD_TESTS_ENABLED)
   find_package(Python3 REQUIRED COMPONENTS Interpreter)
   enable_testing()
+  # Exercise production routing/discretization without linking or running the solver.
+  # The driver supplies small initializer/core stand-ins that write to all four streams.
+  add_executable(workflow_diagnostics tests/diagnostics.cc workflow.cc discretize.cc)
+  target_compile_features(workflow_diagnostics PRIVATE cxx_std_20)
+  target_include_directories(workflow_diagnostics PRIVATE include ${PROJECT_SOURCE_DIR}/c++)
+  target_link_libraries(workflow_diagnostics PRIVATE gmp gsl Boost::mpi fmt::fmt-header-only Threads::Threads project_warnings)
+  target_link_libraries(workflow_diagnostics PRIVATE $<$<BOOL:${ASAN}>:asan> $<$<BOOL:${UBSAN}>:ubsan>)
+  nrgljubljana_apply_strict_floating_point(workflow_diagnostics)
+  add_test(NAME solver_workflow_diagnostics COMMAND workflow_diagnostics ${CMAKE_CURRENT_BINARY_DIR})
+  add_test(NAME solver_workflow_diagnostics_unsynced COMMAND workflow_diagnostics ${CMAKE_CURRENT_BINARY_DIR} unsynced)
+  set_tests_properties(solver_workflow_diagnostics solver_workflow_diagnostics_unsynced PROPERTIES TIMEOUT 30)
+
+  add_executable(workflow_preparation tests/preparation.cpp)
+  target_compile_features(workflow_preparation PRIVATE cxx_std_20)
+  target_include_directories(workflow_preparation PRIVATE include)
+  target_link_libraries(workflow_preparation PRIVATE nrgljubljana::workflow project_warnings
+    $<$<BOOL:${ASAN}>:asan> $<$<BOOL:${UBSAN}>:ubsan>)
+  nrgljubljana_apply_strict_floating_point(workflow_preparation)
+  add_test(NAME solver_workflow_preparation COMMAND workflow_preparation ${PROJECT_SOURCE_DIR}/test/mixchain+nrgrun/templates/QS)
+  set_tests_properties(solver_workflow_preparation PROPERTIES TIMEOUT 30)
+
   add_executable(workflow_contract tests/contract.cc)
   target_link_libraries(workflow_contract PRIVATE nrgljubljana::workflow gmp gsl project_warnings Boost::headers fmt::fmt-header-only)
   target_link_libraries(workflow_contract PRIVATE $<$<BOOL:${ASAN}>:asan> $<$<BOOL:${UBSAN}>:ubsan>)

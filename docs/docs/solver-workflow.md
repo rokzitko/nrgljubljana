@@ -1,8 +1,9 @@
 # Native Solver Workflow
 
 The C++20 library `nrgljubljana_workflow` provides file-backed preparation and a
-sequential solver entry point. Its only public header is
-`<nrgljubljana/solver_workflow.hpp>`, in namespace `NRG::Workflow`. It invokes the
+sequential solver entry point through `<nrgljubljana/solver_workflow.hpp>`, in
+namespace `NRG::Workflow`. In-memory preparation helpers are declared separately
+in `<nrgljubljana/solver_preparation.hpp>`. The file-backed workflow invokes the
 existing discretizer, initializer, chain generator and `NRG::run_nrg` directly;
 it does not invoke executables, simulate `main`, or parse diagnostic output.
 The native and standalone paths share the same numerical formulas and defaults.
@@ -17,6 +18,20 @@ target_link_libraries(my_application PRIVATE nrgljubljana::workflow)
 The source-tree alias is also `nrgljubljana::workflow`. MPI, solver internals,
 BLAS integer-ABI definitions, Eigen and other implementation headers remain
 private. A consumer needs only the installed workflow header and target.
+
+The additive API level is independent of the date-based package/library version
+(`2026.09`). Require the diagnostic-routing overloads at compile time with:
+
+```cpp
+#include <nrgljubljana/solver_workflow.hpp>
+static_assert(NRG::Workflow::workflow_api_version >= 2);
+```
+
+The build-tree and exported `nrgljubljana::workflow` targets also expose the
+custom `WORKFLOW_API_VERSION` property, currently `2`, for configure-time checks
+with `get_target_property`. Existing option/result layouts and original function
+symbols remain unchanged; consumers must link a library providing the new
+overloads when using them. The project version has not been renumbered to `2`.
 
 Build in the upstream root using the same configuration as the core, especially
 the BLAS/LAPACK integer ABI and MKL/OpenMP settings. An existing configured build
@@ -74,8 +89,9 @@ a file-backed bath. Analytic `band=flat` initialization does not require FSOL.
 
 `InitializerOptions` defaults to `parameter_file="param"` and
 `template_directory="template"`. **The caller must supply `nmax` in [1,998].**
-Its default zero is deliberately invalid. Resolve local `Nmax`, `Tmin` or other
-DMFT policies in the caller; the library does not implement that resolver.
+Its default zero is deliberately invalid. Resolve `Nmax` before invoking the
+initializer; the separate `resolve_chain_length` in-memory helper accepts the
+selected `[param]` entries. DMFT iteration policy remains with the caller.
 The supplied value overrides a copy of the chain parameter map before chain
 configuration (including the default `mMAX=2*nmax`) is resolved. It also sets
 the generated data header and coefficient lengths. An explicit `mMAX` is
@@ -105,9 +121,46 @@ exceptions. The CLI's other existing modes remain available through the CLI.
 `ground_energy` is returned directly from seed diagonalization in the same
 absolute units as the generated `e` block, not extracted from stdout.
 
+## Diagnostic Routing
+
+Each file-backed entry point has an additional overload accepting a diagnostic
+filename, without adding fields to the existing option or result structures:
+
+```cpp
+discretize({"/work/case"}, "discretize.log");
+const auto initial = instantiate({"/work/case", "param", "template", 68}, "initialize.log");
+solve("/work/case", "/work/scratch", "nrg.log");
+```
+
+An empty filename is exactly the original stream-routing behavior, as are calls
+to the original overloads. Otherwise, the library creates one combined log for
+C `stdout`/`stderr` and the descriptor-backed C++ `std::cout`/`std::cerr` streams.
+Relative log paths are resolved against `calculation_directory`, not the caller's
+CWD or the parameter file's parent. Resolution happens before any workflow CWD
+change, including when the calculation directory itself is relative. Absolute
+log paths are accepted unchanged.
+
+The log's parent must already exist. Creation uses `O_EXCL` and mode `0600`
+(subject to the host umask): an existing file, directory, or symlink, including a
+dangling symlink, is rejected without truncating or following it. Use a fresh
+filename for each call. A log created before a failed calculation is retained;
+it contains diagnostics emitted up to failure, not an automatic rendering of
+the thrown exception. Open/redirection failures throw before the backend runs.
+No log-routing parameter, environment setting, or callback is introduced, and
+physical output files and logging-verbosity parameters are unaffected.
+
+Capture flushes C and C++ output before switching descriptors and again before
+restoration, including during exception unwinding. It preserves the caller's
+stdout/stderr destinations and descriptor flags. Normal stream buffering still
+determines the ordering of interleaved diagnostic messages. Redirection is
+**process-wide**, inside the existing workflow serialization and saved-state
+guard. It is not per-thread logging or permission to run concurrent application
+I/O; unrelated host output during the call can also enter the log. Custom C++
+stream buffers installed by the host retain their own routing.
+
 ## State And Errors
 
-All three workflow entry points share one serialization mutex and a saved-state
+All three file-backed entry points share one serialization mutex and a saved-state
 guard, including quantum-number metadata restoration around `solve`. Preparation
 restores the caller's CWD, GMP default precision, `std::cout`/`std::cerr`
 formatting (flags, precision, width and fill), and quantum-number metadata on
@@ -119,7 +172,8 @@ This is **not general thread safety**. The host must not overlap other solver
 APIs, GSL operations, GMP-default changes, stream-format changes, CWD changes,
 or CWD-dependent I/O while a workflow call runs. This includes calls through
 other libraries with their own locks. The original CWD must remain accessible
-until restoration. Diagnostics can be emitted; the parent may capture logs.
+until restoration. Diagnostics can be emitted; use the optional diagnostic-file
+overloads to capture them without moving redirection outside the workflow guard.
 
 Preparation uses unique staging directories inside the explicit calculation
 directory. Intermediate chains and matrices are removed on return or exception.
@@ -138,9 +192,20 @@ and the fresh `DONE` marker rather than assuming files imply completion.
 ## Verification
 
 ```sh
+cmake --build build-x86 --target workflow_diagnostics workflow_preparation --parallel 2
+ctest --test-dir build-x86 -R '^solver_workflow_(diagnostics(_unsynced)?|preparation)$' --output-on-failure --no-tests=error
 cmake --build build-x86 --target workflow_contract adapt instantiate nrgchain adapt_high --parallel 2
 ctest --test-dir build-x86 -R '^(solver_workflow_contract|adapt_high|adapt[0-9]|instantiate[0-9]|nrgchain[0-9])' --output-on-failure
 ```
+
+Reconfigure after adding test sources. The focused diagnostics target compiles
+the production routing and discretization sources with test-only initializer and
+solver stand-ins; it neither links nor runs the full solver. It checks a real
+discretization failure after logging, combined C/C++ output, buffered tails,
+relative/absolute paths, exclusive creation and symlink rejection, empty-path
+and original-overload behavior, and exact descriptor/stream-state restoration
+on success and exceptions. Separate processes cover synchronized and
+`sync_with_stdio(false)` C++ streams. The preparation target is also solver-free.
 
 The workflow contract uses disposable copies of the QS template, compares both
 FSOL branches and complete initializer output byte-for-byte against the CLIs,
