@@ -33,6 +33,7 @@
 #include "misc.hpp" // contains, from_string, is_stdout_redirected, parsing code
 #include "workdir.hpp"
 #include "h5.hpp"
+#include "symmetry_traits.hpp"
 
 namespace NRG {
 
@@ -612,13 +613,7 @@ class Params {
     else
       coeffactor = 1;
     coefchannels = coeffactor * channels;
-    if (symtype == "U1" || symtype == "SU2" || symtype == "DBLSU2") {
-      perchannel = 2; // We distinguish spin-up and spin-down operators.
-    } else if (symtype == "NONE" || symtype == "P" || symtype == "PP") {
-      perchannel = 4; // We distinguish CR/AN and spin UP/DO.
-    } else {
-      perchannel = 1;
-    }
+    perchannel = NRG::perchannel(symtype.value());
     my_assert(perchannel >= 1);
     spin                     = symtype == "SL" || symtype == "SL3" ? 1 : 2;
     const auto statespersite = intpow(2, spin);

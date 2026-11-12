@@ -359,13 +359,15 @@ void replace(Entries &files, const std::string &from, const std::string &to, con
   text.replace(pos, from.size(), to);
 }
 
-void accepts(const Entries &files, unsigned subspaces = 1) {
+NRG::Workflow::TemplateInfo accepts(const Entries &files, unsigned subspaces = 1, const std::string &symmetry = "QS", unsigned channels = 1) {
   const auto before = files;
+  NRG::Workflow::TemplateInfo info;
   for (unsigned i = 0; i < 2; ++i) {
-    const auto info = NRG::Workflow::inspect_template_bundle(files);
-    check(info.symmetry == "QS" && info.channels == 1 && info.subspaces == subspaces, "Incorrect template metadata");
+    info = NRG::Workflow::inspect_template_bundle(files);
+    check(info.symmetry == symmetry && info.channels == channels && info.subspaces == subspaces, "Incorrect template metadata");
     check(files == before, "Inspection changed input bytes");
   }
+  return info;
 }
 
 void rejects_template(const Entries &files, const std::string &description) {
@@ -395,7 +397,7 @@ void template_structure() {
   no_newline["data.in"].pop_back();
   accepts(no_newline);
   for (const auto &[from, to] : std::vector<std::pair<std::string, std::string>>{
-         {"#!9", "#!8"}, {"#!9", "#!"}, {"# symtype  QS", "# symtype  QSZ"},
+         {"#!9", "#!8"}, {"#!9", "#!"}, {"# symtype  QS", "# symtype  XYZ"},
          {"# symtype  QS", "# symtype  QS "}, {"# symtype  QS", "# symtype  QS\r"},
          {"#!9", "#!9\r\n# another header comment"}, {"#!9", "#!9 \n# another header comment"},
          {"# Input file", "# COMPLEX Input file"}, {"# Input file", "\n# Input file"},
@@ -441,7 +443,16 @@ void template_structure() {
   }
   auto optional = valid;
   for (const char type : std::string("spdtogq")) optional["data.in"] += std::string(1, type) + "name\n0\n";
-  accepts(optional);
+  const auto info = accepts(optional);
+  check(info.operators == std::vector<NRG::Workflow::TemplateOperator>{{'s', "name"}, {'p', "name"}, {'d', "name"}, {'t', "name"},
+                                                                      {'o', "name"}, {'g', "name"}, {'q', "name"}},
+        "Incorrect operator list");
+  check(!info.field, "QS has no field");
+  for (const auto &header : {"s", "sn d", "sn\td"}) {
+    auto files = valid;
+    files["data.in"] += std::string(header) + "\n0\n";
+    rejects_template(files, std::string("invalid operator header ") + header);
+  }
   for (const char marker : std::string("zZT")) {
     auto files = optional;
     files["data.in"] += std::string(1, marker) + "\nignored old coefficient tables\n!not-executed\n";
@@ -450,6 +461,53 @@ void template_structure() {
     replace(files, "e\n0", std::string(1, marker) + "\ne\n0");
     rejects_template(files, "e block only in discarded suffix");
   }
+}
+
+void template_symmetries() {
+  const auto valid = minimal();
+
+  // Other symmetry types: quantum numbers are integers, as many per subspace as in the first seed.
+  auto qsz = valid;
+  replace(qsz, "# symtype  QS", "# symtype  QSZ");
+  check(accepts(qsz, 1, "QSZ").field, "QSZ has a field");
+  replace(qsz, "0 1\n1\nDIAG", "0 0\n1\nDIAG");
+  accepts(qsz, 1, "QSZ"); // no spin-multiplicity rule outside QS
+  auto wide = valid;
+  replace(wide, "# symtype  QS", "# symtype  ISO");
+  replace(wide, "0 1\n1\nDIAG", "0 1 2\n1\nDIAG");
+  check(!accepts(wide, 1, "ISO").field, "ISO has no field");
+  wide["data.in"] += "sn_d\n1\n0 1 2 0 1 2\nop.n\n";
+  wide["op.n"] = "{{1}}";
+  check(accepts(wide, 1, "ISO").operators == std::vector<NRG::Workflow::TemplateOperator>{{'s', "n_d"}}, "Incorrect ISO operators");
+  for (const auto &[from, to] : std::vector<std::pair<std::string, std::string>>{
+         {"0 1 2 0 1 2", "0 1 0 1"}, {"0 1 2 0 1 2", "0 1 2 0 1 2 3"}, {"0 1 2 0 1 2", "0 1 2 0 1 x"}}) {
+    auto files = wide;
+    replace(files, from, to);
+    rejects_template(files, "ISO operator quantum numbers " + to);
+  }
+  auto mixed = wide;
+  replace(mixed, "1 0 1", "1 0 2");
+  replace(mixed, "f 0 0", "1 2\n1\nDIAG ham_0.1\nf 0 0");
+  rejects_template(mixed, "seeds with different numbers of quantum numbers");
+
+  // Wilson-chain blocks: channels x perchannel, all leading
+  auto two = valid;
+  replace(two, "1 0 1", "2 0 1");
+  rejects_template(two, "two channels, one f block");
+  replace(two, "f 0 0\n0\n", "f 0 0\n0\nf 1 0\n0\n");
+  accepts(two, 1, "QS", 2);
+  auto three = two;
+  replace(three, "f 1 0\n0\n", "f 1 0\n0\nf 2 0\n0\n");
+  rejects_template(three, "two channels, three f blocks");
+  auto late = two;
+  replace(late, "f 1 0\n0\ne\n0\n", "e\n0\nf 1 0\n0\n");
+  rejects_template(late, "f block after e");
+  auto u1 = valid;
+  replace(u1, "# symtype  QS", "# symtype  U1");
+  replace(u1, "0 1\n1\nDIAG", "0\n1\nDIAG");
+  rejects_template(u1, "U1 has two f blocks per channel");
+  replace(u1, "f 0 0\n0\n", "f 0 0\n0\nf 0 1\n0\n");
+  accepts(u1, 1, "U1");
 }
 
 void template_dependencies() {
@@ -586,9 +644,10 @@ void real_template(const fs::path &root) {
     check(!input.bad(), "Error reading real template entry");
   }
   const auto info = NRG::Workflow::inspect_template_bundle(files);
-  accepts(files, info.subspaces);
+  accepts(files, info.subspaces, info.symmetry, info.channels);
   std::cout << "Read-only template: symmetry=" << info.symmetry << " channels=" << info.channels
-            << " subspaces=" << info.subspaces << " files=" << files.size() << '\n';
+            << " subspaces=" << info.subspaces << " operators=" << info.operators.size() << " field=" << info.field
+            << " files=" << files.size() << '\n';
 }
 
 } // namespace
@@ -603,6 +662,7 @@ int main(int argc, char **argv) {
     chain_scales();
     combined_preparation();
     template_structure();
+    template_symmetries();
     template_dependencies();
     template_matrices();
     if (argc == 2) real_template(fs::path(argv[1]));

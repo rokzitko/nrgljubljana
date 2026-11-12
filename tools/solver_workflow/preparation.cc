@@ -1,5 +1,6 @@
 #include <nrgljubljana/solver_preparation.hpp>
 #include "../common/adapt_parameters.hpp"
+#include "symmetry_traits.hpp"
 
 #include <charconv>
 #include <cctype>
@@ -75,20 +76,27 @@ std::string relative_name(const std::string &name) {
   return result;
 }
 
-using Qn = std::pair<int, int>;
+using Qn = std::vector<int>;
 
-std::vector<Qn> quantum_numbers(const std::string &text, std::size_t expected) {
+// All integers of a quantum-number line
+std::vector<int> integers(const std::string &text) {
   std::istringstream input(text);
   input.imbue(std::locale::classic());
+  std::vector<int> result;
+  for (int value = 0; input >> value;) result.push_back(value);
+  require(input.eof(), "invalid quantum numbers: " + text);
+  return result;
+}
+
+// sets x width quantum numbers. QS: width 2 (charge, positive spin multiplicity).
+std::vector<Qn> quantum_numbers(const std::string &text, std::size_t sets, std::size_t width, bool qs) {
+  const auto values = integers(text);
+  require(values.size() == sets * width, "wrong number of quantum numbers: " + text);
   std::vector<Qn> result;
-  for (std::size_t i = 0; i < expected; ++i) {
-    int charge = 0, spin = 0;
-    require(bool(input >> charge >> spin), "invalid QS quantum numbers: " + text);
-    require(spin > 0, "QS spin multiplicity must be positive: " + text);
-    result.emplace_back(charge, spin);
+  for (std::size_t i = 0; i < sets; ++i) {
+    result.emplace_back(values.begin() + static_cast<std::ptrdiff_t>(i * width), values.begin() + static_cast<std::ptrdiff_t>((i + 1) * width));
+    if (qs) require(result.back()[1] > 0, "QS spin multiplicity must be positive: " + text);
   }
-  std::string extra;
-  require(!(input >> extra), "extra QS quantum numbers: " + text);
   return result;
 }
 
@@ -384,8 +392,10 @@ TemplateInfo inspect_template_bundle(const std::map<std::string, std::string> &f
     if (header.peek() == '\n') header.get();
   }
   std::size_t channels = 0, sites = 0, subspaces = 0;
-  require(version == 9 && symmetry == "QS" && bool(header >> channels >> sites >> subspaces) && channels == 1 && subspaces > 0,
-          "expected a real version-9 one-channel QS template header");
+  const auto *traits = find_symmetry_traits(symmetry);
+  require(version == 9 && traits != nullptr && bool(header >> channels >> sites >> subspaces) && channels > 0 && subspaces > 0,
+          "expected a real version-9 template header with a known symmetry type");
+  require(channels <= std::numeric_limits<unsigned>::max(), "channel count exceeds TemplateInfo range");
   require(subspaces <= std::numeric_limits<unsigned>::max(), "subspace count exceeds TemplateInfo range");
 
   DataLines data(text);
@@ -401,9 +411,16 @@ TemplateInfo inspect_template_bundle(const std::map<std::string, std::string> &f
     MatrixShape(file->second, path).validate(rows, columns);
   };
 
+  const bool qs = symmetry == "QS";
+  std::size_t width = 0; // quantum numbers per subspace
   std::map<Qn, std::size_t> sizes;
   for (std::size_t i = 0; i < subspaces; ++i) {
-    const auto qn = quantum_numbers(data.take("seed quantum numbers"), 1).front();
+    const auto line = data.take("seed quantum numbers");
+    if (i == 0) {
+      width = qs ? 2 : integers(line).size();
+      require(width > 0, "no seed quantum numbers: " + line);
+    }
+    const auto qn = quantum_numbers(line, 1, width, qs).front();
     const auto size = count(data.take("seed dimension"), "seed dimension");
     require(size > 0, "zero seed dimension");
     const auto diag = fields(data.take("DIAG reference"));
@@ -414,32 +431,39 @@ TemplateInfo inspect_template_bundle(const std::map<std::string, std::string> &f
     matrix_file(diag[1], size, size);
   }
 
-  bool wilson = false, energy = false;
+  // The native Opch reader expects exactly channels x perchannel leading f blocks.
+  const auto wilson_blocks = channels * perchannel(symmetry);
+  std::size_t wilson = 0;
+  bool energy = false;
+  std::vector<TemplateOperator> operators;
   while (const auto line = data.next()) {
     const auto type = line->front();
     // instantiate discards/regenerates this suffix, including any later blocks.
     if (type == 'z' || type == 'Z' || type == 'T') break;
-    require(wilson || type == 'f', "missing leading Wilson-chain operator block");
+    require(wilson == wilson_blocks || type == 'f',
+            "expected " + std::to_string(wilson_blocks) + " leading Wilson-chain operator blocks, found " + std::to_string(wilson));
     if (*line == "e") {
       data.take("ground-energy placeholder");
       energy = true;
       continue;
     }
     if (type == 'f') {
-      require(!wilson, "more than one Wilson-chain operator block");
+      require(wilson < wilson_blocks, "more than " + std::to_string(wilson_blocks) + " Wilson-chain operator blocks");
       const auto indices = fields(line->substr(1));
       require(indices.size() == 2, "invalid Wilson-chain operator header");
       // The native Opch reader consumes these unsigned labels without using them.
       count(indices[0], "Wilson channel");
       count(indices[1], "Wilson operator");
-      wilson = true;
+      ++wilson;
     } else {
       // instantiate recognizes 'v', but the subsequent native InputData does not.
       require(std::string_view("spdtogq").find(type) != std::string_view::npos, "unsupported data.in block: " + *line);
+      require(line->size() > 1 && line->find_first_of(" \t") == std::string::npos, "invalid operator block header: " + *line);
+      operators.push_back({type, line->substr(1)});
     }
     const auto elements = count(data.take("matrix-element count"), "matrix-element count");
     for (std::size_t i = 0; i < elements; ++i) {
-      const auto qn = quantum_numbers(data.take("operator quantum numbers"), 2);
+      const auto qn = quantum_numbers(data.take("operator quantum numbers"), 2, width, qs);
       require(sizes.contains(qn[0]) && sizes.contains(qn[1]), "operator references unknown seed subspace");
       const auto rows = sizes.at(qn[0]), columns = sizes.at(qn[1]);
       const auto first = data.take("operator matrix");
@@ -453,8 +477,8 @@ TemplateInfo inspect_template_bundle(const std::map<std::string, std::string> &f
       }
     }
   }
-  require(wilson && energy, "missing Wilson-chain operator or e block in data.in");
-  return {symmetry, static_cast<unsigned>(channels), static_cast<unsigned>(subspaces)};
+  require(wilson == wilson_blocks && energy, "missing Wilson-chain operator or e block in data.in");
+  return {symmetry, static_cast<unsigned>(channels), static_cast<unsigned>(subspaces), std::move(operators), traits->field};
 }
 
 } // namespace NRG::Workflow

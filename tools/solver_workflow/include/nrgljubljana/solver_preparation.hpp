@@ -3,6 +3,7 @@
 
 #include <map>
 #include <string>
+#include <vector>
 
 namespace NRG::Workflow {
 
@@ -57,10 +58,19 @@ unsigned resolve_chain_length(const std::map<std::string, std::string> &param_se
 // convergence. Throws std::runtime_error without logging or changing GSL handlers.
 void validate_preparation_parameters(const std::map<std::string, std::string> &rendered_param_section);
 
+// An operator block of data.in: type s, p, d, t, o, g or q, and the operator name.
+struct TemplateOperator {
+  char type;
+  std::string name;
+  bool operator==(const TemplateOperator &) const = default;
+};
+
 struct TemplateInfo {
   std::string symmetry;
   unsigned channels;
   unsigned subspaces;
+  std::vector<TemplateOperator> operators; // in data.in order; a name may repeat
+  bool field;                              // the symmetry type has a field: d spectra are named with -u/-d
 };
 
 // files maps canonical '/'-separated paths RELATIVE TO THE TEMPLATE ROOT to bytes:
@@ -69,10 +79,14 @@ struct TemplateInfo {
 // separators or NUL. References may contain './' or repeated separators, but not
 // '..', absolute paths or file-valued parents. There is no CWD/root fallback.
 //
-// Supported profile: real version-9, one-channel QS. Inspect the native header,
-// positive seed dimensions/scale, unique QS subspaces, DIAG dependencies, one
-// leading f block, an e placeholder, and s/p/d/t/o/g/q operator blocks. Check
-// referenced matrix shapes and scalar syntax, not numerical values of expressions.
+// Supported profile: real version-9 templates of any symmetry type known to the
+// solver, with any number of channels. This is structural validity, not support by
+// instantiate, which accepts a narrower set. Inspect the native header, positive
+// seed dimensions/scale, unique subspaces (the same number of integer quantum
+// numbers each; QS: charge and positive spin multiplicity), DIAG dependencies,
+// channels x perchannel leading f blocks, an e placeholder, and s/p/d/t/o/g/q
+// operator blocks. Check referenced matrix shapes and scalar syntax, not numerical
+// values of expressions.
 // Scalar/vector/matrix forms, + - * /, grouping, identifiers, and the initializer's
 // Sqrt/sqrt/exp/log/Conjugate/gammaPolCh/coefxi/coefzeta calls are supported.
 // Unknown functions, complex profiles, parse directives and shell escapes fail.
