@@ -23,7 +23,6 @@ for my $name (sort { length($a) <=> length($b) || $a cmp $b } @names) {
     my $path = "$cwd/$name";
     next unless -d $path && !-l $path;
     next unless -f "$path/param" && !-l "$path/param";
-    next unless -f "$path/data" && !-l "$path/data";
 
     my $canonical = abs_path($path);
     defined($canonical) or die "Can't resolve $path: $!\n";
