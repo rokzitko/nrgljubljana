@@ -274,7 +274,7 @@ recalcopONEX[m_, diffs_, {diffone_, filename_}] := Module[
         string = expr /. faktor_. ireduc[i1_, ip_, IN1_, INp_] :>
           "{ " <> tos[i1] <> ", " <> tos[ip] <> ", " <>
           outmake[IN1] <> ", " <> outmake[INp] <>
-          ", " <> koefstr3[ faktor ] <> "},";
+          ", " <> koefstr3[If[m === {1}, regularSpinCoefficient[faktor], faktor]] <> "},";
         Print[string];
 
         res = expr /. {

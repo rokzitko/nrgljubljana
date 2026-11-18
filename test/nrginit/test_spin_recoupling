@@ -1,0 +1,43 @@
+#!/bin/sh
+set -eu
+source_dir=$1
+kernel=$2
+
+"$kernel" -noinit -batchinput -batchoutput <<EOF
+failures = 0;
+check[condition_] := If[!TrueQ[condition], Print["FAILED: ", condition]; failures++];
+
+(* Representative pre-fix coefficients, including their removable singularities. *)
+a = Sqrt[(-1+2S)/(3+2S)] (Sqrt[(-1+2S)/(1+3S+2S^2)] +
+  S Sqrt[(-1+2S)/(1+3S+2S^2)] - 2 Sqrt[(1+3S+2S^2)/(-1+2S)])/(1+S)^(3/2);
+b = -Sqrt[3]/2 Sqrt[(-1+S+2S^2)/(2+S)] (
+  (9+20S+4S^2) Sqrt[(3+5S+2S^2)/(-1+2S)] -
+  3 Sqrt[-3+S+8S^2+4S^3])/(3+5S+2S^2)^2;
+c = Sqrt[3] Sqrt[S(1+S)] (
+  Sqrt[(2+S)^2(3+2S)(1+3S+2S^2)^3/S] -
+  4(1+S)^(3/2) Sqrt[S(1+2S)/(3+2S)] (2+5S+2S^2) +
+  (1+S)^(3/2)(2+5S+2S^2)/Sqrt[S(3+2S)/(1+2S)] +
+  3(2+3S+S^2) Sqrt[(1-2S)^2 S(1+2S)/(3+5S+2S^2)] -
+  5 Sqrt[S(1+2S)/(3+5S+2S^2)] (2+7S+7S^2+2S^3) +
+  2S Sqrt[S(1+2S)/(3+5S+2S^2)] (2+7S+7S^2+2S^3)) /
+  (2(1+2S)(2+3S+S^2)^2);
+expected = {-Sqrt[(3+2S)/(1+2S)]/(1+S),
+  -Sqrt[3(2+S)/(3+2S)]/(1+S), Sqrt[3]/((1+S) Sqrt[(1+2S)(3+2S)])};
+
+(* Load only the actual simplifier used by the QS/QSTZ triplet generators. *)
+definitions = ReadList["$source_dir/c++/symmetry/coefnew/nrgcoef.m", Hold[Expression]];
+selected = Cases[definitions,
+  HoldPattern[SetDelayed[lhs:regularSpinCoefficient[___], rhs_]] :> Hold[SetDelayed[lhs, rhs]], Infinity];
+check[Length[selected] == 1];
+If[Length[selected] != 1, Exit[1]];
+ReleaseHold[First[selected]];
+Do[
+  Do[
+    emitted = regularSpinCoefficient[form];
+    check[TrueQ[FullSimplify[emitted == expected[[i]], S >= 5]]];
+    check[TrueQ[FullSimplify[(emitted - expected[[i]]) /. S -> {1/2,1/2,0}[[i]]] == 0]],
+    {form, {{a,b,c}[[i]], FullSimplify[{a,b,c}[[i]], 2S \[Element] Integers && S >= 4]}}];
+  Print["Spin-triplet coefficient ", i, ": ", emitted],
+  {i,3}];
+Exit[If[failures == 0, 0, 1]];
+EOF

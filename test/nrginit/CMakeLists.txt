@@ -24,6 +24,9 @@ endforeach()
 add_test(NAME nrginit_bool_parser
          COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/test_bool_parser ${PROJECT_SOURCE_DIR} ${Mathematica_KERNEL_EXECUTABLE})
 
+add_test(NAME nrginit_spin_recoupling
+         COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/test_spin_recoupling ${PROJECT_SOURCE_DIR} ${Mathematica_KERNEL_EXECUTABLE})
+
 add_test(NAME nrginit_floquet_primitives
          COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/test_floquet_primitives ${PROJECT_SOURCE_DIR} ${Mathematica_KERNEL_EXECUTABLE})
 

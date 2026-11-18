@@ -78,7 +78,7 @@
 { 41, 40, Invar(q1, 1 + ss1), Invar(q1, -1 + ss1), (-5*sqrt((Power(S(ss1),3)*(3 + 2*S(ss1)))/(1 + 2*S(ss1))) - 4*sqrt((Power(S(ss1),5)*(3 + 2*S(ss1)))/(1 + 2*S(ss1))) + 4*sqrt((Power(S(ss1),7)*(3 + 2*S(ss1)))/(1 + 2*S(ss1))) + sqrt(Power(S(ss1),3)*(3 + 4*S(ss1)*(2 + S(ss1)))) - 2*sqrt(Power(S(ss1),5)*(3 + 4*S(ss1)*(2 + S(ss1)))) + 3*sqrt(S(ss1) + (2*S(ss1))/(1 + 2*S(ss1))))/(S(ss1)*(3 + 2*S(ss1))*sqrt(S(ss1)*(-1 + S(ss1) + 2*Power(S(ss1),2))))},
 { 41, 41, Invar(q1, 1 + ss1), Invar(q1, 1 + ss1), (-3 + S(ss1)*(3 + 2*S(ss1)))/sqrt(S(ss1)*(1 + S(ss1))*(1 + 2*S(ss1))*(3 + 2*S(ss1)))},
 { 41, 42, Invar(q1, 1 + ss1), Invar(q1, 3 + ss1), sqrt(3)/sqrt((1 + S(ss1))*(3 + 2*S(ss1)))},
-{ 42, 41, Invar(q1, 3 + ss1), Invar(q1, 1 + ss1), -0.5*(sqrt(-9 + 6*S(ss1) + 15/(2 + S(ss1)))*(-3*sqrt(-3 + S(ss1) + 4*Power(S(ss1),2)*(2 + S(ss1))) + 9*sqrt(3 + S(ss1) + 6/(-1 + 2*S(ss1))) + 4*S(ss1)*(5 + S(ss1))*sqrt(3 + S(ss1) + 6/(-1 + 2*S(ss1)))))/(Power(1 + S(ss1),2)*Power(3 + 2*S(ss1),2))},
+{ 42, 41, Invar(q1, 3 + ss1), Invar(q1, 1 + ss1), -sqrt(3*(2 + S(ss1))/(3 + 2*S(ss1)))/(1 + S(ss1))},
 { 42, 42, Invar(q1, 3 + ss1), Invar(q1, 3 + ss1), (5 + 2*S(ss1))/sqrt(((1 + S(ss1))*(3 + 2*S(ss1))*(5 + 2*S(ss1)))/S(ss1))},
 { 43, 43, Invar(-1 + q1, ss1), Invar(-1 + q1, ss1), 1},
 { 44, 44, Invar(-1 + q1, ss1), Invar(-1 + q1, ss1), 1},

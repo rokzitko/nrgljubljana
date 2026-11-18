@@ -10,6 +10,11 @@ chain frontends, a nontrivial seed, and a nonflat noninteracting Green function.
 It does not change the flat-SIAM fixtures, provenance, or reference assumptions
 documented below.
 
+The separate [QSTZ dynamical-spin regression](QSTZ_SPIN.md) checks an exact,
+untruncated three-channel spin response against an independent free-fermion
+Wick sum, including the zero Matsubara frequency. Its prepared input needs
+`SYM_ALL`, but no Mathematica at test time.
+
 ## Running Tests
 
 The suite requires Python >=3.10 and NumPy >=1.26,<3, in addition to the normal

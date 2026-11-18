@@ -1,0 +1,12 @@
+{
+  "source_revision": "696d061438b04155b3a6279e8de0bdaa4dd092d2",
+  "initializer_sources_sha256": "cefd162f6f6553d2e8b7d1b7897b76811b1c0080cbd38d5e6188a744736df6ce",
+  "kernel_version": "13.3.0 for Linux x86 (64-bit) (June 3, 2023)",
+  "basis_sha256": "b7f6e01b063f27511f04eb707561eac50e04055bb04a7cc80fac8eba8bc500b4",
+  "preparation_script_sha256": "db05817eea45611d9c32f9943f1d277ce4ebb6f58fefe370a084c86b0c07ff99",
+  "files": {
+    "data": "34f443785dc622c3583dd44c1c36dcfcd5749f050b4625611e0a5f3afa6c3bd2",
+    "param": "9b4bccde18cccf0e892304b38e805fe2675e14d2dffb5a0a2dcdf8f568d4831f",
+    "model.m": "893c0244953d8f4c8284222de5a4c44760c81f2390666a6d8cf7435bcf88d0e2"
+  }
+}

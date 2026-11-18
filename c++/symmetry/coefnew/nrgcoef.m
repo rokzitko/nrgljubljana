@@ -55,6 +55,12 @@ If[!ValueQ[debug], debug = 0];
 MyPrint[msg__] := If[debug >= 1, Print[msg]];
 MyPrint[i_Integer, msg__] := If[debug >= i, Print[msg]];
 
+(* Three-channel spin-triplet coefficients need radical cancellation before
+   emission: generic large-S forms can be 0*Infinity at allowed S=0 or 1/2.
+   Low-spin limits are independently checked by the CG/runtime regressions. *)
+regularSpinCoefficient[expr_] := FullSimplify[
+  PowerExpand[Factor[expr], Assumptions -> S >= 5], 2S \[Element] Integers && S >= 5];
+
 (* Generic support for up to five channels, a-e! 
 f denotes the states on the previous site of the Wilson chain. *)
 
@@ -858,7 +864,8 @@ recalcopONE[m_, diffs_, {diffone_, filename_}] := Module[
         string = expr /. faktor_. ireduc[i1_, ip_, IN1_, INp_] :>
           "{ " <> tos[i1] <> ", " <> tos[ip] <> ", " <>
           outmake[IN1] <> ", " <> outmake[INp] <>
-          ", " <> koefstr3[ simpl4[faktor] ] <> "},";
+          ", " <> koefstr3[If[symtype === "QS" && channels == 3 && m === {1},
+            regularSpinCoefficient[faktor], simpl4[faktor]]] <> "},";
         Print["#### string=", string];
 
         AppendTo[seznamdebug, string];

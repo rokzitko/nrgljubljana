@@ -56,6 +56,20 @@ foreach(fixture IN ITEMS siam_qsz siam_qs siam_u0_qsz)
   endforeach()
 endforeach()
 
+# Prepared QSTZ triplet regression: no Mathematica or chain-generation dependency.
+if(SYM_ALL)
+  foreach(temperature IN ITEMS 0.2 0.7)
+    string(REPLACE "." "" temperature_tag "${temperature}")
+    set(test_name "scientific_qstz_spin_T${temperature_tag}")
+    add_test(NAME ${test_name}
+      COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/validate_qstz_spin.py"
+        --nrg $<TARGET_FILE:nrg>
+        --temperature ${temperature}
+        --work-root "${CMAKE_CURRENT_BINARY_DIR}/runs/$<CONFIG>/${test_name}")
+    list(APPEND scientific_tests ${test_name})
+  endforeach()
+endif()
+
 set_tests_properties(${scientific_tests} PROPERTIES
   LABELS scientific
   TIMEOUT 180

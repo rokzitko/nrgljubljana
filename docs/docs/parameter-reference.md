@@ -470,6 +470,17 @@ Spectrum lists contain whitespace-separated operator pairs. The usual token is
 `operator1-operator2`; polarized variants can add `-u` or `-d`. Every named
 operator must have been included in the generated `data` file.
 
+For `QSTZ`, local spin dynamics uses a spin-triplet operator and `spect`,
+including `fdm=true` and/or `fdmmats=true`. With the usual `mtTripletOp`
+normalization, the response is one Cartesian component, not the sum over
+three components. The bosonic zero-frequency Matsubara Green function is
+minus the static susceptibility when the mean spin vanishes. `specchit`
+currently dispatches scalar operators only; triplet dynamics support does
+not imply a shell-by-shell local-spin CHIT curve. In `QSZTZ`, a longitudinal
+local `Sz` operator can instead be declared explicitly with `mtSingletOp`
+and requested through `specs`; do not assume the stock `SZd` initializer
+operator is enabled for that symmetry.
+
 **`gtp`/`chitp`.** `specgt`/`speci1t`/`speci2t` and `specchit` are evaluated
 shell by shell at an absolute temperature `T_eff = gtp * scale(N)` (for
 `gt`/`i1t`/`i2t`) or `T_eff = chitp * scale(N)` (for `chit`) — note that,
