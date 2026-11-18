@@ -148,6 +148,14 @@ call runs under the workflow guard without a calculation directory; a
 working directory, which is not changed. The test `solver_workflow_chain`
 compares the result exactly with `chain.dat` from `mixchain --Nz 2`.
 
+For one channel the chain agrees with `adapt --integral` followed by `nrgchain`
+(test `solver_workflow_vs_nrgchain`: flat bands, tabulated densities, a hard gap, a
+density on a logarithmic grid). It agrees to rounding when every `x = j + z`
+is a node of `FSOL` (z a multiple of `outputstep`, as for Nz = 2 and 4 at the
+default 1/64). Otherwise `nrgchain` interpolates `FSOL` linearly, and the two
+differ by that interpolation error, quadratic in `outputstep` (up to 3e-5 at
+1/64 in the test, at the first sites).
+
 ## Diagnostic Routing
 
 Each file-backed entry point has an additional overload accepting a diagnostic
