@@ -27,7 +27,8 @@ The additive API level is independent of the date-based package/library version
 static_assert(NRG::Workflow::workflow_api_version >= 2);
 ```
 
-Level 3 adds `read_parameter_sections`.
+Level 3 adds `read_parameter_sections` and, in `<nrgljubljana/solver_chain.hpp>`,
+`discretize_hybridization`.
 
 The build-tree and exported `nrgljubljana::workflow` targets also expose the
 custom `WORKFLOW_API_VERSION` property, currently `3`, for configure-time checks
@@ -129,6 +130,23 @@ exceptions. The CLI's other existing modes remain available through the CLI.
 `InitializerResult.data_file` is the absolute published `data` path;
 `ground_energy` is returned directly from seed diagonalization in the same
 absolute units as the generated `e` block, not extracted from stdout.
+
+## Discretization From Gamma In Memory
+
+`discretize_hybridization` in `<nrgljubljana/solver_chain.hpp>` builds the
+Wilson chain of a hybridization matrix Gamma(omega) for each twist, with
+`mixchain`'s star and chain stages and no files. Gamma is given as
+`HybridizationFunction` (row-major N x N per node, real or complex); the result
+is one `WilsonChain` per twist, in the units of `chain.dat` (E and T times
+`bandrescale`), with the diagnostics of its header as fields. The `[param]`
+entries are read with `mixchain`'s names and defaults; `channels`, `dos_prefix`
+and `z` are ignored, `Nmax` is replaced by the `nmax` argument (one length for
+all twists, `mMAX` defaults to `2*nmax`), and `discretization` must be Z. Gamma
+must be positive semidefinite: clipping or projecting it is the caller's. The
+call runs under the workflow guard without a calculation directory; a
+`diagnostic_file` receives `mixchain`'s log and is resolved against the caller's
+working directory, which is not changed. The test `solver_workflow_chain`
+compares the result exactly with `chain.dat` from `mixchain --Nz 2`.
 
 ## Diagnostic Routing
 

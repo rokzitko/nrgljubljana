@@ -1,0 +1,39 @@
+#!/bin/bash
+# Prepare the Gamma inputs of the mixchain regression cases, run mixchain --Nz 2 on each, and compare
+# discretize_hybridization with its chain.dat files (workflow_chain).
+#
+# Usage: chain_test <project source dir> <tools build dir> <work dir> <workflow_chain>
+set -euo pipefail
+
+source_dir="$1"
+tools_dir="$2"
+work_dir="$3"
+driver="$4"
+cases_dir="$source_dir/test/mixchain+nrgrun"
+
+rm -rf "$work_dir"
+mkdir -p "$work_dir"
+cd "$work_dir"
+
+# A flat band, 1/2 on [-1, 1], with one channel: the first case, which the driver also uses for the error tests
+mkdir flat
+awk 'BEGIN { for (k = -100; k <= 100; k++) printf "%.17g 0.5\n", k / 100 }' >flat/Gamma_11-re.dat
+cp "$source_dir/test/tools/mixchain/mixchain1_flat/param" flat/param-mixchain
+
+for name in mixchain_qs mixchain_u1 mixchain_u1_rotated mixchain_spsu2; do
+  mkdir "$name"
+  cp "$cases_dir/$name/param-mixchain" "$name/"
+  (cd "$name" && bash "$cases_dir/$name/make_input.sh" >/dev/null)
+done
+
+# Complex: the rotated case with imaginary off-diagonal parts b = c/10 (Gamma_12 = c + ib, Gamma_21 = c - ib)
+cp -r mixchain_u1_rotated complex
+awk '{ printf "%.17g %.17g\n", $1, 0.1 * $2 }' complex/Gamma_12-re.dat >complex/Gamma_12-im.dat
+awk '{ printf "%.17g %.17g\n", $1, -0.1 * $2 }' complex/Gamma_12-re.dat >complex/Gamma_21-im.dat
+
+cases=(flat mixchain_qs mixchain_u1 mixchain_u1_rotated mixchain_spsu2 complex)
+for name in "${cases[@]}"; do
+  (cd "$name" && "$tools_dir/mixchain" --Nz 2 param-mixchain >mixchain.log 2>&1) || { echo "mixchain failed in $name"; tail "$name/mixchain.log"; exit 1; }
+done
+
+"$driver" "${cases[@]}"

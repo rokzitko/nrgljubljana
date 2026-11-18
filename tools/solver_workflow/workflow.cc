@@ -5,6 +5,7 @@
 #include <exception>
 #include <fcntl.h>
 #include <filesystem>
+#include <functional>
 #include <iostream>
 #include <mutex>
 #include <stdexcept>
@@ -146,6 +147,18 @@ InitializerResult instantiate(const InitializerOptions &options, const std::stri
     return InitializerResult{std::filesystem::absolute("data").string(), energy};
   });
 }
+
+namespace detail {
+
+// The guard of the calls that use no calculation directory; diagnostic_file is resolved against the working directory.
+void guarded(const std::string &diagnostic_file, const std::function<void()> &function) {
+  const std::lock_guard lock(invocation_mutex);
+  const SavedState saved_state;
+  const DiagnosticLog diagnostics(".", diagnostic_file);
+  function();
+}
+
+} // namespace detail
 
 void solve(const std::string &calculation_directory, const std::string &absolute_scratch_directory) {
   solve(calculation_directory, absolute_scratch_directory, {});

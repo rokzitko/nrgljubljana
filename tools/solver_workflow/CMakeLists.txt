@@ -1,4 +1,4 @@
-add_library(nrgljubljana_workflow SHARED workflow.cc discretize.cc preparation.cc ../instantiate/instantiate.cc
+add_library(nrgljubljana_workflow SHARED workflow.cc discretize.cc chain.cc preparation.cc ../instantiate/instantiate.cc
   $<TARGET_OBJECTS:nrgchain_core>)
 add_library(nrgljubljana::workflow ALIAS nrgljubljana_workflow)
 target_compile_features(nrgljubljana_workflow PUBLIC cxx_std_20)
@@ -34,7 +34,7 @@ install(TARGETS nrgljubljana_workflow EXPORT nrgljubljana-workflow-targets
 # Keep the matching core private: no installed internal headers or old core package lookup.
 install(FILES $<TARGET_FILE:nrgljubljana_c>
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/nrgljubljana/workflow COMPONENT workflow)
-install(FILES include/nrgljubljana/solver_workflow.hpp include/nrgljubljana/solver_preparation.hpp
+install(FILES include/nrgljubljana/solver_workflow.hpp include/nrgljubljana/solver_preparation.hpp include/nrgljubljana/solver_chain.hpp
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/nrgljubljana COMPONENT workflow)
 install(EXPORT nrgljubljana-workflow-targets NAMESPACE nrgljubljana::
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/nrgljubljana_workflow COMPONENT workflow)
@@ -76,6 +76,15 @@ if(NRGLJUBLJANA_BUILD_TESTS_ENABLED)
     --temporary-parent ${CMAKE_CURRENT_BINARY_DIR})
   set_tests_properties(solver_workflow_contract PROPERTIES TIMEOUT 180 ENVIRONMENT "OMP_NUM_THREADS=1;MKL_NUM_THREADS=1")
   add_test(NAME solver_workflow_comparator COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_contract.py)
+
+  # discretize_hybridization against the chain.dat files of the mixchain executable
+  add_executable(workflow_chain tests/chain.cc)
+  target_compile_features(workflow_chain PRIVATE cxx_std_20)
+  target_link_libraries(workflow_chain PRIVATE nrgljubljana::workflow project_warnings
+    $<$<BOOL:${ASAN}>:asan> $<$<BOOL:${UBSAN}>:ubsan>)
+  add_test(NAME solver_workflow_chain COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/chain_test ${PROJECT_SOURCE_DIR}
+    ${PROJECT_BINARY_DIR}/tools ${CMAKE_CURRENT_BINARY_DIR}/chain $<TARGET_FILE:workflow_chain>)
+  set_tests_properties(solver_workflow_chain PROPERTIES TIMEOUT 300 ENVIRONMENT "OMP_NUM_THREADS=1;MKL_NUM_THREADS=1")
 
   # solve from a host that initializes MPI: serially, and one calculation per rank
   add_executable(workflow_solve_mpi tests/solve_mpi.cc)
