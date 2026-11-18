@@ -198,13 +198,19 @@ temporary child is removed on success and failure. Solver physical outputs
 remain in the calculation directory and are not transactional; inspect success
 and the fresh `DONE` marker rather than assuming files imply completion.
 
+`solve` makes no MPI calls: it runs the solver serially, with threaded
+BLAS/LAPACK. A host may initialize MPI and run independent calculations on
+different ranks at the same time, each in its own calculation directory; a shared
+scratch directory is fine, since each call uses its own child. Forward-only runs
+(`fdm=false`) are supported and write no FDM output.
+
 ## Verification
 
 ```sh
 cmake --build build-x86 --target workflow_diagnostics workflow_preparation --parallel 2
 ctest --test-dir build-x86 -R '^solver_workflow_(diagnostics(_unsynced)?|preparation)$' --output-on-failure --no-tests=error
-cmake --build build-x86 --target workflow_contract adapt instantiate nrgchain adapt_high --parallel 2
-ctest --test-dir build-x86 -R '^(solver_workflow_contract|adapt_high|adapt[0-9]|instantiate[0-9]|nrgchain[0-9])' --output-on-failure
+cmake --build build-x86 --target workflow_contract workflow_solve_mpi adapt instantiate nrgchain adapt_high --parallel 2
+ctest --test-dir build-x86 -R '^(solver_workflow_contract|solver_workflow_solve|adapt_high|adapt[0-9]|instantiate[0-9]|nrgchain[0-9])' --output-on-failure
 ```
 
 Reconfigure after adding test sources. The focused diagnostics target compiles
@@ -225,6 +231,10 @@ symmetry initialization. Both chain backends
 and an ungapped FSOL tail beyond `xmax` are exercised. To test another current
 template without touching it, run `tools/solver_workflow/tests/contract.py` with
 `--driver`, `--tools`, `--template` and `--temporary-parent` paths.
+`solver_workflow_solve` and `solver_workflow_solve_np2` solve two cases of
+`test/c++` (`mpitest1_qs` with FDM, `legacy_discretization_d1` forward-only)
+from a driver that initializes MPI, serially and with one case per rank under
+`mpiexec -n 2`, and compare them strictly with the references of the `nrg` tests.
 `tools/solver_workflow/tests/consumer` is a minimal standalone installed-package
 consumer requiring no internal headers or explicit MPI dependency.
 Pass its executable as `--consumer` to the contract script to include the

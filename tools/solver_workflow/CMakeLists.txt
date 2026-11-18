@@ -76,4 +76,19 @@ if(NRGLJUBLJANA_BUILD_TESTS_ENABLED)
     --temporary-parent ${CMAKE_CURRENT_BINARY_DIR})
   set_tests_properties(solver_workflow_contract PROPERTIES TIMEOUT 180 ENVIRONMENT "OMP_NUM_THREADS=1;MKL_NUM_THREADS=1")
   add_test(NAME solver_workflow_comparator COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_contract.py)
+
+  # solve from a host that initializes MPI: serially, and one calculation per rank
+  add_executable(workflow_solve_mpi tests/solve_mpi.cc)
+  target_link_libraries(workflow_solve_mpi PRIVATE nrgljubljana::workflow MPI::MPI_CXX project_warnings
+    $<$<BOOL:${ASAN}>:asan> $<$<BOOL:${UBSAN}>:ubsan>)
+  add_test(NAME solver_workflow_solve COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/solve_test ${PROJECT_SOURCE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}/solve $<TARGET_FILE:workflow_solve_mpi>)
+  set_tests_properties(solver_workflow_solve PROPERTIES TIMEOUT 120 ENVIRONMENT "OMP_NUM_THREADS=1;MKL_NUM_THREADS=1")
+  if(NRG_MPI)
+    add_test(NAME solver_workflow_solve_np2 COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/solve_test ${PROJECT_SOURCE_DIR}
+      ${CMAKE_CURRENT_BINARY_DIR}/solve_np2 ${MPIEXEC_EXECUTABLE} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 2
+      $<TARGET_FILE:workflow_solve_mpi> ${MPIEXEC_POSTFLAGS})
+    set_tests_properties(solver_workflow_solve_np2 PROPERTIES TIMEOUT 120 PROCESSORS 2
+      ENVIRONMENT "OMP_NUM_THREADS=1;MKL_NUM_THREADS=1")
+  endif()
 endif()
