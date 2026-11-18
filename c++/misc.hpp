@@ -35,6 +35,7 @@
 #include <fmt/format.h>
 
 #include "basicio.hpp"
+#include "parameter_sections.hpp"
 #include "portabil.hpp"
 
 #include <Eigen/Dense>
@@ -105,17 +106,14 @@ inline auto parse_block(std::istream &F) {
   std::map<std::string, std::string> parsed_params;
   while (F) {
     if (const auto l = nextline(F)) {
-      const auto line = strip_whitespace(l.value());
-      if (line[0] == '[') // new block, we're done!
+      const auto line = parameter_line(l.value());
+      if (line.kind == ParameterLine::Kind::header || line.kind == ParameterLine::Kind::malformed_header) // new block, we're done!
         break;
-      const auto pos_eq = line.find_first_of('=');
-      if (pos_eq == std::string::npos) // not found
+      if (line.kind != ParameterLine::Kind::entry) // no '='
         continue;
-      const auto keyword = strip_whitespace(line.substr(0, pos_eq));
-      const auto value   = strip_whitespace(line.substr(pos_eq+1));
-      if (parsed_params.count(keyword))
-        throw std::runtime_error("Duplicate keyword: " + keyword);
-      parsed_params[keyword] = value;
+      if (parsed_params.count(line.name))
+        throw std::runtime_error("Duplicate keyword: " + line.name);
+      parsed_params[line.name] = line.value;
     }
   }
   return parsed_params;
@@ -123,12 +121,11 @@ inline auto parse_block(std::istream &F) {
 
 // Locate block [name] in a file stream. Returns true if succeessful.
 inline bool find_block(std::istream &F, const std::string &s) {
-  std::string target = "[" + s + "]";
   F.clear();
   F.seekg(0, std::ios::beg);
   while (F) {
     if (auto l = nextline(F))
-      if(target.compare(strip_whitespace(l.value())) == 0) { return true; }
+      if (const auto line = parameter_line(l.value()); line.kind == ParameterLine::Kind::header && line.name == s) { return true; }
   }
   return false;
 }

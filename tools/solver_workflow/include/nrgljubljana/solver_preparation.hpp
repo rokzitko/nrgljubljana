@@ -12,6 +12,15 @@ namespace NRG::Workflow {
 // Invalid/unsupported input throws std::runtime_error. No diagnostics are printed.
 // Callers own parameter-section selection and filesystem/symlink policy.
 
+// Parameter-file text (param, a template manifest, ...) as sections: name -> key -> value.
+// Strict: every line is blank, a whole-line # comment, a header line that is exactly
+// [name] (non-empty, no whitespace around or inside the brackets), or key=value inside
+// a section (split at the first '=', key and value trimmed, the value may be empty).
+// A section given twice, an empty key and a key given twice in a section are errors;
+// the message names the line. Text accepted here is read the same way by nrg and the
+// tools; nrg alone also accepts what is rejected here in sections it does not read.
+std::map<std::string, std::map<std::string, std::string>> read_parameter_sections(const std::string &text);
+
 // param_section contains only [param] entries, not a flattened parameter file.
 // Numeric values are scalar decimal tokens (outer whitespace is ignored); expressions,
 // hexadecimal numbers, nonfinite numbers and nonzero values rounded to zero are

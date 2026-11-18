@@ -27,11 +27,13 @@ The additive API level is independent of the date-based package/library version
 static_assert(NRG::Workflow::workflow_api_version >= 2);
 ```
 
+Level 3 adds `read_parameter_sections`.
+
 The build-tree and exported `nrgljubljana::workflow` targets also expose the
-custom `WORKFLOW_API_VERSION` property, currently `2`, for configure-time checks
+custom `WORKFLOW_API_VERSION` property, currently `3`, for configure-time checks
 with `get_target_property`. Existing option/result layouts and original function
 symbols remain unchanged; consumers must link a library providing the new
-overloads when using them. The project version has not been renumbered to `2`.
+overloads when using them. The project version has not been renumbered.
 
 Build in the upstream root using the same configuration as the core, especially
 the BLAS/LAPACK integer ABI and MKL/OpenMP settings. An existing configured build
@@ -96,6 +98,13 @@ The supplied value overrides a copy of the chain parameter map before chain
 configuration (including the default `mMAX=2*nmax`) is resolved. It also sets
 the generated data header and coefficient lengths. An explicit `mMAX` is
 preserved. The original solver parameter file is never edited.
+
+`read_parameter_sections(text)` in the preparation header reads parameter-file
+text into its sections, for example to select `[param]` for the helpers above.
+It is strict: besides blank lines and whole-line `#` comments, only header lines
+that are exactly `[name]` and `key=value` lines inside a section are accepted, and
+a section or key given twice is an error naming the line. What it accepts, `nrg`
+and the tools read the same way.
 
 Full initialization currently supports real, one-channel, unpolarized QS
 templates. It evaluates seed Hamiltonians, diagonalizes them, transforms the

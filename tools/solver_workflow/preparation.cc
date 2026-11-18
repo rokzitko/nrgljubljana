@@ -2,6 +2,8 @@
 #include "../common/adapt_parameters.hpp"
 #include "symmetry_traits.hpp"
 
+#include <parameter_sections.hpp>
+
 #include <charconv>
 #include <cctype>
 #include <cmath>
@@ -249,6 +251,10 @@ public:
 };
 
 } // namespace
+
+std::map<std::string, std::map<std::string, std::string>> read_parameter_sections(const std::string &text) {
+  return NRG::read_parameter_sections(text);
+}
 
 unsigned resolve_chain_length(const std::map<std::string, std::string> &param_section) {
   const bool has_nmax = param_section.contains("Nmax");

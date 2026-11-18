@@ -37,6 +37,10 @@ keep=100
 - Do not quote strings. Quotes become part of the value.
 - Do not repeat a key. The C++ parser rejects duplicates, while the Mathematica
   parser can overwrite them.
+- Write a block header as exactly `[name]`, with nothing else on the line. `nrg`
+  also finds an indented header or one followed by spaces or a CR (Windows line
+  ending), but the preparation tools do not and keep their defaults. The
+  workflow's `read_parameter_sections` checks all of the above.
 - Boolean values are case-insensitive and accept `yes`, `true`, or `1` and
   `no`, `false`, or `0`.
 - List-valued parameters such as `ops` and `specd` use whitespace-separated

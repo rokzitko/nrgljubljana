@@ -650,12 +650,22 @@ void real_template(const fs::path &root) {
             << " files=" << files.size() << '\n';
 }
 
+// The strict reader through the installed header; its cases are in test/unit/misc/parameter_sections.cpp.
+void parameter_sections() {
+  const auto sections = NRG::Workflow::read_parameter_sections("# comment\n[param]\nsymtype = QS\n\n[extra]\nU1=0.5\n");
+  check(sections.size() == 2 && sections.at("param").at("symtype") == "QS" && sections.at("extra").at("U1") == "0.5",
+        "Parameter sections");
+  rejects_call([] { NRG::Workflow::read_parameter_sections("[param]\nx=1\nx=2\n"); }, "line 3: key \"x\" given twice");
+  rejects_call([] { NRG::Workflow::read_parameter_sections(" [param]\n"); }, "line 1: whitespace in a section header");
+}
+
 } // namespace
 
 int main(int argc, char **argv) {
   try {
     check(argc <= 2, "Usage: workflow_preparation [read-only-template-root]");
     const auto cwd = fs::current_path();
+    parameter_sections();
     chain_fixtures();
     chain_precedence();
     chain_validation();
