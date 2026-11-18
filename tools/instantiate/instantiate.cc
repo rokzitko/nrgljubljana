@@ -18,6 +18,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <tuple>
 #include <ostream>
 #include <stdexcept>
 #include <string>
@@ -1096,10 +1097,48 @@ void run_diag_seed_only(const Options &options) {
   std::cout << "E_gs=" << std::setprecision(18) << seed.ground_energy << '\n';
 }
 
-double run_full_instantiation(const Options &options, const std::optional<unsigned> resolved_nmax = std::nullopt) {
+// Wilson coefficients from elsewhere, with the z, Lambda and bandrescale they were computed for.
+struct SuppliedWilson {
+  const NRG::Tools::NrgChain::WilsonData &data;
+  double z, Lambda, bandrescale;
+};
+
+// The supplied coefficients must be for this parameter file and cover the sites 0..nmax.
+void check_supplied_wilson(const SuppliedWilson &supplied, const ParamSections &sections, const unsigned nmax) {
+  const auto it     = sections.values.find("param");
+  const auto number = [&](const std::string &key, const double default_value) {
+    if (it == sections.values.end()) return default_value;
+    const auto value = it->second.find(key);
+    return value == it->second.end() ? default_value : NRG::Tools::parse_parameter_double(value->second, key);
+  };
+  for (const auto &[key, given, default_value] : {std::tuple{"z", supplied.z, 1.0}, std::tuple{"Lambda", supplied.Lambda, 2.0},
+                                                  std::tuple{"bandrescale", supplied.bandrescale, 1.0}}) {
+    const auto expected = number(key, default_value);
+    if (std::abs(given - expected) > 1e-12 * std::max(1.0, std::abs(expected)))
+      throw std::invalid_argument(fmt::format("The Wilson coefficients were computed for {}={:.17g}, but the parameter file "
+                                              "gives {}={:.17g}.", key, given, key, expected));
+  }
+  if (supplied.data.channels.size() != 1)
+    throw std::invalid_argument(fmt::format("Workflow instantiate requires the Wilson coefficients of one channel, not {}.",
+                                            supplied.data.channels.size()));
+  for (const auto &channel : supplied.data.channels)
+    if (channel.xi.size() < nmax + 1 || channel.zeta.size() < nmax + 1)
+      throw std::invalid_argument(fmt::format("The Wilson coefficients cover the sites 0..{}, fewer than the 0..{} required.",
+                                              std::min(channel.xi.size(), channel.zeta.size()) - 1, nmax));
+}
+
+double run_full_instantiation(const Options &options, const std::optional<unsigned> resolved_nmax = std::nullopt,
+                              const SuppliedWilson *supplied = nullptr) {
   auto sections = parse_param_sections(options.param_filename);
-  const auto nrgchain = make_nrgchain_invocation(options, NrgChainTableMode::Calculate, resolved_nmax);
-  report_configuration(options, nrgchain);
+  std::optional<NrgChainInvocation> nrgchain;
+  if (supplied) {
+    check_supplied_wilson(*supplied, sections, *resolved_nmax);
+    std::cout << fmt::format("# Wilson coefficients supplied: channels={} z={:.17g} sites={}\n", supplied->data.channels.size(),
+                             supplied->z, supplied->data.channels.front().xi.size());
+  } else {
+    nrgchain = make_nrgchain_invocation(options, NrgChainTableMode::Calculate, resolved_nmax);
+    report_configuration(options, *nrgchain);
+  }
   const auto data_destination = std::filesystem::absolute("data");
   NRG::Workdir staging_workdir(data_destination.parent_path().string(), true);
   const auto staging_dir = std::filesystem::path(staging_workdir.get());
@@ -1121,8 +1160,9 @@ double run_full_instantiation(const Options &options, const std::optional<unsign
       throw std::invalid_argument("Workflow instantiate requires a one-channel QS data.in template.");
   }
 
-  const auto wilson = NRG::Tools::NrgChain::calculate_from_params(
-      nrgchain.parameters, nrgchain.configuration.mode, staging_dir);
+  const auto wilson = supplied ? supplied->data
+                               : NRG::Tools::NrgChain::calculate_from_params(nrgchain->parameters, nrgchain->configuration.mode,
+                                                                             staging_dir);
   if (wilson.channels.size() != 1)
     throw std::runtime_error("Only single-channel Wilson generation is supported in this instantiate slice.");
   if (options.generate_temporaries) write_wilson_channel(wilson.channels.front(), 1, staging_dir);
@@ -1197,6 +1237,17 @@ double NRG::Workflow::detail::instantiate(const std::string &parameter_file, con
   options.param_filename = parameter_file;
   options.template_dir = template_directory;
   return run_full_instantiation(options, nmax);
+}
+
+double NRG::Workflow::detail::instantiate(const std::string &parameter_file, const std::string &template_directory,
+                                         const unsigned nmax, const NRG::Tools::NrgChain::WilsonData &wilson, const double z,
+                                         const double Lambda, const double bandrescale) {
+  validate_workflow_nmax(nmax);
+  Options options;
+  options.param_filename = parameter_file;
+  options.template_dir   = template_directory;
+  const SuppliedWilson supplied{wilson, z, Lambda, bandrescale};
+  return run_full_instantiation(options, nmax, &supplied);
 }
 
 #ifndef NRG_INSTANTIATE_NO_MAIN

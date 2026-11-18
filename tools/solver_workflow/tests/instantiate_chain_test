@@ -1,0 +1,53 @@
+#!/bin/bash
+# Prepare the calculation directories of workflow_instantiate_chain and run it.
+#
+# Usage: instantiate_chain_test <QS template directory> <work dir> <workflow_instantiate_chain>
+# A and B: a tabulated Delta.dat; C and D: the same parameters with band=flat. The parameters are those of the
+# workflow contract test (contract.py), with Nmax=6.
+set -euo pipefail
+
+template="$1"
+work_dir="$2"
+driver="$3"
+
+rm -rf "$work_dir"
+mkdir -p "$work_dir"
+
+param='[extra]
+eps1=-0.13
+U1=0.4
+B1=0
+[param]
+symtype=QS
+Lambda=2
+band=asymode
+adapt=false
+polarized=false
+density_interpolation=steffen
+xmax=4
+outputstep=0.125
+f_method=ode
+Nmax=6
+preccpp=384
+tridiag_method=lanczos
+z=0.7
+bandrescale=1
+dos=Delta.dat
+keep=16
+keepmin=1
+T=0.01
+done=true
+data_has_rescaled_energies=false'
+
+for name in A B C D; do
+  mkdir "$work_dir/$name"
+  cp -r "$template" "$work_dir/$name/template"
+  if [ "$name" = A ] || [ "$name" = B ]; then
+    printf '%s\n' "$param" >"$work_dir/$name/param"
+    printf -- '-1 0.15\n-0.5 0.18\n-0.01 0.2\n0.01 0.21\n0.5 0.23\n1 0.25\n' >"$work_dir/$name/Delta.dat"
+  else
+    printf '%s\n' "${param/band=asymode/band=flat}" >"$work_dir/$name/param"
+  fi
+done
+
+"$driver" "$work_dir"

@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+#include <nrgljubljana/solver_workflow.hpp>
+
 namespace NRG::Workflow {
 
 // Gamma(omega), the N x N Hermitian positive semidefinite hybridization matrix, tabulated: for N=1 in the convention
@@ -75,6 +77,14 @@ struct ChainCoefficients {
 // Otherwise, or for a gauge other than polar, it throws std::invalid_argument naming the element. A diagonal Gamma
 // discretized with split_blocks=true (the default) gives such a chain.
 ChainCoefficients uncoupled_coefficients(const WilsonChain &chain);
+
+// instantiate with the given coefficients instead of computing them with nrgchain; everything else as the instantiate
+// of solver_workflow.hpp, with its scope (real, one-channel, unpolarized QS). The coefficients must cover the sites
+// 0..options.nmax (a longer chain is cut), match the coefficient channels of the template, and have the z, Lambda and
+// bandrescale of the parameter file (to 1e-12 relative, with the solver's defaults 1, 2 and 1). The chain keys of the
+// file (dos, band, adapt, tridiag_method, ...) are not read.
+InitializerResult instantiate(const InitializerOptions &options, const ChainCoefficients &coefficients,
+                              const std::string &diagnostic_file = {});
 
 } // namespace NRG::Workflow
 

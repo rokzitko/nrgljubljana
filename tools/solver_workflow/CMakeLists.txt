@@ -95,6 +95,17 @@ if(NRGLJUBLJANA_BUILD_TESTS_ENABLED)
     ${CMAKE_CURRENT_BINARY_DIR}/vs_nrgchain $<TARGET_FILE:workflow_vs_nrgchain>)
   set_tests_properties(solver_workflow_vs_nrgchain PROPERTIES TIMEOUT 300 ENVIRONMENT "OMP_NUM_THREADS=1;MKL_NUM_THREADS=1")
 
+  # instantiate with supplied coefficients against the instantiate that computes them; nrgchain_core gives them exactly
+  add_executable(workflow_instantiate_chain tests/instantiate_chain.cc $<TARGET_OBJECTS:nrgchain_core>)
+  target_compile_features(workflow_instantiate_chain PRIVATE cxx_std_20)
+  target_include_directories(workflow_instantiate_chain PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../nrgchain)
+  target_link_libraries(workflow_instantiate_chain PRIVATE nrgljubljana::workflow gmp gsl Boost::boost project_warnings
+    $<$<BOOL:${ASAN}>:asan> $<$<BOOL:${UBSAN}>:ubsan>)
+  add_test(NAME solver_workflow_instantiate_chain COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/instantiate_chain_test
+    ${PROJECT_SOURCE_DIR}/test/mixchain+nrgrun/templates/QS ${CMAKE_CURRENT_BINARY_DIR}/instantiate_chain
+    $<TARGET_FILE:workflow_instantiate_chain>)
+  set_tests_properties(solver_workflow_instantiate_chain PROPERTIES TIMEOUT 300 ENVIRONMENT "OMP_NUM_THREADS=1;MKL_NUM_THREADS=1")
+
   # solve from a host that initializes MPI: serially, and one calculation per rank
   add_executable(workflow_solve_mpi tests/solve_mpi.cc)
   target_link_libraries(workflow_solve_mpi PRIVATE nrgljubljana::workflow MPI::MPI_CXX project_warnings

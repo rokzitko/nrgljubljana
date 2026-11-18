@@ -158,6 +158,11 @@ void guarded(const std::string &diagnostic_file, const std::function<void()> &fu
   function();
 }
 
+// The guard of the calls with a calculation directory, as discretize and instantiate.
+void prepared(const std::string &directory, const std::string &diagnostic_file, const std::function<void()> &function) {
+  prepare(directory, diagnostic_file, function);
+}
+
 } // namespace detail
 
 void solve(const std::string &calculation_directory, const std::string &absolute_scratch_directory) {

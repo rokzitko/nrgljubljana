@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <complex>
 #include <cstddef>
+#include <filesystem>
 #include <functional>
 #include <iomanip>
 #include <optional>
@@ -16,10 +17,12 @@
 #include "../mixchain/configuration.hpp"
 #include "../mixchain/discretize.hpp"
 #include "../mixchain/load.hpp"
+#include "../instantiate/workflow.hpp"
 
 namespace NRG::Workflow {
 namespace detail {
 void guarded(const std::string &diagnostic_file, const std::function<void()> &function);
+void prepared(const std::string &directory, const std::string &diagnostic_file, const std::function<void()> &function);
 }
 namespace {
 
@@ -176,6 +179,19 @@ std::vector<WilsonChain> discretize_hybridization(const HybridizationFunction &g
                                                   const std::string &diagnostic_file) {
   std::vector<WilsonChain> result;
   detail::guarded(diagnostic_file, [&] { result = compute(gamma, param_section, twists, nmax); });
+  return result;
+}
+
+InitializerResult instantiate(const InitializerOptions &options, const ChainCoefficients &coefficients,
+                              const std::string &diagnostic_file) {
+  NRG::Tools::NrgChain::WilsonData wilson;
+  for (const auto &channel : coefficients.channels) wilson.channels.push_back({channel.theta, channel.xi, channel.zeta});
+  InitializerResult result{};
+  detail::prepared(options.calculation_directory, diagnostic_file, [&] {
+    const auto energy = detail::instantiate(options.parameter_file, options.template_directory, options.nmax, wilson,
+                                            coefficients.z, coefficients.Lambda, coefficients.bandrescale);
+    result = InitializerResult{std::filesystem::absolute("data").string(), energy};
+  });
   return result;
 }
 
