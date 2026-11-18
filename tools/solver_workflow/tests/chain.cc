@@ -273,7 +273,7 @@ void adapter() {
 
   // One channel: theta = V^2, xi = T, zeta = E
   const auto one = chain_of(in_memory({flat}));
-  const auto c   = NRG::Workflow::uncoupled_coefficients(one);
+  const auto c   = NRG::Workflow::diagonal_coefficients(one);
   check(c.channels.size() == 1 && c.z == one.z && c.Lambda == one.Lambda && c.bandrescale == one.bandrescale, "Coefficients header");
   check(c.channels[0].theta == one.V.real[0] * one.V.real[0], "theta = V^2");
   check(c.channels[0].xi.size() == 11 && c.channels[0].zeta.size() == 11, "Sites 0..nmax");
@@ -281,9 +281,9 @@ void adapter() {
     check(c.channels[0].xi[n] == one.T[n].real[0] && c.channels[0].zeta[n] == one.E[n].real[0], "xi = T, zeta = E");
 
   // A diagonal 2x2 Gamma: two channels, each equal to a run of its own
-  const auto two  = NRG::Workflow::uncoupled_coefficients(chain_of(in_memory({flat, semicircle})));
-  const auto a    = NRG::Workflow::uncoupled_coefficients(chain_of(in_memory({flat})));
-  const auto b    = NRG::Workflow::uncoupled_coefficients(chain_of(in_memory({semicircle})));
+  const auto two  = NRG::Workflow::diagonal_coefficients(chain_of(in_memory({flat, semicircle})));
+  const auto a    = NRG::Workflow::diagonal_coefficients(chain_of(in_memory({flat})));
+  const auto b    = NRG::Workflow::diagonal_coefficients(chain_of(in_memory({semicircle})));
   const auto same = [](const NRG::Workflow::CoefficientChannel &x, const NRG::Workflow::CoefficientChannel &y) {
     return x.theta == y.theta && x.xi == y.xi && x.zeta == y.zeta;
   };
@@ -291,22 +291,22 @@ void adapter() {
         "Diagonal Gamma: the channels of separate runs");
 
   // Refused, naming the element
-  rejects([&] { NRG::Workflow::uncoupled_coefficients(chain_of(in_memory({flat, quarter}, 0.1))); }, "not uncoupled: V(1,2)");
+  rejects([&] { NRG::Workflow::diagonal_coefficients(chain_of(in_memory({flat, quarter}, 0.1))); }, "not diagonal: V(1,2)");
   auto diagonal = chain_of(in_memory({flat, semicircle}));
   auto modified = diagonal;
   modified.E[3].real[1] = 1e-300;
-  rejects([&] { NRG::Workflow::uncoupled_coefficients(modified); }, "not uncoupled: E_3(1,2) = ");
+  rejects([&] { NRG::Workflow::diagonal_coefficients(modified); }, "not diagonal: E_3(1,2) = ");
   modified = diagonal;
   modified.T[0].real[2] = -1e-20;
-  rejects([&] { NRG::Workflow::uncoupled_coefficients(modified); }, "T_0(2,1)");
+  rejects([&] { NRG::Workflow::diagonal_coefficients(modified); }, "T_0(2,1)");
   modified = one;
   modified.V.imaginary = {0.1};
   for (auto &m : modified.E) m.imaginary = {0.0};
-  rejects([&] { NRG::Workflow::uncoupled_coefficients(modified); }, "Im V(1,1)");
+  rejects([&] { NRG::Workflow::diagonal_coefficients(modified); }, "Im V(1,1)");
   modified = one;
   modified.gauge = "nambu";
-  rejects([&] { NRG::Workflow::uncoupled_coefficients(modified); }, "polar gauge");
-  std::cout << "  uncoupled_coefficients: ok\n";
+  rejects([&] { NRG::Workflow::diagonal_coefficients(modified); }, "polar gauge");
+  std::cout << "  diagonal_coefficients: ok\n";
 }
 
 } // namespace

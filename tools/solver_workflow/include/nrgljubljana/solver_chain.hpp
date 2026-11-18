@@ -76,7 +76,12 @@ struct ChainCoefficients {
 // Every element left out must be exactly zero: the off-diagonal elements of V, E_n and T_n, and all imaginary parts.
 // Otherwise, or for a gauge other than polar, it throws std::invalid_argument naming the element. A diagonal Gamma
 // discretized with split_blocks=true (the default) gives such a chain.
-ChainCoefficients uncoupled_coefficients(const WilsonChain &chain);
+ChainCoefficients diagonal_coefficients(const WilsonChain &chain);
+
+// The coefficients nrgchain computes for options.parameter_file in options.calculation_directory, from the FSOL.dat and
+// FSOLNEG.dat that discretize writes there (or analytically for band=flat): what instantiate(options) uses, with the same
+// parameter checks. nmax replaces Nmax; template_directory is not used. Under the workflow guard; no files are left.
+ChainCoefficients nrgchain_coefficients(const InitializerOptions &options, const std::string &diagnostic_file = {});
 
 // instantiate with the given coefficients instead of computing them with nrgchain; everything else as the instantiate
 // of solver_workflow.hpp, with its scope (real, one-channel, unpolarized QS). The coefficients must cover the sites

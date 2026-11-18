@@ -28,7 +28,8 @@ static_assert(NRG::Workflow::workflow_api_version >= 2);
 ```
 
 Level 3 adds `read_parameter_sections` and, in `<nrgljubljana/solver_chain.hpp>`,
-`discretize_hybridization`, `uncoupled_coefficients` and an `instantiate` overload.
+`discretize_hybridization`, `diagonal_coefficients`, `nrgchain_coefficients` and an
+`instantiate` overload.
 
 The build-tree and exported `nrgljubljana::workflow` targets also expose the
 custom `WORKFLOW_API_VERSION` property, currently `3`, for configure-time checks
@@ -148,7 +149,7 @@ call runs under the workflow guard without a calculation directory; a
 working directory, which is not changed. The test `solver_workflow_chain`
 compares the result exactly with `chain.dat` from `mixchain --Nz 2`.
 
-`uncoupled_coefficients` turns a chain whose channels do not couple into
+`diagonal_coefficients` turns a chain whose channels do not couple into
 `ChainCoefficients`: per channel k, `theta` = V_kk^2, `xi` = T_n(k,k) and `zeta` =
 E_n(k,k), the coefficients `nrgchain` computes and the initializer reads. Every
 element left out (off-diagonal elements, imaginary parts) must be exactly zero,
@@ -162,15 +163,24 @@ one-channel, unpolarized QS). The coefficients must cover the sites `0..nmax`
 (a longer chain is cut), match the coefficient channels of the template, and have
 the z, Lambda and bandrescale of the parameter file, to 1e-12 relative. The chain
 keys of the file (`dos`, `band`, `adapt`, `tridiag_method`, ...) are not read.
-With the coefficients `nrgchain` computes, it writes the same `data` byte for byte
-(test `solver_workflow_instantiate_chain`). The route without files is then:
+`nrgchain_coefficients(options)` returns the coefficients the `instantiate` above
+computes, from the `FSOL` files that `discretize` writes, so both routes give
+coefficients to the same `instantiate`; with them it writes the same `data` byte
+for byte (test `solver_workflow_instantiate_chain`). `instantiate(options)` is
+short for `instantiate(options, nrgchain_coefficients(options))`.
 
 ```cpp
-auto chains = discretize_hybridization(gamma, param, twists, nmax_all);
-for (std::size_t i = 0; i < twists.size(); i++) {
-  instantiate({directories[i], "param", "template", nmax[i]}, uncoupled_coefficients(chains[i]));
-  solve(directories[i], scratch);
-}
+// adapt and nrgchain: Delta.dat in each directory
+discretize({directory, "param", Branch::positive});
+discretize({directory, "param", Branch::negative});
+auto coefficients = nrgchain_coefficients({directory, "param", "template", nmax});
+
+// mixchain: Gamma in memory, every twist at once
+auto chains       = discretize_hybridization(gamma, param, twists, nmax_all);
+auto coefficients = diagonal_coefficients(chains[i]);
+
+instantiate({directory, "param", "template", nmax}, coefficients);
+solve(directory, scratch);
 ```
 
 For one channel the chain agrees with `adapt --integral` followed by `nrgchain`

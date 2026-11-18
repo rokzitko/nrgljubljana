@@ -3,17 +3,15 @@
 // Usage: workflow_instantiate_chain <work directory>
 // The work directory holds A, B, C and D, each with template/ and param (Nmax=6); A and B have Delta.dat, C and D
 // the same parameters with band=flat. The test:
-//   - A: discretize and instantiate (nrgchain inside). B: the overload with the coefficients nrgchain computes for
-//     A's parameters, taken from its library so that they are exact. data of A and B must be byte-identical.
-//   - C: instantiate with band=flat. D: discretize_hybridization of the same flat band, uncoupled_coefficients and the
+//   - A: discretize and instantiate (nrgchain inside). B: the overload with nrgchain_coefficients of A. data of A and
+//     B must be byte-identical, and nrgchain_coefficients leaves no files in A.
+//   - C: instantiate with band=flat. D: discretize_hybridization of the same flat band, diagonal_coefficients and the
 //     overload. The numbers of data agree to rounding (see solver_workflow_vs_nrgchain).
 //   - Errors: z, Lambda or bandrescale other than the parameter file's, too few sites, two channels.
 
 #include <nrgljubljana/solver_chain.hpp>
 #include <nrgljubljana/solver_preparation.hpp>
 #include <nrgljubljana/solver_workflow.hpp>
-
-#include "nrgchain.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -65,20 +63,12 @@ double number(const std::map<std::string, std::string> &param, const std::string
   return it == param.end() ? default_value : std::stod(it->second);
 }
 
-// The coefficients nrgchain computes for the parameters of directory, which holds FSOL.dat and FSOLNEG.dat
-ChainCoefficients nrgchain_coefficients(const fs::path &directory, const unsigned nmax) {
-  auto param    = param_section(directory);
-  param["Nmax"] = std::to_string(nmax);
-  const auto cwd = fs::current_path();
-  fs::current_path(directory);
-  const auto wilson = NRG::Tools::NrgChain::calculate_from_params(param);
-  fs::current_path(cwd);
-  ChainCoefficients c;
-  c.z           = number(param, "z", 1.0);
-  c.Lambda      = number(param, "Lambda", 2.0);
-  c.bandrescale = number(param, "bandrescale", 1.0);
-  for (const auto &channel : wilson.channels) c.channels.push_back({channel.theta, channel.xi, channel.zeta});
-  return c;
+// The names in a directory
+std::vector<std::string> listing(const fs::path &directory) {
+  std::vector<std::string> names;
+  for (const auto &entry : fs::directory_iterator(directory)) names.push_back(entry.path().filename().string());
+  std::sort(names.begin(), names.end());
+  return names;
 }
 
 // The numbers of two data files agree to tolerance (relative, or absolute below 1); everything else is equal
@@ -110,13 +100,17 @@ void run(const fs::path &work) {
   discretize({a.string(), "param", Branch::positive});
   discretize({a.string(), "param", Branch::negative});
   const auto ra           = instantiate({a.string(), "param", "template", nmax});
-  const auto coefficients = nrgchain_coefficients(a, nmax);
+  const auto before       = listing(a);
+  const auto coefficients = nrgchain_coefficients({a.string(), "param", "template", nmax});
+  check(listing(a) == before, "nrgchain_coefficients left files behind");
+  check(coefficients.z == 0.7 && coefficients.Lambda == 2 && coefficients.bandrescale == 1, "z, Lambda, bandrescale");
+  check(coefficients.channels.size() == 1 && coefficients.channels[0].xi.size() == nmax + 1, "Coefficient channels and sites");
   const auto rb           = instantiate({b.string(), "param", "template", nmax}, coefficients, "instantiate.log");
   check(rb.data_file == (b / "data").string(), "data_file of B");
   check(rb.ground_energy == ra.ground_energy, "Ground energy of A and B");
   check(read(a / "data") == read(b / "data"), "data of A and B differ");
   check(read(b / "instantiate.log").find("# Wilson coefficients supplied: channels=1") != std::string::npos, "Log of B");
-  std::cout << "  supplied nrgchain coefficients: data byte-identical\n";
+  std::cout << "  nrgchain_coefficients and the overload: data byte-identical\n";
 
   // A longer chain is cut to nmax
   auto longer = coefficients;
@@ -139,7 +133,7 @@ void run(const fs::path &work) {
     gamma.real.push_back(0.5);
   }
   const auto chain = discretize_hybridization(gamma, param, {number(param, "z", 1.0)}, nmax).at(0);
-  instantiate({d.string(), "param", "template", nmax}, uncoupled_coefficients(chain));
+  instantiate({d.string(), "param", "template", nmax}, diagonal_coefficients(chain));
   same_numbers(read(c / "data"), read(d / "data"), 1e-12);
 
   // Errors

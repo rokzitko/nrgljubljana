@@ -118,13 +118,13 @@ double element(const ChainMatrix &m, const unsigned i, const unsigned j, const b
   const auto index = static_cast<std::size_t>(i) * m.cols + j;
   if (!m.imaginary.empty() && m.imaginary.at(index) != 0.0) {
     std::ostringstream message;
-    message << std::setprecision(17) << "The chain is not uncoupled: Im " << where() << " = " << m.imaginary[index] << " is not zero.";
+    message << std::setprecision(17) << "The chain is not diagonal: Im " << where() << " = " << m.imaginary[index] << " is not zero.";
     throw std::invalid_argument(message.str());
   }
   const auto value = m.real.at(index);
   if (!keep && value != 0.0) {
     std::ostringstream message;
-    message << std::setprecision(17) << "The chain is not uncoupled: " << where() << " = " << value
+    message << std::setprecision(17) << "The chain is not diagonal: " << where() << " = " << value
             << " is not zero. Channels that Gamma couples, or a diagonal Gamma discretized with split_blocks=false, "
                "need a chain of their own.";
     throw std::invalid_argument(message.str());
@@ -134,16 +134,16 @@ double element(const ChainMatrix &m, const unsigned i, const unsigned j, const b
 
 } // namespace
 
-ChainCoefficients uncoupled_coefficients(const WilsonChain &chain) {
-  if (chain.gauge != "polar") throw std::invalid_argument("uncoupled_coefficients requires the polar gauge, not " + chain.gauge + ".");
+ChainCoefficients diagonal_coefficients(const WilsonChain &chain) {
+  if (chain.gauge != "polar") throw std::invalid_argument("diagonal_coefficients requires the polar gauge, not " + chain.gauge + ".");
   const auto n = chain.channels;
   const auto square = [n](const ChainMatrix &m, const std::string &name) {
     if (m.rows != n || m.cols != n || m.real.size() != static_cast<std::size_t>(n) * n
         || !(m.imaginary.empty() || m.imaginary.size() == m.real.size()))
-      throw std::invalid_argument("uncoupled_coefficients: " + name + " is not " + std::to_string(n) + "x" + std::to_string(n) + ".");
+      throw std::invalid_argument("diagonal_coefficients: " + name + " is not " + std::to_string(n) + "x" + std::to_string(n) + ".");
   };
   if (chain.E.size() != chain.nmax + 1 || chain.T.size() != chain.nmax + 1)
-    throw std::invalid_argument("uncoupled_coefficients: expected " + std::to_string(chain.nmax + 1) + " sites.");
+    throw std::invalid_argument("diagonal_coefficients: expected " + std::to_string(chain.nmax + 1) + " sites.");
   square(chain.V, "V");
   for (unsigned s = 0; s <= chain.nmax; s++) {
     square(chain.E[s], "E_" + std::to_string(s));
@@ -179,6 +179,18 @@ std::vector<WilsonChain> discretize_hybridization(const HybridizationFunction &g
                                                   const std::string &diagnostic_file) {
   std::vector<WilsonChain> result;
   detail::guarded(diagnostic_file, [&] { result = compute(gamma, param_section, twists, nmax); });
+  return result;
+}
+
+ChainCoefficients nrgchain_coefficients(const InitializerOptions &options, const std::string &diagnostic_file) {
+  ChainCoefficients result;
+  detail::prepared(options.calculation_directory, diagnostic_file, [&] {
+    const auto computed = detail::nrgchain_coefficients(options.parameter_file, options.nmax);
+    result.z            = computed.z;
+    result.Lambda       = computed.Lambda;
+    result.bandrescale  = computed.bandrescale;
+    for (const auto &channel : computed.data.channels) result.channels.push_back({channel.theta, channel.xi, channel.zeta});
+  });
   return result;
 }
 

@@ -1239,6 +1239,19 @@ double NRG::Workflow::detail::instantiate(const std::string &parameter_file, con
   return run_full_instantiation(options, nmax);
 }
 
+NRG::Workflow::detail::ComputedWilson NRG::Workflow::detail::nrgchain_coefficients(const std::string &parameter_file,
+                                                                                    const unsigned nmax) {
+  validate_workflow_nmax(nmax);
+  Options options;
+  options.param_filename = parameter_file;
+  const auto nrgchain    = make_nrgchain_invocation(options, NrgChainTableMode::Calculate, nmax);
+  report_configuration(options, nrgchain);
+  NRG::Workdir staging_workdir(std::filesystem::current_path().string(), true);
+  auto wilson = NRG::Tools::NrgChain::calculate_from_params(nrgchain.parameters, nrgchain.configuration.mode,
+                                                            std::filesystem::path(staging_workdir.get()));
+  return {std::move(wilson), nrgchain.configuration.z, nrgchain.configuration.Lambda, nrgchain.configuration.bandrescale};
+}
+
 double NRG::Workflow::detail::instantiate(const std::string &parameter_file, const std::string &template_directory,
                                          const unsigned nmax, const NRG::Tools::NrgChain::WilsonData &wilson, const double z,
                                          const double Lambda, const double bandrescale) {
