@@ -28,7 +28,7 @@ static_assert(NRG::Workflow::workflow_api_version >= 2);
 ```
 
 Level 3 adds `read_parameter_sections` and, in `<nrgljubljana/solver_chain.hpp>`,
-`discretize_hybridization`.
+`discretize_hybridization` and `uncoupled_coefficients`.
 
 The build-tree and exported `nrgljubljana::workflow` targets also expose the
 custom `WORKFLOW_API_VERSION` property, currently `3`, for configure-time checks
@@ -147,6 +147,13 @@ call runs under the workflow guard without a calculation directory; a
 `diagnostic_file` receives `mixchain`'s log and is resolved against the caller's
 working directory, which is not changed. The test `solver_workflow_chain`
 compares the result exactly with `chain.dat` from `mixchain --Nz 2`.
+
+`uncoupled_coefficients` turns a chain whose channels do not couple into
+`ChainCoefficients`: per channel k, `theta` = V_kk^2, `xi` = T_n(k,k) and `zeta` =
+E_n(k,k), the coefficients `nrgchain` computes and the initializer reads. Every
+element left out (off-diagonal elements, imaginary parts) must be exactly zero,
+otherwise it is an error naming the element; a diagonal Gamma discretized with
+`split_blocks=true` (the default) gives such a chain. The gauge must be polar.
 
 For one channel the chain agrees with `adapt --integral` followed by `nrgchain`
 (test `solver_workflow_vs_nrgchain`: flat bands, tabulated densities, a hard gap, a

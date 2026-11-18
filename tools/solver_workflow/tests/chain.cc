@@ -247,6 +247,68 @@ void errors_and_state(const fs::path &directory) {
   std::cout << "  errors and state: ok\n";
 }
 
+// Gamma on 201 nodes in [-1, 1], with the diagonal elements given and the off-diagonal ones all equal to offdiagonal
+HybridizationFunction in_memory(const std::vector<double (*)(double)> &diagonal, const double offdiagonal = 0) {
+  HybridizationFunction gamma;
+  const auto n   = static_cast<unsigned>(diagonal.size());
+  gamma.channels = n;
+  for (int k = -100; k <= 100; k++) {
+    const double w = k / 100.0;
+    gamma.omega.push_back(w);
+    for (unsigned i = 0; i < n; i++)
+      for (unsigned j = 0; j < n; j++) gamma.real.push_back(i == j ? diagonal[i](w) : offdiagonal);
+  }
+  return gamma;
+}
+
+double flat(double) { return 0.5; }
+double quarter(double) { return 0.25; }
+double semicircle(double w) { return 1 - w * w > 0 ? 0.5 * std::sqrt(1 - w * w) : 0.0; }
+
+void adapter() {
+  const std::map<std::string, std::string> param{{"Lambda", "2"}};
+  const auto chain_of = [&](const HybridizationFunction &gamma) {
+    return NRG::Workflow::discretize_hybridization(gamma, param, {0.5}, 10).at(0);
+  };
+
+  // One channel: theta = V^2, xi = T, zeta = E
+  const auto one = chain_of(in_memory({flat}));
+  const auto c   = NRG::Workflow::uncoupled_coefficients(one);
+  check(c.channels.size() == 1 && c.z == one.z && c.Lambda == one.Lambda && c.bandrescale == one.bandrescale, "Coefficients header");
+  check(c.channels[0].theta == one.V.real[0] * one.V.real[0], "theta = V^2");
+  check(c.channels[0].xi.size() == 11 && c.channels[0].zeta.size() == 11, "Sites 0..nmax");
+  for (unsigned n = 0; n <= 10; n++)
+    check(c.channels[0].xi[n] == one.T[n].real[0] && c.channels[0].zeta[n] == one.E[n].real[0], "xi = T, zeta = E");
+
+  // A diagonal 2x2 Gamma: two channels, each equal to a run of its own
+  const auto two  = NRG::Workflow::uncoupled_coefficients(chain_of(in_memory({flat, semicircle})));
+  const auto a    = NRG::Workflow::uncoupled_coefficients(chain_of(in_memory({flat})));
+  const auto b    = NRG::Workflow::uncoupled_coefficients(chain_of(in_memory({semicircle})));
+  const auto same = [](const NRG::Workflow::CoefficientChannel &x, const NRG::Workflow::CoefficientChannel &y) {
+    return x.theta == y.theta && x.xi == y.xi && x.zeta == y.zeta;
+  };
+  check(two.channels.size() == 2 && same(two.channels[0], a.channels[0]) && same(two.channels[1], b.channels[0]),
+        "Diagonal Gamma: the channels of separate runs");
+
+  // Refused, naming the element
+  rejects([&] { NRG::Workflow::uncoupled_coefficients(chain_of(in_memory({flat, quarter}, 0.1))); }, "not uncoupled: V(1,2)");
+  auto diagonal = chain_of(in_memory({flat, semicircle}));
+  auto modified = diagonal;
+  modified.E[3].real[1] = 1e-300;
+  rejects([&] { NRG::Workflow::uncoupled_coefficients(modified); }, "not uncoupled: E_3(1,2) = ");
+  modified = diagonal;
+  modified.T[0].real[2] = -1e-20;
+  rejects([&] { NRG::Workflow::uncoupled_coefficients(modified); }, "T_0(2,1)");
+  modified = one;
+  modified.V.imaginary = {0.1};
+  for (auto &m : modified.E) m.imaginary = {0.0};
+  rejects([&] { NRG::Workflow::uncoupled_coefficients(modified); }, "Im V(1,1)");
+  modified = one;
+  modified.gauge = "nambu";
+  rejects([&] { NRG::Workflow::uncoupled_coefficients(modified); }, "polar gauge");
+  std::cout << "  uncoupled_coefficients: ok\n";
+}
+
 } // namespace
 
 int main(int argc, char **argv) {
@@ -254,6 +316,7 @@ int main(int argc, char **argv) {
     check(argc >= 2, "Usage: workflow_chain <case directory>...");
     for (int i = 1; i < argc; i++) equals_mixchain(fs::absolute(argv[i]));
     errors_and_state(fs::absolute(argv[1]));
+    adapter();
     std::cout << "discretize_hybridization tests passed (" << assertions << " checks).\n";
     return 0;
   } catch (const std::exception &error) {

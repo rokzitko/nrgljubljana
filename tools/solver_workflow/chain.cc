@@ -4,6 +4,9 @@
 #include <complex>
 #include <cstddef>
 #include <functional>
+#include <iomanip>
+#include <optional>
+#include <sstream>
 #include <iostream>
 #include <map>
 #include <stdexcept>
@@ -103,7 +106,69 @@ std::vector<WilsonChain> compute(const HybridizationFunction &gamma, const std::
   return table.complex ? run<std::complex<double>>(table, configuration, twists) : run<double>(table, configuration, twists);
 }
 
+// The element (i,j) of m, which must vanish exactly unless keep; name and site describe it in the error.
+double element(const ChainMatrix &m, const unsigned i, const unsigned j, const bool keep, const std::string &name,
+               const std::optional<unsigned> site) {
+  const auto where = [&] {
+    return name + (site ? "_" + std::to_string(*site) : std::string()) + "(" + std::to_string(i + 1) + "," + std::to_string(j + 1) + ")";
+  };
+  const auto index = static_cast<std::size_t>(i) * m.cols + j;
+  if (!m.imaginary.empty() && m.imaginary.at(index) != 0.0) {
+    std::ostringstream message;
+    message << std::setprecision(17) << "The chain is not uncoupled: Im " << where() << " = " << m.imaginary[index] << " is not zero.";
+    throw std::invalid_argument(message.str());
+  }
+  const auto value = m.real.at(index);
+  if (!keep && value != 0.0) {
+    std::ostringstream message;
+    message << std::setprecision(17) << "The chain is not uncoupled: " << where() << " = " << value
+            << " is not zero. Channels that Gamma couples, or a diagonal Gamma discretized with split_blocks=false, "
+               "need a chain of their own.";
+    throw std::invalid_argument(message.str());
+  }
+  return value;
+}
+
 } // namespace
+
+ChainCoefficients uncoupled_coefficients(const WilsonChain &chain) {
+  if (chain.gauge != "polar") throw std::invalid_argument("uncoupled_coefficients requires the polar gauge, not " + chain.gauge + ".");
+  const auto n = chain.channels;
+  const auto square = [n](const ChainMatrix &m, const std::string &name) {
+    if (m.rows != n || m.cols != n || m.real.size() != static_cast<std::size_t>(n) * n
+        || !(m.imaginary.empty() || m.imaginary.size() == m.real.size()))
+      throw std::invalid_argument("uncoupled_coefficients: " + name + " is not " + std::to_string(n) + "x" + std::to_string(n) + ".");
+  };
+  if (chain.E.size() != chain.nmax + 1 || chain.T.size() != chain.nmax + 1)
+    throw std::invalid_argument("uncoupled_coefficients: expected " + std::to_string(chain.nmax + 1) + " sites.");
+  square(chain.V, "V");
+  for (unsigned s = 0; s <= chain.nmax; s++) {
+    square(chain.E[s], "E_" + std::to_string(s));
+    square(chain.T[s], "T_" + std::to_string(s));
+  }
+
+  ChainCoefficients result;
+  result.z           = chain.z;
+  result.Lambda      = chain.Lambda;
+  result.bandrescale = chain.bandrescale;
+  result.channels.resize(n);
+  for (unsigned i = 0; i < n; i++)
+    for (unsigned j = 0; j < n; j++) {
+      const auto v = element(chain.V, i, j, i == j, "V", std::nullopt);
+      if (i == j) result.channels[i].theta = v * v;
+    }
+  for (unsigned s = 0; s <= chain.nmax; s++)
+    for (unsigned i = 0; i < n; i++)
+      for (unsigned j = 0; j < n; j++) {
+        const auto e = element(chain.E[s], i, j, i == j, "E", s);
+        const auto t = element(chain.T[s], i, j, i == j, "T", s);
+        if (i == j) {
+          result.channels[i].zeta.push_back(e);
+          result.channels[i].xi.push_back(t);
+        }
+      }
+  return result;
+}
 
 std::vector<WilsonChain> discretize_hybridization(const HybridizationFunction &gamma,
                                                   const std::map<std::string, std::string> &param_section,

@@ -58,6 +58,24 @@ std::vector<WilsonChain> discretize_hybridization(const HybridizationFunction &g
                                                   const std::vector<double> &twists, unsigned nmax,
                                                   const std::string &diagnostic_file = {});
 
+// The coefficients of one channel, as nrgchain computes them and the initializer reads them (gammaPolCh = sqrt(theta/pi),
+// coefxi, coefzeta): theta, and xi and zeta for the sites 0..nmax, in the units of the input.
+struct CoefficientChannel {
+  double theta = 0;
+  std::vector<double> xi, zeta;
+};
+
+struct ChainCoefficients {
+  double z = 0, Lambda = 0, bandrescale = 1;
+  std::vector<CoefficientChannel> channels; // coefficient channel k is channel k of Gamma
+};
+
+// The coefficients of a chain whose channels do not couple: theta_k = V_kk^2, xi_k = T_n(k,k), zeta_k = E_n(k,k).
+// Every element left out must be exactly zero: the off-diagonal elements of V, E_n and T_n, and all imaginary parts.
+// Otherwise, or for a gauge other than polar, it throws std::invalid_argument naming the element. A diagonal Gamma
+// discretized with split_blocks=true (the default) gives such a chain.
+ChainCoefficients uncoupled_coefficients(const WilsonChain &chain);
+
 } // namespace NRG::Workflow
 
 #endif
