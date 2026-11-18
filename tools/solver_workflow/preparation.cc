@@ -1,6 +1,7 @@
 #include <nrgljubljana/solver_preparation.hpp>
 #include "../common/adapt_parameters.hpp"
 #include "symmetry_traits.hpp"
+#include "../mixchain/configuration.hpp"
 
 #include <parameter_sections.hpp>
 
@@ -358,6 +359,36 @@ void validate_preparation_parameters(const std::map<std::string, std::string> &r
       resolved["Nmax"] = std::to_string(resolve_chain_length(rendered_param_section));
       detail::validate_initializer_parameters(resolved);
     }
+  } catch (const std::invalid_argument &error) {
+    throw std::runtime_error(error.what());
+  }
+}
+
+void validate_preparation_parameters(const std::map<std::string, std::string> &rendered_param_section, const ChainSource source) {
+  if (source == ChainSource::nrgchain) return validate_preparation_parameters(rendered_param_section);
+  try {
+    const auto &section = rendered_param_section;
+    if (section.contains("discretization")) {
+      const auto scheme = trim(section.at("discretization"));
+      if (scheme.empty() || scheme.front() != 'Z')
+        throw std::invalid_argument("discretization=" + scheme + ": mixchain builds the chain in the Z scheme only.");
+    }
+    const auto nmax   = resolve_chain_length(section);
+    const auto number = [&](const std::string &key, const double default_value) {
+      return section.contains(key) ? NRG::Tools::parse_parameter_double(trim(section.at(key)), key) : default_value;
+    };
+    if (const auto z = number("z", 1.0); !(z > 0.0 && z <= 1.0)) throw std::invalid_argument("z must satisfy 0 < z <= 1.");
+    if (!(number("Lambda", 2.0) > 1.0)) throw std::invalid_argument("Lambda must be greater than 1.");
+    if (!(number("bandrescale", 1.0) > 0.0)) throw std::invalid_argument("bandrescale must be positive.");
+    if (section.contains("tri") && trim(section.at("tri")) == "cpp")
+      throw std::invalid_argument("tri=cpp rebuilds the chain in the solver; the coefficients are supplied.");
+
+    // The keys of discretize_hybridization, read as it reads them
+    auto entries = section;
+    for (const auto *key : {"channels", "dos_prefix", "z"}) entries.erase(key);
+    entries["Nmax"]          = std::to_string(nmax);
+    const auto configuration = NRG::MixChain::read_configuration(entries, true, true);
+    NRG::MixChain::validate_star_options(configuration.star);
   } catch (const std::invalid_argument &error) {
     throw std::runtime_error(error.what());
   }

@@ -123,7 +123,7 @@ void run(const fs::path &work) {
   instantiate({b.string(), "param", "template", nmax}, longer);
   check(read(a / "data") == read(b / "data"), "data of a longer chain differs");
 
-  // C and D: the chain route on a flat band
+  // C and D: the mixchain route on a flat band
   instantiate({c.string(), "param", "template", nmax});
   const auto param = param_section(d);
   HybridizationFunction gamma;

@@ -247,6 +247,46 @@ void preparation_parameters(const std::string &text, const std::string &error = 
         "Parameter validation changed stream formatting");
 }
 
+// validate_preparation_parameters for the mixchain route
+void mixchain_parameters(const std::string &text, const std::string &error = "") {
+  const auto parameters = settings(text);
+  const auto before     = parameters;
+  const auto call = [&] { NRG::Workflow::validate_preparation_parameters(parameters, NRG::Workflow::ChainSource::mixchain); };
+  if (error.empty())
+    call();
+  else
+    rejects_call(call, error);
+  check(parameters == before, "Parameter validation changed input");
+}
+
+void mixchain_preparation() {
+  mixchain_parameters("Nmax=10");
+  mixchain_parameters("Lambda=2\nz=0.5\nNmax=10\ndiscretization=Z\nchain_gauge=nambu\nmesh_weight=trace");
+  mixchain_parameters("Tmin=1e-4\nLambda=2\nz=1");
+  mixchain_parameters("Nmax=10\nhardgap=true\nboundary=0.01\nadapt=true\nsplit_blocks=false");
+  // Keys of adapt and nrgchain, and those discretize_hybridization ignores, are not read
+  mixchain_parameters("Nmax=10\ntridiag_method=bogus\nxmax=0.5\nrescalexi=true\nf_method=nonsense\npreccpp=1\n"
+                      "channels=7\ndos_prefix=x\nband=flat");
+
+  mixchain_parameters("Nmax=10\ndiscretization=Y", "Z scheme only");
+  mixchain_parameters("Nmax=999", "Nmax");
+  mixchain_parameters("Nmax=10\nTmin=1e-4", "either Nmax or Tmin");
+  mixchain_parameters("Nmax=10\nz=0", "z must satisfy");
+  mixchain_parameters("Nmax=10\nLambda=1", "Lambda must be greater than 1");
+  mixchain_parameters("Nmax=10\nbandrescale=0", "bandrescale must be positive");
+  mixchain_parameters("Nmax=10\ntri=cpp", "tri=cpp");
+  mixchain_parameters("Nmax=10\nmesh_weight=bad", "mesh_weight must be");
+  mixchain_parameters("Nmax=10\nbranch_ordering=bad", "branch_ordering must be");
+  mixchain_parameters("Nmax=10\nchain_gauge=bad", "chain_gauge must be");
+  mixchain_parameters("Nmax=10\nrank_tolerance=0", "rank_tolerance must be");
+  mixchain_parameters("Nmax=10\nsensitivity_tolerance=-1", "sensitivity_tolerance must be");
+  mixchain_parameters("Nmax=10\nmMAX=0", "mMAX must be greater than 0");
+  mixchain_parameters("Nmax=10\nallowed_error=0", "allowed_error must be");
+  mixchain_parameters("Nmax=10\nhardgap=true\nboundary=1", "boundary must be in [0,1)");
+  mixchain_parameters("Nmax=10\nsplit_blocks=perhaps", "Invalid boolean value [perhaps]");
+  mixchain_parameters("Nmax=10\ndensity_interpolation=cubic", "density_interpolation must be");
+}
+
 void combined_preparation() {
   // Combined discretize(integral=true) + full-instantiate static contract, not
   // the chain-only contract (which still permits xmax=1 and rescalexi=true).
@@ -671,6 +711,7 @@ int main(int argc, char **argv) {
     chain_validation();
     chain_scales();
     combined_preparation();
+    mixchain_preparation();
     template_structure();
     template_symmetries();
     template_dependencies();

@@ -67,6 +67,16 @@ unsigned resolve_chain_length(const std::map<std::string, std::string> &param_se
 // convergence. Throws std::runtime_error without logging or changing GSL handlers.
 void validate_preparation_parameters(const std::map<std::string, std::string> &rendered_param_section);
 
+// Where the Wilson coefficients come from: nrgchain on the FSOL files of adapt (discretize, then instantiate or
+// nrgchain_coefficients), or mixchain on Gamma in memory (discretize_hybridization and diagonal_coefficients).
+enum class ChainSource { nrgchain, mixchain };
+
+// The same static checks for the route of source; nrgchain is the overload above. For mixchain: discretization, if
+// given, is Z; Nmax as above (Tmin and its keys resolve it), z in (0,1], Lambda > 1, bandrescale > 0, tri not cpp; and
+// the keys of discretize_hybridization as it reads them (mixchain's names and defaults, with channels, dos_prefix and z
+// ignored), including the checks of its star stage that do not need Gamma. The keys of adapt and nrgchain are not read.
+void validate_preparation_parameters(const std::map<std::string, std::string> &rendered_param_section, ChainSource source);
+
 // An operator block of data.in: type s, p, d, t, o, g or q, and the operator name.
 struct TemplateOperator {
   char type;

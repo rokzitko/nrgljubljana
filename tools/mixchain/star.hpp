@@ -349,6 +349,16 @@ template<typename S> void SignDiscretizer<S>::evaluate(const double z, BlockStar
 // block are placed in its channels, and its branch labels follow those of the blocks before it. A block of a single
 // channel is then exactly the scalar problem. With a single block the merge is the identity, and the star is the one
 // the whole matrix gives.
+// The checks of the star options that do not need Gamma.
+inline void validate_star_options(const StarOptions &options) {
+  if (!(static_cast<double>(options.Lambda) > 1.0)) throw std::invalid_argument("Lambda must be greater than 1.");
+  if (options.mMAX < 1) throw std::invalid_argument("mMAX must be greater than 0.");
+  if (!(std::isfinite(options.allowed_error) && options.allowed_error > 0.0))
+    throw std::invalid_argument("allowed_error must be a positive finite number.");
+  if (options.hardgap && !(options.boundary >= 0.0 && options.boundary < 1.0))
+    throw std::invalid_argument("boundary must be in [0,1) when hardgap is set.");
+}
+
 template<typename S> class StarDiscretizer {
  private:
   struct BlockDiscretizer {
@@ -365,10 +375,7 @@ template<typename S> class StarDiscretizer {
 
  public:
   StarDiscretizer(const GammaInput<S> &input, const StarOptions &options) : channels_(input.channels), options_(options) {
-    if (!(static_cast<double>(options.Lambda) > 1.0)) throw std::invalid_argument("Lambda must be greater than 1.");
-    if (options.mMAX < 1) throw std::invalid_argument("mMAX must be greater than 0.");
-    if (!(std::isfinite(options.allowed_error) && options.allowed_error > 0.0))
-      throw std::invalid_argument("allowed_error must be a positive finite number.");
+    validate_star_options(options);
 
     if (options.split_blocks) {
       blocks_ = gamma_blocks(input);

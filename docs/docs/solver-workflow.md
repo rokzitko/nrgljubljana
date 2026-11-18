@@ -28,8 +28,8 @@ static_assert(NRG::Workflow::workflow_api_version >= 2);
 ```
 
 Level 3 adds `read_parameter_sections` and, in `<nrgljubljana/solver_chain.hpp>`,
-`discretize_hybridization`, `diagonal_coefficients`, `nrgchain_coefficients` and an
-`instantiate` overload.
+`discretize_hybridization`, `diagonal_coefficients`, `nrgchain_coefficients`, an
+`instantiate` overload and `validate_preparation_parameters` with `ChainSource`.
 
 The build-tree and exported `nrgljubljana::workflow` targets also expose the
 custom `WORKFLOW_API_VERSION` property, currently `3`, for configure-time checks
@@ -182,6 +182,13 @@ auto coefficients = diagonal_coefficients(chains[i]);
 instantiate({directory, "param", "template", nmax}, coefficients);
 solve(directory, scratch);
 ```
+
+`validate_preparation_parameters(section, ChainSource::mixchain)` is the static
+check of a `[param]` section for this route: `discretization` Z, the chain length
+(`Nmax`, or `Tmin` and its keys), z, Lambda, bandrescale, `tri` other than `cpp`,
+and the keys `discretize_hybridization` reads, as it reads them. The keys of
+`adapt` and `nrgchain` are not read. `ChainSource::nrgchain` is the
+one-argument check.
 
 For one channel the chain agrees with `adapt --integral` followed by `nrgchain`
 (test `solver_workflow_vs_nrgchain`: flat bands, tabulated densities, a hard gap, a
