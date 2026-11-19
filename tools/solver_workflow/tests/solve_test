@@ -1,0 +1,35 @@
+#!/bin/bash
+# Solve two cases of test/c++ through workflow_solve_mpi and compare them with their references.
+#
+# Usage: solve_test <project source dir> <work dir> <command...>
+# <command> is the driver, possibly behind an MPI launcher; the case directories and the scratch directory are
+# appended. mpitest1_qs is a calculation with FDM; legacy_discretization_d1 is forward-only (fdm=false) with
+# dumpannotated. The strict comparison also fails on an output without a reference, such as FDM output of the
+# forward-only case.
+set -euo pipefail
+
+source_dir="$1"
+work_dir="$2"
+shift 2
+
+cases=(mpitest1_qs legacy_discretization_d1)
+
+rm -rf "$work_dir"
+mkdir -p "$work_dir/scratch"
+directories=()
+for name in "${cases[@]}"; do
+  mkdir "$work_dir/$name"
+  cp "$source_dir/test/c++/$name/param" "$source_dir/test/c++/$name/data" "$work_dir/$name/"
+  directories+=("$work_dir/$name")
+done
+
+"$@" "${directories[@]}" "$work_dir/scratch"
+
+for name in "${cases[@]}"; do
+  if [ ! -f "$work_dir/$name/DONE" ]; then
+    echo "$name: DONE not found"
+    exit 1
+  fi
+  echo "== $name"
+  "$source_dir/test/compare.pl" --strict --actual "$work_dir/$name" "$source_dir/test/c++/$name/ref"
+done

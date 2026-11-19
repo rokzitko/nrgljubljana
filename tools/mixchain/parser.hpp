@@ -7,6 +7,7 @@
 #include <fstream>
 #include <map>
 #include <string>
+#include <utility>
 
 #include <parse_bool.hpp>
 
@@ -22,6 +23,7 @@ class Params : public std::map<std::string, std::string> {
     NRG::Tools::open_input(F, filename);
     if (NRG::Tools::find_block(F, "param")) { NRG::Tools::parse_key_value_block(F, *this); }
   }
+  explicit Params(std::map<std::string, std::string> entries) : std::map<std::string, std::string>(std::move(entries)) {}
 
   auto P(const std::string &keyword, const double def) const {
     return NRG::Tools::get_or_default(*this, keyword, def, [&keyword](const auto &value) {

@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <complex>
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
@@ -54,6 +55,20 @@ template<typename S> struct GammaBranch {
 template<typename S> struct GammaInput {
   int channels{};
   GammaBranch<S> pos, neg;
+};
+
+// Gamma(omega) as tabulated, before any check, symmetrization or rescaling: the frequencies and, at each, the
+// channels x channels matrix, row-major. complex: the off-diagonal imaginary parts are given, so the discretization
+// must be performed in complex arithmetic.
+struct GammaTable {
+  int channels{};
+  std::vector<double> omega;
+  std::vector<std::complex<double>> gamma; // Gamma_ij(omega_k) at (k*channels + i)*channels + j, 0-based
+  bool complex{};
+  [[nodiscard]] auto at(const std::size_t k, const int i, const int j) const {
+    return gamma[(k * static_cast<std::size_t>(channels) + static_cast<std::size_t>(i)) * static_cast<std::size_t>(channels)
+                 + static_cast<std::size_t>(j)];
+  }
 };
 
 namespace detail {
@@ -259,16 +274,13 @@ inline auto gamma_is_complex(const GammaOptions &options) {
   return detail::scan_imaginary_parts(options).complex;
 }
 
-// Read the channels^2 components of Gamma. All -re files are required. The off-diagonal -im files are required either
-// all or none; none means that Gamma is real. A diagonal -im file is optional and must vanish within the Hermiticity
-// tolerance, as must the deviation of Gamma_ji from conj(Gamma_ij); Gamma is then symmetrized to (Gamma+Gamma^dag)/2.
-template<typename S> auto load_gamma(const GammaOptions &options, std::ostream &out = std::cout) {
+// Read the channels^2 components of Gamma into a table. All -re files are required. The off-diagonal -im files are
+// required either all or none; none means that Gamma is real. A diagonal -im file is optional. Every check of a file
+// is done here and names the file.
+inline GammaTable read_gamma_table(const GammaOptions &options) {
   detail::validate_options(options);
   const auto n         = options.channels;
   const auto imaginary = detail::scan_imaginary_parts(options);
-  if (imaginary.complex && !is_complex_v<S>)
-    throw std::logic_error("The off-diagonal imaginary parts of Gamma are tabulated, so the discretization must be "
-                           "performed in complex arithmetic.");
 
   const auto index = [n](const int i, const int j) { return static_cast<std::size_t>((i - 1) * n + (j - 1)); };
 
@@ -294,18 +306,16 @@ template<typename S> auto load_gamma(const GammaOptions &options, std::ostream &
     }
   }
 
-  const auto scale = detail::magnitude(re);
-  if (!(scale > 0.0)) throw std::runtime_error("Gamma vanishes identically.");
-
-  // In real arithmetic the tabulated imaginary parts never reach the matrix, so they are checked here rather than
-  // through the Hermiticity test. Only the diagonal ones can be present at this point.
-  if constexpr (!is_complex_v<S>) {
-    for (int i = 1; i <= n; i++) {
-      for (int j = 1; j <= n; j++) {
-        if (!imaginary.present[index(i, j)]) continue;
-        for (const auto &[frequency, value] : im[index(i, j)]) {
+  // Without the off-diagonal imaginary parts the discretization is done in real arithmetic, where the diagonal ones
+  // never reach the matrix; so they are checked here, against the magnitude of the real parts.
+  if (!imaginary.complex) {
+    const auto scale = detail::magnitude(re);
+    if (scale > 0.0) {
+      for (int i = 1; i <= n; i++) {
+        if (!imaginary.present[index(i, i)]) continue;
+        for (const auto &[frequency, value] : im[index(i, i)]) {
           if (std::abs(value) > options.hermiticity_tolerance * scale)
-            throw std::runtime_error(gamma_filename(options.prefix, i, j, true)
+            throw std::runtime_error(gamma_filename(options.prefix, i, i, true)
                                      + ": the imaginary part of a diagonal element of Gamma must vanish; at omega="
                                      + std::to_string(frequency) + " it is " + std::to_string(value) + ".");
         }
@@ -313,19 +323,76 @@ template<typename S> auto load_gamma(const GammaOptions &options, std::ostream &
     }
   }
 
-  const auto nodes = grid.size();
-  std::vector<double> omega(nodes);
-  std::vector<Matrix<S>> gamma(nodes, Matrix<S>::Zero(n, n));
-  for (std::size_t k = 0; k < nodes; k++) {
-    omega[k] = grid[k].first;
+  GammaTable table;
+  table.channels = n;
+  table.complex  = imaginary.complex;
+  table.omega.resize(grid.size());
+  table.gamma.resize(grid.size() * static_cast<std::size_t>(n) * n);
+  for (std::size_t k = 0; k < grid.size(); k++) {
+    table.omega[k] = grid[k].first;
     for (int i = 1; i <= n; i++) {
       for (int j = 1; j <= n; j++) {
         const auto real_part      = re[index(i, j)][k].second;
         const auto imaginary_part = imaginary.present[index(i, j)] ? im[index(i, j)][k].second : 0.0;
-        gamma[k](i - 1, j - 1)    = make_scalar<S>(real_part, imaginary_part);
+        table.gamma[(k * n + (i - 1)) * n + (j - 1)] = {real_part, imaginary_part};
       }
     }
   }
+  return table;
+}
+
+// Gamma from a table: the Hermiticity check within options.hermiticity_tolerance, the symmetrization to
+// (Gamma+Gamma^dag)/2, the rescaling by options.bandrescale and the split into the frequency branches, with the
+// report to out. In real arithmetic the imaginary parts must vanish.
+template<typename S> auto gamma_input(const GammaTable &table, const GammaOptions &options, std::ostream &out = std::cout) {
+  const auto n = table.channels;
+  if (n < 1) throw std::invalid_argument("Gamma must have at least one channel.");
+  if (!(std::isfinite(options.bandrescale) && options.bandrescale > 0.0))
+    throw std::invalid_argument("bandrescale must be a positive finite number.");
+  if (!(std::isfinite(options.hermiticity_tolerance) && options.hermiticity_tolerance > 0.0))
+    throw std::invalid_argument("The Hermiticity tolerance must be a positive finite number.");
+  const auto nodes = table.omega.size();
+  if (nodes < 2) throw std::invalid_argument("Gamma: at least two frequencies are required.");
+  if (table.gamma.size() != nodes * static_cast<std::size_t>(n) * n)
+    throw std::invalid_argument("Gamma: expected " + std::to_string(n) + "x" + std::to_string(n) + " values at each of "
+                                + std::to_string(nodes) + " frequencies, found " + std::to_string(table.gamma.size()) + ".");
+  for (std::size_t k = 0; k < nodes; k++) {
+    if (!std::isfinite(table.omega[k])) throw std::invalid_argument("Gamma: the frequencies must be finite.");
+    if (k > 0 && !(table.omega[k] > table.omega[k - 1]))
+      throw std::runtime_error("Gamma: frequencies must be strictly increasing; found " + std::to_string(table.omega[k])
+                               + " after " + std::to_string(table.omega[k - 1]) + ".");
+  }
+  if (table.complex && !is_complex_v<S>)
+    throw std::logic_error("The off-diagonal imaginary parts of Gamma are tabulated, so the discretization must be "
+                           "performed in complex arithmetic.");
+
+  // The largest |Re Gamma_ij|, the scale of the relative tolerance tests (see detail::magnitude).
+  double scale = 0.0;
+  for (const auto &value : table.gamma) scale = std::max(scale, std::abs(value.real()));
+  if (!(scale > 0.0)) throw std::runtime_error("Gamma vanishes identically.");
+
+  if constexpr (!is_complex_v<S>) {
+    for (std::size_t k = 0; k < nodes; k++) {
+      for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+          const auto value = table.at(k, i, j).imag();
+          if (std::abs(value) > options.hermiticity_tolerance * scale)
+            throw std::runtime_error("Gamma is real here, but element (" + std::to_string(i + 1) + "," + std::to_string(j + 1)
+                                     + ") has the imaginary part " + std::to_string(value)
+                                     + " at omega=" + std::to_string(table.omega[k]) + ".");
+        }
+      }
+    }
+  }
+
+  std::vector<double> omega(table.omega);
+  std::vector<Matrix<S>> gamma(nodes, Matrix<S>::Zero(n, n));
+  for (std::size_t k = 0; k < nodes; k++)
+    for (int i = 0; i < n; i++)
+      for (int j = 0; j < n; j++) {
+        const auto value = table.at(k, i, j);
+        gamma[k](i, j)   = make_scalar<S>(value.real(), value.imag());
+      }
 
   detail::check_hermiticity<S>(omega, gamma, scale, options.hermiticity_tolerance);
   for (auto &m : gamma) m = (0.5 * (m + m.adjoint())).eval();
@@ -348,6 +415,12 @@ template<typename S> auto load_gamma(const GammaOptions &options, std::ostream &
   detail::report_branch(input.pos, Sign::POS, out);
   detail::report_branch(input.neg, Sign::NEG, out);
   return input;
+}
+
+// Read the Gamma files (read_gamma_table) and prepare them (gamma_input).
+template<typename S> auto load_gamma(const GammaOptions &options, std::ostream &out = std::cout) {
+  const auto table = read_gamma_table(options);
+  return gamma_input<S>(table, options, out);
 }
 
 } // namespace NRG::MixChain

@@ -29,9 +29,12 @@
 #include "branches.hpp"
 #include "chain.hpp"
 #include "chain_io.hpp"
+#include "configuration.hpp"
+#include "discretize.hpp"
 #include "load.hpp"
 #include "mesh.hpp"
 #include "parser.hpp"
+#include "report.hpp"
 #include "star.hpp"
 #include "star_io.hpp"
 #include "types.hpp"
@@ -160,82 +163,8 @@ CommandLineOptions cmd_line(int argc, char *argv[]) {
   return options;
 }
 
-struct Configuration {
-  GammaOptions gamma;
-  StarOptions star;
-  bool mmax_from_nmax{};
-  ChainOptions chain;
-  bool discretization_files{}; // write the chain also as one file per matrix element, beside chain.dat
-};
-
 auto builds_star(const Mode mode) { return mode != Mode::Chain; }
 auto builds_chain(const Mode mode) { return mode != Mode::Star; }
-
-void read_star_configuration(const Params &P, const CommandLineOptions &command_line, Configuration &configuration) {
-  configuration.gamma.prefix                = P.Pstr("dos_prefix", "Gamma");
-  configuration.gamma.channels              = P.Pint("channels", 1);
-  configuration.gamma.bandrescale           = P.P("bandrescale", 1.0);
-  configuration.gamma.hermiticity_tolerance = P.P("hermiticity_tolerance", 1e-8);
-
-  auto &star       = configuration.star;
-  star.Lambda      = NRG::Tools::LambdaCache(P.P("Lambda", 2.0));
-  star.z           = P.P("z", 1.0);
-  star.bandrescale = configuration.gamma.bandrescale;
-  star.adapt       = P.Pbool("adapt", false);
-  star.hardgap     = P.Pbool("hardgap", false);
-  star.boundary    = P.P("boundary", 0.0);
-  star.mesh_weight = mesh_weight_from_string(P.Pstr("mesh_weight", "frobenius"));
-  star.interpolation =
-    NRG::Tools::parse_density_interpolation_method(P.Pstr("density_interpolation", "linear"));
-  star.branches.ordering = branch_ordering_from_string(P.Pstr("branch_ordering", "tracked"));
-  star.split_blocks      = P.Pbool("split_blocks", true);
-  star.allowed_error     = P.P("allowed_error", 1e-10);
-  star.cquad             = command_line.cquad;
-
-  // The star stage needs mMAX, the number of intervals. Nmax is the length of the Wilson chain, which only the chain
-  // stage uses; it serves here as the customary default for mMAX.
-  if (P.contains("mMAX")) {
-    const auto mmax = P.Pint("mMAX", 0);
-    if (mmax <= 0) throw std::invalid_argument("mMAX must be greater than 0.");
-    star.mMAX = static_cast<unsigned int>(mmax);
-  } else if (P.contains("Nmax")) {
-    const auto nmax = P.Pint("Nmax", 0);
-    if (nmax <= 0) throw std::invalid_argument("Nmax must be greater than 0.");
-    star.mMAX                  = static_cast<unsigned int>(2 * nmax);
-    configuration.mmax_from_nmax = true;
-  } else {
-    throw std::invalid_argument("Either mMAX or Nmax must be given.");
-  }
-}
-
-void read_chain_configuration(const Params &P, Configuration &configuration) {
-  if (!P.contains("Nmax")) throw std::invalid_argument("Nmax must be given to build the chain.");
-  const auto nmax = P.Pint("Nmax", 0);
-  if (nmax <= 0) throw std::invalid_argument("Nmax must be greater than 0.");
-  configuration.chain.Nmax = static_cast<unsigned int>(nmax);
-
-  configuration.chain.rank_tolerance = P.P("rank_tolerance", 1e-20);
-  if (!(std::isfinite(configuration.chain.rank_tolerance) && configuration.chain.rank_tolerance > 0.0))
-    throw std::invalid_argument("rank_tolerance must be a positive finite number.");
-
-  configuration.chain.sensitivity_tolerance = P.P("sensitivity_tolerance", 1e-10);
-  if (!(std::isfinite(configuration.chain.sensitivity_tolerance) && configuration.chain.sensitivity_tolerance > 0.0))
-    throw std::invalid_argument("sensitivity_tolerance must be a positive finite number.");
-
-  configuration.discretization_files = P.Pbool("discretization_files", false);
-
-  configuration.chain.gauge = chain_gauge_from_string(P.Pstr("chain_gauge", "polar"));
-  configuration.chain.nambu_tolerance = P.P("nambu_tolerance", 1e-8);
-  if (!(std::isfinite(configuration.chain.nambu_tolerance) && configuration.chain.nambu_tolerance > 0.0))
-    throw std::invalid_argument("nambu_tolerance must be a positive finite number.");
-}
-
-Configuration read_configuration(const Params &P, const CommandLineOptions &command_line) {
-  Configuration configuration;
-  if (builds_star(command_line.mode)) read_star_configuration(P, command_line, configuration);
-  if (builds_chain(command_line.mode)) read_chain_configuration(P, configuration);
-  return configuration;
-}
 
 const char *mode_name(const Mode mode) {
   switch (mode) {
@@ -299,57 +228,6 @@ void report_star_configuration(const Configuration &configuration, const Command
   report.value("hermiticity_tolerance", configuration.gamma.hermiticity_tolerance);
 }
 
-template<typename S> void report_star(const Star<S> &star, std::ostream &out) {
-  out << "# levels=" << star.levels.size() << " complex=" << (is_complex_v<S> ? 1 : 0) << std::endl;
-  for (std::size_t b = 0; b < star.diagnostics.size(); b++) {
-    const auto &diagnostics = star.diagnostics[b];
-    // With a single block the lines carry no prefix, as they did before blocks existed.
-    const auto block = star.blocks.size() > 1 ? "block " + blocks_name({star.blocks[b]}) + ": " : std::string();
-    out << "# " << block << "max_interval_deviation=" << diagnostics.max_interval_deviation
-        << " at omega=" << diagnostics.max_interval_omega << std::endl;
-    out << "# " << block << "max_cquad_error=" << diagnostics.max_cquad_error << std::endl;
-    out << "# " << block << "crossings: " << diagnostics.crossings_pos.size() << " positive, "
-        << diagnostics.crossings_neg.size() << " negative" << std::endl;
-
-    // Where the mesh reaches below the innermost tabulated frequency, the density is the constant continuation of
-    // the input: exact for a flat band, an approximation for anything with structure at low frequency.
-    // These frequencies are compared with the input grid and can sit very close to an accumulation point, so they
-    // are printed with every digit that distinguishes them.
-    const auto precision = out.precision(std::numeric_limits<double>::max_digits10);
-    for (const auto &[name, coverage] : {std::pair{"POS", &diagnostics.coverage_pos},
-                                         std::pair{"NEG", &diagnostics.coverage_neg}}) {
-      const auto prefix = "# " + block + name + ": ";
-      if (coverage->fixed_mesh_fallback)
-        out << prefix << "Gamma vanishes on this branch; fixed mesh used" << std::endl;
-      if (coverage->collapsed_levels > 0)
-        out << prefix << coverage->collapsed_levels
-            << " representative energy levels are indistinguishable from the accumulation point "
-            << coverage->accumulation_point << " in double precision" << std::endl;
-      if (coverage->unresolved_intervals == 0) continue;
-      out << prefix << coverage->unresolved_intervals << " of " << star.mMAX + 1
-          << " intervals contain no tabulated point of the input, carrying " << coverage->unresolved_share()
-          << " of the weight of this branch, the outermost being [" << coverage->unresolved_to << ", "
-          << coverage->unresolved_from << "]; ";
-      if (coverage->continued())
-        out << "the input ends at omega=" << coverage->innermost_input
-            << " and below that the density is its constant continuation" << std::endl;
-      else
-        out << "there the star follows the interpolant between neighbouring points" << std::endl;
-    }
-    out.precision(precision);
-  }
-
-  // The trace of Theta agrees with that of the integral of Gamma by construction; the off-diagonal elements only
-  // approximately, because a single level per interval and branch cannot follow a rotating eigenvector.
-  const auto trace_star  = std::real(star.theta.trace());
-  const auto trace_exact = std::real(star.theta_exact.trace());
-  out << "# tr(theta)=" << trace_star << " tr(int Gamma)=" << trace_exact << " difference="
-      << trace_star - trace_exact << std::endl;
-  const auto scale = star.theta_exact.norm();
-  if (scale > 0.0)
-    out << "# ||theta - int Gamma||/||int Gamma||=" << (star.theta - star.theta_exact).norm() / scale << std::endl;
-}
-
 // One value of z and the directory its files go to: the working directory for a single z, and i/ for z = i/Nz.
 struct Target {
   // The z to discretize for. In the chain stage of a single-z run it is empty, since the star records its own z.
@@ -377,13 +255,7 @@ template<typename S> void run_star(const Configuration &configuration, const std
   const auto input       = load_gamma<S>(configuration.gamma);
   StarDiscretizer<S> discretizer(input, configuration.star);
   std::cout << "# star setup: " << seconds_since(setup_start) << " s" << std::endl;
-  // The blocks do not depend on z, so they are reported once.
-  if (configuration.star.split_blocks) {
-    if (discretizer.blocks().size() > 1)
-      std::cout << "# blocks: " << blocks_name(discretizer.blocks()) << std::endl;
-    else
-      std::cout << "# blocks: none (Gamma does not split)" << std::endl;
-  }
+  report_blocks(discretizer, configuration.star.split_blocks, std::cout);
 
   for (const auto &target : list) {
     const auto start = std::chrono::steady_clock::now();
@@ -420,57 +292,6 @@ void check_star_against_parameters(const Star<S> &star, const Params &P, const T
     check("z", star.z, P.P("z", star.z), "the parameter file");
 }
 
-template<typename S>
-void report_chain(const Chain<S> &chain, const ChainFileHeader &header, const double sensitivity_tolerance,
-                  std::ostream &out) {
-  const auto &d = chain.diagnostics;
-  out << "# chain: sites=" << chain.Nmax + 1 << " channels=" << chain.channels
-      << " gauge=" << chain_gauge_name(chain.gauge) << std::endl;
-  if (chain.gauge == ChainGauge::nambu)
-    out << "# the Nambu structure of the blocks holds to " << d.max_nambu_deviation
-        << " of their largest element" << std::endl;
-  if (chain.blocks.size() > 1) out << "# blocks: " << blocks_name(chain.blocks) << std::endl;
-  out << "# levels=" << d.levels << " coupled_levels=" << d.coupled_levels << " theta_rank=" << d.theta_rank
-      << " theta_condition=" << d.theta_condition
-      << " min_residual_condition=" << d.min_residual_condition << std::endl;
-  // From the site where the chain reaches the untabulated region of the input, its coefficients rest on the constant
-  // continuation of the input rather than on data. Printed in the units of the input.
-  if (const auto continued = first_continued_site(chain, header.untabulated_to - header.untabulated_from)) {
-    out << "# from site " << *continued << " on, the chain samples ";
-    if (header.untabulated_from > 0.0) out << header.untabulated_from * header.bandrescale << " < ";
-    out << "|omega| < " << header.untabulated_to * header.bandrescale
-        << ", where Gamma is not tabulated (extend the input grid to lower |omega|, or lower Nmax)" << std::endl;
-  }
-  // How well a star in double precision determines the chain at all.
-  out << "# max_star_sensitivity=" << d.max_star_sensitivity << " at site " << d.max_star_sensitivity_site << std::endl;
-  if (d.sensitive_from_site)
-    out << "# from site " << *d.sensitive_from_site << " on, the chain is determined by the star only to "
-        << sensitivity_tolerance << " or worse (" << d.max_star_sensitivity << " at site "
-        << d.max_star_sensitivity_site << "):" << std::endl
-        << "# levels near an accumulation point of the mesh at a finite energy are not resolved in double precision."
-        << std::endl
-        << "# The coefficients from there on are not reproducible beyond that; a smaller Nmax avoids it." << std::endl;
-  // A Theta of lower rank is a property of Gamma, and the chain is exact for it; a drop further down is not.
-  if (d.theta_rank < chain.channels) {
-    const auto decoupled = chain.channels - d.theta_rank;
-    out << "# Theta has rank " << d.theta_rank << " of " << chain.channels << ": " << decoupled << " combination"
-        << (decoupled == 1 ? "" : "s") << " of the impurity orbitals do" << (decoupled == 1 ? "es" : "")
-        << " not couple to the bath, and its part of the chain is zero" << std::endl;
-  }
-  // A drop is reported for each block where it happens: what limits the chain is a property of that block's star.
-  for (std::size_t b = 0; b < chain.blocks.size(); b++) {
-    const auto &part = chain.block_diagnostics[b];
-    if (!part.rank_drop_site) continue;
-    std::cerr << "mixchain: warning: the rank of the hopping drops below " << part.theta_rank << " at site "
-              << *part.rank_drop_site << " (smallest rank " << part.min_rank << "), in block "
-              << blocks_name({chain.blocks[b]}) << ": the Krylov space of the star is exhausted in some direction, "
-              << "and the chain is zero in it from there on. The block has " << part.coupled_levels << " of "
-              << part.levels << " levels with nonzero coupling; the others lie where Gamma vanishes on the mesh or "
-              << "collapsed onto an accumulation point. A mesh that follows this block (adapt=true, split_blocks=true) "
-              << "or a smaller Nmax avoids it." << std::endl;
-  }
-}
-
 // The chain is built from star.dat also in the default mode, right after the star stage has written it, so that the
 // default mode and 's' followed by 'l' produce the same chain by construction.
 template<typename S0> void run_chain(const Configuration &configuration, const Params &P, const Target &target) {
@@ -480,14 +301,8 @@ template<typename S0> void run_chain(const Configuration &configuration, const P
   const auto star = load_star<S0>(star_file);
   check_star_against_parameters(star, P, target, star_file);
   const auto chain_file = target.file(chain_default_filename);
-  const ChainFileHeader header{star.z, star.Lambda, star.bandrescale,
-                               star.untabulated_known ? star.untabulated_from : 0.0,
-                               star.untabulated_known ? star.untabulated_to : 0.0};
-  auto chain             = build_chain(star, configuration.chain);
-  const auto sensitivity = star_sensitivity(star, configuration.chain);
-  chain.diagnostics.max_star_sensitivity      = sensitivity.largest;
-  chain.diagnostics.max_star_sensitivity_site = sensitivity.largest_site;
-  chain.diagnostics.sensitive_from_site       = sensitivity.from_site;
+  const auto header = chain_header(star);
+  const auto chain  = make_chain(star, configuration.chain);
   report_chain(chain, header, configuration.chain.sensitivity_tolerance, std::cout);
   save_chain(chain, header, chain_file);
   if (configuration.discretization_files) {
@@ -508,7 +323,8 @@ template<typename F> void timed(const char *stage, F &&f) {
 
 void run(const CommandLineOptions &command_line) {
   const Params P(command_line.param_filename);
-  const auto configuration = read_configuration(P, command_line);
+  const auto configuration =
+    read_configuration(P, builds_star(command_line.mode), builds_chain(command_line.mode), command_line.cquad);
   report_configuration(configuration, command_line);
 
   if (builds_star(command_line.mode))

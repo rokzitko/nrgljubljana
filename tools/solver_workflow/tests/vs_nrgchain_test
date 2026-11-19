@@ -1,0 +1,74 @@
+#!/bin/bash
+# discretize_hybridization (mixchain) compared with adapt --integral followed by nrgchain, for one channel.
+#
+# Usage: vs_nrgchain_test <tools build dir> <work dir> <workflow_vs_nrgchain>
+#
+# Each case directory gets Gamma_11-re.dat (also as Delta.dat, the dos of adapt), a param file read by both routes,
+# and for Nz = 2, 3 and 4 the theta.dat, xi.dat and zeta.dat of nrgchain at z = i/Nz in nz<Nz>/<i>/. workflow_vs_nrgchain
+# then compares them with discretize_hybridization, separately for z on and off the FSOL grid of adapt
+# (outputstep 1/64: Nz = 2 and 4 are on it, Nz = 3 is not):
+#   on the grid:  every x = j + z that nrgchain reads is a node of FSOL, and both routes evaluate the same integral
+#                 method, so they agree to rounding (1e-12);
+#   off the grid: nrgchain interpolates FSOL linearly between nodes, while mixchain evaluates the representative
+#                 energies directly. The difference is that interpolation error, quadratic in outputstep (2e-5 to
+#                 3e-5 at the first sites here, 16 times less at outputstep 1/256), so 1e-4. A flat band has no FSOL
+#                 (band=flat is analytic) and agrees to rounding at every z.
+# The hard gap (boundary > 0) agrees to rounding as well.
+set -euo pipefail
+
+tools_dir="$1"
+work_dir="$2"
+driver="$3"
+
+rm -rf "$work_dir"
+mkdir -p "$work_dir"
+cd "$work_dir"
+
+# The parameters both routes read: mMAX=2*Nmax, and xmax = 2*Nmax+5 covers the x = z + mMAX + 2 that nrgchain needs.
+# case name, Lambda, Nmax, extra parameters, awk program writing Gamma_11-re.dat
+make_case() {
+  local name=$1 lambda=$2 nmax=$3 extra=$4 program=$5
+  mkdir "$name"
+  awk "$program" >"$name/Gamma_11-re.dat"
+  cp "$name/Gamma_11-re.dat" "$name/Delta.dat"
+  {
+    printf '[param]\ndos=Delta.dat\nLambda=%s\nNmax=%s\nmMAX=%s\nxmax=%s\n' "$lambda" "$nmax" $((2 * nmax)) $((2 * nmax + 5))
+    printf 'adapt=false\noutputstep=0.015625\nxfine=5\ndx_fine=1e-5\ndx_fast=1e-4\nallowed_error=1e-10\nmax_subdiv=20\n'
+    if [ -n "$extra" ]; then printf '%s\n' "$extra"; fi
+  } >"$name/param"
+}
+
+grid='BEGIN { for (k = -200; k <= 200; k++) { w = k / 200; printf "%.17g %.17g\n", w, VALUE } }'
+make_case flat 2 20 'band=flat' "${grid/VALUE/0.5}"
+make_case flat_gap 2 20 $'band=flat\nhardgap=true\nboundary=0.01' "${grid/VALUE/0.5}"
+make_case semicircle 2 20 '' "${grid/VALUE/(1 - w * w > 0 ? 0.5 * sqrt(1 - w * w) : 0)}"
+make_case asymmetric 2 20 '' "${grid/VALUE/0.3 + 0.2 * w + 0.1 * w * w}"
+make_case gap 2 10 $'hardgap=true\nboundary=0.01\nmax_abs=1e6' "${grid/VALUE/(w >= 0.01 || w <= -0.01 ? 0.5 : 0)}"
+# The interface's SIAM/QS input: Delta = 0.1 * SemiCircular(1), -Im Delta = 0.2 sqrt(1 - w^2), on its log mesh
+# (1e-3 to 1, ratio 1.1), with Lambda=4
+make_case interface 4 20 '' 'function g(w) { return 1 - w * w > 0 ? 0.2 * sqrt(1 - w * w) : 0 }
+  BEGIN { n = 0; for (w = 1e-3; w < 1; w *= 1.1) x[n++] = w; x[n++] = 1
+          for (k = n - 1; k >= 0; k--) printf "%.17g %.17g\n", -x[k], g(x[k])
+          for (k = 0; k < n; k++) printf "%.17g %.17g\n", x[k], g(x[k]) }'
+
+for name in flat flat_gap semicircle asymmetric gap interface; do
+  (
+    cd "$name"
+    if ! grep -q '^band=flat$' param; then
+      "$tools_dir/adapt" --integral P param >adapt-P.log 2>&1
+      "$tools_dir/adapt" --integral N param >adapt-N.log 2>&1
+    fi
+    for nz in 2 3 4; do
+      for i in $(seq 1 $nz); do
+        z=$(awk -v i=$i -v n=$nz 'BEGIN { printf "%.17g", i / n }')
+        { cat param; printf 'z=%s\n' "$z"; } >param-z
+        "$tools_dir/nrgchain" param-z >nrgchain.log 2>&1 || { echo "nrgchain failed in $name, z=$z"; tail nrgchain.log; exit 1; }
+        mkdir -p "nz$nz/$i"
+        mv theta.dat xi.dat zeta.dat "nz$nz/$i/"
+      done
+    done
+  ) || exit 1
+done
+
+"$driver" flat=1e-12:1e-12 flat_gap=1e-12:1e-12 semicircle=1e-12:1e-4 asymmetric=1e-12:1e-4 gap=1e-12:1e-4 \
+  interface=1e-12:1e-4

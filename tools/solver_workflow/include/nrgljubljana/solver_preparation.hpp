@@ -3,6 +3,7 @@
 
 #include <map>
 #include <string>
+#include <vector>
 
 namespace NRG::Workflow {
 
@@ -10,6 +11,15 @@ namespace NRG::Workflow {
 // change CWD or solver state, evaluate model expressions, or diagonalize.
 // Invalid/unsupported input throws std::runtime_error. No diagnostics are printed.
 // Callers own parameter-section selection and filesystem/symlink policy.
+
+// Parameter-file text (param, a template manifest, ...) as sections: name -> key -> value.
+// Strict: every line is blank, a whole-line # comment, a header line that is exactly
+// [name] (non-empty, no whitespace around or inside the brackets), or key=value inside
+// a section (split at the first '=', key and value trimmed, the value may be empty).
+// A section given twice, an empty key and a key given twice in a section are errors;
+// the message names the line. Text accepted here is read the same way by nrg and the
+// tools; nrg alone also accepts what is rejected here in sections it does not read.
+std::map<std::string, std::map<std::string, std::string>> read_parameter_sections(const std::string &text);
 
 // param_section contains only [param] entries, not a flattened parameter file.
 // Numeric values are scalar decimal tokens (outer whitespace is ignored); expressions,
@@ -57,10 +67,29 @@ unsigned resolve_chain_length(const std::map<std::string, std::string> &param_se
 // convergence. Throws std::runtime_error without logging or changing GSL handlers.
 void validate_preparation_parameters(const std::map<std::string, std::string> &rendered_param_section);
 
+// Where the Wilson coefficients come from: nrgchain on the FSOL files of adapt (discretize, then instantiate or
+// nrgchain_coefficients), or mixchain on Gamma in memory (discretize_hybridization and diagonal_coefficients).
+enum class ChainSource { nrgchain, mixchain };
+
+// The same static checks for the route of source; nrgchain is the overload above. For mixchain: discretization, if
+// given, is Z; Nmax as above (Tmin and its keys resolve it), z in (0,1], Lambda > 1, bandrescale > 0, tri not cpp; and
+// the keys of discretize_hybridization as it reads them (mixchain's names and defaults, with channels, dos_prefix and z
+// ignored), including the checks of its star stage that do not need Gamma. The keys of adapt and nrgchain are not read.
+void validate_preparation_parameters(const std::map<std::string, std::string> &rendered_param_section, ChainSource source);
+
+// An operator block of data.in: type s, p, d, t, o, g or q, and the operator name.
+struct TemplateOperator {
+  char type;
+  std::string name;
+  bool operator==(const TemplateOperator &) const = default;
+};
+
 struct TemplateInfo {
   std::string symmetry;
   unsigned channels;
   unsigned subspaces;
+  std::vector<TemplateOperator> operators; // in data.in order; a name may repeat
+  bool field;                              // the symmetry type has a field: d spectra are named with -u/-d
 };
 
 // files maps canonical '/'-separated paths RELATIVE TO THE TEMPLATE ROOT to bytes:
@@ -69,10 +98,14 @@ struct TemplateInfo {
 // separators or NUL. References may contain './' or repeated separators, but not
 // '..', absolute paths or file-valued parents. There is no CWD/root fallback.
 //
-// Supported profile: real version-9, one-channel QS. Inspect the native header,
-// positive seed dimensions/scale, unique QS subspaces, DIAG dependencies, one
-// leading f block, an e placeholder, and s/p/d/t/o/g/q operator blocks. Check
-// referenced matrix shapes and scalar syntax, not numerical values of expressions.
+// Supported profile: real version-9 templates of any symmetry type known to the
+// solver, with any number of channels. This is structural validity, not support by
+// instantiate, which accepts a narrower set. Inspect the native header, positive
+// seed dimensions/scale, unique subspaces (the same number of integer quantum
+// numbers each; QS: charge and positive spin multiplicity), DIAG dependencies,
+// channels x perchannel leading f blocks, an e placeholder, and s/p/d/t/o/g/q
+// operator blocks. Check referenced matrix shapes and scalar syntax, not numerical
+// values of expressions.
 // Scalar/vector/matrix forms, + - * /, grouping, identifiers, and the initializer's
 // Sqrt/sqrt/exp/log/Conjugate/gammaPolCh/coefxi/coefzeta calls are supported.
 // Unknown functions, complex profiles, parse directives and shell escapes fail.

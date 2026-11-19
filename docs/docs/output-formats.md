@@ -411,6 +411,18 @@ I=<quantum numbers> kept=<count> total=<Hamiltonian dimension>
 `N` is zero-based. `total` is the full subspace dimension and can exceed the
 number of eigenpairs computed by a partial eigensolver.
 
+## Reading The Text Outputs
+
+`<nrgljubljana/solver_output.hpp>` of the workflow library reads these files
+from their text, without I/O: `read_step_table` for `td`, `custom`, `tdfdm` and
+`customfdm` (the column names of the last header line and one row per line),
+`read_final_values` for the single row of `tdfdm` and `customfdm`, and
+`read_energy_flow` for `annotated.dat` written with `dumpgroups=true` (the
+default). `spectrum_file_name(list, correlator, algorithm, spin)` gives the
+file of a spectrum as the solver names it (see the filename grammar above),
+without `.dat` or `.bin`. The test `solver_workflow_output` reads every stored
+output of the regression tests with them.
+
 ## HDF5 Output
 
 `h5raw=true` opens `raw.h5` for the main phase and `raw-dm.h5` for a requested

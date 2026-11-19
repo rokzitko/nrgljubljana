@@ -1,0 +1,56 @@
+#!/bin/bash
+# Prepare the calculation directories of workflow_routes and run it.
+#
+# Usage: routes_test <QS template directory> <work dir> <workflow_routes>
+# Gamma = 0.04 (1 + 0.3 omega) on [-1, 1], 401 nodes: Delta.dat of the nrgchain route (N1, N2) and Gamma_11-re.dat
+# of the mixchain route. Twists z = 1/2 (N1, M1) and z = 1 (N2, M2).
+set -euo pipefail
+
+template="$1"
+work_dir="$2"
+driver="$3"
+
+rm -rf "$work_dir"
+mkdir -p "$work_dir"
+
+awk 'BEGIN { for (k = -200; k <= 200; k++) { w = k / 200; printf "%.17g %.17g\n", w, 0.04 * (1 + 0.3 * w) } }' \
+  >"$work_dir/Gamma_11-re.dat"
+
+param='[extra]
+U1=0.1
+eps1=-0.05
+
+[param]
+symtype=QS
+Lambda=2
+Nmax=20
+polarized=false
+band=asymode
+dos=Delta.dat
+adapt=false
+xmax=50
+outputstep=0.015625
+tridiag_method=lanczos
+preccpp=2000
+bandrescale=1
+keep=1000
+keepenergy=8
+T=1e-3
+ops=n_d n_d^2 hop0 A_d
+specd=A_d-A_d
+fdm=true
+fdmexpv=true
+data_has_rescaled_energies=false'
+
+for twist in 1 2; do
+  z=$(awk -v i=$twist 'BEGIN { printf "%.17g", i / 2 }')
+  for route in N M; do
+    directory="$work_dir/$route$twist"
+    mkdir "$directory"
+    cp -r "$template" "$directory/template"
+    printf '%s\nz=%s\n' "$param" "$z" >"$directory/param"
+  done
+  cp "$work_dir/Gamma_11-re.dat" "$work_dir/N$twist/Delta.dat"
+done
+
+"$driver" "$work_dir"

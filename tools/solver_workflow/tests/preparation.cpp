@@ -247,6 +247,46 @@ void preparation_parameters(const std::string &text, const std::string &error = 
         "Parameter validation changed stream formatting");
 }
 
+// validate_preparation_parameters for the mixchain route
+void mixchain_parameters(const std::string &text, const std::string &error = "") {
+  const auto parameters = settings(text);
+  const auto before     = parameters;
+  const auto call = [&] { NRG::Workflow::validate_preparation_parameters(parameters, NRG::Workflow::ChainSource::mixchain); };
+  if (error.empty())
+    call();
+  else
+    rejects_call(call, error);
+  check(parameters == before, "Parameter validation changed input");
+}
+
+void mixchain_preparation() {
+  mixchain_parameters("Nmax=10");
+  mixchain_parameters("Lambda=2\nz=0.5\nNmax=10\ndiscretization=Z\nchain_gauge=nambu\nmesh_weight=trace");
+  mixchain_parameters("Tmin=1e-4\nLambda=2\nz=1");
+  mixchain_parameters("Nmax=10\nhardgap=true\nboundary=0.01\nadapt=true\nsplit_blocks=false");
+  // Keys of adapt and nrgchain, and those discretize_hybridization ignores, are not read
+  mixchain_parameters("Nmax=10\ntridiag_method=bogus\nxmax=0.5\nrescalexi=true\nf_method=nonsense\npreccpp=1\n"
+                      "channels=7\ndos_prefix=x\nband=flat");
+
+  mixchain_parameters("Nmax=10\ndiscretization=Y", "Z scheme only");
+  mixchain_parameters("Nmax=999", "Nmax");
+  mixchain_parameters("Nmax=10\nTmin=1e-4", "either Nmax or Tmin");
+  mixchain_parameters("Nmax=10\nz=0", "z must satisfy");
+  mixchain_parameters("Nmax=10\nLambda=1", "Lambda must be greater than 1");
+  mixchain_parameters("Nmax=10\nbandrescale=0", "bandrescale must be positive");
+  mixchain_parameters("Nmax=10\ntri=cpp", "tri=cpp");
+  mixchain_parameters("Nmax=10\nmesh_weight=bad", "mesh_weight must be");
+  mixchain_parameters("Nmax=10\nbranch_ordering=bad", "branch_ordering must be");
+  mixchain_parameters("Nmax=10\nchain_gauge=bad", "chain_gauge must be");
+  mixchain_parameters("Nmax=10\nrank_tolerance=0", "rank_tolerance must be");
+  mixchain_parameters("Nmax=10\nsensitivity_tolerance=-1", "sensitivity_tolerance must be");
+  mixchain_parameters("Nmax=10\nmMAX=0", "mMAX must be greater than 0");
+  mixchain_parameters("Nmax=10\nallowed_error=0", "allowed_error must be");
+  mixchain_parameters("Nmax=10\nhardgap=true\nboundary=1", "boundary must be in [0,1)");
+  mixchain_parameters("Nmax=10\nsplit_blocks=perhaps", "Invalid boolean value [perhaps]");
+  mixchain_parameters("Nmax=10\ndensity_interpolation=cubic", "density_interpolation must be");
+}
+
 void combined_preparation() {
   // Combined discretize(integral=true) + full-instantiate static contract, not
   // the chain-only contract (which still permits xmax=1 and rescalexi=true).
@@ -359,13 +399,15 @@ void replace(Entries &files, const std::string &from, const std::string &to, con
   text.replace(pos, from.size(), to);
 }
 
-void accepts(const Entries &files, unsigned subspaces = 1) {
+NRG::Workflow::TemplateInfo accepts(const Entries &files, unsigned subspaces = 1, const std::string &symmetry = "QS", unsigned channels = 1) {
   const auto before = files;
+  NRG::Workflow::TemplateInfo info;
   for (unsigned i = 0; i < 2; ++i) {
-    const auto info = NRG::Workflow::inspect_template_bundle(files);
-    check(info.symmetry == "QS" && info.channels == 1 && info.subspaces == subspaces, "Incorrect template metadata");
+    info = NRG::Workflow::inspect_template_bundle(files);
+    check(info.symmetry == symmetry && info.channels == channels && info.subspaces == subspaces, "Incorrect template metadata");
     check(files == before, "Inspection changed input bytes");
   }
+  return info;
 }
 
 void rejects_template(const Entries &files, const std::string &description) {
@@ -395,7 +437,7 @@ void template_structure() {
   no_newline["data.in"].pop_back();
   accepts(no_newline);
   for (const auto &[from, to] : std::vector<std::pair<std::string, std::string>>{
-         {"#!9", "#!8"}, {"#!9", "#!"}, {"# symtype  QS", "# symtype  QSZ"},
+         {"#!9", "#!8"}, {"#!9", "#!"}, {"# symtype  QS", "# symtype  XYZ"},
          {"# symtype  QS", "# symtype  QS "}, {"# symtype  QS", "# symtype  QS\r"},
          {"#!9", "#!9\r\n# another header comment"}, {"#!9", "#!9 \n# another header comment"},
          {"# Input file", "# COMPLEX Input file"}, {"# Input file", "\n# Input file"},
@@ -441,7 +483,16 @@ void template_structure() {
   }
   auto optional = valid;
   for (const char type : std::string("spdtogq")) optional["data.in"] += std::string(1, type) + "name\n0\n";
-  accepts(optional);
+  const auto info = accepts(optional);
+  check(info.operators == std::vector<NRG::Workflow::TemplateOperator>{{'s', "name"}, {'p', "name"}, {'d', "name"}, {'t', "name"},
+                                                                      {'o', "name"}, {'g', "name"}, {'q', "name"}},
+        "Incorrect operator list");
+  check(!info.field, "QS has no field");
+  for (const auto &header : {"s", "sn d", "sn\td"}) {
+    auto files = valid;
+    files["data.in"] += std::string(header) + "\n0\n";
+    rejects_template(files, std::string("invalid operator header ") + header);
+  }
   for (const char marker : std::string("zZT")) {
     auto files = optional;
     files["data.in"] += std::string(1, marker) + "\nignored old coefficient tables\n!not-executed\n";
@@ -450,6 +501,53 @@ void template_structure() {
     replace(files, "e\n0", std::string(1, marker) + "\ne\n0");
     rejects_template(files, "e block only in discarded suffix");
   }
+}
+
+void template_symmetries() {
+  const auto valid = minimal();
+
+  // Other symmetry types: quantum numbers are integers, as many per subspace as in the first seed.
+  auto qsz = valid;
+  replace(qsz, "# symtype  QS", "# symtype  QSZ");
+  check(accepts(qsz, 1, "QSZ").field, "QSZ has a field");
+  replace(qsz, "0 1\n1\nDIAG", "0 0\n1\nDIAG");
+  accepts(qsz, 1, "QSZ"); // no spin-multiplicity rule outside QS
+  auto wide = valid;
+  replace(wide, "# symtype  QS", "# symtype  ISO");
+  replace(wide, "0 1\n1\nDIAG", "0 1 2\n1\nDIAG");
+  check(!accepts(wide, 1, "ISO").field, "ISO has no field");
+  wide["data.in"] += "sn_d\n1\n0 1 2 0 1 2\nop.n\n";
+  wide["op.n"] = "{{1}}";
+  check(accepts(wide, 1, "ISO").operators == std::vector<NRG::Workflow::TemplateOperator>{{'s', "n_d"}}, "Incorrect ISO operators");
+  for (const auto &[from, to] : std::vector<std::pair<std::string, std::string>>{
+         {"0 1 2 0 1 2", "0 1 0 1"}, {"0 1 2 0 1 2", "0 1 2 0 1 2 3"}, {"0 1 2 0 1 2", "0 1 2 0 1 x"}}) {
+    auto files = wide;
+    replace(files, from, to);
+    rejects_template(files, "ISO operator quantum numbers " + to);
+  }
+  auto mixed = wide;
+  replace(mixed, "1 0 1", "1 0 2");
+  replace(mixed, "f 0 0", "1 2\n1\nDIAG ham_0.1\nf 0 0");
+  rejects_template(mixed, "seeds with different numbers of quantum numbers");
+
+  // Wilson-chain blocks: channels x perchannel, all leading
+  auto two = valid;
+  replace(two, "1 0 1", "2 0 1");
+  rejects_template(two, "two channels, one f block");
+  replace(two, "f 0 0\n0\n", "f 0 0\n0\nf 1 0\n0\n");
+  accepts(two, 1, "QS", 2);
+  auto three = two;
+  replace(three, "f 1 0\n0\n", "f 1 0\n0\nf 2 0\n0\n");
+  rejects_template(three, "two channels, three f blocks");
+  auto late = two;
+  replace(late, "f 1 0\n0\ne\n0\n", "e\n0\nf 1 0\n0\n");
+  rejects_template(late, "f block after e");
+  auto u1 = valid;
+  replace(u1, "# symtype  QS", "# symtype  U1");
+  replace(u1, "0 1\n1\nDIAG", "0\n1\nDIAG");
+  rejects_template(u1, "U1 has two f blocks per channel");
+  replace(u1, "f 0 0\n0\n", "f 0 0\n0\nf 0 1\n0\n");
+  accepts(u1, 1, "U1");
 }
 
 void template_dependencies() {
@@ -586,9 +684,19 @@ void real_template(const fs::path &root) {
     check(!input.bad(), "Error reading real template entry");
   }
   const auto info = NRG::Workflow::inspect_template_bundle(files);
-  accepts(files, info.subspaces);
+  accepts(files, info.subspaces, info.symmetry, info.channels);
   std::cout << "Read-only template: symmetry=" << info.symmetry << " channels=" << info.channels
-            << " subspaces=" << info.subspaces << " files=" << files.size() << '\n';
+            << " subspaces=" << info.subspaces << " operators=" << info.operators.size() << " field=" << info.field
+            << " files=" << files.size() << '\n';
+}
+
+// The strict reader through the installed header; its cases are in test/unit/misc/parameter_sections.cpp.
+void parameter_sections() {
+  const auto sections = NRG::Workflow::read_parameter_sections("# comment\n[param]\nsymtype = QS\n\n[extra]\nU1=0.5\n");
+  check(sections.size() == 2 && sections.at("param").at("symtype") == "QS" && sections.at("extra").at("U1") == "0.5",
+        "Parameter sections");
+  rejects_call([] { NRG::Workflow::read_parameter_sections("[param]\nx=1\nx=2\n"); }, "line 3: key \"x\" given twice");
+  rejects_call([] { NRG::Workflow::read_parameter_sections(" [param]\n"); }, "line 1: whitespace in a section header");
 }
 
 } // namespace
@@ -597,12 +705,15 @@ int main(int argc, char **argv) {
   try {
     check(argc <= 2, "Usage: workflow_preparation [read-only-template-root]");
     const auto cwd = fs::current_path();
+    parameter_sections();
     chain_fixtures();
     chain_precedence();
     chain_validation();
     chain_scales();
     combined_preparation();
+    mixchain_preparation();
     template_structure();
+    template_symmetries();
     template_dependencies();
     template_matrices();
     if (argc == 2) real_template(fs::path(argv[1]));

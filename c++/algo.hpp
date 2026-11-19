@@ -1,6 +1,7 @@
 #ifndef _algo_hpp_
 #define _algo_hpp_
 
+#include "spectrum_names.hpp"
 #include <string>
 #include <memory>
 #include <list>
@@ -74,7 +75,7 @@ template <scalar S> using speclist = std::list<BaseSpectrum<S>>;
 
 inline auto spec_fn(const std::string &name, const std::string &prefix, const std::string &algoname, const bool save = true) {
   if (save) fmt::print("Spectrum: {} {} {}\n", name, prefix, algoname); // Don't show if it's not going to be saved
-  return prefix + "_" + algoname + "_dens_" + name; // no suffix (.dat vs. .bin)
+  return spectrum_file_stem(prefix, algoname, name); // no suffix (.dat vs. .bin)
 }
 
 } // namespace

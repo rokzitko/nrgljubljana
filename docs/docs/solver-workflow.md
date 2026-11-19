@@ -27,11 +27,16 @@ The additive API level is independent of the date-based package/library version
 static_assert(NRG::Workflow::workflow_api_version >= 2);
 ```
 
+Level 3 adds `read_parameter_sections` and, in `<nrgljubljana/solver_chain.hpp>`,
+`discretize_hybridization`, `diagonal_coefficients`, `nrgchain_coefficients`, an
+`instantiate` overload and `validate_preparation_parameters` with `ChainSource`, and
+the output readers of `<nrgljubljana/solver_output.hpp>` (see output-formats.md).
+
 The build-tree and exported `nrgljubljana::workflow` targets also expose the
-custom `WORKFLOW_API_VERSION` property, currently `2`, for configure-time checks
+custom `WORKFLOW_API_VERSION` property, currently `3`, for configure-time checks
 with `get_target_property`. Existing option/result layouts and original function
 symbols remain unchanged; consumers must link a library providing the new
-overloads when using them. The project version has not been renumbered to `2`.
+overloads when using them. The project version has not been renumbered.
 
 Build in the upstream root using the same configuration as the core, especially
 the BLAS/LAPACK integer ABI and MKL/OpenMP settings. An existing configured build
@@ -97,6 +102,13 @@ configuration (including the default `mMAX=2*nmax`) is resolved. It also sets
 the generated data header and coefficient lengths. An explicit `mMAX` is
 preserved. The original solver parameter file is never edited.
 
+`read_parameter_sections(text)` in the preparation header reads parameter-file
+text into its sections, for example to select `[param]` for the helpers above.
+It is strict: besides blank lines and whole-line `#` comments, only header lines
+that are exactly `[name]` and `key=value` lines inside a section are accepted, and
+a section or key given twice is an error naming the line. What it accepts, `nrg`
+and the tools read the same way.
+
 Full initialization currently supports real, one-channel, unpolarized QS
 templates. It evaluates seed Hamiltonians, diagonalizes them, transforms the
 operator blocks, writes the ground energy and Wilson coefficients, and validates
@@ -120,6 +132,77 @@ exceptions. The CLI's other existing modes remain available through the CLI.
 `InitializerResult.data_file` is the absolute published `data` path;
 `ground_energy` is returned directly from seed diagonalization in the same
 absolute units as the generated `e` block, not extracted from stdout.
+
+## Discretization From Gamma In Memory
+
+`discretize_hybridization` in `<nrgljubljana/solver_chain.hpp>` builds the
+Wilson chain of a hybridization matrix Gamma(omega) for each twist, with
+`mixchain`'s star and chain stages and no files. Gamma is given as
+`HybridizationFunction` (row-major N x N per node, real or complex); the result
+is one `WilsonChain` per twist, in the units of `chain.dat` (E and T times
+`bandrescale`), with the diagnostics of its header as fields. The `[param]`
+entries are read with `mixchain`'s names and defaults; `channels`, `dos_prefix`
+and `z` are ignored, `Nmax` is replaced by the `nmax` argument (one length for
+all twists, `mMAX` defaults to `2*nmax`), and `discretization` must be Z. Gamma
+must be positive semidefinite: clipping or projecting it is the caller's. The
+call runs under the workflow guard without a calculation directory; a
+`diagnostic_file` receives `mixchain`'s log and is resolved against the caller's
+working directory, which is not changed. The test `solver_workflow_chain`
+compares the result exactly with `chain.dat` from `mixchain --Nz 2`.
+
+`diagonal_coefficients` turns a chain whose channels do not couple into
+`ChainCoefficients`: per channel k, `theta` = V_kk^2, `xi` = T_n(k,k) and `zeta` =
+E_n(k,k), the coefficients `nrgchain` computes and the initializer reads. Every
+element left out (off-diagonal elements, imaginary parts) must be exactly zero,
+otherwise it is an error naming the element; a diagonal Gamma discretized with
+`split_blocks=true` (the default) gives such a chain. The gauge must be polar.
+
+The `instantiate` overload in `<nrgljubljana/solver_chain.hpp>` takes
+`ChainCoefficients` instead of computing the chain with `nrgchain`; everything
+else is shared with the `instantiate` above, including its scope (real,
+one-channel, unpolarized QS). The coefficients must cover the sites `0..nmax`
+(a longer chain is cut), match the coefficient channels of the template, and have
+the z, Lambda and bandrescale of the parameter file, to 1e-12 relative. The chain
+keys of the file (`dos`, `band`, `adapt`, `tridiag_method`, ...) are not read.
+`nrgchain_coefficients(options)` returns the coefficients the `instantiate` above
+computes, from the `FSOL` files that `discretize` writes, so both routes give
+coefficients to the same `instantiate`; with them it writes the same `data` byte
+for byte (test `solver_workflow_instantiate_chain`). `instantiate(options)` is
+short for `instantiate(options, nrgchain_coefficients(options))`.
+
+```cpp
+// adapt and nrgchain: Delta.dat in each directory
+discretize({directory, "param", Branch::positive});
+discretize({directory, "param", Branch::negative});
+auto coefficients = nrgchain_coefficients({directory, "param", "template", nmax});
+
+// mixchain: Gamma in memory, every twist at once
+auto chains       = discretize_hybridization(gamma, param, twists, nmax_all);
+auto coefficients = diagonal_coefficients(chains[i]);
+
+instantiate({directory, "param", "template", nmax}, coefficients);
+solve(directory, scratch);
+```
+
+The test `solver_workflow_routes` runs the SIAM through the SIAM/QS template by
+both routes, from the same tabulated Gamma to `solve`, for two twists: the
+coefficients agree to rounding, and `td`, `custom`, the FDM values and the
+spectral function to 1e-8.
+
+`validate_preparation_parameters(section, ChainSource::mixchain)` is the static
+check of a `[param]` section for this route: `discretization` Z, the chain length
+(`Nmax`, or `Tmin` and its keys), z, Lambda, bandrescale, `tri` other than `cpp`,
+and the keys `discretize_hybridization` reads, as it reads them. The keys of
+`adapt` and `nrgchain` are not read. `ChainSource::nrgchain` is the
+one-argument check.
+
+For one channel the chain agrees with `adapt --integral` followed by `nrgchain`
+(test `solver_workflow_vs_nrgchain`: flat bands, tabulated densities, a hard gap, a
+density on a logarithmic grid). It agrees to rounding when every `x = j + z`
+is a node of `FSOL` (z a multiple of `outputstep`, as for Nz = 2 and 4 at the
+default 1/64). Otherwise `nrgchain` interpolates `FSOL` linearly, and the two
+differ by that interpolation error, quadratic in `outputstep` (up to 3e-5 at
+1/64 in the test, at the first sites).
 
 ## Diagnostic Routing
 
@@ -189,13 +272,19 @@ temporary child is removed on success and failure. Solver physical outputs
 remain in the calculation directory and are not transactional; inspect success
 and the fresh `DONE` marker rather than assuming files imply completion.
 
+`solve` makes no MPI calls: it runs the solver serially, with threaded
+BLAS/LAPACK. A host may initialize MPI and run independent calculations on
+different ranks at the same time, each in its own calculation directory; a shared
+scratch directory is fine, since each call uses its own child. Forward-only runs
+(`fdm=false`) are supported and write no FDM output.
+
 ## Verification
 
 ```sh
 cmake --build build-x86 --target workflow_diagnostics workflow_preparation --parallel 2
 ctest --test-dir build-x86 -R '^solver_workflow_(diagnostics(_unsynced)?|preparation)$' --output-on-failure --no-tests=error
-cmake --build build-x86 --target workflow_contract adapt instantiate nrgchain adapt_high --parallel 2
-ctest --test-dir build-x86 -R '^(solver_workflow_contract|adapt_high|adapt[0-9]|instantiate[0-9]|nrgchain[0-9])' --output-on-failure
+cmake --build build-x86 --target workflow_contract workflow_solve_mpi adapt instantiate nrgchain adapt_high --parallel 2
+ctest --test-dir build-x86 -R '^(solver_workflow_contract|solver_workflow_solve|adapt_high|adapt[0-9]|instantiate[0-9]|nrgchain[0-9])' --output-on-failure
 ```
 
 Reconfigure after adding test sources. The focused diagnostics target compiles
@@ -216,6 +305,10 @@ symmetry initialization. Both chain backends
 and an ungapped FSOL tail beyond `xmax` are exercised. To test another current
 template without touching it, run `tools/solver_workflow/tests/contract.py` with
 `--driver`, `--tools`, `--template` and `--temporary-parent` paths.
+`solver_workflow_solve` and `solver_workflow_solve_np2` solve two cases of
+`test/c++` (`mpitest1_qs` with FDM, `legacy_discretization_d1` forward-only)
+from a driver that initializes MPI, serially and with one case per rank under
+`mpiexec -n 2`, and compare them strictly with the references of the `nrg` tests.
 `tools/solver_workflow/tests/consumer` is a minimal standalone installed-package
 consumer requiring no internal headers or explicit MPI dependency.
 Pass its executable as `--consumer` to the contract script to include the
