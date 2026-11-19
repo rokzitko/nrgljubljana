@@ -345,17 +345,16 @@ subtest 'parameter and iteration state' => sub {
 
 subtest 'destructive helpers stay contained' => sub {
     my $dir = tempdir(CLEANUP => 1);
-    for my $name (1, 3) {
-        make_path("$dir/$name");
-        write_file("$dir/$name/param", "p\n");
-        write_file("$dir/$name/data", "d\n");
-    }
-    make_path("$dir/2");
-    write_file("$dir/2/param", "keep\n");
+    make_path("$dir/1", "$dir/3", "$dir/4");
+    write_file("$dir/1/param", "p\n");
+    write_file("$dir/1/data", "d\n");
+    write_file("$dir/3/param", "p\n");
+    write_file("$dir/4/data", "keep\n");
     my ($status) = run_command($dir, $^X, script('delete_NRG_output'));
     is($status, 0, 'cleanup succeeds across numbering gaps');
-    ok(!-e "$dir/1" && !-e "$dir/3", 'marked directories removed');
-    ok(-d "$dir/2", 'unmarked directory retained');
+    ok(!-e "$dir/1", 'marked directory with data removed');
+    ok(!-e "$dir/3", 'marked directory without data removed');
+    ok(-f "$dir/4/data", 'unmarked directory and its data retained');
 
     make_path("$dir/job/dmft", "$dir/job/res");
     write_file("$dir/job/param.loop", "loop\n");
