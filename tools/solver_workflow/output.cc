@@ -2,14 +2,22 @@
 
 #include <spectrum_names.hpp>
 
+#include <cerrno>
 #include <charconv>
+#include <clocale>
+#include <cmath>
 #include <cstddef>
+#include <cstdlib>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <system_error>
 #include <utility>
 #include <vector>
+
+#ifdef __APPLE__
+#include <xlocale.h>
+#endif
 
 namespace NRG::Workflow {
 namespace {
@@ -58,6 +66,34 @@ class Lines {
 template <typename T> bool parse_number(std::string_view s, T &value) {
   const auto [end, error] = std::from_chars(s.data(), s.data() + s.size(), value);
   return error == std::errc{} && end == s.data() + s.size();
+}
+
+// Floating-point from_chars is unavailable before macOS 26 with libc++.
+bool parse_number(std::string_view s, double &value) {
+  if (s.empty() || s.front() == '+' || whitespace.find(s.front()) != std::string_view::npos) return false;
+  const auto magnitude = s.front() == '-' ? s.substr(1) : s;
+  if (magnitude.starts_with("0x") || magnitude.starts_with("0X")) return false;
+
+  struct NumericLocale {
+    locale_t handle = newlocale(LC_ALL_MASK, "C", nullptr);
+    ~NumericLocale() {
+      if (handle) freelocale(handle);
+    }
+  };
+  static const NumericLocale locale;
+  if (!locale.handle) throw std::runtime_error("cannot create the C locale for parsing solver output");
+
+  const std::string text(s);
+  char *end = nullptr;
+  const int saved_errno = errno;
+  errno = 0;
+  const double parsed = strtod_l(text.c_str(), &end, locale.handle);
+  const bool out_of_range = errno == ERANGE && (parsed == 0.0 || std::isinf(parsed));
+  errno = saved_errno;
+  // Some implementations report ERANGE even for representable subnormals.
+  if (end != text.c_str() + text.size() || out_of_range) return false;
+  value = parsed;
+  return true;
 }
 
 } // namespace

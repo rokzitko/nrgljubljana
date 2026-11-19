@@ -7,10 +7,12 @@
 
 #include <nrgljubljana/solver_output.hpp>
 
+#include <cmath>
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <sstream>
 #include <stdexcept>
@@ -139,6 +141,18 @@ void malformed() {
   std::cout << "  malformed text: ok\n";
 }
 
+void floating_point_fields() {
+  const auto table = read_step_table("# decimal exponent zero subnormal infinity nan\n.5 -1.25e+2 -0 5e-324 inf nan\n");
+  const auto &row  = table.rows.at(0);
+  check(row.at(0) == 0.5 && row.at(1) == -125.0, "decimal and scientific notation");
+  check(row.at(2) == 0.0 && std::signbit(row.at(2)), "signed zero");
+  check(row.at(3) == std::numeric_limits<double>::denorm_min(), "representable subnormal");
+  check(std::isinf(row.at(4)) && std::isnan(row.at(5)), "infinity and NaN");
+  for (const std::string token : {"+1", "-0X1p0", "1,25", "1.25x", "1e400", "1e-400"}) {
+    rejects([&] { read_step_table("# T\n" + token + "\n"); }, "line 2: not a number: \"" + token + "\"");
+  }
+}
+
 } // namespace
 
 int main(int argc, char **argv) {
@@ -147,6 +161,7 @@ int main(int argc, char **argv) {
     stored_outputs(argv[1]);
     mpitest1_qs(argv[1]);
     malformed();
+    floating_point_fields();
     std::cout << "Output readers: tests passed (" << assertions << " checks).\n";
     return 0;
   } catch (const std::exception &error) {
