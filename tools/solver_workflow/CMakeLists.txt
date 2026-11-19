@@ -105,6 +105,15 @@ if(NRGLJUBLJANA_BUILD_TESTS_ENABLED)
     $<TARGET_FILE:workflow_instantiate_chain>)
   set_tests_properties(solver_workflow_instantiate_chain PROPERTIES TIMEOUT 300 ENVIRONMENT "OMP_NUM_THREADS=1;MKL_NUM_THREADS=1")
 
+  # the SIAM by both routes, from discretization to solve, through the workflow library only
+  add_executable(workflow_routes tests/routes.cc)
+  target_compile_features(workflow_routes PRIVATE cxx_std_20)
+  target_link_libraries(workflow_routes PRIVATE nrgljubljana::workflow project_warnings
+    $<$<BOOL:${ASAN}>:asan> $<$<BOOL:${UBSAN}>:ubsan>)
+  add_test(NAME solver_workflow_routes COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/routes_test
+    ${PROJECT_SOURCE_DIR}/test/mixchain+nrgrun/templates/QS ${CMAKE_CURRENT_BINARY_DIR}/routes $<TARGET_FILE:workflow_routes>)
+  set_tests_properties(solver_workflow_routes PROPERTIES TIMEOUT 600 ENVIRONMENT "OMP_NUM_THREADS=1;MKL_NUM_THREADS=1")
+
   # solve from a host that initializes MPI: serially, and one calculation per rank
   add_executable(workflow_solve_mpi tests/solve_mpi.cc)
   target_link_libraries(workflow_solve_mpi PRIVATE nrgljubljana::workflow MPI::MPI_CXX project_warnings

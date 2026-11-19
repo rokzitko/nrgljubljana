@@ -183,6 +183,11 @@ instantiate({directory, "param", "template", nmax}, coefficients);
 solve(directory, scratch);
 ```
 
+The test `solver_workflow_routes` runs the SIAM through the SIAM/QS template by
+both routes, from the same tabulated Gamma to `solve`, for two twists: the
+coefficients agree to rounding, and `td`, `custom`, the FDM values and the
+spectral function to 1e-8.
+
 `validate_preparation_parameters(section, ChainSource::mixchain)` is the static
 check of a `[param]` section for this route: `discretization` Z, the chain length
 (`Nmax`, or `Tmin` and its keys), z, Lambda, bandrescale, `tri` other than `cpp`,
