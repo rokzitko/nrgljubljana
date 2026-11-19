@@ -54,6 +54,16 @@ This release summarizes changes since the `2024.12` release, with major improvem
 - `matrix` reads every coefficient file that is present, instead of selecting a fixed set with the `-s` switch, and reports a missing table only where an expression uses it. A template that reads `V{i}{j}{ch}` but has no pairing terms therefore no longer needs empty `scdelta`/`sckappa` files. `-s` is still accepted and now does nothing.
 - Conda packaging and build coverage now include broader Linux, macOS, ARM, BLAS, and compiler configurations.
 
+## Library Workflow (API Level 3)
+
+- `discretize_hybridization` builds the Wilson chains of a matrix hybridization function held in memory, for several twists at once, with the `mixchain` method. No files are read or written.
+- `diagonal_coefficients` gives the coefficients of a chain whose channels do not couple, and `nrgchain_coefficients` those `nrgchain` computes from the `FSOL` files; a new `instantiate` overload takes the coefficients of either.
+- `validate_preparation_parameters(section, ChainSource)` checks a parameter section for either route before any computation.
+- `read_parameter_sections` reads parameter-file text strictly, accepting only what `nrg` and the tools read the same way.
+- `<nrgljubljana/solver_output.hpp>` reads `td`, `custom`, `tdfdm`, `customfdm` and `annotated.dat`, and names spectrum files as the solver does.
+- `solve` is now tested from an MPI host running independent calculations on different ranks, and for forward-only runs.
+- `workflow_api_version` is 3. Existing calls are unchanged; consumers that check for exactly 2 need `>= 2`.
+
 ## Installation
 
 NRG Ljubljana is available from conda-forge:
