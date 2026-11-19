@@ -106,7 +106,9 @@ void run(const fs::path &work) {
   check(coefficients.z == 0.7 && coefficients.Lambda == 2 && coefficients.bandrescale == 1, "z, Lambda, bandrescale");
   check(coefficients.channels.size() == 1 && coefficients.channels[0].xi.size() == nmax + 1, "Coefficient channels and sites");
   const auto rb           = instantiate({b.string(), "param", "template", nmax}, coefficients, "instantiate.log");
-  check(rb.data_file == (b / "data").string(), "data_file of B");
+  check(fs::path(rb.data_file).is_absolute(), "data_file of B is not absolute: " + rb.data_file);
+  check(fs::equivalent(rb.data_file, b / "data"),
+        "data_file of B: expected " + (b / "data").string() + ", got " + rb.data_file);
   check(rb.ground_energy == ra.ground_energy, "Ground energy of A and B");
   check(read(a / "data") == read(b / "data"), "data of A and B differ");
   check(read(b / "instantiate.log").find("# Wilson coefficients supplied: channels=1") != std::string::npos, "Log of B");

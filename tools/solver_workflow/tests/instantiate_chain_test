@@ -50,4 +50,5 @@ for name in A B C D; do
   fi
 done
 
-"$driver" "$work_dir"
+# Exercise equivalent path spellings even without a symlinked build directory.
+"$driver" "$work_dir/."
