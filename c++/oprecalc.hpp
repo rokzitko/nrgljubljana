@@ -8,6 +8,7 @@
 #include <memory>
 #include <ostream>
 #include <utility>
+#include "spectrum_names.hpp"
 #include "time_mem.hpp"
 #include "operators.hpp"
 #include "symmetry.hpp"
@@ -169,7 +170,7 @@ class Oprecalc {
                   const std::string &type1, const std::string &type2, const gf_type gt, const int spin) {
      for (const auto &[name1, op1] : set1) {
        for (const auto &[name2, op2] : set2) {
-         if (const auto name = name1 + "-" + name2 + (spin == 0 ? "" : (spin == 1 ? "-u" : "-d")); stringtoken.find(name)) {
+         if (const auto name = spectrum_correlator(name1, name2, spin); stringtoken.find(name)) {
            if (prepare_spec(prefix, ff, cf, op1, op2, spin, name, gt)) {
              ops.insert({type1, name1});
              ops.insert({type2, name2});

@@ -1,4 +1,4 @@
-add_library(nrgljubljana_workflow SHARED workflow.cc discretize.cc chain.cc preparation.cc ../instantiate/instantiate.cc
+add_library(nrgljubljana_workflow SHARED workflow.cc discretize.cc chain.cc output.cc preparation.cc ../instantiate/instantiate.cc
   $<TARGET_OBJECTS:nrgchain_core>)
 add_library(nrgljubljana::workflow ALIAS nrgljubljana_workflow)
 target_compile_features(nrgljubljana_workflow PUBLIC cxx_std_20)
@@ -34,7 +34,7 @@ install(TARGETS nrgljubljana_workflow EXPORT nrgljubljana-workflow-targets
 # Keep the matching core private: no installed internal headers or old core package lookup.
 install(FILES $<TARGET_FILE:nrgljubljana_c>
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/nrgljubljana/workflow COMPONENT workflow)
-install(FILES include/nrgljubljana/solver_workflow.hpp include/nrgljubljana/solver_preparation.hpp include/nrgljubljana/solver_chain.hpp
+install(FILES include/nrgljubljana/solver_workflow.hpp include/nrgljubljana/solver_preparation.hpp include/nrgljubljana/solver_chain.hpp include/nrgljubljana/solver_output.hpp
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/nrgljubljana COMPONENT workflow)
 install(EXPORT nrgljubljana-workflow-targets NAMESPACE nrgljubljana::
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/nrgljubljana_workflow COMPONENT workflow)
@@ -113,6 +113,14 @@ if(NRGLJUBLJANA_BUILD_TESTS_ENABLED)
   add_test(NAME solver_workflow_routes COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/routes_test
     ${PROJECT_SOURCE_DIR}/test/mixchain+nrgrun/templates/QS ${CMAKE_CURRENT_BINARY_DIR}/routes $<TARGET_FILE:workflow_routes>)
   set_tests_properties(solver_workflow_routes PROPERTIES TIMEOUT 600 ENVIRONMENT "OMP_NUM_THREADS=1;MKL_NUM_THREADS=1")
+
+  # the readers of solver_output.hpp on the stored outputs of the regression tests
+  add_executable(workflow_output tests/output.cc)
+  target_compile_features(workflow_output PRIVATE cxx_std_20)
+  target_link_libraries(workflow_output PRIVATE nrgljubljana::workflow project_warnings
+    $<$<BOOL:${ASAN}>:asan> $<$<BOOL:${UBSAN}>:ubsan>)
+  add_test(NAME solver_workflow_output COMMAND workflow_output ${PROJECT_SOURCE_DIR}/test/c++)
+  set_tests_properties(solver_workflow_output PROPERTIES TIMEOUT 30)
 
   # solve from a host that initializes MPI: serially, and one calculation per rank
   add_executable(workflow_solve_mpi tests/solve_mpi.cc)

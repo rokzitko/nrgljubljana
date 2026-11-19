@@ -29,7 +29,8 @@ static_assert(NRG::Workflow::workflow_api_version >= 2);
 
 Level 3 adds `read_parameter_sections` and, in `<nrgljubljana/solver_chain.hpp>`,
 `discretize_hybridization`, `diagonal_coefficients`, `nrgchain_coefficients`, an
-`instantiate` overload and `validate_preparation_parameters` with `ChainSource`.
+`instantiate` overload and `validate_preparation_parameters` with `ChainSource`, and
+the output readers of `<nrgljubljana/solver_output.hpp>` (see output-formats.md).
 
 The build-tree and exported `nrgljubljana::workflow` targets also expose the
 custom `WORKFLOW_API_VERSION` property, currently `3`, for configure-time checks
