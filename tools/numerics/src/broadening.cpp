@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <cstdint>
+#include <filesystem>
 #include <fstream>
 #include <map>
 #include <stdexcept>
@@ -31,6 +32,10 @@ SpectrumBins load_spectrum_bins(const std::string &filename, const SpectrumLayou
     case SpectrumLayout::complex_imaginary: columns = 3; component = 2; break;
     default: throw std::invalid_argument("Unknown spectrum layout.");
   }
+  // Some filesystems allow seeking to offset zero on a directory.
+  std::error_code error;
+  if (std::filesystem::is_directory(filename, error))
+    throw std::runtime_error("Binary spectrum path is a directory: " + filename);
   std::ifstream input(filename, std::ios::binary | std::ios::ate);
   if (!input) throw std::runtime_error("Cannot open binary spectrum: " + filename);
   const auto end = input.tellg();

@@ -16,6 +16,18 @@ endif()
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/ChainBackendTests.cmake)
 
+execute_process(
+  COMMAND "${PERL_EXECUTABLE}" -MTest::More -MJSON::PP -e 1
+  RESULT_VARIABLE perl_modules_status
+  ERROR_VARIABLE perl_modules_error
+  ERROR_STRIP_TRAILING_WHITESPACE)
+if(NOT perl_modules_status STREQUAL "0")
+  message(FATAL_ERROR
+    "The test suite requires Perl with Test::More and JSON::PP. "
+    "Install the modules for ${PERL_EXECUTABLE} or set -DPERL_EXECUTABLE to a Perl that provides them.\n"
+    "${perl_modules_error}")
+endif()
+
 if(GPROF)
   message(STATUS "*** gprof instrumentalization enabled")
   find_program(GPROF_EXECUTABLE gprof REQUIRED)

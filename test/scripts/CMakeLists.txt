@@ -1,5 +1,3 @@
-find_package(Perl REQUIRED)
-
 add_test(
   NAME scripts_helpers
   COMMAND ${PERL_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/helpers.t

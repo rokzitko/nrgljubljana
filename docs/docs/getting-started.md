@@ -37,9 +37,9 @@ already available in the CPM source cache.
 For a network-free build, install CMake config packages for Eigen 3.4 or newer,
 HighFive, fmt 11 or newer, and range-v3, then configure with
 `-DNRGLJUBLJANA_USE_SYSTEM_DEPS=ON`. GoogleTest must also be installed when
-tests are enabled. The test suite additionally uses Perl and the HDF5
-command-line tools; configure with `-DBuild_Tests=OFF` when tests are not
-needed.
+tests are enabled. The test suite also uses Perl with `Test::More` and `JSON::PP`,
+and the HDF5 command-line tools. Set `-DPERL_EXECUTABLE=/path/to/perl` to select
+a different Perl installation. Use `-DBuild_Tests=OFF` to build without tests.
 
 ### BLAS/LAPACK integer ABI
 

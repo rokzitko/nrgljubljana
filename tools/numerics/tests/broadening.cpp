@@ -233,7 +233,7 @@ void parser() {
     }
   }
   rejects<std::runtime_error>([&] { load_spectrum_bins((temp.path / "missing").string()); });
-  rejects([&] { load_spectrum_bins(temp.path.string()); });
+  rejects<std::runtime_error>([&] { load_spectrum_bins(temp.path.string()); });
   rejects<std::invalid_argument>([&] { load_spectrum_bins(path.string(), static_cast<SpectrumLayout>(99)); });
 }
 
