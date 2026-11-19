@@ -28,7 +28,7 @@
    rok.zitko@ijs.si
 *)
 
-VERSION = "2026.09";
+VERSION = "2026.11";
 
 (* Logging of Mathematica output: this is useful for bug hunting *)
 If[!ValueQ[mmalog],
