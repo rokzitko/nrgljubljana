@@ -284,6 +284,20 @@ For the `chit` prefix, `value` is `k_B*T*chi(T)` (`chi/beta`), not `chi(T)`.
 Recovering `chi(T)` therefore requires division by `k_B*T` in the units used by
 the calculation.
 
+`specchit` accepts scalar/global-scalar pairs and spin-triplet pairs. With the
+usual `mtTripletOp` normalization under spin SU(2), a triplet autocorrelator
+reports one Cartesian component, for example `T*chi_zz`, not the sum over
+three spin directions. A free spin gives `T*chi=S*(S+1)/3` (no magnetic-moment
+prefactors). Local-spin CHIT includes off-diagonal transitions, so it is not
+generally the equal-time moment `<S_local^2>/3`. These are shell-temperature
+curves even when an FDM calculation is also requested. Scalar CHIT does not
+subtract disconnected means automatically.
+
+For `QST` and `SPSU2T`, the spin-response trace includes the spectator orbital
+multiplicity `2*T_orb+1`, matching the partition function. This applies to
+both triplet CHIT and dynamical spin spectra; no extra orbital factor should
+be applied in postprocessing.
+
 `gt`, `i1t`, and `i2t` implement the linear-response conductance and
 transport-moment formula of Yoshida, Seridonio & Oliveira (2009), Eq. (8)
 (full citation in the [parameter reference](parameter-reference.md#references));

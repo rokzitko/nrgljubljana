@@ -16,12 +16,15 @@ def digest(path):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", type=Path, default=Path(__file__).resolve().parents[2])
-    parser.add_argument("--basis", type=Path, required=True, help="external QSTZbasis.m (regeneration only)")
+    parser.add_argument("--basis", type=Path, help="explicit QSTZbasis.m override (default: bundled nrginit module)")
     parser.add_argument("--kernel", type=Path, required=True)
     parser.add_argument("--work-root", type=Path, required=True)
     parser.add_argument("--write", action="store_true", help="publish generated data/provenance, not solver outputs")
     args = parser.parse_args()
     source = args.source.resolve()
+    basis = args.basis.resolve() if args.basis is not None else source / "nrginit/QSTZbasis.m"
+    if not basis.is_file():
+        parser.error(f"QSTZ basis module not found: {basis}")
     fixture = Path(__file__).resolve().parent / "fixtures/qstz_spin"
     args.work_root.mkdir(parents=True, exist_ok=True)
     # The initializer searches '.' and '..'; both must be fresh and owned.
@@ -30,7 +33,10 @@ def main():
     candidate.mkdir()
     for name in ("model.m", "param"):
         shutil.copyfile(fixture / name, candidate / name)
-    shutil.copyfile(args.basis, candidate / "QSTZbasis.m")
+    # Without an override, exercise the initializer's bundled-module search.
+    if args.basis is not None:
+        shutil.copyfile(basis, candidate / "QSTZbasis.m")
+        basis = candidate / "QSTZbasis.m"
     script = f'''
 NRGDIR={json.dumps(str(source / "nrginit"))};
 PACKAGEPATH={{NRGDIR}};
@@ -62,7 +68,7 @@ Exit[0];
         "initializer_sources_sha256": sources.hexdigest(),
         "kernel_version": next(line.split("=", 1)[1] for line in log.splitlines()
                                if line.startswith("QSTZ_KERNEL_VERSION=")),
-        "basis_sha256": digest(candidate / "QSTZbasis.m"),
+        "basis_sha256": digest(basis),
         "preparation_script_sha256": digest(Path(__file__)),
         "files": {name: digest(candidate / name) for name in ("data", "param", "model.m")},
     }

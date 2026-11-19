@@ -4,6 +4,11 @@
    Invar[q,ss] for (Q,S) NRG or Invar[ii,ss] for (I,S) NRG, etc. For
    backward compatibility, we also allow simple List[] wrapping. *)
 
+(* READBASIS bypasses the symmetry module and its operator-label adapter. *)
+If[SYMTYPE === "QSTZ" && option["READBASIS"],
+  MyError["QSTZ does not support READBASIS; generate the basis instead."];
+];
+
 makebasis[basisops]; (* Occupation number representation *)
 vak = vacuum[]; (* vc[0, 0, ..., 0] *)
 

@@ -1,0 +1,201 @@
+#!/bin/sh
+set -eu
+
+NRG_TEST_SOURCE=$1
+export NRG_TEST_SOURCE
+"$2" -noinit -noprompt -batchinput -batchoutput <<'EOF'
+$HistoryLength = 0;
+$IterationLimit = Infinity;
+sourceDir = ExpandFileName[Environment["NRG_TEST_SOURCE"]];
+packageDir = FileNameJoin[{sourceDir, "nrginit"}];
+If[Check[Quiet[Get[FileNameJoin[{packageDir, "sneg.m"}]], General::shdw],
+    $Failed] === $Failed, Exit[1]];
+testCount = 0;
+check[label_, condition_] := If[TrueQ[condition],
+  testCount++; Print["PASS ", label],
+  Print["FAIL ", label]; Throw[False, "TestFailure"]];
+dimension[basis_] := Total[(#[[1, 2]] Length[#[[2]]]) & /@ basis];
+zeroQ[x_] := TrueQ[Simplify[Expand[x]] === 0];
+
+(* Verify Fock-space quantum numbers and highest weights independently of the
+   QS constructor. Sz=S and S+|state>=0 imply S^2=S(S+1). Different sectors
+   then have different Q, Sz, or Tz; their mutual orthogonality follows. *)
+checkBasis[label_, ops_, charges_, basis_] := Module[
+  {n = Length[ops], mask, szmask, raising, states, occupations, expected, rows},
+  mask = Flatten[({#, #} &) /@ (ops /. charges)];
+  szmask = Flatten[ConstantArray[{1/2, -1/2}, n]];
+  raising = Sum[KroneckerProduct[IdentityMatrix[4^i, SparseArray],
+    SparseArray[{{3, 2} -> 1}, {4, 4}],
+    IdentityMatrix[4^(n - i - 1), SparseArray]], {i, 0, n - 1}];
+  check[label <> " Q, Sz=S, normalized Tz", And @@ Table[
+    expected = {sector[[1, 1]], (sector[[1, 2]] - 1)/2, sector[[1, 3]]};
+    occupations = List @@@ DeleteDuplicates[Cases[sector[[2]], _vc, Infinity]];
+    And @@ ({Total[#] - n, szmask . #, mask . #} === expected & /@ occupations),
+    {sector, basis}]];
+  check[label <> " highest weights and orthonormality", And @@ Table[
+    states = sector[[2]];
+    rows = SparseArray[Flatten[MapIndexed[Function[{state, row},
+      ({First[row], 1 + FromDigits[List @@ #, 2]} -> N[Coefficient[state, #]]) & /@
+        DeleteDuplicates[Cases[state, _vc, {0, Infinity}]]], states], 1],
+      {Length[states], 4^n}];
+    Norm[rows . Transpose[raising], "Frobenius"] < 10^-12 &&
+      Max[Abs[Flatten[Normal[rows . ConjugateTranspose[rows]] -
+        IdentityMatrix[Length[states]]]]] < 10^-12,
+    {sector, basis}]];
+];
+
+SetAttributes[reject, HoldRest];
+reject[label_, expression_, diagnostic_] := Module[{error},
+  error = Quiet[Catch[expression; False, "InitializerError"],
+    {qstzbasisvc::metadata, qsbasisvc::spin}];
+  check[label, StringQ[error] && StringContainsQ[error, diagnostic]]
+];
+
+(* Fresh current and parent directories prevent local modules/caches from
+   masking the bundled files. No production calculation or solver is run. *)
+testRoot = CreateDirectory[FileNameJoin[{Directory[], "qstz-basis-" <> CreateUUID[]}]];
+SetDirectory[CreateDirectory[FileNameJoin[{testRoot, "case"}]]];
+testOK = CheckAbort[TimeConstrained[Catch[Check[
+  check["standalone constructor load without initializer globals",
+    Get[FileNameJoin[{packageDir, "QSTZbasis.m"}]] =!= $Failed && !ValueQ[basisops]];
+  snegfermionoperators[f, renamedOrbital, indexedOrbital];
+  snegspinlessfermionoperators[spinlessOrbital];
+  snegfermionoperators[{higherSpinOrbital, 3/2}];
+  bathOps = {f[1], f[0], f[-1]};
+  bathCharges = {f[1] -> 1, f[0] -> 0, f[-1] -> -1};
+  bathBasis = qstzbasisvc[bathOps, Reverse[bathCharges]];
+  check["bath dimension 64; unordered metadata", dimension[bathBasis] === 64];
+  checkBasis["bath", bathOps, bathCharges, bathBasis];
+  makebasis[bathOps];
+  spinSquared = Last[manyspin[bathOps]];
+  check["bath SNEG S(S+1)", And @@ Flatten[Table[
+    zeroQ /@ (ap[spinSquared, sector[[2]]] -
+      (sector[[1, 2]]^2 - 1)/4 sector[[2]]), {sector, bathBasis}]]];
+  check["empty standalone basis", qstzbasisvc[{}, {}] === {{{0, 1, 0}, {vc[]}}}];
+
+  renamedBasis = qstzbasisvc[{renamedOrbital[]}, {renamedOrbital[] -> 2}];
+  check["renamed orbital: unshifted Q and undoubled Tz",
+    Sort[First /@ renamedBasis] === {{-1, 1, 0}, {0, 2, 2}, {1, 1, 4}} &&
+      dimension[renamedBasis] === 4];
+  checkBasis["renamed", {renamedOrbital[]}, {renamedOrbital[] -> 2}, renamedBasis];
+
+  impurityOps = {renamedOrbital[], indexedOrbital[4], indexedOrbital["orb", -2]};
+  impurityCharges = Thread[impurityOps -> {1, 0, -1}];
+  atomicBasis = qstzbasisvc[impurityOps, impurityCharges];
+  check["indexed impurity dimension 64", dimension[atomicBasis] === 64];
+  checkBasis["indexed impurity", impurityOps, impurityCharges, atomicBasis];
+  Do[check["reject metadata: " <> invalid[[1]],
+    Quiet[qstzbasisvc[impurityOps, invalid[[2]]], qstzbasisvc::metadata] === $Failed],
+    {invalid, {
+      {"missing", Most[impurityCharges]},
+      {"duplicate", Append[impurityCharges, First[impurityCharges]]},
+      {"extra", Append[impurityCharges, f[1] -> 1]},
+      {"noninteger", Thread[impurityOps -> {1/2, 0, -1}]},
+      {"not rules", impurityOps},
+      {"undefined", missingMetadata},
+      {"delayed rule", {renamedOrbital[] :> 1}}
+    }}];
+  check["reject duplicate orbitals",
+    Quiet[qstzbasisvc[{renamedOrbital[], renamedOrbital[]},
+      {renamedOrbital[] -> 1}], qstzbasisvc::metadata] === $Failed];
+  Do[check["reject non-spin-1/2 fermion: " <> ToString[op, InputForm],
+    Quiet[qstzbasisvc[{op}, {op -> 0}], qsbasisvc::spin] === $Failed],
+    {op, {spinlessOrbital[], higherSpinOrbital[], undeclaredOrbital[]}}];
+
+  DEBUG = 0;
+  Get[FileNameJoin[{packageDir, "misc.m"}]];
+  MyError[msg__] := Throw[StringJoin[ToString /@ {msg}], "InitializerError"];
+  Get[FileNameJoin[{packageDir, "initialparse.m"}]];
+  listkeywords["param"] = {};
+  SYMTYPE = "QSTZ";
+  Get[FileNameJoin[{packageDir, "sym.m"}]];
+  CHANNELS = 3;
+  Ninit = 0;
+  testOptions = {};
+  option[name_] := MemberQ[testOptions, name];
+  MAKESPINKET = MAKEORBKET = MAKEPHONON = MAKEPHONONTENSOR = MAKEFLOQUET = Null;
+  BASISRULE = "";
+  modulespath = {".", "..", packageDir};
+  readdir = {".", ".."};
+  writedir = "";
+  check["module is in the installed file list",
+    StringContainsQ[Import[FileNameJoin[{packageDir, "CMakeLists.txt"}], "Text"],
+      " QSTZbasis.m "]];
+  check["no calculation-local basis override",
+    !FileExistsQ["QSTZbasis.m"] && !FileExistsQ["../QSTZbasis.m"]];
+
+  basopsdot = {};
+  qstzImpurityCharges = {};
+  basopsch = {f[0], f[1], f[2]};
+  basisops = basops = Sort[basopsch];
+  Get["basis.m", Path -> {packageDir}];
+  check["actual basis.m bath adapter and package lookup",
+    basopsch === bathOps && basisops === Sort[bathOps] && basops === basisops &&
+      NROPS === 3 && dimension[bvc] === 64 && vak === vc[0, 0, 0, 0, 0, 0] &&
+      BASIS === Flatten[Table[f[CR, ch, spin], {ch, {-1, 0, 1}}, {spin, {UP, DO}}]]];
+  checkBasis["adapted bath", basisops, bathCharges, bvc];
+
+  basopsdot = impurityOps;
+  qstzImpurityCharges = Reverse[impurityCharges];
+  basopsch = {f[0], f[1], f[2]};
+  basisops = basops = Sort[Join[basopsdot, basopsch]];
+  Get["basis.m", Path -> {packageDir}];
+  check["full seed dimension 4096; renamed/indexed impurity adapter",
+    NROPS === 6 && basopsch === bathOps &&
+      basisops === Sort[Join[impurityOps, bathOps]] && basops === basisops &&
+      dimension[bvc] === 4096 &&
+      And @@ (degnr[#[[1]]] === #[[1, 2]] & /@ bvc) &&
+      FreeQ[bvc, _ap | _vc2ops | _ket]];
+  checkBasis["full seed", basisops, Join[impurityCharges, bathCharges], bvc];
+  check["full seed operator/occupation round trip",
+    bzop2bzvc[bzvc2bzop[bvc], vak] === bvc];
+
+  Block[{Ninit = 1}, reject["reject Ninit>0",
+    loadmodule["QSTZbasis.m"], "Ninit=0"]];
+  Block[{CHANNELS = 2}, reject["reject other channel counts",
+    loadmodule["QSTZbasis.m"], "three channels"]];
+  Block[{qstzImpurityCharges}, reject["reject absent impurity metadata",
+    loadmodule["QSTZbasis.m"], "qstzImpurityCharges"]];
+  Block[{qstzImpurityCharges = Most[impurityCharges]},
+    reject["reject incomplete impurity metadata", loadmodule["QSTZbasis.m"],
+      "qstzImpurityCharges"]];
+  Block[{qstzImpurityCharges = Append[impurityCharges, First[impurityCharges]]},
+    reject["reject duplicate impurity metadata", loadmodule["QSTZbasis.m"],
+      "qstzImpurityCharges"]];
+  Block[{qstzImpurityCharges = Thread[impurityOps -> {1/2, 0, -1}]},
+    reject["reject noninteger impurity metadata", loadmodule["QSTZbasis.m"],
+      "basis construction failed"]];
+  Block[{listkeywords, data},
+    listkeywords["param"] = {"spinless"}; data["param"]["spinless"] = "true";
+    reject["reject spinless projection", loadmodule["QSTZbasis.m"], "spinless=true"]];
+  Block[{MAKESPINKET = 1}, reject["reject spin kets",
+    loadmodule["QSTZbasis.m"], "auxiliary"]];
+  Block[{MAKEORBKET = 1}, reject["reject orbital kets",
+    loadmodule["QSTZbasis.m"], "auxiliary"]];
+  Block[{MAKEPHONON = 1}, reject["reject phonon kets",
+    loadmodule["QSTZbasis.m"], "auxiliary"]];
+  Block[{MAKEPHONONTENSOR = 1}, reject["reject phonon tensor kets",
+    loadmodule["QSTZbasis.m"], "auxiliary"]];
+  Block[{MAKEFLOQUET = 1}, reject["reject Floquet kets",
+    loadmodule["QSTZbasis.m"], "auxiliary"]];
+  Block[{testOptions = {"READBASIS"}},
+    reject["direct module rejects cached basis", loadmodule["QSTZbasis.m"], "READBASIS"];
+    Block[{silentGet, cacheRead = False},
+      silentGet[___] := (cacheRead = True; bathBasis);
+      reject["actual basis.m rejects READBASIS before cache loading",
+        Get["basis.m", Path -> {packageDir}], "READBASIS"];
+      check["READBASIS did not touch cache", !cacheRead]]];
+  Block[{SYMTYPE = "QS", testOptions = {"READBASIS"}, silentGet, cacheRead = False},
+    silentGet[___] := (cacheRead = True; bathBasis);
+    Get["basis.m", Path -> {packageDir}];
+    check["non-QSTZ cached-basis behavior unchanged", cacheRead && bvc === bathBasis]];
+  True,
+  Print["FAIL unexpected Wolfram message"]; False], _,
+  Function[{value, tag}, Print["FAIL ", tag, ": ", value]; False]],
+  180, Print["FAIL suite exceeded 180 s"]; False],
+  Print["FAIL suite aborted"]; False];
+ResetDirectory[];
+DeleteDirectory[testRoot, DeleteContents -> True];
+Print[If[TrueQ[testOK], "PASS", "FAIL"], " QSTZ basis suite: ", testCount, " checks"];
+Exit[If[TrueQ[testOK], 0, 1]];
+EOF

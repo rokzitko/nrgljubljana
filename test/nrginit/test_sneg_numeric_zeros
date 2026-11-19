@@ -1,0 +1,36 @@
+#!/bin/sh
+set -eu
+source_dir=$1
+kernel=$2
+"$kernel" -noinit -batchinput -batchoutput <<EOF
+If[Check[Quiet[Get["$source_dir/nrginit/sneg.m"], General::shdw], \$Failed] === \$Failed, Exit[1]];
+failures = 0;
+SetAttributes[check, HoldAll];
+check[label_, condition_] := If[!TrueQ[Check[condition, False]],
+  Print["FAILED: ", label]; failures++];
+Do[
+  check["mixed numeric zero records",
+    indexvalue2list[{zero, {2, x}, zero, {4, 1.*^-100}}, 5] === {0, x, 0, 1.*^-100, 0}];
+  check["only numeric zeros", indexvalue2list[{zero, zero}, 3] === {0, 0, 0}],
+  {zero, {0, 0., 0. + 0. I, SetPrecision[0., 50]}}];
+check["complex nonzero coefficient", indexvalue2list[{0., {1, 0.3 + 0.2 I}}, 2] === {0.3 + 0.2 I, 0}];
+snegfermionoperators[c, d];
+makebasis[{c[], d[]}];
+states = vc @@@ Tuples[{0, 1}, 4];
+interaction = Expand[0.7 hubbard[c[]] + 0.43 hubbard[d[]] +
+  0.21 nc[number[c[]], number[d[]]] - 0.3 spinspin[c[], d[]]];
+qd = Expand[komutator[interaction, c[CR, UP]]];
+Do[
+  check["fast/general numerical matrix",
+    Max[Abs[Flatten[N[matrixrepresentationvcfast[op, states] -
+      matrixrepresentationvc[op, states]]]]] < 10^-13],
+  {op, {interaction, qd, Expand[antikomutator[qd, c[AN, UP]]],
+    Expand[antikomutator[conj[qd], qd]], (0.3 + 0.2 I) hop[c[], d[]]}}];
+left = I Take[states, 8];
+right = -Take[states, -8];
+check["rectangular complex numerical matrix",
+  Max[Abs[Flatten[N[matrixrepresentationvcfast[qd, left, right] -
+    matrixrepresentationvc[qd, left, right]]]]] < 10^-13];
+Print["Numeric-zero failures: ", failures];
+Exit[If[failures == 0, 0, 1]];
+EOF

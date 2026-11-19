@@ -45,13 +45,13 @@ class SymmetrySPSU2T : public Symmetry<SC> {
 #include "spsu2t/spsu2t-QN.dat"
   } // load
 
-  // Same as for SYMTYPE=QS, because spin operators are angular momentum singlets.
+  // QS spin trace times the multiplicity of the spectator orbital multiplet.
   double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) const override {
     check_diff(Ip, I1, "T", 0);
     const int ssp = Ip.get("SS");
     const int ss1 = I1.get("SS");
     my_assert((std::abs(ss1 - ssp) == 2 || ss1 == ssp));
-    return switch3(ss1, ssp + 2, 1. + (ssp - 1) / 3., ssp, ssp / 3., ssp - 2, (-2. + ssp) / 3.);
+    return (2 * Ip.get("T") + 1) * switch3(ss1, ssp + 2, 1. + (ssp - 1) / 3., ssp, ssp / 3., ssp - 2, (-2. + ssp) / 3.);
   }
 
   // Creation operator is a spin-doublet, angular-momentum-triplet !

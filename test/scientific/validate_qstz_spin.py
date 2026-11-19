@@ -1,4 +1,4 @@
-"""Compare untruncated QSTZ FDM spin Matsubara data with a free-fermion Wick sum."""
+"""Compare untruncated QSTZ spin Matsubara and T*chi data with free-fermion Wick sums."""
 
 import argparse
 from collections import Counter
@@ -128,10 +128,22 @@ def check_retention(log):
             "expected exactly one NRG and one DM extension")
 
 
+def check_chit(rows, h):
+    """Check the complete CHIT curve: final 7-site shell, then 4-site seed, sorted by T."""
+    rows = np.asarray(rows)
+    require(rows.shape == (2, 2) and np.all(np.isfinite(rows)), "expected two finite CHIT (T,T*chi) rows")
+    require(0 < rows[0, 0] < rows[1, 0], "CHIT shell temperatures must be positive and increasing")
+    # CHIT reports T*chi at chitp*scale, not at the fixed FDM temperature.
+    # The bosonic Green function has the opposite sign to the susceptibility.
+    expected = [-temperature * spin_matsubara(shell, temperature)[0].real
+                for shell, temperature in zip((h, h[:4, :4]), rows[:, 0])]
+    return compare(rows[:, 1], expected, "spin T*chi")
+
+
 def run(nrg, fixture, temperature, work_root):
     parameters, h = inspect_fixture(fixture)
     expected = spin_matsubara(h, temperature)
-    parameters, count = re.subn(r"(?m)^T=.*$", f"T={temperature}", parameters)
+    parameters, count = re.subn(r"(?m)^T=.*$", f"T={temperature}\nspecchit=sigma_d-sigma_d", parameters)
     require(count == 1, "expected exactly one temperature parameter")
     work_root.mkdir(parents=True, exist_ok=True)
     directory = Path(tempfile.mkdtemp(prefix="qstz-spin-", dir=work_root.resolve()))
@@ -159,13 +171,17 @@ def run(nrg, fixture, temperature, work_root):
         compare(rows[:, 0], 2 * np.pi * temperature * np.arange(MATS), "frequencies", atol=1e-14, rtol=1e-14)
         report["max_real_error"] = compare(rows[:, 1], expected.real, "Re spin correlator")
         report["max_imag_error"] = compare(rows[:, 2], expected.imag, "Im spin correlator")
+        chit = np.loadtxt(directory / "chit_CHIT_dens_sigma_d-sigma_d.dat", ndmin=2)
+        report["max_chit_error"] = check_chit(chit, h)
+        report["chit_curve"] = chit.tolist()
         report["status"] = "passed"
     except Exception as error:
         report.update(status="failed", error=str(error))
         raise
     finally:
         (directory / "validation.json").write_text(json.dumps(report, indent=2) + "\n")
-    print(f"PASS: four bosonic frequencies; errors {report['max_real_error']:.3g}, {report['max_imag_error']:.3g}")
+    print(f"PASS: four bosonic frequencies and two CHIT shells; errors "
+          f"{report['max_real_error']:.3g}, {report['max_imag_error']:.3g}, {report['max_chit_error']:.3g}")
 
 
 def main():

@@ -1,7 +1,10 @@
 #ifndef _read_input_hpp_
 #define _read_input_hpp_
 
+#include <algorithm>
 #include <cctype>
+#include <cmath>
+#include <complex>
 #include <cstddef>
 #include <fstream>
 #include <ios>
@@ -22,6 +25,7 @@
 #include "operators.hpp"
 #include "floquet.hpp"
 #include "coef.hpp"
+#include "tridiag.hpp"
 #include "mk_sym.hpp"
 
 #include <fmt/format.h>
@@ -67,6 +71,47 @@ void determine_Nmax_Nlen(const Coef<S> &coef, const size_t Nmax0, Params &P) { /
   P.Nlen = P.Nmax;
   if (!P.silent) std::cout << "\nlength_coef_table=" << length_coef_table << " Nmax0=" << Nmax0 << " Nmax=" << P.Nmax << "\n\n";
   my_assert(P.Nlen < MAX_NDX);
+}
+
+template<scalar S>
+void validate_equal_bath_chains(const Coef<S> &coef, const Params &P) {
+  if (P.symtype != "QSTZ" && P.symtype != "QSZTZ") return;
+  const auto requirement = fmt::format("{}: only equal normalized bath chains (xi/zeta) are supported", P.symtype.value());
+  const auto tables = {std::pair{"xi", &coef.xi}, std::pair{"zeta", &coef.zeta}};
+  // These runtimes reuse channel 0 for all three orbitals; other coefficient arrays are not used.
+  for (const auto &[name, table] : tables) {
+    if (table->nr_tabs() < 3)
+      throw std::invalid_argument(fmt::format("{}; missing {} channel {} at coefficient index 0.", requirement, name, table->nr_tabs()));
+    for (size_t ch = 0; ch < 3; ++ch) {
+      if (table->max(ch) != table->max(0))
+        throw std::invalid_argument(fmt::format("{}; {} channel {} has length {}, channel 0 has length {} "
+                                               "(first unmatched coefficient index {}).",
+                                               requirement, name, ch, table->max(ch) + 1, table->max(0) + 1,
+                                               std::min(table->max(ch), table->max(0)) + 1));
+      // max() is the last valid index, not the number of coefficients.
+      for (size_t n = 0; n <= table->max(0); ++n) {
+        const auto value = (*table)(n, ch);
+        if (!std::isfinite(std::real(value)) || !std::isfinite(std::imag(value)))
+          throw std::invalid_argument(fmt::format("{}; nonfinite {} channel {} at coefficient index {}.", requirement, name, ch, n));
+      }
+    }
+  }
+  constexpr double tolerance = 1e-12;
+  const auto norm = [](const auto value) { return std::max(std::abs(std::real(value)), std::abs(std::imag(value))); };
+  for (const auto &[name, table] : tables)
+    for (size_t ch = 1; ch < 3; ++ch)
+      for (size_t n = 0; n <= table->max(0); ++n) {
+        const auto reference = (*table)(n, 0), value = (*table)(n, ch);
+        auto scale = std::max(norm(reference), norm(value));
+        if (table == &coef.zeta) {
+          // DIAG uses zeta(N+1) alongside xi(N): allow onsite roundoff on that local scale, with no absolute floor.
+          const auto k = std::min(n == 0 ? 0 : n - 1, coef.xi.max(0));
+          scale = std::max({scale, norm(coef.xi(k, 0)), norm(coef.xi(k, ch))});
+        }
+        if (norm(value - reference) > tolerance * scale)
+          throw std::invalid_argument(fmt::format("{}; {} channel {} differs from channel 0 at coefficient index {}.",
+                                                 requirement, name, ch, n));
+      }
 }
 
 template<scalar S>
@@ -139,6 +184,7 @@ private:
 
   void finalize_coefficients(Params &P, const DataHeader &header) {
     if (std::string(P.tri) == "cpp") Tridiag<S>(coef, header.Nmax, P);
+    validate_equal_bath_chains(coef, P);
     determine_Nmax_Nlen(coef, header.Nmax, P);
     P.validate_after_data_file();
   }

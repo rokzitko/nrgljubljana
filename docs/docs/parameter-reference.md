@@ -126,6 +126,24 @@ SPSU2LR SPSU2C3 SPSU2T SL SL3 P PP NONE ISOSZ ISOSZLR
 Builds made without the extended symmetry sets support only a subset. Complex
 `data` is required by the complex-only implementations.
 
+The bundled `QSTZbasis.m` supports three spinful channels with `Ninit=0`.
+Models must declare `qstzImpurityCharges` and use the boundary labels
+`f[+1],f[0],f[-1]`; see [QSTZ basis initialization](nrginit-workflow.md#qstz-basis).
+Auxiliary kets, spinless projection and `READBASIS` are not supported by this
+adapter. Calculation-local basis modules still participate in normal module lookup.
+
+`QSTZ` and `QSZTZ` currently reuse channel zero's bath-chain coefficients.
+The runtime therefore rejects unequal `xi` or `zeta` chains after loading
+coefficients or generating them with `tri=cpp`, before starting iterations.
+It checks all three arrays for matching lengths and finite entries, then
+compares with relative tolerance `1e-12` on the local coefficient scale;
+onsite roundoff is also measured against the incoming hopping. There is no
+global absolute tolerance that could hide low-energy differences. Error
+messages use zero-based channel and coefficient indices. Different impurity
+couplings or proportional Gamma functions are allowed when their normalized
+bath chains coincide. This guard does not implement independent channel
+shapes or alter any coefficients.
+
 ### Discretization And Wilson Chain
 
 | Parameter | Type | Default | Meaning |
@@ -445,7 +463,7 @@ why this project defaults to the more conservative `betabar=1.0`.
 | `speci1t` | string list | empty | Operator pairs for first transport moments. |
 | `speci2t` | string list | empty | Operator pairs for second transport moments. |
 | `gtp` | number | `0.7` | Parameter `p` used for conductance and transport curves. |
-| `specchit` | string list | empty | Operator pairs for `k_B*T*chi(T)`, emitted with the `chit` prefix. |
+| `specchit` | string list | empty | Scalar or spin-triplet operator pairs for `k_B*T*chi(T)`, emitted with the `chit` prefix. |
 | `chitp` | number | `1.0` | Parameter `p` used for susceptibility. |
 | `chitp_ratio` | number | `-999` | If positive, overrides `chitp` with `chitp_ratio/betabar`. |
 | `finite` | boolean | `false` | Enable the finite-temperature Costi-Hewson-Zlatic algorithm. |
@@ -475,8 +493,10 @@ including `fdm=true` and/or `fdmmats=true`. With the usual `mtTripletOp`
 normalization, the response is one Cartesian component, not the sum over
 three components. The bosonic zero-frequency Matsubara Green function is
 minus the static susceptibility when the mean spin vanishes. `specchit`
-currently dispatches scalar operators only; triplet dynamics support does
-not imply a shell-by-shell local-spin CHIT curve. In `QSZTZ`, a longitudinal
+also accepts spin-triplet pairs, using the same Cartesian-component spin
+factor, to obtain a shell-by-shell local-spin `T*chi(T)` curve. This uses
+the CHIT algorithm, not an FDM temperature sweep; `fdm` is not required.
+The existing scalar/global-scalar pairings are unchanged. In `QSZTZ`, a longitudinal
 local `Sz` operator can instead be declared explicitly with `mtSingletOp`
 and requested through `specs`; do not assume the stock `SZd` initializer
 operator is enabled for that symmetry.

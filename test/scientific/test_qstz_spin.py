@@ -4,10 +4,48 @@ import unittest
 
 import numpy as np
 
-from validate_qstz_spin import FIXTURE, MATS, check_retention, compare, dimensions, inspect_fixture, spin_matsubara
+from ed_siam import AndersonModel, solve
+from validate_qstz_spin import FIXTURE, MATS, check_chit, check_retention, compare, dimensions, inspect_fixture, spin_matsubara
+
+
+def lehmann_chit(energies, operator, temperature):
+    """T*chi from a full many-body eigenbasis, including degenerate matrix elements."""
+    energies = np.asarray(energies)
+    p = np.exp(-(energies - energies.min()) / temperature)
+    p /= p.sum()
+    result = 0.0
+    for i, ei in enumerate(energies):
+        for j, ej in enumerate(energies):
+            weight = p[i] if abs(ei - ej) < 1e-12 else temperature * (p[i] - p[j]) / (ej - ei)
+            result += abs(operator[i, j]) ** 2 * weight
+    return result
 
 
 class QSTZSpinTests(unittest.TestCase):
+    def test_free_spin_curie_normalization(self):
+        for spin, expected in ((0.5, 0.25), (1, 2 / 3)):
+            sz = np.diag(np.arange(-spin, spin + 1))
+            energies = np.zeros(len(sz))
+            # A rotated spin component puts the weight off diagonal within the degenerate multiplet.
+            rotation = np.fft.fft(np.eye(len(sz))) / np.sqrt(len(sz))
+            for operator in (sz, rotation.conj().T @ sz @ rotation):
+                for temperature in (0.2, 0.7):
+                    compare(lehmann_chit(energies, operator, temperature), expected, "free-spin T*chi")
+                    compare(lehmann_chit(energies, 2 * operator, temperature), 4 * expected, "Pauli normalization")
+
+    def test_exchange_pair_lehmann(self):
+        j = 0.43
+        sx = np.array([[0, 0.5], [0.5, 0]])
+        sy = np.array([[0, -0.5j], [0.5j, 0]])
+        sz = np.diag([0.5, -0.5])
+        energies, vectors = np.linalg.eigh(j * sum(np.kron(s, s) for s in (sx, sy, sz)))
+        operator = vectors.conj().T @ np.kron(sz, np.eye(2)) @ vectors
+        for temperature in (0.17, 0.63):
+            q = np.exp(-j / temperature)
+            expected = (q / 2 + temperature * (1 - q) / (2 * j)) / (1 + 3 * q)
+            compare(lehmann_chit(energies, operator, temperature), expected, "exchange-pair T*chi")
+            self.assertGreater(abs(expected - 0.25), 1e-3)
+
     def test_atomic_sign_and_normalization(self):
         for temperature in (0.2, 0.7):
             f = 1 / (1 + np.exp(0.15 / temperature))
@@ -36,6 +74,41 @@ class QSTZSpinTests(unittest.TestCase):
             compare(full, central, "spectator cancellation")
             self.assertTrue(np.all(full.real < 0))
             self.assertGreater(abs(full[1]), 1e-4)
+
+    def test_nonconserved_spin_against_many_body_lehmann(self):
+        _, h = inspect_fixture(FIXTURE)
+        for shell, sites in ((h[:4, :4], [0, 2]), (h, [0, 2, 5])):
+            central = shell[np.ix_(sites, sites)]
+            solution = solve(AndersonModel(central[0, 0], 0, central[0, 1],
+                                          tuple(np.diag(central)[1:]), tuple(np.diag(central, 1)[1:])))
+            states = np.arange(len(solution.energies))
+            sz = ((states & 1) - ((states >> 1) & 1)) / 2
+            operator = solution.vectors.conj().T @ (sz[:, None] * solution.vectors)
+            differences = solution.energies[:, None] - solution.energies[None, :]
+            self.assertGreater(np.linalg.norm(differences * operator), 0.1)
+            for temperature in (0.2, 0.7, 0.5 / np.log(2), np.sqrt(2) * 0.5 / np.log(2)):
+                expected = lehmann_chit(solution.energies, operator, temperature)
+                compare(-temperature * spin_matsubara(shell, temperature)[0], expected, "Wick vs Lehmann T*chi")
+                p = np.exp(-(solution.energies - solution.energies.min()) / temperature)
+                equal_time = np.dot(p / p.sum(), np.sum(np.abs(operator) ** 2, axis=1))
+                self.assertGreater(abs(expected - equal_time), 1e-4)
+
+    def test_chit_curve_contract(self):
+        _, h = inspect_fixture(FIXTURE)
+        temperatures = np.array([0.5 / np.log(2), np.sqrt(2) * 0.5 / np.log(2)])
+        values = [-t * spin_matsubara(shell, t)[0].real for shell, t in zip((h, h[:4, :4]), temperatures)]
+        rows = np.column_stack((temperatures, values))
+        self.assertEqual(check_chit(rows, h), 0)
+        wrong_values = [np.array(values) * factor for factor in (-1, 3, 4)]
+        wrong_values.extend((np.array(values) / temperatures, values[::-1],
+                             [-0.2 * spin_matsubara(shell, 0.2)[0].real for shell in (h, h[:4, :4])]))
+        for values in wrong_values:
+            with self.assertRaises(ValueError):
+                check_chit(np.column_stack((temperatures, values)), h)
+        for bad in ([], rows[:1], np.vstack((rows, rows)), rows[:, :1], rows[::-1],
+                    [[0, 0], [1, 0]], [[1, 0], [1, 0]], [[np.nan, 0], [1, 0]], [[1, np.inf], [2, 0]]):
+            with self.assertRaises(ValueError):
+                check_chit(bad, h)
 
     def test_dimensions(self):
         for charges, multiplets, states in (((0, 1, 0, -1), 126, 256),

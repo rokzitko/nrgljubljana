@@ -27,6 +27,12 @@ add_test(NAME nrginit_bool_parser
 add_test(NAME nrginit_spin_recoupling
          COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/test_spin_recoupling ${PROJECT_SOURCE_DIR} ${Mathematica_KERNEL_EXECUTABLE})
 
+add_test(NAME nrginit_sneg_numeric_zeros
+         COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/test_sneg_numeric_zeros ${PROJECT_SOURCE_DIR} ${Mathematica_KERNEL_EXECUTABLE})
+
+add_test(NAME nrginit_qstz_basis
+         COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/test_qstz_basis ${PROJECT_SOURCE_DIR} ${Mathematica_KERNEL_EXECUTABLE})
+
 add_test(NAME nrginit_floquet_primitives
          COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/test_floquet_primitives ${PROJECT_SOURCE_DIR} ${Mathematica_KERNEL_EXECUTABLE})
 

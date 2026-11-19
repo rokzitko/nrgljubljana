@@ -191,12 +191,13 @@ class Oprecalc {
     loopover(a.opsg, a.opsg, sts, Sym->CorrelatorFactorFnc(), Sym->TrivialCheckSpinFnc(), "corr", "g", "g", gf_type::bosonic, 0);
     loopover(a.ops,  a.opsg, sts, Sym->CorrelatorFactorFnc(), Sym->TrivialCheckSpinFnc(), "corr", "s", "g", gf_type::bosonic, 0);
     loopover(a.opsg, a.ops,  sts, Sym->CorrelatorFactorFnc(), Sym->TrivialCheckSpinFnc(), "corr", "g", "s", gf_type::bosonic, 0);
-    // Global susceptibilities (global singlet operators)
+    // Static susceptibilities (singlet and spin-triplet operators)
     string_token stchit(P.specchit);
     loopover(a.ops,  a.ops,  stchit, Sym->CorrelatorFactorFnc(), Sym->TrivialCheckSpinFnc(), "chit", "s", "s", gf_type::bosonic, 0);
     loopover(a.ops,  a.opsg, stchit, Sym->CorrelatorFactorFnc(), Sym->TrivialCheckSpinFnc(), "chit", "s", "g", gf_type::bosonic, 0);
     loopover(a.opsg, a.ops,  stchit, Sym->CorrelatorFactorFnc(), Sym->TrivialCheckSpinFnc(), "chit", "g", "s", gf_type::bosonic, 0);
     loopover(a.opsg, a.opsg, stchit, Sym->CorrelatorFactorFnc(), Sym->TrivialCheckSpinFnc(), "chit", "g", "g", gf_type::bosonic, 0);
+    loopover(a.opt,  a.opt,  stchit, Sym->SpinSuscFactorFnc(), Sym->TrivialCheckSpinFnc(), "chit", "t", "t", gf_type::bosonic, 0);
     // Dynamic spin susceptibilities (triplet operators)
     string_token stt(P.spect);
     loopover(a.opt, a.opt, stt, Sym->SpinSuscFactorFnc(), Sym->TrivialCheckSpinFnc(),  "spin", "t", "t", gf_type::bosonic, 0);

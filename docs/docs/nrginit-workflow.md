@@ -67,6 +67,64 @@ the process status before running `nrg`: a failed rerun does not remove an old
 `data` file. `mmalog` is diagnostic output and can vary with the Mathematica
 version.
 
+## QSTZ Basis
+
+The installed `QSTZbasis.m` constructs highest-weight states labelled by
+`{Q, 2*S+1, Tz}`. `Q` is already relative to half filling; `Tz` is the sum
+of the declared orbital charges times occupations, with no doubling or
+half-filling shift. It uses explicit metadata rather than impurity names:
+
+```mathematica
+def3ch[3];
+qstzImpurityCharges = {d[] -> 1, a[] -> 0, b[] -> -1};
+
+(* def3ch uses ordinary 0,1,2 bath labels; QSTZ uses +1,0,-1. *)
+H0 = H0 /. f[ca_, ch_, spin_] :> f[ca, 1-ch, spin];
+Hc = gammaPolCh[1] hop[f[1], d[]] +
+     gammaPolCh[2] hop[f[0], a[]] +
+     gammaPolCh[3] hop[f[-1], b[]];
+(* Supply a QSTZ-invariant Himp, then H = H0 + Himp + Hc. *)
+```
+
+Supply exactly one integer-charge rule per impurity orbital. Indexed or
+renamed orbitals work. A bath-only model uses `def3ch[0]` and
+`qstzImpurityCharges={}` and must omit the default impurity coupling from H.
+The adapter replaces the generic bath basis inventory with `{f[1],f[0],f[-1]}`;
+it does not rewrite a model's Hamiltonian. All three boundary components
+are stored in the runtime's `f 0 0` slot and identified by their Tz transfer.
+
+The supported initializer contract is three channels, `Ninit=0`, and
+spin-1/2 fermion orbitals. Noninteger/missing/duplicate metadata, spinless
+projection, cached `READBASIS`, and auxiliary spin/orbital/phonon/Floquet kets
+are rejected explicitly. `READBASIS` is rejected before cache loading could
+bypass the adapter. Existing calculation-local modules still take part in
+module lookup; remove an old local override when intending to use the
+bundled implementation.
+
+The reusable constructor `qstzbasisvc[orbitals, chargeRules]` returns the
+occupation-vector basis without an initializer adapter when the module is
+loaded outside `SYMTYPE="QSTZ"`. The constructor accepts arbitrary integer
+charges; this does not extend runtime operator-recalculation selection rules.
+QSTZ doublet callbacks have the signature `(creation, deltaTz, spin)` rather
+than the ordinary two-argument QS signature. For example, an orbital-resolved
+creation callback for charge +1 is `If[#2 == 1, d[#1,#3], 0]&`.
+
+The initializer is tested on the 64-state pure-bath seed and the 4096-state
+three-impurity/three-bath seed, including quantum numbers, orthonormality,
+highest weights, and invalid-input paths. The C++ runtime still requires
+identical normalized bath chains for QSTZ and QSZTZ; unequal impurity
+hybridization amplitudes alone do not violate that condition.
+
+## Bundled SNEG
+
+`nrginit/sneg.m` is synchronized with the standalone SNEG 2.1.1 source,
+including matrix-valued hopping and its regression fixes. Both copies also
+filter exact, inexact and complex scalar zero records in the fast
+matrix-construction path. Nonzero matrix coefficients, however small, are
+not clipped. Numerical composite operators no longer need rationalization
+merely to avoid `First[0.]`/`ReplacePart` errors; retaining exact coefficients
+can still be useful for symbolic symmetry identities.
+
 ## Wilson-Chain Reconstruction
 
 The default remains `tri=old`, the existing high-precision recursion in

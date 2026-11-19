@@ -106,6 +106,17 @@ imaginary components use the scientific suite's symmetric
 missing, empty, wrong-shaped and numerically incorrect results fail. No
 broadening, binning-to-Matsubara transform, or saved spectral reference is used.
 
+The validator also requests `specchit=sigma_d-sigma_d` at runtime without
+changing the fixture inputs. Both rows of its CHIT curve (seed and final
+shell) must equal `-T*Czz(0)` evaluated independently at the reported shell
+temperature with the corresponding 4x4 or 7x7 Hamiltonian. This distinguishes
+the local Kubo response from an equal-time spin moment and from the fixed-T
+FDM result. The `specchit` C++ unit test additionally checks free spin-1/2
+and spin-1 Curie constants, a nonconserved Heisenberg-dimer local spin,
+scalar-pairing preservation and real/complex spin-SU(2) dispatch.
+Nonzero orbital multiplets in QST/SPSU2T test the spectator factor `2*T+1`,
+including spin-changing transitions in the local-dimer response.
+
 `keep=100000`, `keepenergy=-1`, full `dsyevd` diagonalization and explicit
 `lastall=true` prevent truncation. The validator independently counts multiplets
 from occupation states and requires the log to report all 256 seed states,
@@ -115,24 +126,25 @@ test of early-shell FDM discarded-kept terms. NumPy and NRG may share LAPACK.
 
 ## Regeneration
 
-Only regeneration needs a licensed Wolfram kernel and an external
-`QSTZbasis.m`. The generic basis constructor is deliberately not copied into
-this bugfix. Supply a module which groups `qsbasisvc` states by integer orbital
-charge with metadata `qstzImpurityCharges={d[]->0}` and bath labels
-`{f[1]->1,f[0]->0,f[-1]->-1}`, converts `S` to `SS=2S+1`, and declares
-`degnr[{q,ss,tz}]=ss`. The prepared data already contains the resulting reduced
-basis information and needs no such module at runtime.
+Only regeneration needs a licensed Wolfram kernel. It uses the bundled
+`nrginit/QSTZbasis.m` by default; an explicit `--basis` argument can override
+it. The model declares `qstzImpurityCharges={d[]->0}`, while the adapter uses
+bath charges `{f[1]->1,f[0]->0,f[-1]->-1}` and quantum numbers `{Q,2S+1,Tz}`.
+The prepared data already contains the reduced basis information and needs
+no Mathematica or basis module at runtime.
 
 ```sh
 python3 -B test/scientific/prepare_qstz_spin.py \
-  --basis /path/to/QSTZbasis.m --kernel /path/to/WolframKernel \
+  --kernel /path/to/WolframKernel \
   --work-root /tmp/opencode
 ```
 
 This uses repository `sneg.m`/`initial.m` directly in an isolated temporary
 parent and child, preserving license discovery but excluding home-directory
 initializer overrides. The candidate contains the exact `model.m`, `param`,
-external basis, entry script, initializer log, `data`, and `provenance.json`.
+entry script, initializer log, `data`, and `provenance.json`; an explicit basis
+override is also copied into the candidate. The default instead exercises
+package lookup, with no calculation-local basis file.
 Use `validate_qstz_spin.py --fixture <candidate>` at both temperatures to
 qualify it. `--write` on the preparation command publishes only the generated
 text `data` and provenance; it does not run NRG or imply qualification. Numerical

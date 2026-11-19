@@ -31,7 +31,7 @@
 
 BeginPackage["Sneg`"];
 
-snegidstring = "sneg.m 2.1 Aug 2026";
+snegidstring = "sneg.m 2.1.1 Sep 2026";
 snegcopyright = "Copyright (C) 2002-2026 Rok Zitko";
 
 $SnegVersion = Module[{pos, p1, p2},
@@ -321,6 +321,13 @@ UsageWithMore[hop,
 "hop[a[i], b[j]] returns the electron hopping operator between
 sites a[i] and b[j]. hop[a[i], b[j], sigma] with sigma=UP | DO
 does the same for a single spin projection sigma."];
+UsageWithMore[matrixhop,
+"matrixhop[T, a[i], b[j]] returns a^dagger . T . b plus its Hermitian
+conjugate, summed over both spin indices. T is a dense or
+sparse 2 by 2 matrix in the spin basis {UP, DO}. The operators must be
+spin-1/2 fermions or creation-defined abstract-orbital Functions.
+Pauli decomposition is used to simplify symbolic matrices, including
+results of MatrixExp, under the current $Assumptions.", "hop"];
 UsageWithMore[anomaloushop,
 "anomaloushop[a[i], b[j]] returns the anomalous hopping operator between
 sites a[i] and b[j]."];
@@ -1173,6 +1180,15 @@ contraction[x1:op_[AN, j1___], x2:op_[CR, j2___]] /;
     ];
 contraction[op_[___], op_[___]] /; (ordering[op] == NONE) := 0;
 
+(* Independent operator families still have zero cross contractions when
+   automatic reordering is disabled. Respect a custom fermionic acmt. *)
+contraction[x1:op1_[t1_, j1___], x2:op2_[t2_, j2___]] /;
+  (op1 =!= op2 && ordering[op1] === NONE && ordering[op2] === NONE &&
+   (TrueQ[fermionQ[op1]] || TrueQ[bosonQ[op1]]) &&
+   (TrueQ[fermionQ[op2]] || TrueQ[bosonQ[op2]])) :=
+    If[t1 === AN && t2 === CR && TrueQ[fermionQ[op1]] && TrueQ[fermionQ[op2]],
+      acmt[x1, x2], 0];
+
 (* NEW RULES for ordering=SEA, 25. 3. 2007 *)
 
 snegOrderedQ[x1:op_[i1_, k1___], x2:op_[i2_, k2___]] /;
@@ -1934,7 +1950,8 @@ sumAbstractIndex[expr_, ndxfunc_] := Module[{ r },
   SetAttributes[ndxfunc, NumericFunction];
   r = sum[a_, it_List] :> Module[{rule, len, i},
         len = Length[it];
-        rule = Table[it[[i]] :> ndxfunc[i], {i, len}];
+        (* Evaluate each replacement while its iterator is in scope. *)
+        rule = Table[it[[i]] -> ndxfunc[i], {i, len}];
         sum[a //. rule, it //. rule]
       ];
   expr /. r
@@ -1944,9 +1961,9 @@ sumNameIndex::usage =
 "sumNameIndex[expr] is to be used in conjunction with
 sumAbstractIndex[expr].";
 
-sumNameIndex[expr_, ndxfunc_, li_List] := Module[ {len},
+sumNameIndex[expr_, ndxfunc_, li_List] := Module[ {len, i},
   len = Length[li];
-  expr //. Table[ndxfunc[i] :> li[[i]], {i, len}]
+  expr //. Table[ndxfunc[i] -> li[[i]], {i, len}]
 ];
 
 rulesumStripSums = {
@@ -2054,9 +2071,11 @@ sneglinearoperatorFirst /@ {vev, vevwick};
 SetAttributes[{vev, vevwick}, Listable];
 vev[_?fermionQ[__]] := 0;
 vevwick[_?fermionQ[__]] := 0;
+vevwick2[_?fermionQ[__]] := 0;
 
 vev[_?bosonQ[__]] := 0;
 vevwick[_?bosonQ[__]] := 0;
+vevwick2[_?bosonQ[__]] := 0;
 
 (* Odd number of operators *)
 vev[x:HoldPattern[nc[_?fermionQ[__]..]]] /; OddQ[Length[x]] := 0;
@@ -2520,6 +2539,55 @@ hop[fn1_Function, fn2_Function] :=
 
 hop[fn1_Function, op2_?fermionQ[j2___]] := hop[fn1, op2[#1, j2, #2]&];
 hop[op1_?fermionQ[j1___], fn2_Function] := hop[op1[#1, j1, #2]&, fn2];
+
+(* Matrix-valued hopping. Rows and columns are ordered as {UP, DO}.
+   This constructor is not Listable: a matrix is a single argument. *)
+matrixhop::matrix = "Expected a 2 by 2 hopping matrix, got ``.";
+matrixhop::op = "Expected a spin-1/2 fermion operator or an abstract-orbital Function, got ``.";
+
+matrixhopCreation[op_?fermionQ[j___]] /; TrueQ[spinof[op] == 1/2] :=
+  {op[CR, j, UP], op[CR, j, DO]};
+matrixhopCreation[fn_Function] := {fn[CR, UP], fn[CR, DO]};
+matrixhopCreation[op_] := (Message[matrixhop::op, op]; $Failed);
+
+matrixhop[T_, op1_, op2_] := Module[
+  {mat, cr1, cr2, terms, paulis, coefficients, conjugates},
+  If[!MatrixQ[T] || Dimensions[T] =!= {2, 2},
+    Message[matrixhop::matrix, T];
+    Return[$Failed]
+  ];
+  mat = If[Head[T] === SparseArray, Normal[T], T];
+  cr1 = matrixhopCreation[op1];
+  If[cr1 === $Failed, Return[$Failed]];
+  cr2 = matrixhopCreation[op2];
+  If[cr2 === $Failed, Return[$Failed]];
+  terms = Outer[nc, cr1, conj[cr2]];
+
+  (* T = Sum[t_mu sigma_mu], with t_mu = Tr[T.sigma_mu]/2.
+     Simplify the four scalars, rather than the operator expression.
+     Work with evaluated matrices so that precomputed MatrixExp results
+     benefit as well. Numeric matrices and matrices containing inexact
+     numbers use the direct contraction below to avoid roundoff from
+     decomposing and reconstructing their entries. *)
+  If[!MatrixQ[mat, NumericQ] && FreeQ[mat, _?InexactNumberQ],
+    paulis = {IdentityMatrix[2], PauliX, PauliY, PauliZ};
+    coefficients = Simplify[ExpToTrig[Tr[mat.#]/2 & /@ paulis]];
+    If[LeafCount[coefficients] < LeafCount[Flatten[mat]],
+      terms = Total[Flatten[# terms]] & /@ paulis;
+      conjugates = Simplify[Conjugate[coefficients]];
+      Return[Total[MapThread[
+        Which[
+          #1 === #2, #1 (#3 + conj[#3]),
+          #1 === -#2, #1 (#3 - conj[#3]),
+          True, #1 #3 + #2 conj[#3]
+        ] &, {coefficients, conjugates, terms}]]]
+    ]
+  ];
+
+  (* Matrix entries are scalars even if they have not been declared as
+     SNEG constants. Conjugate them separately from the operator terms. *)
+  Total[Flatten[mat terms + Conjugate[mat] conj[terms]]]
+];
 
 (* Generic hopping with a complex-valued parameter t *)
 genhop[t_, op1_?fermionQ[j1___], op2_?fermionQ[j2___], sigma_] :=
@@ -3087,6 +3155,9 @@ qsbasisSpinHalfOperatorQ[op_[___]] :=
 qsbasisSpinHalfOperatorQ[_] := False;
 
 qsbasisBadOps[l_List] := Select[l, !qsbasisSpinHalfOperatorQ[#]&];
+
+qsbasisvcold[l_List] := bzop2bzvc[ qsbasis[l] ];
+
 
 qsbasisvc[l_List] := Module[{bad},
   bad = qsbasisBadOps[l];
@@ -4037,13 +4108,13 @@ enain[i_, n_] := Table[If[j == i, 1, 0], {j, n}];
 (* Given a set of operators "oldbasis", a set of operators "newbasis" and
 a set of operator expressions for newbasis, produce the transformation
 rules from the oldbasis to the new basis! *)
-snegold2newrules[oldbasis_, newbasis_, rules_] := Module[{n, ob, mat, x},
+snegold2newrules[oldbasis_, newbasis_, rules_] := Module[{n, ob, mat, x, i},
   n = Length[oldbasis];
   If[n != Length[newbasis],
     Print["Mismatching lengths."];
     Return[];
   ];
-  ob = Table[oldbasis[[i]] :> enain[i, n], {i, Length[oldbasis]}];
+  ob = Table[oldbasis[[i]] -> enain[i, n], {i, Length[oldbasis]}];
   mat = rules /. ob;
   x = Norm[mat . Transpose[Conjugate[mat]] - IdentityMatrix[n]];
   If[x != 0,
@@ -4090,7 +4161,7 @@ contractedpairs[nr_, l_List] := contractedpairs[nr,l] =
 (* Contraction of two operators according to the standard definition:
 substract the normal ordered expression. *)
 contraction[x1 : op1_[t1_, i1___], x2 : op2_[t2_, i2___]] /;
-    (ordering[op] =!= NONE) :=
+    (ordering[op1] =!= NONE || ordering[op2] =!= NONE) :=
        nc[x1, x2] - normalorder[x1 ~ nc ~ x2];
 
 (* Bosonic endpoints are even. Preserve the historical odd behavior for all
@@ -4270,7 +4341,7 @@ mambpair[{qn1_, vecs1_}, {qn2_, vecs2_}, op_, FNC_] := Module[{pair, matrep, tot
   matrep = FNC[op, vecs1, vecs2];
   (* TRICK: Drop combinations of subspaces that do not contribute. *)
   tot = Total[Abs[matrep], 2];
-  If[tot =!= 0, {pair, matrep}, HoldComplete[Sequence[]]]
+  If[!TrueQ[tot == 0], {pair, matrep}, HoldComplete[Sequence[]]]
 ];
 
 listofpairs[l1_, l2_] := Flatten[Outer[List, l1, l2, 1], 1];
@@ -4621,16 +4692,11 @@ matrixrepresentationvcfast[a_, l1_List, l2_List] := Module[
   l2] // Transpose
 ];
 
-(* Transform a list of {index, value} pairs into a vector with given
-values at indexed positions. *)
+(* Transform {index, value} pairs to a vector. Operator application can also
+   produce scalar zeros, including inexact and complex zeros, between records. *)
 indexvalue2list[iv_List, n_Integer] :=
   Fold[ReplacePart[#1, Last[#2], First[#2]] &, Table[0, {n}],
-  Select[iv, (# =!= 0)&] ];
-
-(* Added 25.3.2011 *)
-indexvalue2list[{0}, n_Integer]:= Table[0, {n}];
-indexvalue2list[{0.}, n_Integer]:= Table[0, {n}];
-indexvalue2list[{0.+0. I}, n_Integer]:= Table[0, {n}];
+  Select[iv, !(NumberQ[#] && TrueQ[# == 0])&] ];
 
 (* Symmetrized spin-spin correlation for a list of operators. *)
 spinspinsymmetric[ops_List] := Module[{l},
@@ -4686,16 +4752,21 @@ SU2merge[{qn1_, l1_}, {qn2_, l2_},
      Map[{combineqnfn[First[#], qn1, qn2], {Last[#]}} &, states]
  ];
 
-SU2combine[op1_, op2_, {s1_, s2_}, fixspin1fnc_, fixspin2fnc_] :=
+SU2combine[op1_, op2_, {s1_, s2_}, fixspin1fnc_, fixspin2fnc_] := Module[
+ {s, sz1, sz2},
   Table[
-   {s, Sum[
-     With[{cg = ClebschGordan[{s1, sz1}, {s2, sz2}, {s, s}]},
-      If[cg =!= 0,
-         cg  nc[fixspin1fnc[op1, s1, sz1] , fixspin2fnc[op2, s2, sz2]],
-         0]
-      ], {sz1, -s1, s1}, {sz2, -s2, s2}]},
+    {s, Sum[
+     (* The projection selection rule also avoids nonphysical-argument
+        messages for terms whose coefficient is known to vanish. *)
+     If[sz1 + sz2 == s,
+      With[{cg = ClebschGordan[{s1, sz1}, {s2, sz2}, {s, s}]},
+       If[cg =!= 0,
+          cg  nc[fixspin1fnc[op1, s1, sz1] , fixspin2fnc[op2, s2, sz2]],
+          0]
+      ], 0], {sz1, -s1, s1}, {sz2, -s2, s2}]},
    {s, Abs[s1 - s2], s1 + s2}
-  ];
+  ]
+];
 
 fixspin[op_, s_, s_] := op;
 fixspin[op_, s_, sz_] /; sz < s := Nest[spindown, op, s - sz];
