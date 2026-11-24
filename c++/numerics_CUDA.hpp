@@ -11,13 +11,16 @@
 #endif
 
 #if NRG_ENABLE_CUDA
+#include <algorithm>
 #include <cassert>
 #include <complex>
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
 #include <cuComplex.h>
+#include <limits>
 #include <memory>
 #include <type_traits>
 #include <unordered_map>
@@ -30,14 +33,27 @@ namespace NRG {
 inline auto cuda_mult_requested(const std::string &mult) { return mult == "cuda"; }
 
 #if NRG_ENABLE_CUDA
+class CudaMultOutOfMemory : public std::runtime_error {
+  using std::runtime_error::runtime_error;
+};
+
 inline void cuda_mult_check(const cudaError_t status, const char *what) {
+  if (status == cudaErrorMemoryAllocation)
+    throw CudaMultOutOfMemory(fmt::format("{} failed: {}", what, cudaGetErrorString(status)));
   if (status != cudaSuccess)
     throw std::runtime_error(fmt::format("{} failed: {}", what, cudaGetErrorString(status)));
 }
 
 inline void cublas_check(const cublasStatus_t status, const char *what) {
+  if (status == CUBLAS_STATUS_ALLOC_FAILED)
+    throw CudaMultOutOfMemory(fmt::format("{} failed. status={}", what, static_cast<int>(status)));
   if (status != CUBLAS_STATUS_SUCCESS)
     throw std::runtime_error(fmt::format("{} failed. status={}", what, static_cast<int>(status)));
+}
+
+[[nodiscard]] constexpr size_t cuda_recalc_f_cache_budget(size_t free_bytes) {
+  // Reserve space for the output, scratch buffers and library workspaces.
+  return std::min<std::uint64_t>(free_bytes / 2, 4ULL << 30);
 }
 
 inline auto cuda_mult_available_device_count() {
@@ -95,8 +111,10 @@ template<typename T> class CudaMultBuffer {
    void ensure(const size_t size) {
      if (size <= size_) return;
      if (data_ != nullptr) cuda_mult_check(cudaFree(data_), "cudaFree");
+     data_ = nullptr;
+     size_ = 0;
+     cuda_mult_check(cudaMalloc(reinterpret_cast<void **>(&data_), bytes(size)), "cudaMalloc");
      size_ = size;
-     cuda_mult_check(cudaMalloc(reinterpret_cast<void **>(&data_), size_ * sizeof(T)), "cudaMalloc");
    }
    size_t bytes() const { return bytes(size_); }
    static constexpr size_t bytes(const size_t size) { return size * sizeof(T); }
@@ -192,15 +210,17 @@ template<scalar S> class CudaRecalcScope {
   CudaRecalcScope &operator=(const CudaRecalcScope &) = delete;
 
   template<Eigen_matrix EM>
-  void register_matrix(const EM &M) {
-    if (!finite_size(M)) return;
+  size_t register_matrix(const EM &M, size_t remaining_bytes = std::numeric_limits<size_t>::max()) {
+    if (!finite_size(M)) return 0;
     const auto key = make_key(M);
-    if (cache_.contains(key)) return;
-    auto cached = std::make_unique<CachedMatrix>(size1(M) * size2(M));
+    const auto elements = static_cast<size_t>(M.size());
+    if (elements > remaining_bytes / sizeof(CT) || cache_.contains(key)) return 0;
+    auto cached = std::make_unique<CachedMatrix>(elements);
     cached->rows = size1(M);
     cached->cols = size2(M);
     cuda_mult_copy_to_device<S>(M, cached->buffer, "cudaMemcpy H2D cached matrix");
     cache_.emplace(key, std::move(cached));
+    return elements * sizeof(CT);
   }
 
   template<Eigen_matrix EM>

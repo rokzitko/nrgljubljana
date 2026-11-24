@@ -237,6 +237,32 @@ void recalc_irreducible(const Step &step,
                         const Params &P) {
   const auto section_timing = mt.time_it("recalc f");
   if (!P.substeps) {
+#if NRG_ENABLE_CUDA
+    if (P.mult == "cuda") {
+      for (const bool cache_blocks : {true, false}) {
+        try {
+          CudaRecalcScope<S> scope;
+          if (cache_blocks) {
+            size_t free_bytes, total_bytes;
+            cuda_mult_check(cudaMemGetInfo(&free_bytes, &total_bytes), "cudaMemGetInfo");
+            auto remaining = cuda_recalc_f_cache_budget(free_bytes);
+            // Post-truncation blocks stay immutable for the lifetime of this scope.
+            for (const auto &eig : diag.eigs()) {
+              if (!remaining) break;
+              for (const auto block : range0(eig.U.size())) remaining -= scope.register_matrix(eig.U.get(block), remaining);
+            }
+          }
+          opch = Sym->recalc_irreduc(step, diag);
+          return;
+        } catch (const CudaMultOutOfMemory &e) {
+          // The scope and unpublished result have unwound. Don't mask an unrelated CUDA error.
+          const auto status = cudaGetLastError();
+          if (status != cudaErrorMemoryAllocation) cuda_mult_check(status, "recalc_f OOM recovery");
+          std::cerr << "CUDA recalc_f: " << e.what() << "; retrying " << (cache_blocks ? "without cached blocks" : "without the scope") << '\n';
+        }
+      }
+    }
+#endif
     opch = Sym->recalc_irreduc(step, diag);
   } else {
     const auto [N, M] = step.NM();

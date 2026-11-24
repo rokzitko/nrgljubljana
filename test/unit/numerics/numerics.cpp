@@ -556,6 +556,49 @@ TEST(numerics, transform_dispatch_blas) {
 }
 
 #if NRG_ENABLE_CUDA
+TEST(numerics, recalc_f_CUDA_budget) {
+  EXPECT_EQ(cuda_recalc_f_cache_budget(0), 0u);
+  EXPECT_EQ(cuda_recalc_f_cache_budget(1024), 512u);
+  if constexpr (sizeof(size_t) >= 8) EXPECT_EQ(cuda_recalc_f_cache_budget(12ULL << 30), 4ULL << 30);
+}
+
+template<scalar S>
+void check_recalc_f_CUDA_products() {
+  if (cuda_mult_available_device_count() == 0) GTEST_SKIP() << "No CUDA accelerator available";
+  using Matrix = Matrix_traits<S>;
+  // Different contraction lengths and a nonzero initial sum exercise accumulation and conjugation.
+  const Matrix a = Matrix::Random(2, 3), b = Matrix::Random(4, 3);
+  const Matrix c = Matrix::Random(2, 2), d = Matrix::Random(4, 2), initial = Matrix::Random(2, 4);
+  const S alpha = a(0, 0), beta = -b(0, 1);
+  Matrix ref = initial;
+  product_Eigen<S>(ref, alpha, a, b);
+  product_Eigen<S>(ref, beta, c, d);
+
+  constexpr auto bytes = sizeof(typename CudaMultTraits<S>::cuda_type);
+  for (const size_t capacity : {0, 14, 30}) { // no blocks; a and d; all four
+    SCOPED_TRACE(capacity);
+    CudaRecalcScope<S> scope;
+    auto remaining = capacity * bytes;
+    for (const auto block : {&a, &a, &b, &d, &c}) remaining -= scope.register_matrix(*block, remaining);
+    EXPECT_EQ(remaining, 0u);
+    EXPECT_EQ(scope.cached_data(a) != nullptr, capacity >= 14);
+    EXPECT_EQ(scope.cached_data(b) != nullptr, capacity == 30);
+    EXPECT_EQ(scope.cached_data(c) != nullptr, capacity == 30);
+    EXPECT_EQ(scope.cached_data(d) != nullptr, capacity >= 14);
+    Matrix result = initial;
+    CudaRecalcAccumulator<S, Matrix> accumulator(result);
+    ASSERT_TRUE(accumulator.active());
+    product_CUDA_accumulate<S>(accumulator, alpha, a, b);
+    product_CUDA_accumulate<S>(accumulator, beta, c, d);
+    accumulator.copy_back();
+    EXPECT_TRUE(result.isApprox(ref));
+  }
+  EXPECT_EQ(CudaRecalcScope<S>::current(), nullptr);
+}
+
+TEST(numerics, recalc_f_CUDA_real) { check_recalc_f_CUDA_products<double>(); }
+TEST(numerics, recalc_f_CUDA_complex) { check_recalc_f_CUDA_products<std::complex<double>>(); }
+
 TEST(numerics, product_CUDA) {
   if (cuda_mult_available_device_count() == 0) GTEST_SKIP() << "No CUDA accelerator available";
   auto a = generate_matrix<std::complex<double>>(2,2);
