@@ -107,7 +107,7 @@ struct TemplateInfo {
 // operator blocks. Check referenced matrix shapes and scalar syntax, not numerical
 // values of expressions.
 // Scalar/vector/matrix forms, + - * /, grouping, identifiers, and the initializer's
-// Sqrt/sqrt/exp/log/Conjugate/gammaPolCh/coefxi/coefzeta calls are supported.
+// Sqrt/sqrt/exp/log/Conjugate/gammaPolCh/coefxi/coefzeta/bathCoupling/coefrung calls are supported.
 // Unknown functions, complex profiles, parse directives and shell escapes fail.
 // Matrix numeric lexing follows the initializer's strtod grammar and assumes the
 // C numeric locale; this API does not change the process locale.

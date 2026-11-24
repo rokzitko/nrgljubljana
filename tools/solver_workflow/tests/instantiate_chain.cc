@@ -153,10 +153,10 @@ void run(const fs::path &work) {
   refused(bad, "computed for bandrescale=2");
   bad = coefficients;
   bad.channels[0].xi.resize(nmax);
-  refused(bad, "fewer than the 0..6 required");
+  refused(bad, "do not cover the sites 0..6 required");
   bad = coefficients;
   bad.channels.push_back(bad.channels[0]);
-  refused(bad, "one channel, not 2");
+  refused(bad, "channel count");
   rejects([&] { instantiate({(work / "missing").string(), "param", "template", nmax}, coefficients); }, "calculation_directory");
   std::cout << "  errors: ok\n";
 }

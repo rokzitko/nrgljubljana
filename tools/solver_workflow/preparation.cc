@@ -187,7 +187,8 @@ class MatrixShape {
         check(callable || (operand && ch == '('));
         unsigned arity = 0;
         if (callable) {
-          if (identifier == "coefxi" || identifier == "coefzeta") arity = 2;
+          if (identifier == "coefxi" || identifier == "coefzeta" || identifier == "coefrung" ||
+              identifier == "bathCoupling") arity = 2;
           else if (identifier == "Sqrt" || identifier == "sqrt" || identifier == "exp" || identifier == "log" ||
                    identifier == "Conjugate" || identifier == "gammaPolCh") arity = 1;
           else require(false, "unsupported function " + identifier + " in " + source);

@@ -317,3 +317,36 @@ installed-library solve check. Adding `--current-input /path/to/calculation
 `param` and `Delta.dat` plus the selected template. The supplied chain length is
 explicit, not resolved by the test or library; this check does not run the full
 production solver calculation.
+
+## Two-orbital QS workflows
+
+Workflow API 4 adds real, unpolarized two-channel preparation for the
+supplied-coefficient route. Use `diagonal_coefficients(chain)` with the
+existing overload for a diagonal bath, or pass the full two-channel polar
+`WilsonChain` to `instantiate`. The latter checks that the retained `V`,
+`E`, and `T` blocks are finite and real symmetric. Set `rungs=true` for
+off-diagonal chain hopping or on-site terms. The initializer uses the
+solver's existing real QS `z` and `X` coefficient blocks.
+
+The installed `two-orbital-qs` bundle under
+`share/nrgljubljana/workflow/templates` uses `bathCoupling(i,j)` for the
+site-zero impurity–bath hopping, with 1-based indices and the factor
+`1/sqrt(pi)` applied to `V(i,j)`. It uses `coefrung(1,0)` for the site-zero
+off-diagonal `E` element. Both expressions also work in the diagonal
+supplied-coefficient route.
+
+The templates take the physical impurity levels `eps1`, `eps2`, the
+local hybridization `V12`, intraorbital interactions `U1`, `U2`, and
+interorbital interactions `U12`, `J12`. A Kanamori case uses
+`U1=U2=U`, `U12=U-2J`, and `J12=J`, which includes spin flip and pair
+transfer. A two-orbital PAM case uses the on-site hybridization and sets
+`U12=J12=0`. The source model and generation parameters accompany the
+generated files. To regenerate in an empty directory, copy `model.m` and
+`modeloperators.m` and copy `generate.param` as `param`. Run `nrginit`
+with Mathematica and stage its `data.in`, `ham_*`, and `op.*` outputs.
+
+`solver_fdm.hpp` assembles the requested FDM bins for real spin-symmetric
+runs. It averages the given twists, broadens on a common mesh, reconstructs
+retarded correlators, and computes the matrix symmetric improved estimator.
+It returns raw self-energy values so callers can inspect causality and
+choose their lattice-specific completion and mixing policies.

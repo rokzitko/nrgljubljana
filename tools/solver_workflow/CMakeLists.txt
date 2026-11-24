@@ -1,4 +1,4 @@
-add_library(nrgljubljana_workflow SHARED workflow.cc discretize.cc chain.cc output.cc preparation.cc ../instantiate/instantiate.cc
+add_library(nrgljubljana_workflow SHARED workflow.cc discretize.cc chain.cc fdm.cc output.cc preparation.cc ../instantiate/instantiate.cc
   $<TARGET_OBJECTS:nrgchain_core>)
 add_library(nrgljubljana::workflow ALIAS nrgljubljana_workflow)
 target_compile_features(nrgljubljana_workflow PUBLIC cxx_std_20)
@@ -8,7 +8,8 @@ nrgljubljana_apply_strict_floating_point(nrgljubljana_workflow)
 target_include_directories(nrgljubljana_workflow
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
   PRIVATE ${PROJECT_BINARY_DIR}/tools/generated ${CMAKE_CURRENT_SOURCE_DIR}/../nrgchain)
-target_link_libraries(nrgljubljana_workflow PRIVATE $<BUILD_INTERFACE:nrgljubljana_c> project_warnings gsl Threads::Threads)
+target_link_libraries(nrgljubljana_workflow PRIVATE $<BUILD_INTERFACE:nrgljubljana::numerics>
+  $<BUILD_INTERFACE:nrgljubljana_c> Eigen3::Eigen project_warnings gsl Threads::Threads)
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   # The matching private core must precede an older same-SONAME LD_LIBRARY_PATH entry.
   # Put this after link options: MPI may contribute --enable-new-dtags there.
@@ -16,7 +17,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif()
 set_target_properties(nrgljubljana_workflow PROPERTIES
   EXPORT_NAME workflow VERSION ${PROJECT_VERSION}
-  WORKFLOW_API_VERSION 3 EXPORT_PROPERTIES WORKFLOW_API_VERSION
+  WORKFLOW_API_VERSION 4 EXPORT_PROPERTIES WORKFLOW_API_VERSION
   BUILD_RPATH "${PROJECT_BINARY_DIR}/c++"
   INSTALL_RPATH "$ORIGIN/nrgljubljana/workflow")
 
@@ -34,7 +35,13 @@ install(TARGETS nrgljubljana_workflow EXPORT nrgljubljana-workflow-targets
 # Keep the matching core private: no installed internal headers or old core package lookup.
 install(FILES $<TARGET_FILE:nrgljubljana_c>
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/nrgljubljana/workflow COMPONENT workflow)
-install(FILES include/nrgljubljana/solver_workflow.hpp include/nrgljubljana/solver_preparation.hpp include/nrgljubljana/solver_chain.hpp include/nrgljubljana/solver_output.hpp
+get_target_property(_workflow_numerics_type nrgljubljana_numerics TYPE)
+if(_workflow_numerics_type STREQUAL "SHARED_LIBRARY")
+  install(FILES $<TARGET_FILE:nrgljubljana_numerics>
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/nrgljubljana/workflow
+    RENAME $<TARGET_SONAME_FILE_NAME:nrgljubljana_numerics> COMPONENT workflow)
+endif()
+install(FILES ../numerics/include/nrgljubljana/numerics.hpp include/nrgljubljana/solver_workflow.hpp include/nrgljubljana/solver_preparation.hpp include/nrgljubljana/solver_chain.hpp include/nrgljubljana/solver_fdm.hpp include/nrgljubljana/solver_output.hpp
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/nrgljubljana COMPONENT workflow)
 install(EXPORT nrgljubljana-workflow-targets NAMESPACE nrgljubljana::
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/nrgljubljana_workflow COMPONENT workflow)
@@ -42,7 +49,15 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nrgljubljana_workflowConfig.cmake
   ${CMAKE_CURRENT_BINARY_DIR}/nrgljubljana_workflowConfigVersion.cmake
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/nrgljubljana_workflow COMPONENT workflow)
 
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/share/workflow/templates/
+  DESTINATION ${CMAKE_INSTALL_DATADIR}/nrgljubljana/workflow/templates COMPONENT workflow)
+
 if(NRGLJUBLJANA_BUILD_TESTS_ENABLED)
+  add_executable(workflow_matrix tests/matrix.cc)
+  target_link_libraries(workflow_matrix PRIVATE nrgljubljana::workflow nrgljubljana::numerics Eigen3::Eigen project_warnings)
+  add_test(NAME solver_workflow_matrix COMMAND workflow_matrix
+    ${PROJECT_SOURCE_DIR}/share/workflow/templates/two-orbital-qs ${CMAKE_CURRENT_BINARY_DIR}/matrix-test)
+  set_tests_properties(solver_workflow_matrix PROPERTIES TIMEOUT 180 ENVIRONMENT "OMP_NUM_THREADS=1;MKL_NUM_THREADS=1")
   find_package(Python3 REQUIRED COMPONENTS Interpreter)
   enable_testing()
   # Exercise production routing/discretization without linking or running the solver.

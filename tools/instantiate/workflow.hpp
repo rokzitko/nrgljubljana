@@ -1,7 +1,9 @@
 #ifndef NRG_INSTANTIATE_WORKFLOW_HPP
 #define NRG_INSTANTIATE_WORKFLOW_HPP
 
+#include <array>
 #include <string>
+#include <vector>
 
 #include "../nrgchain/nrgchain.hpp"
 
@@ -15,9 +17,15 @@ struct ComputedWilson {
   double z, Lambda, bandrescale;
 };
 ComputedWilson nrgchain_coefficients(const std::string &parameter_file, unsigned nmax);
+struct QSMixing {
+  std::array<double, 4> coupling; // polar V in the impurity-by-bath basis, before 1/sqrt(pi)
+  std::vector<double> hopping, onsite; // the real off-diagonal elements of T and E
+};
+
 // The same with supplied Wilson coefficients instead of nrgchain, for the z, Lambda and bandrescale given.
 double instantiate(const std::string &parameter_file, const std::string &template_directory, unsigned nmax,
-                   const NRG::Tools::NrgChain::WilsonData &wilson, double z, double Lambda, double bandrescale);
+                   const NRG::Tools::NrgChain::WilsonData &wilson, double z, double Lambda, double bandrescale,
+                   const QSMixing *mixing = nullptr);
 }
 
 #endif
