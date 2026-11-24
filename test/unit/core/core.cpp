@@ -107,6 +107,37 @@ TEST(Core, FloquetModeOperatorIsRetainedForDmSweep) { // NOLINT
   EXPECT_FALSE(selected.do_s("other", P, dm_step));
 }
 
+TEST(Core, WilsonChainRecalcInQstzReplay) { // NOLINT
+  Params P;
+  P.symtype = "QSTZ";
+  P.Nmax = 2;
+  Step forward(P), replay(P, RUNTYPE::DMNRG);
+  EXPECT_TRUE(need_recalc_irreducible(forward, P));
+  EXPECT_FALSE(need_recalc_irreducible(replay, P));
+
+  P.logstr = "@#"; // call tracing alone does not consume f matrices
+  EXPECT_FALSE(need_recalc_irreducible(replay, P));
+  for (const auto *flag : {"f", "F"}) {
+    P.logstr = flag;
+    EXPECT_TRUE(need_recalc_irreducible(replay, P));
+  }
+  P.logstr = "";
+  for (auto *flag : {&P.dump_f, &P.checksumrules, &P.logall, &P.substeps, &P.floquet}) {
+    *flag = true;
+    EXPECT_TRUE(need_recalc_irreducible(replay, P));
+    *flag = false;
+  }
+  P.symtype = "QS";
+  EXPECT_TRUE(need_recalc_irreducible(replay, P));
+
+  P.symtype = "QSTZ";
+  P.dump_f = true;
+  forward.set_last();
+  replay.set_last();
+  EXPECT_FALSE(need_recalc_irreducible(forward, P));
+  EXPECT_FALSE(need_recalc_irreducible(replay, P));
+}
+
 int main(int argc, char **argv) {
    ::testing::InitGoogleTest(&argc, argv);
    return RUN_ALL_TESTS(); // NOLINT

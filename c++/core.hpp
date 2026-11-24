@@ -295,6 +295,12 @@ void recalculate_and_measure(const Step &step, Operators<S> &operators, Stats<S>
   calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store_all, mt, Sym, P);
 }
 
+[[nodiscard]] inline bool need_recalc_irreducible(const Step &step, const Params &P) {
+  if (step.last()) return false;
+  // QSTZ replay loads the next eigensystem; named spectra and expectation values do not read opch.
+  return step.nrg() || P.symtype != "QSTZ" || P.substeps || P.floquet || P.dump_f || P.checksumrules || P.logletter('f') || P.logletter('F');
+}
+
 template<scalar S>
 void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, DiagInfo<S> &diag, Output<S> &output,
                 const SubspaceStructure &substruct, ThermoStore<S> &store, BackiterStore &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym,
@@ -312,7 +318,7 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
   nrglog('@', "truncate_perform()");
   diag.truncate_perform();                               // Actual truncation occurs at this point
   archive_iteration_state(step, diag, substruct, store, store_all, Sym, P);
-  if (!step.last()) {
+  if (need_recalc_irreducible(step, P)) {
     nrglog('@', "recalc_irreducible()");
     recalc_irreducible(step, diag, substruct, operators.opch, Sym, mt, P);
     if (P.dump_f) operators.opch.dump();
