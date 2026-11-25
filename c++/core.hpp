@@ -264,7 +264,7 @@ void finalize_nrg_iteration_metadata(const Step &step, Stats<S> &stats, DiagInfo
 
 template<scalar S>
 void persist_nrg_iteration_outputs(const Step &step, Stats<S> &stats, DiagInfo<S> &diag, Output<S> &output,
-                                   const SubspaceStructure &substruct, const Symmetry<S> *Sym, const Params &P) {
+                                   const SubspaceStructure &substruct, const Symmetry<S> *Sym, Params &P) {
   if ((P.dm || P.resume) && !diag.loaded_from_checkpoint())
     diag.save(step.ndx(), P, stats.Egs);
   perform_basic_measurements(step, diag, Sym, stats, output, P);
@@ -303,7 +303,7 @@ void recalculate_and_measure(const Step &step, Operators<S> &operators, Stats<S>
 template<scalar S>
 void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, DiagInfo<S> &diag, Output<S> &output,
                 const SubspaceStructure &substruct, ThermoStore<S> &store, BackiterStore &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym,
-                MemTime &mt, const Params &P) {
+                MemTime &mt, Params &P) {
   nrglog('@', "after_diag()");
   if (step.nrg()) {
     if (!diag.loaded_from_checkpoint())
@@ -333,7 +333,7 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
 // Perform one iteration step
 template<scalar S>
 auto iterate(const Step &step, Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev,
-             Output<S> &output, ThermoStore<S> &store, BackiterStore &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, DiagEngine<S> *eng, MemTime &mt, const Params &P) {
+             Output<S> &output, ThermoStore<S> &store, BackiterStore &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, DiagEngine<S> *eng, MemTime &mt, Params &P) {
   SubspaceStructure substruct{diagprev, Sym};
   TaskList tasklist{substruct, !P.silent}; // verbose = !P.silent
   if (P.h5raw && (P.h5all || (P.h5last && step.last())) && P.h5struct)
@@ -361,7 +361,7 @@ void docalc0(Step &step, const Operators<S> &operators, const DiagInfo<S> &diag0
 
 template<scalar S>
 auto nrg_loop(Step &step, Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, DiagInfo<S> diag,
-              Output<S> &output, ThermoStore<S> &store, BackiterStore &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, DiagEngine<S> *eng, MemTime &mt, const Params &P) {
+              Output<S> &output, ThermoStore<S> &store, BackiterStore &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, DiagEngine<S> *eng, MemTime &mt, Params &P) {
   for (step.init(); !step.end(); step.next())
     diag = iterate(step, operators, coef, stats, diag, output, store, store_all, oprecalc, Sym, eng, mt, P);
   step.set(step.lastndx());

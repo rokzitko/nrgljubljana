@@ -24,9 +24,12 @@
 #include <cmath>
 #include <algorithm>
 #include <cctype>
+#include <filesystem>
+#include <vector>
 
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
+#include <boost/uuid/uuid_serialize.hpp>
 
 #include <fmt/format.h>
 
@@ -47,9 +50,9 @@ inline auto to_lower(std::string value) {
 inline constexpr std::uint64_t checkpoint_fingerprint_offset_basis = 14695981039346656037ULL;
 inline constexpr std::uint64_t checkpoint_fingerprint_prime = 1099511628211ULL;
 
-// Stable file identity used to reject accidental checkpoint reuse with changed state.
-inline std::uint64_t checkpoint_file_fingerprint(const std::string &filename,
-                                                 std::uint64_t fingerprint = checkpoint_fingerprint_offset_basis) {
+// Only input files are fingerprinted, and only for resumable runs.
+inline std::uint64_t checkpoint_file_fingerprint(const std::string &filename) {
+  auto fingerprint = checkpoint_fingerprint_offset_basis;
   auto input = safe_open_for_reading(filename, true);
   std::array<char, 8192> buffer{};
   while (input) {
@@ -59,7 +62,7 @@ inline std::uint64_t checkpoint_file_fingerprint(const std::string &filename,
       fingerprint *= checkpoint_fingerprint_prime;
     }
   }
-  if (!input.eof()) throw std::runtime_error(fmt::format("Error reading {} while fingerprinting checkpoint inputs", filename));
+  if (input.bad() || !input.eof()) throw std::runtime_error(fmt::format("Error reading {} while fingerprinting checkpoint inputs", filename));
   return fingerprint;
 }
 
@@ -473,7 +476,7 @@ class Params {
   std::optional<size_t> laststored;                             // has value if stored data is found
   std::uint64_t checkpoint_param_fingerprint = 0;
   std::uint64_t checkpoint_data_fingerprint = 0;
-  std::uint64_t checkpoint_unitary_fingerprint = 0;
+  std::vector<boost::uuids::uuid> checkpoint_generations; // indexed by N; empty for a nonresumable calculation
 
   /* Fine-grained control over data logging with the following tokens:
    @ - follow the program flow
@@ -653,9 +656,11 @@ class Params {
 
   // What is the last iteration completed in the previous NRG runs?
   void initialize_checkpointing(const std::string &param_filename = "param", const std::string &data_filename = "data") {
+    init_laststored();
+    if (!resume) return;
     checkpoint_param_fingerprint = checkpoint_file_fingerprint(param_filename);
     checkpoint_data_fingerprint = checkpoint_file_fingerprint(data_filename);
-    init_laststored();
+    checkpoint_generations.assign(Nmax, boost::uuids::uuid{});
   }
 
   void init_laststored() {
@@ -669,7 +674,7 @@ class Params {
     bool missing_checkpoint = false;
     for (size_t N = Ninit; N < Nmax; N++) {
       const auto fn = workdir->unitaryfn(N);
-      if (std::ifstream(fn, std::ios::binary).good()) {
+      if (std::filesystem::exists(std::filesystem::symlink_status(fn))) {
         if (missing_checkpoint)
           throw std::runtime_error(fmt::format("Non-contiguous checkpoint sequence: found {} after a missing iteration", fn));
         laststored = N;
@@ -691,10 +696,18 @@ class Params {
     return resume && laststored && laststored.value() + 1 == Nmax;
   }
 
-  void initialize_unitary_checkpoint_fingerprint() {
-    checkpoint_unitary_fingerprint = checkpoint_fingerprint_offset_basis;
-    for (size_t N = Ninit; N < Nmax; N++)
-      checkpoint_unitary_fingerprint = checkpoint_file_fingerprint(workdir->unitaryfn(N), checkpoint_unitary_fingerprint);
+  [[nodiscard]] boost::uuids::uuid checkpoint_parent(size_t N) const {
+    if (N == Ninit) return {};
+    const auto id = checkpoint_generations.at(N - 1);
+    if (id.is_nil()) throw std::logic_error("Missing predecessor generation for unitary checkpoint");
+    return id;
+  }
+
+  [[nodiscard]] boost::uuids::uuid checkpoint_tip() const {
+    if (!resume) return {};
+    const auto id = checkpoint_generations.at(Nmax - 1);
+    if (id.is_nil()) throw std::logic_error("Missing final unitary checkpoint generation");
+    return id;
   }
 
   [[nodiscard]] bool remove_consumed_files() const noexcept { return removefiles && !resume; }

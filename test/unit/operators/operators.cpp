@@ -274,7 +274,9 @@ TEST(Operators, DensMatRejectsIncompatibleCheckpoint) { // NOLINT
 TEST(Operators, DensMatRejectsDifferentUnitaryChain) { // NOLINT
   Params writer;
   writer.Nmax = 2;
-  writer.checkpoint_unitary_fingerprint = 123;
+  writer.resume = true;
+  writer.checkpoint_generations.resize(writer.Nmax);
+  writer.checkpoint_generations.back() = boost::uuids::random_generator()();
   DensMatElements<double> rho_out;
   rho_out[Invar()] = zero_matrix<double>(1);
   rho_out.save(0, writer, fn_rho);
@@ -283,6 +285,10 @@ TEST(Operators, DensMatRejectsDifferentUnitaryChain) { // NOLINT
   reader.Nmax = 2;
   reader.workdir = std::make_unique<Workdir>(writer.workdir->get(), WorkdirMode::persistent_exact, true);
 
+  reader.resume = true;
+  reader.checkpoint_generations = writer.checkpoint_generations;
+  EXPECT_TRUE(DensMatElements<double>::compatible_file(0, reader, fn_rho));
+  reader.checkpoint_generations.back() = boost::uuids::random_generator()();
   EXPECT_FALSE(DensMatElements<double>::compatible_file(0, reader, fn_rho));
 }
 
@@ -298,6 +304,19 @@ TEST(Operators, DensMatCompatibilityReadsEntirePayload) { // NOLINT
 
   EXPECT_FALSE(DensMatElements<double>::compatible_file(0, P, fn_rho));
   EXPECT_THROW(DensMatElements<double>().load(0, P, fn_rho, false), std::exception);
+}
+
+TEST(Operators, ScratchDensityCannotBeReusedOnRestart) {
+  Params P;
+  P.Nmax = 1;
+  DensMatElements<double> rho;
+  rho[Invar()] = zero_matrix<double>(1);
+  rho.save(0, P, fn_rho);
+  P.resume = true;
+  P.checkpoint_generations.resize(1);
+  EXPECT_FALSE(DensMatElements<double>::compatible_file(0, P, fn_rho)); // no tip yet
+  P.checkpoint_generations.back() = boost::uuids::random_generator()();
+  EXPECT_FALSE(DensMatElements<double>::compatible_file(0, P, fn_rho));
 }
 
 int main(int argc, char **argv) {

@@ -3,6 +3,13 @@
 This document records removals of deprecated or obsolete features, newest first.
 Dates use `YYYY-MM-DD` and identify when the feature was removed.
 
+## 2026-11-25: Older Restart Checkpoint Formats
+
+Restart requires unitary v2 and density v3 headers. There is no migration:
+use a fresh checkpoint directory if a unitary archive has an unsupported
+format. With a compatible unitary chain, `nrg` rebuilds incompatible density
+files as needed.
+
 ## 2026-10-09: Obsolete Mathematica Chain Backends
 
 - Removed the `tri=orth`, `tri=nambu`, `tri=sc`, and `tri=sc2` selectors and their implementations from the Mathematica initializer. These selectors now produce an unknown-backend error.

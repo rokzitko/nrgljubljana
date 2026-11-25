@@ -108,10 +108,10 @@ private:
   BackiterStore store_all;
   MemTime mt; // memory and timing statistics
 
-  void preflight_resume_checkpoints() const {
+  void preflight_resume_checkpoints() {
     if (!P.laststored) return;
     for (size_t N = P.Ninit; N <= P.laststored.value(); N++)
-      static_cast<void>(DiagInfo<S>(N, P));
+      DiagInfo<S>().load(N, P, false, &P.checkpoint_generations.at(N));
   }
 
   void select_diag_engine() {
@@ -217,7 +217,6 @@ public:
 
     auto diag = run_phase(RUNTYPE::NRG, operators_seed, coef_seed, diag_seed);
     if (P.dm) {
-      P.initialize_unitary_checkpoint_fingerprint();
       if (P.need_rho()) prepare_rho(diag);
       if (P.need_rhoFDM()) prepare_rhoFDM();
       run_dm_phase(operators_seed, coef_seed, diag_seed);

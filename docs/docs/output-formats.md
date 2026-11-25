@@ -543,9 +543,17 @@ not machine parsing.
 ## Workdir Files
 
 Multiphase calculations can store `unitaryN`, `rhoN`, and `rhofdmN` in the
-workdir. With `resume=true`, these versioned, input-fingerprinted archives can
-be used by later invocations as well as by the running solver. They remain
-native binary state and are not portable across Boost versions, architectures,
+workdir for use between sweeps. For `resume=true`, each archive requires a
+versioned header with shell and configuration metadata and separate 64-bit
+hashes of `param` and `data`:
+
+- `unitaryN` (v2): a non-nil generation UUID and the preceding shell's UUID.
+  Only the root at `Ninit` has a nil predecessor.
+- `rhoN` and `rhofdmN` (v3): the generation UUID of the final unitary in the
+  complete chain, not the UUID of shell `N`.
+
+The UUIDs identify checkpoint generations, not hashes of archive contents.
+These native archives are not portable across Boost versions, architectures,
 scalar types, or releases.
 
 Individual archives are written through temporary files and renamed after

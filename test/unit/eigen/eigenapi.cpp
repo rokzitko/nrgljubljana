@@ -214,6 +214,46 @@ TEST(Diag, load_rejects_incompatible_checkpoint) { // NOLINT
   EXPECT_TRUE(std::filesystem::exists(writer.workdir->unitaryfn(0)));
 }
 
+TEST(Diag, rejects_legacy_unitary_before_reading_payload) {
+  Params P;
+  const auto fn = P.workdir->unitaryfn(0);
+  {
+    std::ofstream out(fn, std::ios::binary);
+    out << unitary_checkpoint_magic;
+    boost::archive::binary_oarchive archive(out);
+    archive << std::uint32_t{1};
+  }
+  try {
+    DiagInfo<double>().load(0, P, true);
+    FAIL() << "Accepted a v1 unitary";
+  } catch (const std::runtime_error &e) {
+    EXPECT_NE(std::string(e.what()).find("fresh checkpoint directory"), std::string::npos);
+  }
+  EXPECT_TRUE(std::filesystem::exists(fn));
+}
+
+TEST(Diag, generation_is_published_only_after_successful_rename) {
+  Params P;
+  P.Ninit = 2;
+  P.Nmax = 4;
+  P.resume = true;
+  P.checkpoint_generations.resize(P.Nmax);
+  DiagInfo<double> diag;
+  const auto fn = P.workdir->unitaryfn(2);
+  std::filesystem::create_directory(fn); // cannot atomically rename a regular file over it
+  EXPECT_THROW(diag.save(2, P, 0.0), std::filesystem::filesystem_error);
+  EXPECT_TRUE(P.checkpoint_generations.at(2).is_nil());
+  EXPECT_FALSE(std::filesystem::exists(fn + ".tmp"));
+  std::filesystem::remove(fn);
+  diag.save(2, P, 0.0);
+  EXPECT_FALSE(P.checkpoint_generations.at(2).is_nil());
+  diag.save(3, P, 0.0);
+  EXPECT_NE(P.checkpoint_generations.at(2), P.checkpoint_tip());
+  EXPECT_NO_THROW(diag.load(3, P));
+  P.checkpoint_generations.at(3) = P.checkpoint_generations.at(2);
+  EXPECT_THROW(diag.load(3, P), std::runtime_error);
+}
+
 template<typename T>
 auto range_size(T t)
 {

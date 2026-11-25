@@ -14,16 +14,27 @@ Important file families stored there include:
 - unitary/eigenspectrum snapshots via `unitaryfn(...)`
 - shell density matrices via `rhofn(...)`
 
-These files are used to bridge phases such as the second DM-NRG or FDM sweep.
-With `resume=true`, unitary files also serve as restart checkpoints. Discovery
-runs after `data` establishes `Nmax` and accepts only a contiguous prefix from
-`Ninit`. Cached shells skip diagonalization and checkpoint preprocessing but
-are replayed to reconstruct statistics, stores, operators, and result files.
-All discovered unitary archives are read and validated before result files are
-opened. Density archives are reused only when the complete unitary chain was
-reused and their stored chain fingerprint matches those exact unitary files.
-Resumable archives are not consumed and remain in the exact checkpoint
-directory until the user removes them.
+With `resume=false` (the default), DM-NRG and FDM serialize and reload these
+files between sweeps and check their structure on read. This same-run use
+requires no input hashing, provenance scan, prior-chain discovery, or random IDs.
+
+With `resume=true`, discovery runs after `data` establishes `Nmax` and accepts
+only a contiguous unitary prefix from `Ninit`. Before opening result files,
+the mandatory preflight reads each discovered unitary and checks that its
+predecessor UUID matches the previous shell's generation UUID (nil predecessor
+at `Ninit`). Preflight rejects a splice between independent chains even if
+`param` and `data` are identical. Normal loads also check the generation IDs
+against those expected for the shell. These comparisons use the existing
+reads, not a separate pass to hash checkpoint contents. They do not detect
+in-place payload edits that leave the IDs intact.
+
+Cached shells are replayed without diagonalization to rebuild statistics,
+stores, operators, and result files. If the complete unitary chain is reused,
+each requested density family (`rho` or `rhofdm`) can be reused only if all
+its required files are compatible and name the final unitary's UUID (the
+chain tip). Otherwise that family is rebuilt. A partial restart computes the
+missing shells with new generation IDs and rebuilds all requested densities.
+Resumable archives remain in the checkpoint directory until the user removes them.
 
 ## In-Memory Current-Step State
 
@@ -74,11 +85,9 @@ Several types serialize themselves directly:
 - HDF5 save helpers across `Values`, `DiagInfo`, `Operators`, `Stats`, and stores
 
 Workdir archives are written to temporary files and renamed after successful
-serialization. Unitary and density checkpoints include a format version,
-iteration and configuration metadata, and input fingerprints; unitary files
-also store the shell ground-state shift needed for replay, while density files
-are bound to the complete unitary chain. They are native same-build state, not
-a cross-version interchange format.
+serialization. Unitary files store the shell ground-state shift needed for
+replay. See [Workdir files](output-formats.md#workdir-files) for the required
+resumable headers and their compatibility limits.
 Persistent result files such as `td`, spectra, and
 HDF5 output are generally opened directly and can remain partial after an
 interrupted run.

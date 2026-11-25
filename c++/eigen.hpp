@@ -28,6 +28,7 @@
 
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/irange.hpp>
+#include <boost/uuid/random_generator.hpp>
 
 #include <range/v3/all.hpp>
 
@@ -45,7 +46,7 @@
 namespace NRG {
 
 inline constexpr std::string_view unitary_checkpoint_magic = "NRGLjubljana-unitary\n";
-inline constexpr std::uint32_t unitary_checkpoint_version = 1;
+inline constexpr std::uint32_t unitary_checkpoint_version = 2;
 inline constexpr std::uint32_t unitary_checkpoint_stage_replay_ready = 1;
 
 template<typename T>
@@ -655,9 +656,12 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
            fmt::print("({}) {} states: {}\n", I.str(), eig.getnrstored(), eig.values.all_rel());
        fmt::print("Number of states (multiplicity taken into account): {}\n\n", count_states(mult));
      }
-   void save(const size_t N, const Params &P, const t_eigen Egs) const {
+   void save(const size_t N, Params &P, const t_eigen Egs) const {
      const std::string fn = P.workdir->unitaryfn(N);
      if (!std::isfinite(Egs)) throw std::runtime_error(fmt::format("Can't checkpoint non-finite Egs for iteration {}", N));
+     auto *slot = P.resume ? &P.checkpoint_generations.at(N) : nullptr;
+     const auto parent = slot ? P.checkpoint_parent(N) : boost::uuids::uuid{};
+     const auto self = slot ? boost::uuids::random_generator()() : boost::uuids::uuid{};
      const auto tmp_fn = fn + ".tmp";
      struct temp_file_guard {
        std::string filename;
@@ -682,9 +686,10 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
           << P.Ninit.value()
           << std::string(P.symtype)
           << is_complex<S>::value
-          << P.checkpoint_param_fingerprint
-          << P.checkpoint_data_fingerprint
-          << Egs;
+           << P.checkpoint_param_fingerprint
+           << P.checkpoint_data_fingerprint
+           << parent << self
+           << Egs;
        oa << this->size();
        for (const auto &[I, eig]: *this) {
          oa << I;
@@ -698,13 +703,15 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      if (!MATRIXF) throw std::runtime_error(fmt::format("Error writing {}", fn));
      std::filesystem::rename(tmp_fn, fn);
      guard.active = false;
+     if (slot) *slot = self; // Publish the in-memory generation only after the archive is in place.
    }
-   void load(const size_t N, const Params &P, const bool remove_files = false) {
+   void load(const size_t N, const Params &P, const bool remove_files = false, boost::uuids::uuid *preflight_id = nullptr) {
      const std::string fn = P.workdir->unitaryfn(N);
      std::ifstream MATRIXF(fn, std::ios::binary | std::ios::in);
      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for reading", fn));
      DiagInfo<S> loaded;
      t_eigen Egs{};
+     boost::uuids::uuid self{};
      std::array<char, unitary_checkpoint_magic.size()> magic{};
      MATRIXF.read(magic.data(), static_cast<std::streamsize>(magic.size()));
      if (!MATRIXF || !std::equal(magic.begin(), magic.end(), unitary_checkpoint_magic.begin()))
@@ -713,7 +720,7 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
        boost::archive::binary_iarchive ia(MATRIXF);
        const auto version = read_one<std::uint32_t>(ia);
        if (version != unitary_checkpoint_version)
-         throw std::runtime_error(fmt::format("Unsupported checkpoint format in {}", fn));
+         throw std::runtime_error(fmt::format("Unsupported checkpoint version {} in {}; start with a fresh checkpoint directory", version, fn));
        const auto stage = read_one<std::uint32_t>(ia);
        if (stage != unitary_checkpoint_stage_replay_ready)
          throw std::runtime_error(fmt::format("Unsupported checkpoint format in {}", fn));
@@ -724,6 +731,8 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
        const auto stored_complex = read_one<bool>(ia);
        const auto stored_param_fingerprint = read_one<std::uint64_t>(ia);
        const auto stored_data_fingerprint = read_one<std::uint64_t>(ia);
+       const auto parent = read_one<boost::uuids::uuid>(ia);
+       ia >> self;
        Egs = read_one<t_eigen>(ia);
        if (!std::isfinite(Egs)) throw std::runtime_error(fmt::format("Checkpoint {} contains non-finite Egs", fn));
        if (stored_N != N)
@@ -732,6 +741,12 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
            stored_complex != is_complex<S>::value || stored_param_fingerprint != P.checkpoint_param_fingerprint ||
            stored_data_fingerprint != P.checkpoint_data_fingerprint)
          throw std::runtime_error(fmt::format("Checkpoint {} is incompatible with the current calculation", fn));
+       if (P.resume) {
+         if (self.is_nil() || self == parent || parent != P.checkpoint_parent(N) || (!preflight_id && self != P.checkpoint_generations.at(N)))
+           throw std::runtime_error(fmt::format("Checkpoint {} belongs to a different unitary chain", fn));
+       } else if (!parent.is_nil() || !self.is_nil()) {
+         throw std::runtime_error(fmt::format("Unexpected resumable checkpoint in temporary workdir: {}", fn));
+       }
        const auto nr = read_one<size_t>(ia); // Number of subspaces
        for ([[maybe_unused]] const auto cnt : range0(nr)) {
          const auto inv = read_one<Invar>(ia);
@@ -747,6 +762,7 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      }
      this->swap(loaded);
      loaded_checkpoint_Egs = Egs;
+     if (preflight_id) *preflight_id = self;
    }
    void h5save(H5Easy::File &fd, const std::string &name, const bool save_vectors = true) const {
      for (const auto &[I, eig]: *this) eig.h5save(fd, name + "/" + I.name(), save_vectors);

@@ -643,6 +643,11 @@ the general patching/broadening procedure. `NN1` (N/N+1 patching) uses a
 narrower, `Lambda`-times smaller patching window around each shell boundary
 than the default N/N+2 scheme, which can be preferable at larger `Lambda`.
 
+With the default `resume=false`, `nrg` does not hash `param` or `data`, scan
+files for provenance, look for a prior chain, or generate random checkpoint
+IDs. DM and FDM runs still write and read the workdir files needed between
+sweeps and check their structure on read.
+
 To make a run resumable, set `resume=true` before its first invocation and use
 the same exact checkpoint directory each time:
 
@@ -652,14 +657,18 @@ nrg --checkpoint-dir /scratch/my-calculation
 
 The directory is created if necessary, exclusively locked while `nrg` owns it,
 and never recursively removed by `nrg`. Exact checkpoint directories reject
-runs with `resume=false`. Checkpoints must form a contiguous sequence beginning
-at `Ninit`; gaps are rejected, and every discovered archive is validated before
-result files are opened. They are native same-build artifacts and must only be
-reused with the same `param` and `data` inputs. A resumed run replays cached
+runs with `resume=false`. Unitary checkpoints must form a contiguous chain
+beginning at `Ninit`; every discovered unitary archive is validated before
+result files are opened. Restart requires the same build and matching 64-bit
+hashes of both `param` and `data`. A resumed run replays cached
 shells rather than appending to partial result files, so statistics, operators,
 and outputs are rebuilt consistently. Resumable artifacts are retained after
 both failed and successful runs, independently of `removefiles`; remove the
 checkpoint directory explicitly when it is no longer needed.
+
+Only a complete unitary restart can reuse matching density files; a partial
+restart rebuilds all requested densities. See [State and persistence](state-and-persistence.md#workdir-owned-state)
+for the chain checks.
 
 ### Logging, Diagnostics, HDF5, And Compatibility
 
