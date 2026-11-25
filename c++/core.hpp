@@ -295,10 +295,9 @@ void recalculate_and_measure(const Step &step, Operators<S> &operators, Stats<S>
   calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store_all, mt, Sym, P);
 }
 
-[[nodiscard]] inline bool need_recalc_irreducible(const Step &step, const Params &P) {
-  if (step.last()) return false;
-  // QSTZ replay loads the next eigensystem; named spectra and expectation values do not read opch.
-  return step.nrg() || P.symtype != "QSTZ" || P.substeps || P.floquet || P.dump_f || P.checksumrules || P.logletter('f') || P.logletter('F');
+[[nodiscard]] inline bool need_recalc_irreducible(const Step &step) {
+  // The next forward Hamiltonian uses opch. The DM sweep loads its eigensystems from checkpoints.
+  return step.nrg() && !step.last();
 }
 
 template<scalar S>
@@ -318,7 +317,7 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
   nrglog('@', "truncate_perform()");
   diag.truncate_perform();                               // Actual truncation occurs at this point
   archive_iteration_state(step, diag, substruct, store, store_all, Sym, P);
-  if (need_recalc_irreducible(step, P)) {
+  if (need_recalc_irreducible(step)) {
     nrglog('@', "recalc_irreducible()");
     recalc_irreducible(step, diag, substruct, operators.opch, Sym, mt, P);
     if (P.dump_f) operators.opch.dump();
@@ -326,7 +325,7 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
   if (P.do_recalc_kept(step.get_runtype())) { // ... or ...
     recalculate_and_measure(step, operators, stats, diag, oprecalc, output, substruct, store_all, Sym, mt, P);
   }
-  if (P.checksumrules) operator_sumrules(operators, Sym);
+  if (step.nrg() && P.checksumrules) operator_sumrules(operators, Sym);
   if (P.h5raw && (P.h5all || (P.h5last && step.last())) && P.h5ops)
     operators.h5save(*output.h5raw, std::to_string(step.ndx()+1));
 }

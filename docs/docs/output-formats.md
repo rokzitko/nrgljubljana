@@ -577,9 +577,10 @@ discretization and truncation error, see Žitko 2011 under
 expected sum rule for the operator in question is a strong, immediate sign of
 a truncation, normalization, or model-setup problem, and is worth checking
 before trusting a broadened spectrum. With `checksumrules=true`, `nrg`
-additionally prints one `norm[name]=...` line per requested operator, giving
-the same sum-rule diagnostic referenced to a spin-1/2 operator by convention
-(see `c++/core.hpp`, `operator_sumrules()`).
+additionally prints `norm[name]=...` for doublet and quadruplet operators and
+`norm[f,channel,index]=...` for Wilson-chain operators during the forward NRG
+sweep. For symmetries that resolve spin in a field, the doublet and Wilson-chain
+norms use the spin-up component by convention.
 
 `nrg` does not create a file named `log`. Repository test wrappers do so by
 combining standard output and standard error through `tee`. Users who want the

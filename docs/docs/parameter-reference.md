@@ -630,11 +630,10 @@ Weichselbaum, von Delft & Bulla 2008).
 **Peak trimming.** `discard_trim` and `discard_immediately` clip spectral
 bins whose weight falls below a threshold set relative to the bin width or
 peak energy, respectively. Because spectral density is weight *per interval*,
-overly aggressive trimming silently discards spectral weight and can violate
-the sum rules checked by `checksumrules` (see
-[Output formats](output-formats.md)); the discretization/truncation error
-analysis of Žitko (2011) is the relevant reference for choosing these
-thresholds together with `keep` and `alpha`.
+overly aggressive trimming can shift the zeroth moment reported in the spectral
+summary (see [Output formats](output-formats.md)). The discretization and
+truncation error analysis of Žitko (2011) is the relevant reference for choosing
+these thresholds together with `keep` and `alpha`.
 
 **Patching.** `goodE`, `NN1`, `NN2even`, `NN2avg`, and `NNtanh` control how
 spectral contributions from consecutive NRG shells are stitched ("patched")
@@ -674,7 +673,7 @@ checkpoint directory explicitly when it is no longer needed.
 | `lastall` | boolean | `false` | Keep all last-step states for DM-NRG. |
 | `lastalloverride` | boolean | `false` | Prevent CFS/FDM from automatically enabling last-step retention. |
 | `dumpsubspaces` | boolean | `false` | Write `subspaces.dat`. |
-| `dump_f` | boolean | `false` | Print irreducible `f`-operator matrix elements. |
+| `dump_f` | boolean | `false` | Print irreducible Wilson-chain `f` matrix elements after recalculation on nonfinal forward NRG steps. |
 | `dumpenergies` | boolean | `false` | Write all diagonalized energies to `energies.nrg`. |
 | `dumpcorr` | boolean | `false` | Add corrected energies to `energies.nrg`; requires `dumpenergies`. |
 | `dumpcrit` | boolean | `false` | Add truncation criteria to `energies.nrg`; requires `dumpenergies`. |
@@ -682,7 +681,7 @@ checkpoint directory explicitly when it is no longer needed.
 | `dumpenergiesunscaled` | boolean | `false` | Convert energy/state dumps from shell units to bandwidth units. |
 | `dumpabsenergies` | boolean | `false` | Write `absolute_energies.dat`. |
 | `removefiles` | boolean | `true` | Remove temporary phase files as they are consumed. Resumable artifacts are retained when `resume=true`. |
-| `checksumrules` | boolean | `false` | Check operator sum rules. |
+| `checksumrules` | boolean | `false` | Report operator sum rules during the forward NRG sweep. |
 | `absolute` | boolean | `false` | Run without the usual NRG energy rescaling; generated input must also use `data_has_rescaled_energies=false`. |
 | `diag_mode` | string | `default` | Scheduling mode: `default`, `MPI`, `OpenMP`, or `serial`. |
 | `h5raw` | boolean | `false` | Enable `raw.h5` and, when needed, `raw-dm.h5`. |
@@ -698,8 +697,9 @@ checkpoint directory explicitly when it is no longer needed.
 
 Common `log` combinations are `@0` for high-level flow, `is` for
 matrix-construction diagnostics, `eAt` for diagonalization, and `fr` for
-irreducible operator recalculation. Logging text is diagnostic and not a
-machine-readable interface.
+irreducible operator recalculation. Wilson-chain `f` recalculation and its
+logging occur during the forward NRG sweep. Logging text is diagnostic and not
+a machine-readable interface.
 
 The [native workflow diagnostic-file overloads](solver-workflow.md#diagnostic-routing)
 route console output to an exclusively created combined stdout/stderr log.
