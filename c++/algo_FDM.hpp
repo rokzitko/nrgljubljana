@@ -12,6 +12,7 @@
 
 #include "traits.hpp"
 #include "algo.hpp"
+#include "fdm_zero_dd.hpp"
 #include "spectrum.hpp"
 
 namespace NRG {
@@ -161,9 +162,12 @@ class Algo_FDM : public Algo_FDMls<S>, public Algo_FDMgt<S> {
         gt_cb.add(std::make_pair(absGj[j] - absGi[i], conj_me(op1(j, i)) * op2_rho(j, i)), factor);
       };
 
-      for (const auto j : diagI1.Drange())
-        for (const auto i : diagIp.Drange())
-          add_exp_weight(i, j);
+      const auto di = diagIp.Drange(), dj = diagI1.Drange();
+      if (!fdm_zero_dd_block(di, dj, boltzGi, boltzGj, absGi, absGj, op1, op2, T, wnf, factor)) {
+        for (const auto j : dj)
+          for (const auto i : di)
+            add_exp_weight(i, j);
+      }
       for (const auto j : diagI1.Krange())
         for (const auto i : diagIp.Drange()) {
           const auto energy = absGj[j] - absGi[i];
