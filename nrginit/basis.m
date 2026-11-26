@@ -5,8 +5,8 @@
    backward compatibility, we also allow simple List[] wrapping. *)
 
 (* READBASIS bypasses the symmetry module and its operator-label adapter. *)
-If[SYMTYPE === "QSTZ" && option["READBASIS"],
-  MyError["QSTZ does not support READBASIS; generate the basis instead."];
+If[MemberQ[{"QSTZ", "QSZTZ"}, SYMTYPE] && option["READBASIS"],
+  MyError[SYMTYPE <> " does not support READBASIS; generate the basis instead."];
 ];
 
 makebasis[basisops]; (* Occupation number representation *)

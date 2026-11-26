@@ -197,6 +197,10 @@ A successful initializer exits with status zero, prints `Success!`, and leaves
 `data` and `mmalog` in the calculation directory. `data` is the generated input
 for `nrg`; `mmalog` is a diagnostic Mathematica transcript.
 
+For a three-channel `symtype=QSZTZ` model, declare the impurity orbital charges
+in the model before generating `data`. Changing those rules changes the seed
+sectors, so rerun `nrginit`; see [QSZTZ basis initialization](nrginit-workflow.md#qsztz-basis).
+
 ### Optional scalar chain backend
 
 The example above retains the legacy defaults: `tri=old` and

@@ -130,11 +130,12 @@ SPSU2LR SPSU2C3 SPSU2T SL SL3 P PP NONE ISOSZ ISOSZLR
 Builds made without the extended symmetry sets support only a subset. Complex
 `data` is required by the complex-only implementations.
 
-The bundled `QSTZbasis.m` supports three spinful channels with `Ninit=0`.
-Models must declare `qstzImpurityCharges` and use the boundary labels
-`f[+1],f[0],f[-1]`; see [QSTZ basis initialization](nrginit-workflow.md#qstz-basis).
-Auxiliary kets, spinless projection and `READBASIS` are not supported by this
-adapter. Calculation-local basis modules still participate in normal module lookup.
+The bundled `QSTZ` and `QSZTZ` basis adapters support three spinful channels
+with `Ninit=0`. Models must use the boundary labels `f[+1],f[0],f[-1]` and
+declare `qstzImpurityCharges` for [QSTZ](nrginit-workflow.md#qstz-basis) or
+`qsztzImpurityCharges` for [QSZTZ](nrginit-workflow.md#qsztz-basis).
+Neither adapter supports auxiliary kets, spinless projection, or `READBASIS`.
+Calculation-local basis modules still participate in normal module lookup.
 
 `QSTZ` and `QSZTZ` currently reuse channel zero's bath-chain coefficients.
 The runtime therefore rejects unequal `xi` or `zeta` chains after loading

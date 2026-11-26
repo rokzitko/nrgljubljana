@@ -115,6 +115,36 @@ highest weights, and invalid-input paths. The C++ runtime still requires
 identical normalized bath chains for QSTZ and QSZTZ; unequal impurity
 hybridization amplitudes alone do not violate that condition.
 
+## QSZTZ Basis
+
+Use `symtype=QSZTZ` when the Hamiltonian conserves charge, spin projection
+`Sz`, and orbital projection `Tz`, but need not conserve total spin. Unlike
+QSTZ, `QSZTZbasis.m` retains every occupation vector. Each counts once in its
+sector `{Q, 1+2*Sz, Tz}`: the middle label is **not** a spin multiplicity.
+`Q` is relative to half filling and `Tz` is the sum of the orbital charges
+of all occupied spin modes, without a shift or factor of two.
+
+Use the same bath relabelling and hybridization as in the [QSTZ example](#qstz-basis),
+but declare `qsztzImpurityCharges` in the model, for example:
+
+```mathematica
+qsztzImpurityCharges = {d[] -> 1, a[] -> 0, b[] -> -1};
+```
+
+Supply one integer rule per distinct impurity orbital, including its indices,
+in any order. A bath-only model must explicitly set `qsztzImpurityCharges = {}`.
+The adapter supplies the boundary charges `f[1] -> 1`, `f[0] -> 0`, `f[-1] -> -1`;
+it does not rewrite the Hamiltonian. It requires three channels, `Ninit=0`,
+and spin-1/2 fermions, and rejects `READBASIS`, spinless projection, and
+auxiliary spin, orbital, phonon, or Floquet kets. Remove calculation-local
+`QSZTZbasis.m` overrides to use the bundled module.
+
+With SNEG loaded and `SYMTYPE` unset or different from `"QSZTZ"`, loading the
+module defines only `qsztzbasisvc[orbitals, chargeRules]`. This constructor
+accepts any number of orbitals with integer charges; `qsztzbasisvc[{}, {}]`
+returns the vacuum sector `{0, 1, 0}`. Arbitrary constructor charges do not
+extend the runtime's boundary-operator selection rules.
+
 ## Bundled SNEG
 
 `nrginit/sneg.m` is synchronized with the standalone SNEG 2.1.1 source,
