@@ -81,6 +81,8 @@ class SymmetryQSTZ : public Symmetry<SC> {
 
   DECL;
   HAS_DOUBLET;
+  MatrixElements<SC> recalc_named_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct,
+                                          const MatrixElements<SC> &cold, qstz_transfer::Mask mask) const override;
   HAS_TRIPLET;
 };
 
