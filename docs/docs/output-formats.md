@@ -574,6 +574,10 @@ used when output is a terminal and disabled when output is redirected.
 Console text is diagnostic and can change. Even familiar lines such as `Total
 energy:` should not be treated as a general structured-output interface.
 
+Floquet calculations print the ranking criterion shift as `Clw`. With `log=4`,
+they also report the first state's raw energy, corrected energy, and shifted
+ranking criterion in each subspace, followed by `scale`, `shift`, and `T_shift`.
+
 **Sum-rule self-checks.** Every computed spectral function prints a summary
 line to standard output with its total positive weight (`pos=`), negative
 weight (`neg=`), overall weight `sum=pos+neg`, and the first four moments

@@ -3,6 +3,12 @@
 This document records removals of deprecated or obsolete features, newest first.
 Dates use `YYYY-MM-DD` and identify when the feature was removed.
 
+## 2026-11-26: Obsolete Numerical Helpers And Floquet Diagnostic Field
+
+- Removed the old trapezoidal integration headers for `adapt` and `nrgchain`. Both tools use `TabulatedDensity` for integration.
+- Removed unused eigenvalue, coefficient, occupation-factor, Matsubara, and quadrature helpers.
+- Removed the always-NaN `c_shift` field from the verbose Floquet report. Use the `Clw` line in the console output to read the shift applied to the ranking criterion.
+
 ## 2026-11-25: Older Restart Checkpoint Formats
 
 Restart requires unitary v2 and density v3 headers. There is no migration:

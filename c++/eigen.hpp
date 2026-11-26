@@ -50,34 +50,6 @@ inline constexpr std::uint32_t unitary_checkpoint_version = 2;
 inline constexpr std::uint32_t unitary_checkpoint_stage_replay_ready = 1;
 
 template<typename T>
-std::vector<T> negate_copy(const std::vector<T>& v) {
-  std::vector<T> out(v.size());
-  std::transform(v.begin(), v.end(), out.begin(),
-                 [](const T& x) { return -x; });
-  return out;
-}
-
-template<typename T>
-std::vector<T> abs_copy(const std::vector<T>& v) {
-  std::vector<T> out(v.size());
-  std::transform(v.begin(), v.end(), out.begin(),
-                 [](const T& x) { return std::abs(x); });
-  return out;
-}
-
-template<typename T>
-void negate_inplace(std::vector<T>& v) {
-  for (auto& x : v)
-    x = -x;
-}
-
-template<typename T>
-void abs_inplace(std::vector<T>& v) {
-  for (auto& x : v)
-    x = std::abs(x);
-}
-
-template<typename T>
 void shift_inplace(std::vector<T>& v, const T shift) {
   for (auto& x : v)
     x -= shift; // note that we do a subtraction!
@@ -99,7 +71,6 @@ class Values {
    double abs_GS_energy = std::numeric_limits<double>::quiet_NaN();
    std::vector<t_eigen> corrected; // these are referenced to Egs in current step (in the same way as rel_zero)
    std::vector<t_eigen> c; // criterion, value of "cost" function for truncation; constrols the sort order of states!!
-   double c_shift = std::numeric_limits<double>::quiet_NaN(); // shift for criterion 'c'
   public:
    std::vector<t_eigen> & ref_v() { return v; }
    std::vector<t_eigen> & ref_corrected() { return corrected; }
@@ -124,7 +95,7 @@ class Values {
      assert(v.size() > 0);
      std::cout << "v[0]=" << v.front() << " corrected[0]=" << corrected.front() << " crit[0]=" << c.front() << std::endl;
      if (verbose)
-       std::cout << "scale=" << scale << " shift=" << shift << " T_shift=" << T_shift << " c_shift=" << c_shift << std::endl;
+       std::cout << "scale=" << scale << " shift=" << shift << " T_shift=" << T_shift << std::endl;
    }
    [[nodiscard]] const auto & all_rel() const noexcept { return v; }
    [[nodiscard]] const auto & all_crit() const noexcept { return c; }
@@ -151,7 +122,6 @@ class Values {
     void set(std::vector<t_eigen> &&in) { v = std::move(in); }
    void set_scale(const double scale_) { scale = scale_; }
    void set_shift(const double shift_) { shift = shift_; }
-   void set_c_shift(const double c_shift_) { c_shift = c_shift_; }
    void set_T_shift(const double T_shift_) { T_shift = T_shift_; }
    void set_abs_GS_energy(const double abs_GS_energy_) { abs_GS_energy = abs_GS_energy_; }
     void set_corr(const std::vector<t_eigen> &in) { corrected = in; }
@@ -163,8 +133,6 @@ class Values {
    void set_crit(const size_t i, const t_eigen x) { c[i] = x; }
    void crit_copy_raw() { c = v; }
    void crit_copy_corr() { c = corrected; }
-   void crit_negate() { negate_inplace(c); }
-   void crit_abs() { abs_inplace(c); }
    [[nodiscard]] auto has_abs() const noexcept { return std::isfinite(scale); }
    [[nodiscard]] auto has_zero() const noexcept { return std::isfinite(shift); }
    [[nodiscard]] auto has_abs_zero() const noexcept { return has_abs() && has_zero(); }
@@ -592,23 +560,9 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
        all.insert(all.end(), eig.values.all_rel_zero().begin(), eig.values.all_rel_zero().end());
      return all | ranges::move | ranges::actions::sort;
    }
-   [[nodiscard]] std::vector<t_eigen> sorted_criterion_values() const {
-     std::vector<t_eigen> all;
-     for (const auto &eig: eigs())
-       all.insert(all.end(), eig.values.all_crit().begin(), eig.values.all_crit().end());
-     return all | ranges::move | ranges::actions::sort;
-   }
    void sort_by_c() {
      for (auto &eig: eigs())
        eig.do_sort_by_c();
-   }
-   void negate_c() {
-     for (auto &eig: eigs())
-       eig.values.crit_negate();
-   }
-   void abs_c() {
-     for (auto &eig: eigs())
-       eig.values.crit_abs();
    }
    void report(const bool verbose = false) const {
      std::cout << "DiagInfo report" << std::endl;

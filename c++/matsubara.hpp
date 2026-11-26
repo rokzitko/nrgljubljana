@@ -28,9 +28,6 @@ inline int gf_sign(const gf_type gt) { return gt == gf_type::bosonic ? S_BOSONIC
     default: my_assert_not_reached();
   }
 }
-[[nodiscard]] inline auto wb(const size_t n, const double T) { return T * M_PI * (2.0 * static_cast<double>(n)); }
-[[nodiscard]] inline auto wf(const size_t n, const double T) { return T * M_PI * (2.0 * static_cast<double>(n) + 1.0); }
-
 template<scalar S, typename t_weight = weight_traits<S>>
 class Matsubara {
  private:

@@ -369,16 +369,6 @@ class integrator {
 
   auto policy() const noexcept { return error_policy; }
 
-  void record_warning(const gsl_failure &failure) {
-    if (error_policy != NRG::Tools::GslErrorPolicy::warn) return;
-    if (failures) {
-      failures->record(failure);
-      return;
-    }
-    std::cerr << "hilb: warning: qag error: " << failure.status << " -- " << gsl_strerror(failure.status)
-              << (failure.nonfinite ? "; nonfinite result or error estimate" : "") << '\n';
-  }
-
   void record_global_warning(std::string message) {
     if (error_policy != NRG::Tools::GslErrorPolicy::warn) return;
     if (failures) {
