@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iostream>
 #include <iterator>
+#include <limits>
 #include <ostream>
 #include <stdexcept>
 #include <string>
@@ -105,18 +106,14 @@ inline double windowfunction(const double E, const double Emin, const double Ex,
   if (E <= Ex && step.last()) return 1.0;  // Exception 1
   if (E >= Ex && step.first()) return 1.0; // Exception 2
   if (E <= Emin || E >= Emax) return 0.0;  // Optimization
-  // Window functions: f(0)=0, f(1)=1.
-  const auto fnc_linear = [](const auto x) { return x ; };
-  const auto fnc_tanh_0 = [](const double x, const double NNtanh) { return std::tanh(NNtanh * (x - 0.5)); };
-  const auto fnc_tanh = [fnc_tanh_0](const double x, const double NNtanh) {
-    const auto f0 = fnc_tanh_0(0, NNtanh);
-    const auto fx = fnc_tanh_0(x, NNtanh);
-    const auto f1 = fnc_tanh_0(1, NNtanh);
-    return (fx - f0) / (f1 - f0);
+  // The normalized tanh window differs from the linear window at order steepness squared.
+  const auto window = [steepness = P.NNtanh.value()](const double x) {
+    if (!(steepness > std::sqrt(std::numeric_limits<double>::epsilon()))) return x;
+    const auto endpoint = std::tanh(0.5 * steepness);
+    return (std::tanh(steepness * (x - 0.5)) + endpoint) / (2.0 * endpoint);
   };
-  const auto fnc = [&P, fnc_linear, fnc_tanh](const auto x) { return P.NNtanh > 0 ? fnc_tanh(x, P.NNtanh) : fnc_linear(x); };
-  if (Emin < E && E <= Ex) return fnc((E - Emin) / (Ex - Emin));
-  if (Ex < E && E < Emax) return 1.0 - fnc((E - Ex) / (Emax - Ex));
+  if (Emin < E && E <= Ex) return window((E - Emin) / (Ex - Emin));
+  if (Ex < E && E < Emax) return 1.0 - window((E - Ex) / (Emax - Ex));
   my_assert_not_reached();
 }
 

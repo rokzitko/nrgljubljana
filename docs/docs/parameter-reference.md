@@ -417,7 +417,7 @@ An empty string default means that the feature or list is disabled.
 | `keep` | non-negative integer | `100` | Maximum retained states; must be greater than `1`. |
 | `keepenergy` | number | `-1.0` | Positive values enable a shell-rescaled energy cutoff; retention extends through the first state above the cutoff, subject to `keep`. |
 | `keepmin` | non-negative integer | `0` | Minimum retained states with energy-cutoff truncation; cannot exceed `keep`. |
-| `keepall` | string | empty | `even`, `odd`, or comma-separated iteration numbers to retain completely. |
+| `keepall` | string | empty | `even`, `odd`, or comma-separated zero-based iteration numbers. Whitespace around numbers is ignored. Retains all computed states on matching iterations. |
 | `safeguard` | number | `1e-5` | Near-degeneracy tolerance in current eigenspectrum units; non-positive disables it. |
 | `safeguardmax` | non-negative integer | `200` | Maximum extra states retained by `safeguard`. |
 | `fixeps` | number | `1e-15` | Threshold in current eigenspectrum units for correcting floating-point eigenvalue splitting. |
@@ -607,7 +607,7 @@ above.
 | `NN1` | boolean | `false` | Use N/N+1 rather than N/N+2 patching. |
 | `NN2even` | boolean | `true` | Use even iterations for N/N+2 patching. |
 | `NN2avg` | boolean | `false` | Average even and odd N/N+2 results. |
-| `NNtanh` | number | `0.0` | Positive values select a smooth tanh patching window. |
+| `NNtanh` | number | `0.0` | Positive values select a smooth tanh patching window. Values near zero use the linear limit. |
 | `width_td` | integer | `16` | Minimum column width in `td` and `tdfdm`. |
 | `width_custom` | integer | `16` | Minimum column width in `custom` and `customfdm`. |
 | `prec_td` | integer | `10` | Significant digits in `td` and `tdfdm`. |

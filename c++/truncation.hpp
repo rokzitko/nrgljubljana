@@ -11,6 +11,7 @@
 
 #include "step.hpp"
 #include "eigen.hpp"
+#include "parameter_sections.hpp"
 #include "params.hpp"
 #include "symmetry.hpp"
 #include "debug.hpp" // nrgdump
@@ -27,8 +28,8 @@ inline auto keepall(const Step &step, const Params &P) {
    if (P.keepall == "even"s && step.N() % 2 == 0) return true;
    if (P.keepall == "odd"s && step.N() % 2 == 1) return true;
    const auto list = split(P.keepall, ',');
-   if (std::find(list.begin(), list.end(), to_string(step.N())) != list.end()) return true;
-   return false;
+   const auto iteration = to_string(step.N());
+   return std::ranges::any_of(list, [&iteration](const auto &token) { return trim_parameter_text(token) == iteration; });
 }
 
 // Determine the number of states to be retained. Returns Emax - the highest energy (cost) to still be retained.
