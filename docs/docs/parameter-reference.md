@@ -505,6 +505,9 @@ The existing scalar/global-scalar pairings are unchanged. In `QSZTZ`, a longitud
 local `Sz` operator can instead be declared explicitly with `mtSingletOp`
 and requested through `specs`; do not assume the stock `SZd` initializer
 operator is enabled for that symmetry.
+For explicit QSZTZ ladders, request the desired names in `ops` and use their
+same-name pairs in `spect` (or `specchit` for shell susceptibilities); see
+[transverse spin operators](nrginit-workflow.md#transverse-spin-operators).
 
 **`gtp`/`chitp`.** `specgt`/`speci1t`/`speci2t` and `specchit` are evaluated
 shell by shell at an absolute temperature `T_eff = gtp * scale(N)` (for

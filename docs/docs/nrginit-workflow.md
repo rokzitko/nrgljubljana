@@ -145,6 +145,35 @@ accepts any number of orbitals with integer charges; `qsztzbasisvc[{}, {}]`
 returns the vacuum sector `{0, 1, 0}`. Arbitrary constructor charges do not
 extend the runtime's boundary-operator selection rules.
 
+### Transverse spin operators
+
+In `modeloperators.m`, supply the physical raising operator and two distinct
+names. The initializer derives the lowering operator by Hermitian conjugation.
+For example, for one impurity orbital `d[]`:
+
+```mathematica
+Join[mtQSZTZLadderOps["SpLoc", "SmLoc", spinplus[d[]]],
+     mtSingletOp["SzLoc", spinz[d[]]]]
+```
+
+For a total local spin, sum `spinplus` over the desired orbitals. The raising
+and lowering blocks conserve `Q` and `Tz` and change `2*Sz` by `+2` and `-2`.
+They carry no Clebsch-Gordan or spherical-tensor factors. Unlike the reduced
+`mtTripletOp` in QSTZ, the two names can be requested independently in `ops`.
+Regenerate `data` after adding the operators. For raw real-frequency spectra:
+
+```ini
+ops=SpLoc SmLoc SzLoc
+spect=SpLoc-SpLoc SmLoc-SmLoc
+specs=SzLoc-SzLoc
+fdm=true
+savebins=true
+broaden=false
+```
+
+Use same-name pairs: the first operator in an autocorrelator is adjointed
+by the solver. See the [signed-weight convention](output-formats.md#qsztz-transverse-spin).
+
 ## Bundled SNEG
 
 `nrginit/sneg.m` is synchronized with the standalone SNEG 2.1.1 source,

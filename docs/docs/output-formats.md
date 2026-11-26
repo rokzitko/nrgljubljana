@@ -238,6 +238,15 @@ Current algorithm identifiers include `FT`, `FTmats`, `DMNRG`, `DMNRGmats`,
 `CFS`, `CFSgt`, `CFSls`, `FDM`, `FDMgt`, `FDMls`, `FDMmats`, `GT`, `I1T`,
 `I2T`, and `CHIT`.
 
+### QSZTZ transverse spin
+
+For the [physical spin ladders](nrginit-workflow.md#transverse-spin-operators),
+`spin_FDM_dens_SpLoc-SpLoc.bin` uses the matrix elements of `S+` acting on
+the ket. This is the `S-,S+` commutator spectrum: summing its **signed bin
+weights** gives `-2<SzLoc>` in the complete-basis limit. `SmLoc-SmLoc`
+gives `+2<SzLoc>`. In a spin-rotation-invariant ensemble each transverse
+spectrum is twice the one-component longitudinal spectrum, not equal to it.
+
 ### Broadened Real-Frequency `.dat`
 
 When `broaden=true`, real-frequency spectra are headerless text:

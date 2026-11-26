@@ -1560,6 +1560,14 @@ ireducsigmaTable[opinput_] := Module[{t, i, cp, mat, op = ReleaseHold[opinput]},
   t (* return *)
 ];
 
+(* Explicit physical spin component, not an SU(2)-reduced matrix element.
+   QSZTZ labels are {Q, 1+2 Sz, Tz}; pairs are ordered {bra, ket}. *)
+qsztzLadderTable[held_, ds:(2 | -2)] := Module[{op = ReleaseHold[held], pairs},
+  pairs = Select[spincoupledpairs, First[#] - Last[#] === {0, ds, 0} &];
+  opdata = ({#, optransform[op, First[#], Last[#]]} &) /@ pairs;
+  Join[{{Length[pairs]}}, Flatten[(Prepend[Last[#], Flatten[First[#]]] &) /@ opdata, 1]]
+];
+
 
 (*                     --- ORBITAL TRIPLET OPERATORS ---               *)
 
@@ -1706,6 +1714,12 @@ mtGlobalOp[opname_String, opinput_] :=        mtOp[opname, opinput, "g",  single
 mtDoubletOp[opname_String, opinput_] :=       mtOp[opname, opinput, "d",  ireducTable];
 mtDoubletOp[opname_String, opinput_, opt_] := mtOp[opname, opinput, "d",  ireducTable[#1,opt]& ];
 mtTripletOp[opname_String, opinput_] :=       mtOp[opname, opinput, "t",  ireducsigmaTable];
+mtQSZTZLadderOps[plus_String, minus_String, raising_] := Module[{},
+  If[SYMTYPE =!= "QSZTZ", MyError["mtQSZTZLadderOps requires QSZTZ symmetry."]];
+  If[plus === minus, MyError["mtQSZTZLadderOps requires distinct raising and lowering names."]];
+  Join[mtOp[plus, raising, "t", qsztzLadderTable[#, 2] &],
+       mtOp[minus, conj[raising], "t", qsztzLadderTable[#, -2] &]]
+];
 mtOrbTripletOp[opname_String, opinput_] :=    mtOp[opname, opinput, "ot", ireducorbsigmaTable];
 
 (************* DIAGONALIZATION *************)
