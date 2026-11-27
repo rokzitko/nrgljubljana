@@ -6,6 +6,7 @@
 #include <cmath>
 #include <complex>
 #include <cstddef>
+#include <cstdlib>
 #include <fstream>
 #include <ios>
 #include <istream>
@@ -23,6 +24,8 @@
 #include "params.hpp"
 #include "eigen.hpp"
 #include "operators.hpp"
+#include "qstz_transfer.hpp"
+#include "qsztz_transfer.hpp"
 #include "floquet.hpp"
 #include "coef.hpp"
 #include "tridiag.hpp"
@@ -194,6 +197,10 @@ private:
     initialize_symmetry(P, header);
     read_seed_data(fdata, header, P);
     read_blocks(fdata, P);
+    if (header.symtype == "QSTZ")
+      operators.doublet_masks = qstz_transfer::seed_masks(operators.opd, P, std::getenv("NRG_QSTZ_TRANSFER_MASK"));
+    else if (header.symtype == "QSZTZ")
+      operators.qsztz_doublet_masks = qsztz_transfer::seed_masks(operators.opd, P, std::getenv("NRG_QSZTZ_TRANSFER_MASK"));
     if (P.floquet)
       P.set_floquet_mode_bounds(validate_floquet_mode_operator(diag, operators));
     finalize_coefficients(P, header);

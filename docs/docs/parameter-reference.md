@@ -493,6 +493,34 @@ Spectrum lists contain whitespace-separated operator pairs. The usual token is
 `operator1-operator2`; polarized variants can add `-u` or `-d`. Every named
 operator must have been included in the generated `data` file.
 
+**Optional QSTZ doublet optimization.** Run `NRG_QSTZ_TRANSFER_MASK=1 nrg`
+to skip orbital transfers absent from a named doublet. This is a solver
+environment variable, not a `param` key. Unset or `0` uses the usual dense
+recalculation. Other symmetries ignore the variable.
+
+For each name, the solver reads the set of `TZ_bra - TZ_ket` values from
+exactly nonzero seed matrix elements. For example, an operator with transfers
+`0` and `+1` skips only `-1`. Both reduced-spin branches are kept for each
+allowed transfer, even if an individual seed block is zero. There is no
+amplitude cutoff. This does not change `data`, the initial `calc0` matrices,
+or the Wilson-chain operators; no `nrginit` rerun is needed.
+
+**Optional QSZTZ doublet optimization.** Run `NRG_QSZTZ_TRANSFER_MASK=1 nrg`
+to skip absent *joint* spin and orbital transfers of each named doublet. In
+`QSZTZ`, spin projection is additive: the transfer labels are the pair of
+bra-minus-ket differences in `2*Sz` and `Tz`, not reduced-spin branches.
+For example, a sum of spin-up creation at `Tz=0` and spin-down creation at
+`Tz=+1` retains `(+1,0)` and `(-1,+1)`, not all four combinations of those
+spin and orbital labels. A name with all six pairs stays dense. As in `QSTZ`,
+support comes from exactly nonzero seed elements, not the operator name or
+individual zero blocks. Unset or `0` keeps the usual dense behavior. This
+switch does not affect triplets, Wilson-chain operators, or other symmetries.
+
+For both optimizations the solver keeps dense recalculation for `h5ops`, `checksumrules`, logging
+letters `f`, `r`, or `R`, and nonempty `specgt`, `speci1t`, or `speci2t`
+requests, where explicitly stored zero blocks can affect diagnostic output
+or which temperature rows are written.
+
 For `QSTZ`, local spin dynamics uses a spin-triplet operator and `spect`,
 including `fdm=true` and/or `fdmmats=true`. With the usual `mtTripletOp`
 normalization, the response is one Cartesian component, not the sum over

@@ -261,6 +261,15 @@ class Opch : public std::vector<OpchChannel<S>> {
    }
 };
 
+namespace qstz_transfer {
+// Support of bra TZ - ket TZ for a QSTZ doublet.
+enum Mask : unsigned { none = 0, minus = 1, zero = 2, plus = 4, all = minus | zero | plus };
+}
+
+namespace qsztz_transfer {
+enum Mask : unsigned { none = 0, all = 0x3f }; // six joint (dSZ, dTZ) pairs
+}
+
 // Object of class Operators cotains full information about matrix representations when entering stage N of the NRG
 // iteration.
 template<scalar S>
@@ -271,6 +280,8 @@ class Operators {
    CustomOp<S> opsp; // singlet operators (odd parity)
    CustomOp<S> opsg; // singlet operators [global op]
    CustomOp<S> opd;  // doublet operators (spectral functions)
+   std::map<std::string, qstz_transfer::Mask> doublet_masks; // from named QSTZ seeds; missing = unrestricted
+   std::map<std::string, qsztz_transfer::Mask> qsztz_doublet_masks; // from named QSZTZ seeds; missing = unrestricted
    CustomOp<S> opt;  // triplet operators (dynamical spin susceptibility)
    CustomOp<S> opq;  // quadruplet operators (spectral functions for J=3/2)
    CustomOp<S> opot; // orbital triplet operators
