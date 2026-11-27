@@ -237,6 +237,11 @@ instead of `share`; CMake prints its exact path during configuration. The
 script configures the executable, library, include, and CMake package search
 paths.
 
+On macOS, the installed executables locate the NRG Ljubljana library through a
+loader-relative RPATH and do not depend on `DYLD_LIBRARY_PATH`. Tested conda-forge
+and Homebrew dependency recipes are in the
+[getting-started guide](docs/docs/getting-started.md#macos).
+
 Run the default test suite with:
 
 ```sh

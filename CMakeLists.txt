@@ -45,6 +45,14 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OR (NOT IS_ABSOLUTE ${CMAKE_INSTA
 endif()
 message(STATUS "-------- CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX} --------")
 
+# macOS: installed executables must find libnrgljubljana_c without DYLD_LIBRARY_PATH,
+# which SIP strips when a run passes through /bin/sh, /usr/bin/env, or /usr/bin/perl.
+# Linux install trees are deliberately left without RPATH (LD_LIBRARY_PATH, EasyBuild, conda-build).
+if(APPLE AND NOT DEFINED CMAKE_INSTALL_RPATH)
+  file(RELATIVE_PATH NRGLJUBLJANA_BIN_TO_LIB "${CMAKE_INSTALL_FULL_BINDIR}" "${CMAKE_INSTALL_FULL_LIBDIR}")
+  set(CMAKE_INSTALL_RPATH "@loader_path/${NRGLJUBLJANA_BIN_TO_LIB}")
+endif()
+
 # ############
 # Options
 

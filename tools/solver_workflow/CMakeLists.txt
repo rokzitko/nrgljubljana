@@ -18,8 +18,12 @@ endif()
 set_target_properties(nrgljubljana_workflow PROPERTIES
   EXPORT_NAME workflow VERSION ${PROJECT_VERSION}
   WORKFLOW_API_VERSION 4 EXPORT_PROPERTIES WORKFLOW_API_VERSION
-  BUILD_RPATH "${PROJECT_BINARY_DIR}/c++"
-  INSTALL_RPATH "$ORIGIN/nrgljubljana/workflow")
+  BUILD_RPATH "${PROJECT_BINARY_DIR}/c++")
+if(APPLE)
+  set_target_properties(nrgljubljana_workflow PROPERTIES INSTALL_RPATH "@loader_path/nrgljubljana/workflow")
+else()
+  set_target_properties(nrgljubljana_workflow PROPERTIES INSTALL_RPATH "$ORIGIN/nrgljubljana/workflow")
+endif()
 
 include(CMakePackageConfigHelpers)
 configure_package_config_file(nrgljubljana_workflowConfig.cmake.in

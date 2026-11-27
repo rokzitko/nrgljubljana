@@ -43,9 +43,9 @@ the BLAS/LAPACK integer ABI and MKL/OpenMP settings. An existing configured buil
 can be used without replacing these settings:
 
 ```sh
-cmake -S . -B build-x86
-cmake --build build-x86 --target nrgljubljana_workflow --parallel 2
-cmake --install build-x86 --component workflow --prefix /absolute/temporary/prefix
+cmake -S . -B build
+cmake --build build --target nrgljubljana_workflow --parallel 2
+cmake --install build --component workflow --prefix /absolute/temporary/prefix
 ```
 
 Set `nrgljubljana_workflow_DIR` to
@@ -54,7 +54,8 @@ Set `nrgljubljana_workflow_DIR` to
 the matching core binary in `lib[64]/nrgljubljana/workflow`; it does not import a
 possibly older installed core package. The package supplies the private core's
 link-time dependency path. On Linux, the workflow library uses an origin-relative
-RPATH so this core precedes older same-SONAME libraries in `LD_LIBRARY_PATH`.
+RPATH so this core precedes older same-SONAME libraries in `LD_LIBRARY_PATH`;
+on macOS it uses the corresponding `@loader_path` `LC_RPATH`.
 External runtime dependencies still need the environment used by the upstream
 build. Do not link or preload a different NRG core into the same process: an
 already loaded library with the same SONAME cannot be replaced by RPATH.
@@ -281,10 +282,10 @@ scratch directory is fine, since each call uses its own child. Forward-only runs
 ## Verification
 
 ```sh
-cmake --build build-x86 --target workflow_diagnostics workflow_preparation --parallel 2
-ctest --test-dir build-x86 -R '^solver_workflow_(diagnostics(_unsynced)?|preparation)$' --output-on-failure --no-tests=error
-cmake --build build-x86 --target workflow_contract workflow_solve_mpi adapt instantiate nrgchain adapt_high --parallel 2
-ctest --test-dir build-x86 -R '^(solver_workflow_contract|solver_workflow_solve|adapt_high|adapt[0-9]|instantiate[0-9]|nrgchain[0-9])' --output-on-failure
+cmake --build build --target workflow_diagnostics workflow_preparation --parallel 2
+ctest --test-dir build -R '^solver_workflow_(diagnostics(_unsynced)?|preparation)$' --output-on-failure --no-tests=error
+cmake --build build --target workflow_contract workflow_solve_mpi adapt instantiate nrgchain adapt_high --parallel 2
+ctest --test-dir build -R '^(solver_workflow_contract|solver_workflow_solve|adapt_high|adapt[0-9]|instantiate[0-9]|nrgchain[0-9])' --output-on-failure
 ```
 
 Reconfigure after adding test sources. The focused diagnostics target compiles
