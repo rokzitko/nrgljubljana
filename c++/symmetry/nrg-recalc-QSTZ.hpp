@@ -5,7 +5,7 @@ namespace NRG {
 
 using std::sqrt;
 
-// *** WARNING!!! Modify nrg-recalc-QSTZ.cc.m4, not nrg-recalc-QSTZ.cc !!!
+// Edit nrg-recalc-QSTZ.hpp.m4, not the generated header.
 
 // Quantum number dependant recalculation routines
 // Rok Zitko, rok.zitko@ijs.si, Feb 2016
@@ -35,20 +35,24 @@ namespace NRG {
 
 template<typename SC>
 MatrixElements<SC> SymmetryQSTZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
+  return recalc_named_doublet(diag, substruct, cold, qstz_transfer::all);
+}
+
+template<typename SC>
+MatrixElements<SC> SymmetryQSTZ<SC>::recalc_named_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct,
+                                                          const MatrixElements<SC> &cold, qstz_transfer::Mask mask) const {
   MatrixElements<SC> cnew;
+  if (mask == qstz_transfer::none) return cnew;
   for(const auto &[I1, eig]: diag) {
     int q1   = I1.get("Q");
     int ss1   = I1.get("SS");
     int tz1 = I1.get("TZ");
     Invar Ip;
 
-    // Two different lengths: D_3CH_a and D_3CH_b
-
-    // Invar(1,2,+-1,0) is correct. 1 = add charge, 2 = doublet,
-    // 1 = triplet (because working with abs orbital momentum QNs)
-
-    Ip = Invar(q1 - 1, ss1 + 1, tz1 - 1);
-    {
+    // The added local state is a spectator: bra TZ - ket TZ is unchanged from the seed.
+    if (mask & qstz_transfer::plus) {
+      Ip = Invar(q1 - 1, ss1 + 1, tz1 - 1);
+      {
   nrglog('f', "RECALC(fn=" << "qstz/qstz-doubletp-1.dat" << ", Iop=" << Invar(1, 2, +1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (this->have_stored_subspaces(diag, I1, Ip)) {
@@ -59,9 +63,8 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
     if (cn) cnew[II] = *cn;
   }
 };
-
-    Ip = Invar(q1 - 1, ss1 - 1, tz1 - 1);
-    {
+      Ip = Invar(q1 - 1, ss1 - 1, tz1 - 1);
+      {
   nrglog('f', "RECALC(fn=" << "qstz/qstz-doubletm-1.dat" << ", Iop=" << Invar(1, 2, +1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (this->have_stored_subspaces(diag, I1, Ip)) {
@@ -72,9 +75,10 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
     if (cn) cnew[II] = *cn;
   }
 };
-
-    Ip = Invar(q1 - 1, ss1 + 1, tz1);
-    {
+    }
+    if (mask & qstz_transfer::zero) {
+      Ip = Invar(q1 - 1, ss1 + 1, tz1);
+      {
   nrglog('f', "RECALC(fn=" << "qstz/qstz-doubletp0.dat" << ", Iop=" << Invar(1, 2, 0) << ")");
   auto II = Twoinvar(I1, Ip);
   if (this->have_stored_subspaces(diag, I1, Ip)) {
@@ -85,9 +89,8 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
     if (cn) cnew[II] = *cn;
   }
 };
-
-    Ip = Invar(q1 - 1, ss1 - 1, tz1);
-    {
+      Ip = Invar(q1 - 1, ss1 - 1, tz1);
+      {
   nrglog('f', "RECALC(fn=" << "qstz/qstz-doubletm0.dat" << ", Iop=" << Invar(1, 2, 0) << ")");
   auto II = Twoinvar(I1, Ip);
   if (this->have_stored_subspaces(diag, I1, Ip)) {
@@ -98,9 +101,10 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
     if (cn) cnew[II] = *cn;
   }
 };
-
-    Ip = Invar(q1 - 1, ss1 + 1, tz1 + 1);
-    {
+    }
+    if (mask & qstz_transfer::minus) {
+      Ip = Invar(q1 - 1, ss1 + 1, tz1 + 1);
+      {
   nrglog('f', "RECALC(fn=" << "qstz/qstz-doubletp+1.dat" << ", Iop=" << Invar(1, 2, -1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (this->have_stored_subspaces(diag, I1, Ip)) {
@@ -111,9 +115,8 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
     if (cn) cnew[II] = *cn;
   }
 };
-
-    Ip = Invar(q1 - 1, ss1 - 1, tz1 + 1);
-    {
+      Ip = Invar(q1 - 1, ss1 - 1, tz1 + 1);
+      {
   nrglog('f', "RECALC(fn=" << "qstz/qstz-doubletm+1.dat" << ", Iop=" << Invar(1, 2, -1) << ")");
   auto II = Twoinvar(I1, Ip);
   if (this->have_stored_subspaces(diag, I1, Ip)) {
@@ -124,6 +127,7 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, co
     if (cn) cnew[II] = *cn;
   }
 };
+    }
   }
   return cnew;
 }

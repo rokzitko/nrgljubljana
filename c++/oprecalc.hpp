@@ -11,6 +11,7 @@
 #include "spectrum_names.hpp"
 #include "time_mem.hpp"
 #include "operators.hpp"
+#include "qstz_transfer.hpp"
 #include "symmetry.hpp"
 #include "step.hpp"
 #include "params.hpp"
@@ -96,8 +97,12 @@ class Oprecalc {
          m = recalc_or_clear(ops.count({"p", name}),  name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr..., -1); }, "p", step, diag, substruct);
        for (auto &[name, m] : a.opsg)
          m = recalc_or_clear(ops.do_g(name, P_, step), name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr...,  1); }, "g", step, diag, substruct);
-       for (auto &[name, m] : a.opd)
-         m = recalc_or_clear(ops.count({"d", name}),  name, m, [this](const auto &... pr) { return Sym->recalc_doublet(pr...);     }, "d", step, diag, substruct);
+       for (auto &[name, m] : a.opd) {
+         const auto mask = qstz_transfer::effective_mask(a.doublet_masks, name);
+         m = recalc_or_clear(ops.count({"d", name}), name, m, [this, mask](const auto &... pr) {
+           return mask == qstz_transfer::all ? Sym->recalc_doublet(pr...) : Sym->recalc_named_doublet(pr..., mask);
+         }, "d", step, diag, substruct);
+       }
        for (auto &[name, m] : a.opt)
          m = recalc_or_clear(ops.count({"t", name}),  name, m, [this](const auto &... pr) { return Sym->recalc_triplet(pr...);     }, "t", step, diag, substruct);
        for (auto &[name, m] : a.opot)
