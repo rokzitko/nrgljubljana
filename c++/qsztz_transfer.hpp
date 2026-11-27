@@ -21,8 +21,7 @@ Mask infer(const std::string &name, const MatrixElements<S> &seed) {
   unsigned bits = none;
   for (const auto &[key, mat] : seed) {
     if (!(mat.array() != S{}).any()) continue; // exact, including subnormal real or imaginary components
-    const auto &[bra, ket] = key;
-    const auto delta = [&](const char *qn) { return std::int64_t(bra.get(qn)) - ket.get(qn); };
+    const auto delta = [&bra = key.first, &ket = key.second](const char *qn) { return std::int64_t(bra.get(qn)) - ket.get(qn); };
     const auto dq = delta("Q"), dsz = delta("SZ"), dtz = delta("TZ");
     const auto pair = bit(dsz, dtz);
     if (dq != 1 || pair == none)
