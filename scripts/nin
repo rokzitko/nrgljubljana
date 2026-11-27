@@ -8,7 +8,13 @@ use warnings;
 
 unlink('data');
 while (!-e 'data') {
-    system("timeout -s KILL 10m nrginit");
+    if (system("command -v timeout >/dev/null 2>&1") == 0) {
+	system("timeout -s KILL 10m nrginit");
+    } elsif (system("command -v gtimeout >/dev/null 2>&1") == 0) {
+	system("gtimeout -s KILL 10m nrginit");
+    } else { # macOS without coreutils: SIGALRM survives exec; the kernel subprocess is not killed
+	system("perl", "-e", 'alarm 600; exec @ARGV', "nrginit");
+    }
     if (!-e 'data') {
 	print "nrginit failed. Will retry in 10 seconds.\n";
 	sleep(10);

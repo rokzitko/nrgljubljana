@@ -11,7 +11,18 @@ fi
 
 NRGDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 NRG_INITSCRIPT=${NRGDIR}/nrginit.m
-${1:-math} -batchinput -batchoutput <<EOF
+# Kernel: argument, else `math` on PATH, else a standard macOS application bundle.
+MATH="${1:-}"
+if [ -z "$MATH" ]; then
+  MATH=math
+  if ! command -v math >/dev/null 2>&1; then
+    for k in /Applications/Wolfram.app/Contents/MacOS/wolfram /Applications/Mathematica.app/Contents/MacOS/wolfram \
+             /Applications/Wolfram.app/Contents/MacOS/WolframKernel /Applications/Mathematica.app/Contents/MacOS/WolframKernel; do
+      if [ -x "$k" ]; then MATH="$k"; break; fi
+    done
+  fi
+fi
+$MATH -batchinput -batchoutput <<EOF
 NRGDIR="${NRGDIR}";
 Get["${NRG_INITSCRIPT}"];
 EOF

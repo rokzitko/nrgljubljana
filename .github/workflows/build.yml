@@ -294,6 +294,15 @@ jobs:
         cd build
         ctest -j2 "${ctest_args[@]}" --output-on-failure --timeout "${NRGLJUBLJANA_CTEST_TIMEOUT_SECONDS}" --no-tests=error
 
+    - name: Check installed executables run without DYLD_LIBRARY_PATH (macOS)
+      if: ${{ contains(matrix.os, 'macos') }}
+      run: |
+        set -euo pipefail
+        cmake --install build
+        otool -l "$HOME/install/bin/nrg" | grep -A2 LC_RPATH
+        # /bin/sh is SIP-protected and strips DYLD_* variables, as in user driver scripts.
+        env -u DYLD_LIBRARY_PATH /bin/sh -c '"$HOME/install/bin/nrg" --version && "$HOME/install/bin/broaden" --version'
+
     - name: Test scientific validation
       if: ${{ matrix.scientific == true }}
       run: ctest --test-dir build -j2 -R '^scientific_' --output-on-failure --no-tests=error --output-junit "$PWD/build/scientific-results.xml"

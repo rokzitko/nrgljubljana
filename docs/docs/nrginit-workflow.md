@@ -23,8 +23,10 @@ calculation directory containing `param`:
 nrginit
 ```
 
-It runs the command `math` by default. To select another kernel executable,
-pass it as the only positional argument:
+It runs the command `math` by default. If `math` is not on `PATH`, it tries the
+standard macOS application bundles, `/Applications/Wolfram.app` and then
+`/Applications/Mathematica.app` (`Contents/MacOS/wolfram`, then `WolframKernel`).
+To select another kernel executable, pass it as the only positional argument:
 
 ```sh
 nrginit /path/to/WolframKernel

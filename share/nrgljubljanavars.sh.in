@@ -1,8 +1,13 @@
 # Source this in your environment.
 
 _nrgljubljana_root="${NRGLJUBLJANA_ROOT:-}"
-if [ -z "${_nrgljubljana_root}" ] && [ -n "${BASH_SOURCE:-}" ]; then
-  _nrgljubljana_vars_dir="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE}")" >/dev/null 2>&1 && pwd)"
+_nrgljubljana_vars_file="${BASH_SOURCE:-}"
+if [ -z "${_nrgljubljana_vars_file}" ] && [ -n "${ZSH_VERSION:-}" ]; then
+  # zsh (default macOS shell) has no BASH_SOURCE; eval keeps this syntax away from sh/dash parsers.
+  eval '_nrgljubljana_vars_file="${(%):-%x}"'
+fi
+if [ -z "${_nrgljubljana_root}" ] && [ -n "${_nrgljubljana_vars_file}" ]; then
+  _nrgljubljana_vars_dir="$(CDPATH= cd -- "$(dirname -- "${_nrgljubljana_vars_file}")" >/dev/null 2>&1 && pwd)"
   if [ -n "${_nrgljubljana_vars_dir}" ]; then
     _nrgljubljana_root="$(CDPATH= cd -- "${_nrgljubljana_vars_dir}/.." >/dev/null 2>&1 && pwd)"
   fi
@@ -28,7 +33,8 @@ export CPLUS_INCLUDE_PATH="${_nrgljubljana_includedir}${CPLUS_INCLUDE_PATH:+:${C
 export PATH="${_nrgljubljana_bindir}:${_nrgljubljana_nrginitdir}${PATH:+:${PATH}}"
 export LIBRARY_PATH="${_nrgljubljana_libdir}${LIBRARY_PATH:+:${LIBRARY_PATH}}"
 export LD_LIBRARY_PATH="${_nrgljubljana_libdir}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+# On macOS, installed binaries locate the library via RPATH; SIP strips DYLD_LIBRARY_PATH in many child processes.
 export DYLD_LIBRARY_PATH="${_nrgljubljana_libdir}${DYLD_LIBRARY_PATH:+:${DYLD_LIBRARY_PATH}}"
 export CMAKE_PREFIX_PATH="${_nrgljubljana_libdir}/cmake/nrgljubljana${CMAKE_PREFIX_PATH:+:${CMAKE_PREFIX_PATH}}"
 
-unset _nrgljubljana_root _nrgljubljana_vars_dir _nrgljubljana_bindir _nrgljubljana_libdir _nrgljubljana_datadir _nrgljubljana_includedir _nrgljubljana_nrginitdir
+unset _nrgljubljana_root _nrgljubljana_vars_file _nrgljubljana_vars_dir _nrgljubljana_bindir _nrgljubljana_libdir _nrgljubljana_datadir _nrgljubljana_includedir _nrgljubljana_nrginitdir

@@ -36,7 +36,7 @@ HDF5 reference is needed to run it.
 With `TEST_SCIENTIFIC=ON` and `SYM_ALL=ON`, configure and build as usual, then:
 
 ```sh
-ctest --test-dir build-x86 -R '^scientific_qstz_spin_' \
+ctest --test-dir build -R '^scientific_qstz_spin_' \
   --output-on-failure --no-tests=error
 python3 -B -m unittest discover -s test/scientific -p test_qstz_spin.py
 ```
@@ -52,9 +52,9 @@ The Python self-checks are also discovered by `scientific_unit`.
 Direct invocation, from the repository root on Linux:
 
 ```sh
-LD_LIBRARY_PATH="$PWD/build-x86/c++:${LD_LIBRARY_PATH:-}" \
+LD_LIBRARY_PATH="$PWD/build/c++:${LD_LIBRARY_PATH:-}" \
   python3 -B test/scientific/validate_qstz_spin.py \
-  --nrg build-x86/c++/nrg --temperature 0.2 --work-root /tmp/opencode
+  --nrg build/c++/nrg --temperature 0.2 --work-root /tmp/opencode
 ```
 
 ## Model And Oracle

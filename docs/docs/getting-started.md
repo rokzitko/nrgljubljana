@@ -95,6 +95,39 @@ It sets the executable, library, include, and CMake package search paths. With
 a nondefault `CMAKE_INSTALL_DATADIR`, the script is installed under that
 directory instead of `share`; CMake prints the exact path during configuration.
 
+### macOS
+
+Two dependency routes are tested on Apple Silicon. Both use Apple Accelerate
+for BLAS/LAPACK, which is LP64 only, so keep `NRGLJUBLJANA_BLAS_ILP64=OFF`.
+Application OpenMP stays at its default `OFF`.
+
+A conda-forge environment, as used for local development:
+
+```sh
+conda create -n nrg-build -c conda-forge cmake ninja c-compiler cxx-compiler perl \
+  mpich libboost-devel libboost-mpi gsl gmp hdf5 eigen highfive fmt range-v3 gtest \
+  "libblas=*=*accelerate" "liblapack=*=*accelerate"
+conda activate nrg-build
+cmake -S . -B build -G Ninja -DCMAKE_INSTALL_PREFIX=$HOME/nrgljubljana/ \
+  -DNRGLJUBLJANA_USE_SYSTEM_DEPS=ON
+```
+
+Homebrew with LLVM clang, as in the macOS CI jobs:
+
+```sh
+brew install cmake llvm boost boost-mpi eigen hdf5 open-mpi gsl gmp
+export PATH="$(brew --prefix llvm)/bin:$PATH" CC=clang CXX=clang++ CXXFLAGS=-stdlib=libc++
+cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$HOME/nrgljubljana/
+```
+
+On macOS the installed executables carry a loader-relative `LC_RPATH`
+(`@loader_path/../lib`) to `libnrgljubljana_c`. They therefore run without
+`DYLD_LIBRARY_PATH`, which System Integrity Protection removes whenever a
+program is started through `/bin/sh`, `/usr/bin/env`, or the system Perl, as
+in typical driver scripts. `nrgljubljanavars.sh` locates its installation tree
+when sourced from bash or zsh. For locating the Mathematica kernel used by
+`nrginit`, see [First End-To-End Calculation](#first-end-to-end-calculation).
+
 For a debug build:
 
 ```sh
@@ -186,8 +219,10 @@ Generate the seed Hamiltonian, operators, and Wilson-chain coefficients:
 nrginit && test -s data
 ```
 
-The launcher uses the command `math` by default. If the kernel has another
-name or is not on `PATH`, pass it as the only positional argument:
+The launcher uses the command `math` by default. If `math` is not on `PATH`, it
+tries the standard macOS application bundles, `/Applications/Wolfram.app` and
+then `/Applications/Mathematica.app` (`Contents/MacOS/wolfram`, then
+`WolframKernel`). To use another kernel, pass it as the only positional argument:
 
 ```sh
 nrginit /path/to/WolframKernel

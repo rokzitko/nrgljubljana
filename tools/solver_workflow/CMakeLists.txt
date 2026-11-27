@@ -18,8 +18,12 @@ endif()
 set_target_properties(nrgljubljana_workflow PROPERTIES
   EXPORT_NAME workflow VERSION ${PROJECT_VERSION}
   WORKFLOW_API_VERSION 4 EXPORT_PROPERTIES WORKFLOW_API_VERSION
-  BUILD_RPATH "${PROJECT_BINARY_DIR}/c++"
-  INSTALL_RPATH "$ORIGIN/nrgljubljana/workflow")
+  BUILD_RPATH "${PROJECT_BINARY_DIR}/c++")
+if(APPLE)
+  set_target_properties(nrgljubljana_workflow PROPERTIES INSTALL_RPATH "@loader_path/nrgljubljana/workflow")
+else()
+  set_target_properties(nrgljubljana_workflow PROPERTIES INSTALL_RPATH "$ORIGIN/nrgljubljana/workflow")
+endif()
 
 include(CMakePackageConfigHelpers)
 configure_package_config_file(nrgljubljana_workflowConfig.cmake.in
@@ -66,7 +70,7 @@ if(NRGLJUBLJANA_BUILD_TESTS_ENABLED)
   add_executable(workflow_diagnostics tests/diagnostics.cc workflow.cc discretize.cc)
   target_compile_features(workflow_diagnostics PRIVATE cxx_std_20)
   target_include_directories(workflow_diagnostics PRIVATE include ${PROJECT_SOURCE_DIR}/c++)
-  target_link_libraries(workflow_diagnostics PRIVATE gmp gsl Boost::mpi fmt::fmt-header-only Threads::Threads project_warnings)
+  target_link_libraries(workflow_diagnostics PRIVATE gmp gsl Boost::mpi mpi fmt::fmt-header-only Threads::Threads project_warnings)
   target_link_libraries(workflow_diagnostics PRIVATE $<$<BOOL:${ASAN}>:asan> $<$<BOOL:${UBSAN}>:ubsan>)
   nrgljubljana_apply_strict_floating_point(workflow_diagnostics)
   add_test(NAME solver_workflow_diagnostics COMMAND workflow_diagnostics ${CMAKE_CURRENT_BINARY_DIR})

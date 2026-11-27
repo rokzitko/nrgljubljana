@@ -73,6 +73,19 @@ EOF
 
 chmod +x "$TESTDIR/math" "$TESTDIR/sleep"
 
+# Hang guard: GNU timeout, Homebrew gtimeout, or a Perl alarm (macOS has no timeout).
+with_timeout() {
+  local seconds=$1
+  shift
+  if command -v timeout >/dev/null 2>&1; then
+    timeout "$seconds" "$@"
+  elif command -v gtimeout >/dev/null 2>&1; then
+    gtimeout "$seconds" "$@"
+  else
+    perl -e 'alarm shift; exec @ARGV or die "exec: $!\n"' "$seconds" "$@"
+  fi
+}
+
 run_scenario() {
   local scenario=$1
   local expected_status=$2
@@ -92,7 +105,7 @@ run_scenario() {
     INPUTS="$TESTDIR/inputs" \
     ATTEMPTS="$TESTDIR/attempts" \
     SLEEPS="$TESTDIR/sleeps" \
-    timeout 5 "$NRGINIT" "$TESTDIR/math" > "$stdout" 2> "$stderr"
+    with_timeout 5 "$NRGINIT" "$TESTDIR/math" > "$stdout" 2> "$stderr"
   status=$?
   set -e
 
