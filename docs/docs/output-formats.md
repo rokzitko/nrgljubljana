@@ -238,6 +238,15 @@ Current algorithm identifiers include `FT`, `FTmats`, `DMNRG`, `DMNRGmats`,
 `CFS`, `CFSgt`, `CFSls`, `FDM`, `FDMgt`, `FDMls`, `FDMmats`, `GT`, `I1T`,
 `I2T`, and `CHIT`.
 
+### QSZTZ transverse spin
+
+For the [physical spin ladders](nrginit-workflow.md#transverse-spin-operators),
+`spin_FDM_dens_SpLoc-SpLoc.bin` uses the matrix elements of `S+` acting on
+the ket. This is the `S-,S+` commutator spectrum: summing its **signed bin
+weights** gives `-2<SzLoc>` in the complete-basis limit. `SmLoc-SmLoc`
+gives `+2<SzLoc>`. In a spin-rotation-invariant ensemble each transverse
+spectrum is twice the one-component longitudinal spectrum, not equal to it.
+
 ### Broadened Real-Frequency `.dat`
 
 When `broaden=true`, real-frequency spectra are headerless text:
@@ -543,9 +552,17 @@ not machine parsing.
 ## Workdir Files
 
 Multiphase calculations can store `unitaryN`, `rhoN`, and `rhofdmN` in the
-workdir. With `resume=true`, these versioned, input-fingerprinted archives can
-be used by later invocations as well as by the running solver. They remain
-native binary state and are not portable across Boost versions, architectures,
+workdir for use between sweeps. For `resume=true`, each archive requires a
+versioned header with shell and configuration metadata and separate 64-bit
+hashes of `param` and `data`:
+
+- `unitaryN` (v2): a non-nil generation UUID and the preceding shell's UUID.
+  Only the root at `Ninit` has a nil predecessor.
+- `rhoN` and `rhofdmN` (v3): the generation UUID of the final unitary in the
+  complete chain, not the UUID of shell `N`.
+
+The UUIDs identify checkpoint generations, not hashes of archive contents.
+These native archives are not portable across Boost versions, architectures,
 scalar types, or releases.
 
 Individual archives are written through temporary files and renamed after
@@ -566,6 +583,10 @@ used when output is a terminal and disabled when output is redirected.
 Console text is diagnostic and can change. Even familiar lines such as `Total
 energy:` should not be treated as a general structured-output interface.
 
+Floquet calculations print the ranking criterion shift as `Clw`. With `log=4`,
+they also report the first state's raw energy, corrected energy, and shifted
+ranking criterion in each subspace, followed by `scale`, `shift`, and `T_shift`.
+
 **Sum-rule self-checks.** Every computed spectral function prints a summary
 line to standard output with its total positive weight (`pos=`), negative
 weight (`neg=`), overall weight `sum=pos+neg`, and the first four moments
@@ -577,9 +598,10 @@ discretization and truncation error, see Žitko 2011 under
 expected sum rule for the operator in question is a strong, immediate sign of
 a truncation, normalization, or model-setup problem, and is worth checking
 before trusting a broadened spectrum. With `checksumrules=true`, `nrg`
-additionally prints one `norm[name]=...` line per requested operator, giving
-the same sum-rule diagnostic referenced to a spin-1/2 operator by convention
-(see `c++/core.hpp`, `operator_sumrules()`).
+additionally prints `norm[name]=...` for doublet and quadruplet operators and
+`norm[f,channel,index]=...` for Wilson-chain operators during the forward NRG
+sweep. For symmetries that resolve spin in a field, the doublet and Wilson-chain
+norms use the spin-up component by convention.
 
 `nrg` does not create a file named `log`. Repository test wrappers do so by
 combining standard output and standard error through `tee`. Users who want the

@@ -130,11 +130,12 @@ SPSU2LR SPSU2C3 SPSU2T SL SL3 P PP NONE ISOSZ ISOSZLR
 Builds made without the extended symmetry sets support only a subset. Complex
 `data` is required by the complex-only implementations.
 
-The bundled `QSTZbasis.m` supports three spinful channels with `Ninit=0`.
-Models must declare `qstzImpurityCharges` and use the boundary labels
-`f[+1],f[0],f[-1]`; see [QSTZ basis initialization](nrginit-workflow.md#qstz-basis).
-Auxiliary kets, spinless projection and `READBASIS` are not supported by this
-adapter. Calculation-local basis modules still participate in normal module lookup.
+The bundled `QSTZ` and `QSZTZ` basis adapters support three spinful channels
+with `Ninit=0`. Models must use the boundary labels `f[+1],f[0],f[-1]` and
+declare `qstzImpurityCharges` for [QSTZ](nrginit-workflow.md#qstz-basis) or
+`qsztzImpurityCharges` for [QSZTZ](nrginit-workflow.md#qsztz-basis).
+Neither adapter supports auxiliary kets, spinless projection, or `READBASIS`.
+Calculation-local basis modules still participate in normal module lookup.
 
 `QSTZ` and `QSZTZ` currently reuse channel zero's bath-chain coefficients.
 The runtime therefore rejects unequal `xi` or `zeta` chains after loading
@@ -417,7 +418,7 @@ An empty string default means that the feature or list is disabled.
 | `keep` | non-negative integer | `100` | Maximum retained states; must be greater than `1`. |
 | `keepenergy` | number | `-1.0` | Positive values enable a shell-rescaled energy cutoff; retention extends through the first state above the cutoff, subject to `keep`. |
 | `keepmin` | non-negative integer | `0` | Minimum retained states with energy-cutoff truncation; cannot exceed `keep`. |
-| `keepall` | string | empty | `even`, `odd`, or comma-separated iteration numbers to retain completely. |
+| `keepall` | string | empty | `even`, `odd`, or comma-separated zero-based iteration numbers. Whitespace around numbers is ignored. Retains all computed states on matching iterations. |
 | `safeguard` | number | `1e-5` | Near-degeneracy tolerance in current eigenspectrum units; non-positive disables it. |
 | `safeguardmax` | non-negative integer | `200` | Maximum extra states retained by `safeguard`. |
 | `fixeps` | number | `1e-15` | Threshold in current eigenspectrum units for correcting floating-point eigenvalue splitting. |
@@ -532,6 +533,9 @@ The existing scalar/global-scalar pairings are unchanged. In `QSZTZ`, a longitud
 local `Sz` operator can instead be declared explicitly with `mtSingletOp`
 and requested through `specs`; do not assume the stock `SZd` initializer
 operator is enabled for that symmetry.
+For explicit QSZTZ ladders, request the desired names in `ops` and use their
+same-name pairs in `spect` (or `specchit` for shell susceptibilities); see
+[transverse spin operators](nrginit-workflow.md#transverse-spin-operators).
 
 **`gtp`/`chitp`.** `specgt`/`speci1t`/`speci2t` and `specchit` are evaluated
 shell by shell at an absolute temperature `T_eff = gtp * scale(N)` (for
@@ -635,7 +639,7 @@ above.
 | `NN1` | boolean | `false` | Use N/N+1 rather than N/N+2 patching. |
 | `NN2even` | boolean | `true` | Use even iterations for N/N+2 patching. |
 | `NN2avg` | boolean | `false` | Average even and odd N/N+2 results. |
-| `NNtanh` | number | `0.0` | Positive values select a smooth tanh patching window. |
+| `NNtanh` | number | `0.0` | Positive values select a smooth tanh patching window. Values near zero use the linear limit. |
 | `width_td` | integer | `16` | Minimum column width in `td` and `tdfdm`. |
 | `width_custom` | integer | `16` | Minimum column width in `custom` and `customfdm`. |
 | `prec_td` | integer | `10` | Significant digits in `td` and `tdfdm`. |
@@ -658,11 +662,10 @@ Weichselbaum, von Delft & Bulla 2008).
 **Peak trimming.** `discard_trim` and `discard_immediately` clip spectral
 bins whose weight falls below a threshold set relative to the bin width or
 peak energy, respectively. Because spectral density is weight *per interval*,
-overly aggressive trimming silently discards spectral weight and can violate
-the sum rules checked by `checksumrules` (see
-[Output formats](output-formats.md)); the discretization/truncation error
-analysis of Žitko (2011) is the relevant reference for choosing these
-thresholds together with `keep` and `alpha`.
+overly aggressive trimming can shift the zeroth moment reported in the spectral
+summary (see [Output formats](output-formats.md)). The discretization and
+truncation error analysis of Žitko (2011) is the relevant reference for choosing
+these thresholds together with `keep` and `alpha`.
 
 **Patching.** `goodE`, `NN1`, `NN2even`, `NN2avg`, and `NNtanh` control how
 spectral contributions from consecutive NRG shells are stitched ("patched")
@@ -671,6 +674,11 @@ near its own scale reliably; see Bulla, Costi & Pruschke (2008), Sec. IV, for
 the general patching/broadening procedure. `NN1` (N/N+1 patching) uses a
 narrower, `Lambda`-times smaller patching window around each shell boundary
 than the default N/N+2 scheme, which can be preferable at larger `Lambda`.
+
+With the default `resume=false`, `nrg` does not hash `param` or `data`, scan
+files for provenance, look for a prior chain, or generate random checkpoint
+IDs. DM and FDM runs still write and read the workdir files needed between
+sweeps and check their structure on read.
 
 To make a run resumable, set `resume=true` before its first invocation and use
 the same exact checkpoint directory each time:
@@ -681,14 +689,18 @@ nrg --checkpoint-dir /scratch/my-calculation
 
 The directory is created if necessary, exclusively locked while `nrg` owns it,
 and never recursively removed by `nrg`. Exact checkpoint directories reject
-runs with `resume=false`. Checkpoints must form a contiguous sequence beginning
-at `Ninit`; gaps are rejected, and every discovered archive is validated before
-result files are opened. They are native same-build artifacts and must only be
-reused with the same `param` and `data` inputs. A resumed run replays cached
+runs with `resume=false`. Unitary checkpoints must form a contiguous chain
+beginning at `Ninit`; every discovered unitary archive is validated before
+result files are opened. Restart requires the same build and matching 64-bit
+hashes of both `param` and `data`. A resumed run replays cached
 shells rather than appending to partial result files, so statistics, operators,
 and outputs are rebuilt consistently. Resumable artifacts are retained after
 both failed and successful runs, independently of `removefiles`; remove the
 checkpoint directory explicitly when it is no longer needed.
+
+Only a complete unitary restart can reuse matching density files; a partial
+restart rebuilds all requested densities. See [State and persistence](state-and-persistence.md#workdir-owned-state)
+for the chain checks.
 
 ### Logging, Diagnostics, HDF5, And Compatibility
 
@@ -702,7 +714,7 @@ checkpoint directory explicitly when it is no longer needed.
 | `lastall` | boolean | `false` | Keep all last-step states for DM-NRG. |
 | `lastalloverride` | boolean | `false` | Prevent CFS/FDM from automatically enabling last-step retention. |
 | `dumpsubspaces` | boolean | `false` | Write `subspaces.dat`. |
-| `dump_f` | boolean | `false` | Print irreducible `f`-operator matrix elements. |
+| `dump_f` | boolean | `false` | Print irreducible Wilson-chain `f` matrix elements after recalculation on nonfinal forward NRG steps. |
 | `dumpenergies` | boolean | `false` | Write all diagonalized energies to `energies.nrg`. |
 | `dumpcorr` | boolean | `false` | Add corrected energies to `energies.nrg`; requires `dumpenergies`. |
 | `dumpcrit` | boolean | `false` | Add truncation criteria to `energies.nrg`; requires `dumpenergies`. |
@@ -710,7 +722,7 @@ checkpoint directory explicitly when it is no longer needed.
 | `dumpenergiesunscaled` | boolean | `false` | Convert energy/state dumps from shell units to bandwidth units. |
 | `dumpabsenergies` | boolean | `false` | Write `absolute_energies.dat`. |
 | `removefiles` | boolean | `true` | Remove temporary phase files as they are consumed. Resumable artifacts are retained when `resume=true`. |
-| `checksumrules` | boolean | `false` | Check operator sum rules. |
+| `checksumrules` | boolean | `false` | Report operator sum rules during the forward NRG sweep. |
 | `absolute` | boolean | `false` | Run without the usual NRG energy rescaling; generated input must also use `data_has_rescaled_energies=false`. |
 | `diag_mode` | string | `default` | Scheduling mode: `default`, `MPI`, `OpenMP`, or `serial`. |
 | `h5raw` | boolean | `false` | Enable `raw.h5` and, when needed, `raw-dm.h5`. |
@@ -726,8 +738,9 @@ checkpoint directory explicitly when it is no longer needed.
 
 Common `log` combinations are `@0` for high-level flow, `is` for
 matrix-construction diagnostics, `eAt` for diagonalization, and `fr` for
-irreducible operator recalculation. Logging text is diagnostic and not a
-machine-readable interface.
+irreducible operator recalculation. Wilson-chain `f` recalculation and its
+logging occur during the forward NRG sweep. Logging text is diagnostic and not
+a machine-readable interface.
 
 The [native workflow diagnostic-file overloads](solver-workflow.md#diagnostic-routing)
 route console output to an exclusively created combined stdout/stderr log.

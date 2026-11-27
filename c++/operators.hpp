@@ -35,7 +35,7 @@
 namespace NRG {
 
 inline constexpr std::string_view density_checkpoint_magic = "NRGLjubljana-density\n";
-inline constexpr std::uint32_t density_checkpoint_version = 1;
+inline constexpr std::uint32_t density_checkpoint_version = 3;
 
 inline void validate_density_checkpoint_magic(std::istream &input, const std::string &filename) {
   std::array<char, density_checkpoint_magic.size()> magic{};
@@ -58,12 +58,12 @@ void validate_density_checkpoint_metadata(boost::archive::binary_iarchive &ia, c
   const auto stored_complex = read_one<bool>(ia);
   const auto stored_param_fingerprint = read_one<std::uint64_t>(ia);
   const auto stored_data_fingerprint = read_one<std::uint64_t>(ia);
-  const auto stored_unitary_fingerprint = read_one<std::uint64_t>(ia);
+  const auto stored_tip = read_one<boost::uuids::uuid>(ia);
   if (stored_N != N || stored_prefix != prefix || stored_Nmax != P.Nmax || stored_Ninit != P.Ninit.value() ||
       stored_symtype != std::string(P.symtype) || stored_complex != is_complex<S>::value ||
       stored_param_fingerprint != P.checkpoint_param_fingerprint || stored_data_fingerprint != P.checkpoint_data_fingerprint)
     throw std::runtime_error(fmt::format("Density checkpoint {} is incompatible with the current calculation", filename));
-  if (stored_unitary_fingerprint != P.checkpoint_unitary_fingerprint)
+  if (stored_tip != P.checkpoint_tip())
     throw std::runtime_error(fmt::format("Density checkpoint {} belongs to a different unitary chain", filename));
 }
 
@@ -160,7 +160,7 @@ class DensMatElements : public std::map<Invar, Matrix> {
           << is_complex<S>::value
           << P.checkpoint_param_fingerprint
           << P.checkpoint_data_fingerprint
-          << P.checkpoint_unitary_fingerprint;
+          << P.checkpoint_tip();
        oa << this->size();
        for (const auto &[I, mat] : *this) {
          oa << I;

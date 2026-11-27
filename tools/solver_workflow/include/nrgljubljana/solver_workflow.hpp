@@ -5,7 +5,7 @@
 
 namespace NRG::Workflow {
 
-inline constexpr unsigned workflow_api_version = 3;
+inline constexpr unsigned workflow_api_version = 4;
 
 enum class Branch { positive, negative };
 

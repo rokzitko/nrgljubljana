@@ -69,11 +69,6 @@ auto moment(const Spikes<S> &s_neg, const Spikes<S> &s_pos, const int moment) {
   return sumA+sumB;
 }
 
-inline constexpr double unsafe_fermi_fnc(const double omega, const double T) {
-  const auto x = omega/T;
-  return 1.0 / (1.0 + std::exp(-x));
-}
-
 template <class T> T sigmoid(T x) noexcept {
    static_assert(std::is_floating_point_v<T>);
    // NaN propagates naturally, but this makes the intent explicit.
@@ -104,12 +99,6 @@ template <class T> T sigmoid(T x) noexcept {
 inline double fermi_fnc(const double omega, const double T) noexcept {
   const auto x = omega/T;
   return sigmoid(x);
-}
-
-inline constexpr double unsafe_bose_fnc(const double omega, const double T) {
-  const auto x = omega/T;
-  const auto d = 1.0 - std::exp(-x);
-  return d != 0.0 ? 1.0/d : std::numeric_limits<double>::quiet_NaN();
 }
 
 template <class T> T inv_one_minus_exp_neg(T x) noexcept {

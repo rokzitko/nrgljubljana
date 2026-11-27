@@ -1,3 +1,4 @@
+#include <limits>
 #include <string>
 #include <sstream>
 #include <vector>
@@ -6,6 +7,7 @@
 #include "test_common.hpp"
 #include <core.hpp>
 #include <floquet.hpp>
+#include <spectrum.hpp>
 #include <truncation.hpp>
 
 using namespace NRG;
@@ -22,6 +24,40 @@ TEST(Core, HighestRetainedUsesSafeguardWithoutFullSort) { // NOLINT
 
   Step step(P);
   EXPECT_DOUBLE_EQ(highest_retained(step, diag, P), 1.05);
+}
+
+TEST(Core, KeepallTrimsEachIterationNumber) { // NOLINT
+  Params P;
+  P.keepall = "0 ,\t2, 12 ";
+  Step step(P);
+
+  EXPECT_TRUE(keepall(step, P));
+  step.set(1);
+  EXPECT_FALSE(keepall(step, P));
+  step.set(2);
+  EXPECT_TRUE(keepall(step, P));
+  step.set(12);
+  EXPECT_TRUE(keepall(step, P));
+}
+
+TEST(Core, TanhPatchingUsesLinearLimitAtTinySteepness) { // NOLINT
+  Params P;
+  P.Nmax = 3;
+  Step step(P);
+  step.set(1);
+
+  for (const auto steepness : {0.0, std::numeric_limits<double>::denorm_min(), std::numeric_limits<double>::min()}) {
+    P.NNtanh = steepness;
+    EXPECT_DOUBLE_EQ(windowfunction(1.25, 1.0, 2.0, 3.0, step, P), 0.25);
+    EXPECT_DOUBLE_EQ(windowfunction(2.25, 1.0, 2.0, 3.0, step, P), 0.75);
+  }
+
+  P.NNtanh = 4.0;
+  const auto rising = windowfunction(1.25, 1.0, 2.0, 3.0, step, P);
+  const auto falling = windowfunction(2.25, 1.0, 2.0, 3.0, step, P);
+  EXPECT_GT(rising, 0.0);
+  EXPECT_LT(rising, 0.25);
+  EXPECT_DOUBLE_EQ(rising + falling, 1.0);
 }
 
 TEST(Core, FloquetCriterionPreservesExtendedZoneOrdering) { // NOLINT
@@ -105,6 +141,22 @@ TEST(Core, FloquetModeOperatorIsRetainedForDmSweep) { // NOLINT
 
   EXPECT_TRUE(selected.do_s("m", P, dm_step));
   EXPECT_FALSE(selected.do_s("other", P, dm_step));
+}
+
+TEST(Core, WilsonChainRecalcBeforeNextForwardStep) { // NOLINT
+  Params P;
+  P.Nmax = 2;
+  P.dump_f = true;
+  P.checksumrules = true;
+  P.logall = true;
+  Step forward(P), replay(P, RUNTYPE::DMNRG);
+  EXPECT_TRUE(need_recalc_irreducible(forward));
+  EXPECT_FALSE(need_recalc_irreducible(replay));
+
+  forward.set_last();
+  replay.set_last();
+  EXPECT_FALSE(need_recalc_irreducible(forward));
+  EXPECT_FALSE(need_recalc_irreducible(replay));
 }
 
 int main(int argc, char **argv) {

@@ -264,7 +264,7 @@ void finalize_nrg_iteration_metadata(const Step &step, Stats<S> &stats, DiagInfo
 
 template<scalar S>
 void persist_nrg_iteration_outputs(const Step &step, Stats<S> &stats, DiagInfo<S> &diag, Output<S> &output,
-                                   const SubspaceStructure &substruct, const Symmetry<S> *Sym, const Params &P) {
+                                   const SubspaceStructure &substruct, const Symmetry<S> *Sym, Params &P) {
   if ((P.dm || P.resume) && !diag.loaded_from_checkpoint())
     diag.save(step.ndx(), P, stats.Egs);
   perform_basic_measurements(step, diag, Sym, stats, output, P);
@@ -295,10 +295,15 @@ void recalculate_and_measure(const Step &step, Operators<S> &operators, Stats<S>
   calculate_spectral_and_expv(step, stats, output, oprecalc, diag, operators, store_all, mt, Sym, P);
 }
 
+[[nodiscard]] inline bool need_recalc_irreducible(const Step &step) {
+  // The next forward Hamiltonian uses opch. The DM sweep loads its eigensystems from checkpoints.
+  return step.nrg() && !step.last();
+}
+
 template<scalar S>
 void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, DiagInfo<S> &diag, Output<S> &output,
                 const SubspaceStructure &substruct, ThermoStore<S> &store, BackiterStore &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym,
-                MemTime &mt, const Params &P) {
+                MemTime &mt, Params &P) {
   nrglog('@', "after_diag()");
   if (step.nrg()) {
     if (!diag.loaded_from_checkpoint())
@@ -312,7 +317,7 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
   nrglog('@', "truncate_perform()");
   diag.truncate_perform();                               // Actual truncation occurs at this point
   archive_iteration_state(step, diag, substruct, store, store_all, Sym, P);
-  if (!step.last()) {
+  if (need_recalc_irreducible(step)) {
     nrglog('@', "recalc_irreducible()");
     recalc_irreducible(step, diag, substruct, operators.opch, Sym, mt, P);
     if (P.dump_f) operators.opch.dump();
@@ -320,7 +325,7 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
   if (P.do_recalc_kept(step.get_runtype())) { // ... or ...
     recalculate_and_measure(step, operators, stats, diag, oprecalc, output, substruct, store_all, Sym, mt, P);
   }
-  if (P.checksumrules) operator_sumrules(operators, Sym);
+  if (step.nrg() && P.checksumrules) operator_sumrules(operators, Sym);
   if (P.h5raw && (P.h5all || (P.h5last && step.last())) && P.h5ops)
     operators.h5save(*output.h5raw, std::to_string(step.ndx()+1));
 }
@@ -328,7 +333,7 @@ void after_diag(const Step &step, Operators<S> &operators, Stats<S> &stats, Diag
 // Perform one iteration step
 template<scalar S>
 auto iterate(const Step &step, Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, const DiagInfo<S> &diagprev,
-             Output<S> &output, ThermoStore<S> &store, BackiterStore &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, DiagEngine<S> *eng, MemTime &mt, const Params &P) {
+             Output<S> &output, ThermoStore<S> &store, BackiterStore &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, DiagEngine<S> *eng, MemTime &mt, Params &P) {
   SubspaceStructure substruct{diagprev, Sym};
   TaskList tasklist{substruct, !P.silent}; // verbose = !P.silent
   if (P.h5raw && (P.h5all || (P.h5last && step.last())) && P.h5struct)
@@ -356,7 +361,7 @@ void docalc0(Step &step, const Operators<S> &operators, const DiagInfo<S> &diag0
 
 template<scalar S>
 auto nrg_loop(Step &step, Operators<S> &operators, const Coef<S> &coef, Stats<S> &stats, DiagInfo<S> diag,
-              Output<S> &output, ThermoStore<S> &store, BackiterStore &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, DiagEngine<S> *eng, MemTime &mt, const Params &P) {
+              Output<S> &output, ThermoStore<S> &store, BackiterStore &store_all, Oprecalc<S> &oprecalc, const Symmetry<S> *Sym, DiagEngine<S> *eng, MemTime &mt, Params &P) {
   for (step.init(); !step.end(); step.next())
     diag = iterate(step, operators, coef, stats, diag, output, store, store_all, oprecalc, Sym, eng, mt, P);
   step.set(step.lastndx());

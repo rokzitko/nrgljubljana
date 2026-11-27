@@ -68,6 +68,7 @@ TEST(params, Defaults) {
   EXPECT_EQ(P.keepmin, 0ul);
   EXPECT_EQ(P.fixeps, 1e-15);
   EXPECT_EQ(P.dm, false);
+  EXPECT_EQ(P.resume, false);
   EXPECT_EQ(P.fdm_cutoff, 1e-16);
   EXPECT_EQ(P.strategy, "kept");
   EXPECT_EQ(P.clip_tol_imag, 1e-10);
@@ -494,6 +495,20 @@ TEST(params, resume_requires_persistent_workdir) {
   P.resume = true;
   P.Nmax = 2;
   EXPECT_THROW(P.init_laststored(), std::invalid_argument);
+}
+
+TEST(params, default_checkpointing_does_not_hash_inputs_or_discover_units) {
+  Params P;
+  P.Nmax = 1;
+  P.fdm = true;
+  std::ofstream(P.workdir->unitaryfn(0)) << "not a checkpoint";
+  const auto absent = P.workdir->get() + "/not-created";
+  EXPECT_NO_THROW(P.initialize_checkpointing(absent, absent));
+  EXPECT_FALSE(P.laststored.has_value());
+  EXPECT_TRUE(P.checkpoint_generations.empty());
+  EXPECT_EQ(P.checkpoint_param_fingerprint, 0u);
+  EXPECT_EQ(P.checkpoint_data_fingerprint, 0u);
+  EXPECT_TRUE(P.checkpoint_tip().is_nil());
 }
 
 TEST(params, persistent_workdir_requires_resume) {

@@ -164,7 +164,6 @@ public:
   // 2*P.channels...3*P.channels-1 correspond to UP/DO, 3*P.channels...4*P.channels-1 correspond to DO/UP.
   [[nodiscard]] auto xiUPDO  (const t_ndx N, const t_ch ch) const { return xi  (N, ch + 2 * P.channels); }
   [[nodiscard]] auto xiDOUP  (const t_ndx N, const t_ch ch) const { return xi  (N, ch + 3 * P.channels); }
-  [[nodiscard]] auto zetaUPDO(const t_ndx N, const t_ch ch) const { return zeta(N, ch + 2 * P.channels); }
   [[nodiscard]] auto zetaDOUP(const t_ndx N, const t_ch ch) const { return zeta(N, ch + 3 * P.channels); }
 };
 

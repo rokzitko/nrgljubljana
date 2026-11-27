@@ -1,0 +1,3 @@
+# Rotation by pi about x forces this cross-susceptibility to zero.
+# The absolute bound accommodates eigensolver roundoff.
+5e-10 0

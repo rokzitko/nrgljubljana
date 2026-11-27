@@ -197,6 +197,10 @@ A successful initializer exits with status zero, prints `Success!`, and leaves
 `data` and `mmalog` in the calculation directory. `data` is the generated input
 for `nrg`; `mmalog` is a diagnostic Mathematica transcript.
 
+For a three-channel `symtype=QSZTZ` model, declare the impurity orbital charges
+in the model before generating `data`. Changing those rules changes the seed
+sectors, so rerun `nrginit`; see [QSZTZ basis initialization](nrginit-workflow.md#qsztz-basis).
+
 ### Optional scalar chain backend
 
 The example above retains the legacy defaults: `tri=old` and
@@ -277,7 +281,8 @@ file lifecycle details.
 The runtime also creates a uniquely named temporary workdir for eigenspectra
 and density matrices used between phases. `nrg -w DIR` or `NRG_WORKDIR=DIR`
 selects the parent of that temporary directory; neither setting relocates
-`td`, `custom`, spectra, or other persistent results.
+`td`, `custom`, spectra, or other persistent results. With the default
+`resume=false`, the temporary workdir is for this run only.
 
 For restartable calculations, set `resume=true` in `param` before the initial
 run and invoke `nrg --checkpoint-dir DIR`. Unlike `-w`, this option creates or
@@ -285,7 +290,10 @@ reopens exactly `DIR`, locks it against concurrent solver processes, and
 preserves the directory after exit. Repeat the same command after an
 interruption; completed diagonalizations are loaded while all shells are
 replayed to reconstruct complete output files. The checkpoint files are native
-same-build artifacts and require unchanged `param` and `data` inputs.
+same-build artifacts and require unchanged `param` and `data` inputs. If `nrg`
+rejects an unsupported unitary format, rerun with a fresh checkpoint directory;
+there is no migration. Incompatible density files alone do not require a fresh
+directory: `nrg` rebuilds the affected family.
 
 It is normal for `nrg` to report initializer-only keys such as `model`, `U`,
 `Gamma`, `band`, and `Nmax` under `Unused settings`. Review the list because a

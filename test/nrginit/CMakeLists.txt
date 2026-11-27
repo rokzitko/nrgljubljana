@@ -33,6 +33,22 @@ add_test(NAME nrginit_sneg_numeric_zeros
 add_test(NAME nrginit_qstz_basis
          COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/test_qstz_basis ${PROJECT_SOURCE_DIR} ${Mathematica_KERNEL_EXECUTABLE})
 
+add_test(NAME nrginit_qsztz_basis
+         COMMAND ${Mathematica_KERNEL_EXECUTABLE} -noinit -noprompt -script ${CMAKE_CURRENT_SOURCE_DIR}/qsztz_basis.m)
+set_tests_properties(nrginit_qsztz_basis PROPERTIES ENVIRONMENT "NRG_INIT_DIR=${PROJECT_SOURCE_DIR}/nrginit"
+                     PASS_REGULAR_EXPRESSION "PASS QSZTZ basis" TIMEOUT 120)
+
+if(NRGLJUBLJANA_INSTALL_NRGINIT)
+  find_package(Python3 REQUIRED COMPONENTS Interpreter)
+  add_test(NAME nrginit_qsztz_one_step
+           COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qsztz_one_step.py
+                   ${CMAKE_COMMAND} ${PROJECT_BINARY_DIR}/nrginit ${NRGLJUBLJANA_INSTALL_NRGINIT_DIR}
+                   ${Mathematica_KERNEL_EXECUTABLE} $<TARGET_FILE:nrg>)
+  set_tests_properties(nrginit_qsztz_one_step PROPERTIES TIMEOUT 180
+    ENVIRONMENT "${TEST_BUILD_ENV};MKL_NUM_THREADS=1;OPENBLAS_NUM_THREADS=1;OMP_NUM_THREADS=1"
+    ENVIRONMENT_MODIFICATION "LD_LIBRARY_PATH=path_list_prepend:$<TARGET_FILE_DIR:nrgljubljana_c>;DYLD_LIBRARY_PATH=path_list_prepend:$<TARGET_FILE_DIR:nrgljubljana_c>")
+endif()
+
 add_test(NAME nrginit_floquet_primitives
          COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/test_floquet_primitives ${PROJECT_SOURCE_DIR} ${Mathematica_KERNEL_EXECUTABLE})
 

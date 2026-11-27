@@ -17,6 +17,13 @@ In this mode the code has serial application-level scheduling, while each LAPACK
 
 OpenMP-based MKL threading-layer choices link CMake's documented `OpenMP::OpenMP_CXX` target so MKL can resolve the corresponding runtime symbols even though NRG Ljubljana's own OpenMP regions remain disabled.
 
+With `mult=cuda` and `substeps=false`, Wilson-chain operator recalculation
+accumulates each output block on the GPU and copies it back once. The input
+block cache uses at most 4 GiB or half the available device memory, whichever
+is smaller. Blocks that do not fit are uploaded as needed. If device
+allocation fails, the solver retries without caching and then, if necessary,
+with the original per-product CUDA path. This does not change `mult=blas`.
+
 ## BLAS/LAPACK ABI
 
 Threading and integer width are separate choices. The default

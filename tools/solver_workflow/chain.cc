@@ -1,6 +1,8 @@
 #include <nrgljubljana/solver_chain.hpp>
 
 #include <algorithm>
+#include <array>
+#include <cmath>
 #include <complex>
 #include <cstddef>
 #include <filesystem>
@@ -9,10 +11,12 @@
 #include <optional>
 #include <sstream>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <numeric>
 
 #include "../mixchain/configuration.hpp"
 #include "../mixchain/discretize.hpp"
@@ -132,6 +136,21 @@ double element(const ChainMatrix &m, const unsigned i, const unsigned j, const b
   return value;
 }
 
+std::array<double, 4> qs_block(const ChainMatrix &matrix, const std::string &name) {
+  if (matrix.rows != 2 || matrix.cols != 2 || matrix.real.size() != 4 ||
+      (!matrix.imaginary.empty() && matrix.imaginary.size() != 4))
+    throw std::invalid_argument(name + " must be a real 2 by 2 Wilson block.");
+  if (std::any_of(matrix.imaginary.begin(), matrix.imaginary.end(), [](double x) { return x != 0.0; }) ||
+      std::any_of(matrix.real.begin(), matrix.real.end(), [](double x) { return !std::isfinite(x); }))
+    throw std::invalid_argument(name + " must contain finite real Wilson coefficients.");
+  const auto &a = matrix.real;
+  const auto scale = std::max({std::abs(a[0]), std::abs(a[1]), std::abs(a[2]), std::abs(a[3])});
+  if (std::abs(a[1] - a[2]) > 32 * std::numeric_limits<double>::epsilon() * scale)
+    throw std::invalid_argument(name + " is not symmetric in the polar gauge.");
+  const auto cross = std::midpoint(a[1], a[2]);
+  return {a[0], cross, cross, a[3]};
+}
+
 } // namespace
 
 ChainCoefficients diagonal_coefficients(const WilsonChain &chain) {
@@ -202,6 +221,42 @@ InitializerResult instantiate(const InitializerOptions &options, const ChainCoef
   detail::prepared(options.calculation_directory, diagnostic_file, [&] {
     const auto energy = detail::instantiate(options.parameter_file, options.template_directory, options.nmax, wilson,
                                             coefficients.z, coefficients.Lambda, coefficients.bandrescale);
+    result = InitializerResult{std::filesystem::absolute("data").string(), energy};
+  });
+  return result;
+}
+
+InitializerResult instantiate(const InitializerOptions &options, const WilsonChain &chain,
+                              const std::string &diagnostic_file) {
+  if (chain.channels != 2 || chain.gauge != "polar")
+    throw std::invalid_argument("Matrix instantiate requires a two-channel Wilson chain in the polar gauge.");
+  if (options.nmax == 0 || options.nmax > 998 || chain.nmax < options.nmax ||
+      chain.E.size() != static_cast<std::size_t>(chain.nmax) + 1 || chain.T.size() != chain.E.size())
+    throw std::invalid_argument("Matrix Wilson coefficients do not cover the requested sites 0..nmax.");
+
+  detail::QSMixing mixing{qs_block(chain.V, "V"), {}, {}};
+  NRG::Tools::NrgChain::WilsonData wilson;
+  wilson.channels.resize(2);
+  for (const unsigned channel : {0u, 1u}) {
+    const auto v = mixing.coupling[3 * channel];
+    if (v < 0.0) throw std::invalid_argument("The polar Wilson coupling must have nonnegative diagonal elements.");
+    wilson.channels[channel].theta = v * v;
+  }
+  for (unsigned site = 0; site <= options.nmax; ++site) {
+    const auto e = qs_block(chain.E[site], "E_" + std::to_string(site));
+    const auto t = qs_block(chain.T[site], "T_" + std::to_string(site));
+    for (const unsigned channel : {0u, 1u}) {
+      wilson.channels[channel].xi.push_back(t[3 * channel]);
+      wilson.channels[channel].zeta.push_back(e[3 * channel]);
+    }
+    mixing.hopping.push_back(t[1]);
+    mixing.onsite.push_back(e[1]);
+  }
+
+  InitializerResult result{};
+  detail::prepared(options.calculation_directory, diagnostic_file, [&] {
+    const auto energy = detail::instantiate(options.parameter_file, options.template_directory, options.nmax, wilson,
+                                            chain.z, chain.Lambda, chain.bandrescale, &mixing);
     result = InitializerResult{std::filesystem::absolute("data").string(), energy};
   });
   return result;

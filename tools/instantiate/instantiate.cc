@@ -1017,10 +1017,20 @@ void write_z_coefficients(std::ostream &out, const NRG::Tools::NrgChain::WilsonD
   for (const auto &channel : wilson.channels) write_coefficient_table(out, channel.zeta, max_index);
 }
 
-NRG::Spawn::MatrixEvaluator make_matrix_evaluator(const ParamSections &sections, const NRG::Tools::NrgChain::WilsonData &wilson) {
+void write_x_coefficients(std::ostream &out, const NRG::Workflow::detail::QSMixing &mixing, const size_t nmax) {
+  out << "X\n";
+  write_coefficient_table(out, mixing.hopping, nmax);
+  write_coefficient_table(out, mixing.hopping, nmax);
+  write_coefficient_table(out, mixing.onsite, nmax);
+  write_coefficient_table(out, std::vector<double>(nmax + 1, 0.0), nmax);
+}
+
+NRG::Spawn::MatrixEvaluator make_matrix_evaluator(const ParamSections &sections, const NRG::Tools::NrgChain::WilsonData &wilson,
+                                                 const NRG::Workflow::detail::QSMixing *mixing = nullptr) {
   NRG::Spawn::MatrixEvalContext context;
   if (const auto it = sections.values.find("extra"); it != sections.values.end()) context.variables = numeric_variables(it->second);
   context.wilson = wilson;
+  context.mixing = mixing;
   return NRG::Spawn::MatrixEvaluator(std::move(context));
 }
 
@@ -1101,6 +1111,7 @@ void run_diag_seed_only(const Options &options) {
 struct SuppliedWilson {
   const NRG::Tools::NrgChain::WilsonData &data;
   double z, Lambda, bandrescale;
+  const NRG::Workflow::detail::QSMixing *mixing;
 };
 
 // The supplied coefficients must be for this parameter file and cover the sites 0..nmax.
@@ -1114,17 +1125,21 @@ void check_supplied_wilson(const SuppliedWilson &supplied, const ParamSections &
   for (const auto &[key, given, default_value] : {std::tuple{"z", supplied.z, 1.0}, std::tuple{"Lambda", supplied.Lambda, 2.0},
                                                   std::tuple{"bandrescale", supplied.bandrescale, 1.0}}) {
     const auto expected = number(key, default_value);
-    if (std::abs(given - expected) > 1e-12 * std::max(1.0, std::abs(expected)))
+    if (!std::isfinite(given) || std::abs(given - expected) > 1e-12 * std::max(1.0, std::abs(expected)))
       throw std::invalid_argument(fmt::format("The Wilson coefficients were computed for {}={:.17g}, but the parameter file "
                                               "gives {}={:.17g}.", key, given, key, expected));
   }
-  if (supplied.data.channels.size() != 1)
-    throw std::invalid_argument(fmt::format("Workflow instantiate requires the Wilson coefficients of one channel, not {}.",
-                                            supplied.data.channels.size()));
-  for (const auto &channel : supplied.data.channels)
-    if (channel.xi.size() < nmax + 1 || channel.zeta.size() < nmax + 1)
-      throw std::invalid_argument(fmt::format("The Wilson coefficients cover the sites 0..{}, fewer than the 0..{} required.",
-                                              std::min(channel.xi.size(), channel.zeta.size()) - 1, nmax));
+  if (supplied.data.channels.empty() || supplied.data.channels.size() > 2)
+    throw std::invalid_argument("Workflow instantiate requires one or two supplied coefficient channels.");
+  const auto finite_prefix = [nmax](const auto &table) {
+    return std::all_of(table.begin(), table.begin() + nmax + 1, [](double value) { return std::isfinite(value); });
+  };
+  for (const auto &channel : supplied.data.channels) {
+    if (channel.xi.size() <= nmax || channel.zeta.size() <= nmax)
+      throw std::invalid_argument(fmt::format("The Wilson coefficients do not cover the sites 0..{} required.", nmax));
+    if (!(channel.theta >= 0.0) || !std::isfinite(channel.theta) || !finite_prefix(channel.xi) || !finite_prefix(channel.zeta))
+      throw std::invalid_argument("Invalid supplied Wilson coefficient.");
+  }
 }
 
 double run_full_instantiation(const Options &options, const std::optional<unsigned> resolved_nmax = std::nullopt,
@@ -1146,39 +1161,51 @@ double run_full_instantiation(const Options &options, const std::optional<unsign
   if (options.generate_temporaries)
     write_staged_param_section_files(sections, options.param_filename, staging_dir, legacy_artifacts);
   auto params = make_instantiate_params(options.param_filename, staging_dir);
+  const auto *mixing = supplied ? supplied->mixing : nullptr;
+  const auto coefficient_channels = supplied ? supplied->data.channels.size() : 1;
   if (resolved_nmax) {
-    if (params->symtype.value() != "QS" || params->polarized || params->pol2x2 || params->rungs || params->substeps || params->floquet)
-      throw std::invalid_argument("Workflow instantiate supports only real, one-channel, unpolarized QS templates "
-                                  "without pol2x2, rungs, substeps or Floquet mode.");
+    if (params->symtype.value() != "QS" || params->polarized || params->pol2x2 || params->substeps || params->floquet)
+      throw std::invalid_argument("Workflow instantiate supports only real, unpolarized QS templates without pol2x2, "
+                                  "substeps or Floquet mode.");
+    if (params->rungs && !mixing)
+      throw std::invalid_argument("QS rungs require a two-channel matrix Wilson chain.");
+    if (mixing && !params->rungs) {
+      const auto nonzero = [resolved_nmax](const auto &table) {
+        return std::any_of(table.begin(), table.begin() + *resolved_nmax + 1, [](double value) { return value != 0.0; });
+      };
+      if (nonzero(mixing->hopping) || nonzero(mixing->onsite))
+        throw std::invalid_argument("A Wilson chain with off-diagonal E or T requires rungs=true.");
+    }
     validate_workflow_tri(params->tri.value());
     const auto template_file = resolve_template_file(options.template_dir, "data.in");
     if (NRG::complex_data(template_file.string()))
       throw std::invalid_argument("Workflow instantiate does not support complex templates.");
     std::ifstream input(template_file);
     const auto header = NRG::read_data_header(input);
-    if (header.symtype != "QS" || header.channels != 1)
-      throw std::invalid_argument("Workflow instantiate requires a one-channel QS data.in template.");
+    if (header.symtype != "QS" || header.channels != coefficient_channels)
+      throw std::invalid_argument("QS data.in channel count does not match the supplied Wilson coefficients.");
   }
 
   const auto wilson = supplied ? supplied->data
                                : NRG::Tools::NrgChain::calculate_from_params(nrgchain->parameters, nrgchain->configuration.mode,
                                                                              staging_dir);
-  if (wilson.channels.size() != 1)
-    throw std::runtime_error("Only single-channel Wilson generation is supported in this instantiate slice.");
+  if (wilson.channels.size() != coefficient_channels)
+    throw std::runtime_error("The generated Wilson coefficients do not match the requested channels.");
   if (options.generate_temporaries) write_wilson_channel(wilson.channels.front(), 1, staging_dir);
 
   const auto nmax = resolved_nmax ? *resolved_nmax : parse_size_t_value(param_value(sections, "param", "Nmax"), "Nmax");
   const auto polarized = params->polarized.value();
   if (polarized) throw std::runtime_error("Spin-polarized coefficient tables are not supported in this instantiate slice.");
 
-  auto evaluator = make_matrix_evaluator(sections, wilson);
+  auto evaluator = make_matrix_evaluator(sections, wilson, mixing);
 
   std::ostringstream data_buffer;
 
   const auto template_dir = std::filesystem::path(options.template_dir);
   DataTemplateReader data_in(resolve_template_file(template_dir, "data.in"), &data_buffer);
   const auto header = read_template_header(data_in);
-  if (header.channels != 1) throw std::runtime_error("Only single-channel data.in templates are supported in this slice.");
+  if (header.channels != coefficient_channels)
+    throw std::runtime_error("The data.in channel count does not match the Wilson coefficients.");
   initialize_template_symmetry(*params, header);
   data_buffer << header.channels << ' ' << nmax << ' ' << header.subspaces << '\n';
 
@@ -1187,6 +1214,7 @@ double run_full_instantiation(const Options &options, const std::optional<unsign
   const auto tail = process_template_tail(data_in, data_buffer, seed, evaluator, template_dir, params->channels * params->perchannel);
   if (tail.ground_energy != seed.ground_energy) throw std::runtime_error("Internal ground-energy mismatch while instantiating data.");
   write_z_coefficients(data_buffer, wilson, params->coefchannels, nmax);
+  if (mixing && params->rungs) write_x_coefficients(data_buffer, *mixing, nmax);
 
   const auto data_text = data_buffer.str();
   validate_generated_data(options.param_filename, data_text, staging_dir);
@@ -1254,12 +1282,12 @@ NRG::Workflow::detail::ComputedWilson NRG::Workflow::detail::nrgchain_coefficien
 
 double NRG::Workflow::detail::instantiate(const std::string &parameter_file, const std::string &template_directory,
                                          const unsigned nmax, const NRG::Tools::NrgChain::WilsonData &wilson, const double z,
-                                         const double Lambda, const double bandrescale) {
+                                         const double Lambda, const double bandrescale, const QSMixing *mixing) {
   validate_workflow_nmax(nmax);
   Options options;
   options.param_filename = parameter_file;
   options.template_dir   = template_directory;
-  const SuppliedWilson supplied{wilson, z, Lambda, bandrescale};
+  const SuppliedWilson supplied{wilson, z, Lambda, bandrescale, mixing};
   return run_full_instantiation(options, nmax, &supplied);
 }
 

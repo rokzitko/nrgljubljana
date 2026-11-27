@@ -1,0 +1,102 @@
+#!/bin/bash
+set -Eeuo pipefail
+trap 'echo "Failed in $PWD at line $LINENO: $BASH_COMMAND" >&2' ERR
+
+nrg=$1
+export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 BLIS_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1
+rm -rf original branch
+mkdir original branch
+cp param data original/
+printf '\nfdm=true\nresume=true\ndiag_mode=serial\n' >>original/param
+cp original/{param,data} branch/
+touch -t 200001010000 old
+
+run() {
+  echo "Running $1 (see $PWD/../$1.log)"
+  "$nrg" --checkpoint-dir checkpoint >"../$1.log" 2>&1
+}
+(cd original; run original; test -f DONE)
+
+cd branch
+orig=../original/checkpoint
+outputs=(td tdfdm custom corr_{DMNRG,FDM}_dens_n_d-n_d.dat spec_{DMNRG,FDM}_dens_A_d-A_d.dat spin_{DMNRG,FDM}_dens_sigma_d-sigma_d.dat)
+unitaries=(checkpoint/unitary{0..3})
+# The last-shell density seeds may be written even on a full replay.
+lower=(checkpoint/{rho,rhofdm}{0..2})
+
+compare_outputs() {
+  local f
+  for f in "${outputs[@]}"; do
+    test -s "$f"
+    cmp "../original/$f" "$f"
+  done
+}
+succeed() {
+  rm -f DONE "${outputs[@]}"
+  run "$1"
+  test -f DONE
+  compare_outputs
+}
+# Backdating before a run makes even a byte-identical rewrite observable.
+check_age() {
+  local expected=$1 f actual
+  shift
+  for f; do
+    test -s "$f"
+    actual=untouched
+    if [[ $f -nt ../old ]]; then actual=written; fi
+    [[ $actual == "$expected" ]] || { echo "$f: expected $expected, was $actual" >&2; return 1; }
+  done
+}
+reject() {
+  local status=0
+  touch DONE
+  touch -c -r ../old "${outputs[@]}"
+  run "$1" || status=$?
+  [[ $status == 1 && ! -e DONE ]]
+  check_age untouched "${outputs[@]}"
+  compare_outputs
+}
+
+# Same inputs in two empty checkpoint dirs must produce independent roots.
+succeed independent
+cp "$orig/unitary0" checkpoint/
+reject independent-splice
+
+# Fork the original after shell 1, leaving both old density families in place.
+cp "$orig/unitary1" "$orig"/{rho,rhofdm}{0..3} checkpoint/
+rm checkpoint/unitary{2,3}
+touch -r ../old checkpoint/unitary{0,1} "${lower[@]}"
+succeed partial
+check_age untouched checkpoint/unitary{0,1}
+check_age written checkpoint/unitary{2,3} "${lower[@]}"
+
+# Original shell 2 has the right parent (shared shell 1), but its self ID is
+# not the one recorded by the new shell 3. Reject before opening results.
+mv checkpoint/unitary2 unitary2.branch
+cp "$orig/unitary2" checkpoint/
+reject branch-splice
+mv unitary2.branch checkpoint/unitary2
+
+touch -r ../old "${unitaries[@]}" "${lower[@]}"
+succeed complete
+check_age untouched "${unitaries[@]}" "${lower[@]}"
+
+# Even density at a shared shell is stale: it belongs to the original tip.
+repair_family() {
+  local stale=$1 valid=$2
+  cp "$orig/${stale}1" checkpoint/
+  touch -r ../old "${lower[@]}"
+  succeed "stale-$stale"
+  check_age written checkpoint/"$stale"{0..2}
+  check_age untouched checkpoint/"$valid"{0..2} "${unitaries[@]}"
+}
+repair_family rho rhofdm
+repair_family rhofdm rho
+
+# Change only the raw bytes, not the calculation or the generation chain.
+for input in param data; do
+  printf '\n' >>"$input"
+  reject "changed-$input"
+  cp "../original/$input" "$input"
+done

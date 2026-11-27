@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <cctype>
+#include <limits>
 #include <map>
 #include <stdexcept>
 #include <string>
@@ -15,7 +16,7 @@
 
 #include <traits.hpp>
 
-#include "nrgchain.hpp"
+#include "workflow.hpp"
 
 namespace NRG::Spawn {
 
@@ -24,6 +25,7 @@ using std::size_t;
 struct MatrixEvalContext {
   std::map<std::string, double> variables;
   NRG::Tools::NrgChain::WilsonData wilson;
+  const NRG::Workflow::detail::QSMixing *mixing = nullptr;
 };
 
 class MatrixEvaluator {
@@ -132,7 +134,8 @@ class MatrixEvaluator {
 
   static int integral_argument(const double value, const std::string &name) {
     const auto rounded = std::round(value);
-    if (std::abs(value - rounded) > 1e-12)
+    if (!std::isfinite(rounded) || rounded < std::numeric_limits<int>::min() ||
+        rounded > std::numeric_limits<int>::max() || std::abs(value - rounded) > 1e-12)
       throw std::runtime_error(fmt::format("{} argument must be integral.", name));
     return static_cast<int>(rounded);
   }
@@ -145,6 +148,23 @@ class MatrixEvaluator {
     if (name == "gammaPolCh" && args.size() == 1) {
       const auto ch = integral_argument(args[0], name);
       return std::sqrt(channel(ch).theta / M_PI);
+    }
+    if (name == "bathCoupling" && args.size() == 2) {
+      const auto impurity = integral_argument(args[0], name);
+      const auto bath = integral_argument(args[1], name);
+      const auto &diagonal = channel(impurity);
+      channel(bath);
+      if (context.mixing) return context.mixing->coupling.at(2 * (impurity - 1) + bath - 1) / std::sqrt(M_PI);
+      return impurity == bath ? std::sqrt(diagonal.theta / M_PI) : 0.0;
+    }
+    if (name == "coefrung" && args.size() == 2) {
+      const auto ch = integral_argument(args[0], name);
+      const auto idx = integral_argument(args[1], name);
+      if (ch != 1) throw error("Two-channel QS has one independent on-site rung.");
+      const auto &diagonal = channel(ch);
+      if (context.mixing) return coefficient(context.mixing->onsite, idx);
+      coefficient(diagonal.zeta, idx);
+      return 0.0;
     }
     if (name == "coefxi" && args.size() == 2) {
       const auto ch = integral_argument(args[0], name);

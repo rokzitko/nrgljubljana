@@ -84,11 +84,18 @@ ChainCoefficients diagonal_coefficients(const WilsonChain &chain);
 ChainCoefficients nrgchain_coefficients(const InitializerOptions &options, const std::string &diagnostic_file = {});
 
 // instantiate with the given coefficients instead of computing them with nrgchain; everything else as the instantiate
-// of solver_workflow.hpp, with its scope (real, one-channel, unpolarized QS). The coefficients must cover the sites
+// of solver_workflow.hpp, allowing real one- or two-channel unpolarized QS. Rungs are disabled. The coefficients must cover the sites
 // 0..options.nmax (a longer chain is cut), match the coefficient channels of the template, and have the z, Lambda and
 // bandrescale of the parameter file (to 1e-12 relative, with the solver's defaults 1, 2 and 1). The chain keys of the
 // file (dos, band, adapt, tridiag_method, ...) are not read.
 InitializerResult instantiate(const InitializerOptions &options, const ChainCoefficients &coefficients,
+                              const std::string &diagnostic_file = {});
+
+// Instantiate a real two-channel QS template with the full polar-gauge chain.
+// The template uses bathCoupling(impurity, channel) = V(impurity, channel)/sqrt(pi)
+// with 1-based indices, and coefrung(1,0) for the site-zero off-diagonal E.
+// Set rungs=true if the off-diagonal elements of E or T are nonzero.
+InitializerResult instantiate(const InitializerOptions &options, const WilsonChain &chain,
                               const std::string &diagnostic_file = {});
 
 } // namespace NRG::Workflow

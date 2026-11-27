@@ -68,15 +68,6 @@ TEST(Integ, analytic_modes_do_not_allocate_qag_workspace) { // NOLINT
   EXPECT_DOUBLE_EQ(NRG::Integ::calculate(polynomial, options), -0.5);
 }
 
-TEST(Integ, fermi_factor_is_stable_at_extreme_arguments) { // NOLINT
-  EXPECT_DOUBLE_EQ(NRG::Integ::fermi_factor(1000.0, 1.0), 0.0);
-  EXPECT_DOUBLE_EQ(NRG::Integ::fermi_factor(-1000.0, 1.0), 1.0);
-  EXPECT_DOUBLE_EQ(NRG::Integ::fermi_factor(0.0, 1e-300), 0.5);
-  EXPECT_DOUBLE_EQ(NRG::Integ::fermi_factor(-1.0, 0.0), 1.0);
-  EXPECT_DOUBLE_EQ(NRG::Integ::fermi_factor(0.0, 0.0), 0.5);
-  EXPECT_DOUBLE_EQ(NRG::Integ::fermi_factor(1.0, 0.0), 0.0);
-}
-
 TEST(Integ, positive_temperature_fermi_integration_splits_piecewise_domain) { // NOLINT
   const NRG::Integ::Polynomial constant{{-2.0, -0.25, 0.5, 3.0}, {{1.0}, {1.0}, {1.0}}};
   NRG::Integ::Options options;

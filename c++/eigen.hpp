@@ -28,6 +28,7 @@
 
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/irange.hpp>
+#include <boost/uuid/random_generator.hpp>
 
 #include <range/v3/all.hpp>
 
@@ -45,36 +46,8 @@
 namespace NRG {
 
 inline constexpr std::string_view unitary_checkpoint_magic = "NRGLjubljana-unitary\n";
-inline constexpr std::uint32_t unitary_checkpoint_version = 1;
+inline constexpr std::uint32_t unitary_checkpoint_version = 2;
 inline constexpr std::uint32_t unitary_checkpoint_stage_replay_ready = 1;
-
-template<typename T>
-std::vector<T> negate_copy(const std::vector<T>& v) {
-  std::vector<T> out(v.size());
-  std::transform(v.begin(), v.end(), out.begin(),
-                 [](const T& x) { return -x; });
-  return out;
-}
-
-template<typename T>
-std::vector<T> abs_copy(const std::vector<T>& v) {
-  std::vector<T> out(v.size());
-  std::transform(v.begin(), v.end(), out.begin(),
-                 [](const T& x) { return std::abs(x); });
-  return out;
-}
-
-template<typename T>
-void negate_inplace(std::vector<T>& v) {
-  for (auto& x : v)
-    x = -x;
-}
-
-template<typename T>
-void abs_inplace(std::vector<T>& v) {
-  for (auto& x : v)
-    x = std::abs(x);
-}
 
 template<typename T>
 void shift_inplace(std::vector<T>& v, const T shift) {
@@ -98,7 +71,6 @@ class Values {
    double abs_GS_energy = std::numeric_limits<double>::quiet_NaN();
    std::vector<t_eigen> corrected; // these are referenced to Egs in current step (in the same way as rel_zero)
    std::vector<t_eigen> c; // criterion, value of "cost" function for truncation; constrols the sort order of states!!
-   double c_shift = std::numeric_limits<double>::quiet_NaN(); // shift for criterion 'c'
   public:
    std::vector<t_eigen> & ref_v() { return v; }
    std::vector<t_eigen> & ref_corrected() { return corrected; }
@@ -123,7 +95,7 @@ class Values {
      assert(v.size() > 0);
      std::cout << "v[0]=" << v.front() << " corrected[0]=" << corrected.front() << " crit[0]=" << c.front() << std::endl;
      if (verbose)
-       std::cout << "scale=" << scale << " shift=" << shift << " T_shift=" << T_shift << " c_shift=" << c_shift << std::endl;
+       std::cout << "scale=" << scale << " shift=" << shift << " T_shift=" << T_shift << std::endl;
    }
    [[nodiscard]] const auto & all_rel() const noexcept { return v; }
    [[nodiscard]] const auto & all_crit() const noexcept { return c; }
@@ -150,7 +122,6 @@ class Values {
     void set(std::vector<t_eigen> &&in) { v = std::move(in); }
    void set_scale(const double scale_) { scale = scale_; }
    void set_shift(const double shift_) { shift = shift_; }
-   void set_c_shift(const double c_shift_) { c_shift = c_shift_; }
    void set_T_shift(const double T_shift_) { T_shift = T_shift_; }
    void set_abs_GS_energy(const double abs_GS_energy_) { abs_GS_energy = abs_GS_energy_; }
     void set_corr(const std::vector<t_eigen> &in) { corrected = in; }
@@ -162,8 +133,6 @@ class Values {
    void set_crit(const size_t i, const t_eigen x) { c[i] = x; }
    void crit_copy_raw() { c = v; }
    void crit_copy_corr() { c = corrected; }
-   void crit_negate() { negate_inplace(c); }
-   void crit_abs() { abs_inplace(c); }
    [[nodiscard]] auto has_abs() const noexcept { return std::isfinite(scale); }
    [[nodiscard]] auto has_zero() const noexcept { return std::isfinite(shift); }
    [[nodiscard]] auto has_abs_zero() const noexcept { return has_abs() && has_zero(); }
@@ -591,23 +560,9 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
        all.insert(all.end(), eig.values.all_rel_zero().begin(), eig.values.all_rel_zero().end());
      return all | ranges::move | ranges::actions::sort;
    }
-   [[nodiscard]] std::vector<t_eigen> sorted_criterion_values() const {
-     std::vector<t_eigen> all;
-     for (const auto &eig: eigs())
-       all.insert(all.end(), eig.values.all_crit().begin(), eig.values.all_crit().end());
-     return all | ranges::move | ranges::actions::sort;
-   }
    void sort_by_c() {
      for (auto &eig: eigs())
        eig.do_sort_by_c();
-   }
-   void negate_c() {
-     for (auto &eig: eigs())
-       eig.values.crit_negate();
-   }
-   void abs_c() {
-     for (auto &eig: eigs())
-       eig.values.crit_abs();
    }
    void report(const bool verbose = false) const {
      std::cout << "DiagInfo report" << std::endl;
@@ -655,9 +610,12 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
            fmt::print("({}) {} states: {}\n", I.str(), eig.getnrstored(), eig.values.all_rel());
        fmt::print("Number of states (multiplicity taken into account): {}\n\n", count_states(mult));
      }
-   void save(const size_t N, const Params &P, const t_eigen Egs) const {
+   void save(const size_t N, Params &P, const t_eigen Egs) const {
      const std::string fn = P.workdir->unitaryfn(N);
      if (!std::isfinite(Egs)) throw std::runtime_error(fmt::format("Can't checkpoint non-finite Egs for iteration {}", N));
+     auto *slot = P.resume ? &P.checkpoint_generations.at(N) : nullptr;
+     const auto parent = slot ? P.checkpoint_parent(N) : boost::uuids::uuid{};
+     const auto self = slot ? boost::uuids::random_generator()() : boost::uuids::uuid{};
      const auto tmp_fn = fn + ".tmp";
      struct temp_file_guard {
        std::string filename;
@@ -682,9 +640,10 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
           << P.Ninit.value()
           << std::string(P.symtype)
           << is_complex<S>::value
-          << P.checkpoint_param_fingerprint
-          << P.checkpoint_data_fingerprint
-          << Egs;
+           << P.checkpoint_param_fingerprint
+           << P.checkpoint_data_fingerprint
+           << parent << self
+           << Egs;
        oa << this->size();
        for (const auto &[I, eig]: *this) {
          oa << I;
@@ -698,13 +657,15 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      if (!MATRIXF) throw std::runtime_error(fmt::format("Error writing {}", fn));
      std::filesystem::rename(tmp_fn, fn);
      guard.active = false;
+     if (slot) *slot = self; // Publish the in-memory generation only after the archive is in place.
    }
-   void load(const size_t N, const Params &P, const bool remove_files = false) {
+   void load(const size_t N, const Params &P, const bool remove_files = false, boost::uuids::uuid *preflight_id = nullptr) {
      const std::string fn = P.workdir->unitaryfn(N);
      std::ifstream MATRIXF(fn, std::ios::binary | std::ios::in);
      if (!MATRIXF) throw std::runtime_error(fmt::format("Can't open file {} for reading", fn));
      DiagInfo<S> loaded;
      t_eigen Egs{};
+     boost::uuids::uuid self{};
      std::array<char, unitary_checkpoint_magic.size()> magic{};
      MATRIXF.read(magic.data(), static_cast<std::streamsize>(magic.size()));
      if (!MATRIXF || !std::equal(magic.begin(), magic.end(), unitary_checkpoint_magic.begin()))
@@ -713,7 +674,7 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
        boost::archive::binary_iarchive ia(MATRIXF);
        const auto version = read_one<std::uint32_t>(ia);
        if (version != unitary_checkpoint_version)
-         throw std::runtime_error(fmt::format("Unsupported checkpoint format in {}", fn));
+         throw std::runtime_error(fmt::format("Unsupported checkpoint version {} in {}; start with a fresh checkpoint directory", version, fn));
        const auto stage = read_one<std::uint32_t>(ia);
        if (stage != unitary_checkpoint_stage_replay_ready)
          throw std::runtime_error(fmt::format("Unsupported checkpoint format in {}", fn));
@@ -724,6 +685,8 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
        const auto stored_complex = read_one<bool>(ia);
        const auto stored_param_fingerprint = read_one<std::uint64_t>(ia);
        const auto stored_data_fingerprint = read_one<std::uint64_t>(ia);
+       const auto parent = read_one<boost::uuids::uuid>(ia);
+       ia >> self;
        Egs = read_one<t_eigen>(ia);
        if (!std::isfinite(Egs)) throw std::runtime_error(fmt::format("Checkpoint {} contains non-finite Egs", fn));
        if (stored_N != N)
@@ -732,6 +695,12 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
            stored_complex != is_complex<S>::value || stored_param_fingerprint != P.checkpoint_param_fingerprint ||
            stored_data_fingerprint != P.checkpoint_data_fingerprint)
          throw std::runtime_error(fmt::format("Checkpoint {} is incompatible with the current calculation", fn));
+       if (P.resume) {
+         if (self.is_nil() || self == parent || parent != P.checkpoint_parent(N) || (!preflight_id && self != P.checkpoint_generations.at(N)))
+           throw std::runtime_error(fmt::format("Checkpoint {} belongs to a different unitary chain", fn));
+       } else if (!parent.is_nil() || !self.is_nil()) {
+         throw std::runtime_error(fmt::format("Unexpected resumable checkpoint in temporary workdir: {}", fn));
+       }
        const auto nr = read_one<size_t>(ia); // Number of subspaces
        for ([[maybe_unused]] const auto cnt : range0(nr)) {
          const auto inv = read_one<Invar>(ia);
@@ -747,6 +716,7 @@ class DiagInfo : public std::map<Invar, Eigen<S>> {
      }
      this->swap(loaded);
      loaded_checkpoint_Egs = Egs;
+     if (preflight_id) *preflight_id = self;
    }
    void h5save(H5Easy::File &fd, const std::string &name, const bool save_vectors = true) const {
      for (const auto &[I, eig]: *this) eig.h5save(fd, name + "/" + I.name(), save_vectors);

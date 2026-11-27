@@ -272,28 +272,6 @@ inline auto integrate_absolute_clipped(const Polynomial &polynomial, const doubl
   return bounds ? NRG::Tools::absolute_integral(polynomial, bounds->first, bounds->second) : 0.0;
 }
 
-inline auto fermi_factor(const double energy, const double temperature) {
-  if (temperature == 0.0) return energy < 0.0 ? 1.0 : energy > 0.0 ? 0.0 : 0.5;
-  const auto argument = energy / temperature;
-  if (argument >= 0.0) {
-    const auto exponential = std::exp(-argument);
-    return exponential / (1.0 + exponential);
-  }
-  return 1.0 / (1.0 + std::exp(argument));
-}
-
-inline auto fermi_weighted_value(const double value, const double energy, const double temperature) {
-  if (temperature == 0.0) return value * fermi_factor(energy, temperature);
-  const auto argument = static_cast<long double>(energy) / static_cast<long double>(temperature);
-  if (argument < 0.0L)
-    return static_cast<double>(static_cast<long double>(value) / (1.0L + std::exp(argument)));
-  if (value == 0.0) return value;
-  if (!std::isfinite(value)) return value * fermi_factor(energy, temperature);
-  const auto logarithm = std::log(std::abs(static_cast<long double>(value))) - argument
-                         - std::log1p(std::exp(-argument));
-  return std::copysign(static_cast<double>(std::exp(logarithm)), value);
-}
-
 inline auto energy_moment(const Polynomial &polynomial) {
   if constexpr (NRG::Tools::detail::native_extended_precision) {
     NRG::Tools::CompensatedLongComplexSum sum;

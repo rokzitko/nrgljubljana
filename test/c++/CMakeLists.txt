@@ -74,6 +74,12 @@ add_test(NAME test_resume_fdm COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/resume_te
          WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test_resume_fdm)
 set_tests_properties(test_resume_fdm PROPERTIES ENVIRONMENT "${TEST_BUILD_ENV}")
 
+configure_file(test2_algorithms_dmnrg/param test_resume_generation/param COPYONLY)
+configure_file(test2_algorithms_dmnrg/data test_resume_generation/data COPYONLY)
+add_test(NAME test_resume_generation COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/resume_generation_test $<TARGET_FILE:nrg>
+         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test_resume_generation)
+set_tests_properties(test_resume_generation PROPERTIES ENVIRONMENT "${TEST_BUILD_ENV}")
+
 if(GPROF)
   gprof("${registered_tests}" ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 endif()

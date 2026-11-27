@@ -1,0 +1,16 @@
+[extra]
+U1=
+U2=
+U12=
+J12=
+eps1=
+eps2=
+V12=
+
+[param]
+options=GENERATE_TEMPLATE GENERATE_TEMPLATE_ALL
+model=model.m
+symtype=QS
+rungs=true
+ops=n_d1 n_d2 D_d1 D_d2 n_d1n_d2 S_d1S_d2 SigmaHartree11 SigmaHartree12 SigmaHartree21 SigmaHartree22 A_d1 A_d2 self_d1 self_d2 sigma_d1 sigma_d2
+data_has_rescaled_energies=false
