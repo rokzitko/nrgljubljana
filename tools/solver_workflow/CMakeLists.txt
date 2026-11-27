@@ -54,7 +54,8 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/share/workflow/templates/
 
 if(NRGLJUBLJANA_BUILD_TESTS_ENABLED)
   add_executable(workflow_matrix tests/matrix.cc)
-  target_link_libraries(workflow_matrix PRIVATE nrgljubljana::workflow nrgljubljana::numerics Eigen3::Eigen project_warnings)
+  target_link_libraries(workflow_matrix PRIVATE nrgljubljana::workflow nrgljubljana::numerics Eigen3::Eigen project_warnings
+    $<$<BOOL:${ASAN}>:asan> $<$<BOOL:${UBSAN}>:ubsan>)
   add_test(NAME solver_workflow_matrix COMMAND workflow_matrix
     ${PROJECT_SOURCE_DIR}/share/workflow/templates/two-orbital-qs ${CMAKE_CURRENT_BINARY_DIR}/matrix-test)
   set_tests_properties(solver_workflow_matrix PROPERTIES TIMEOUT 180 ENVIRONMENT "OMP_NUM_THREADS=1;MKL_NUM_THREADS=1")

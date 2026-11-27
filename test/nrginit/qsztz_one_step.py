@@ -127,7 +127,7 @@ Get["initial.m", Path -> PACKAGEPATH];
 
     def run(command, status=0, **kwargs):
         result = subprocess.run(command, cwd=case, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                text=True, **kwargs)
+                                universal_newlines=True, **kwargs)
         if result.returncode != status:
             raise RuntimeError(f"{case.name}: {command[0]} exited {result.returncode}, expected {status}:\n{result.stdout}")
         return result.stdout

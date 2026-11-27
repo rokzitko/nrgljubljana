@@ -33,7 +33,7 @@ Level 3 adds `read_parameter_sections` and, in `<nrgljubljana/solver_chain.hpp>`
 the output readers of `<nrgljubljana/solver_output.hpp>` (see output-formats.md).
 
 The build-tree and exported `nrgljubljana::workflow` targets also expose the
-custom `WORKFLOW_API_VERSION` property, currently `3`, for configure-time checks
+custom `WORKFLOW_API_VERSION` property, currently `4` (two-orbital matrix support), for configure-time checks
 with `get_target_property`. Existing option/result layouts and original function
 symbols remain unchanged; consumers must link a library providing the new
 overloads when using them. The project version has not been renumbered.
