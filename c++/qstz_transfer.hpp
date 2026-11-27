@@ -2,13 +2,11 @@
 #define NRG_QSTZ_TRANSFER_HPP
 
 #include <cstdint>
-#include <map>
 #include <stdexcept>
 #include <string>
-#include <string_view>
 #include <fmt/format.h>
 
-#include "operators.hpp"
+#include "doublet_transfer.hpp"
 
 namespace NRG::qstz_transfer {
 
@@ -29,25 +27,11 @@ Mask infer(const std::string &name, const MatrixElements<S> &seed) {
   return static_cast<Mask>(bits);
 }
 
-inline Mask effective_mask(const std::map<std::string, Mask> &masks, const std::string &name) {
-  const auto it = masks.find(name);
-  return it == masks.end() ? all : it->second;
-}
+using doublet_transfer::effective_mask;
 
 template<scalar S>
 auto seed_masks(const CustomOp<S> &doublets, const Params &P, const char *flag) {
-  std::map<std::string, Mask> masks;
-  if (!flag || std::string_view(flag) == "0") return masks;
-  if (std::string_view(flag) != "1") throw std::invalid_argument("NRG_QSTZ_TRANSFER_MASK must be 0 or 1");
-
-  // These consumers observe the block structure; even a zero block can create a GT/I1T/I2T row.
-  const bool dense = P.h5ops || P.checksumrules || P.logletter('f') || P.logletter('r') || P.logletter('R') ||
-                     P.specgt != "" || P.speci1t != "" || P.speci2t != "";
-  for (const auto &[name, seed] : doublets) {
-    const auto mask = infer(name, seed);
-    masks.emplace(name, dense ? all : mask);
-  }
-  return masks;
+  return doublet_transfer::seed_masks(doublets, P, flag, "NRG_QSTZ_TRANSFER_MASK", infer<S>);
 }
 
 } // namespace NRG::qstz_transfer

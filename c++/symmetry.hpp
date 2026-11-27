@@ -198,6 +198,10 @@ class Symmetry {
                                                   const MatrixElements<S> &cold, qstz_transfer::Mask /*mask*/) const {
      return recalc_doublet(diag, substruct, cold);
    }
+   virtual MatrixElements<S> recalc_named_qsztz_doublet(const DiagInfo<S> &diag, const SubspaceStructure &substruct,
+                                                        const MatrixElements<S> &cold, qsztz_transfer::Mask /*mask*/) const {
+     return recalc_doublet(diag, substruct, cold);
+   }
    virtual MatrixElements<S> recalc_triplet([[maybe_unused]] const DiagInfo<S> &diag, [[maybe_unused]] const SubspaceStructure &substruct,
                                                  [[maybe_unused]] const MatrixElements<S> &cold) const { my_assert_not_reached(); }
    virtual MatrixElements<S> recalc_orb_triplet([[maybe_unused]] const DiagInfo<S> &diag, [[maybe_unused]] const SubspaceStructure &substruct,
