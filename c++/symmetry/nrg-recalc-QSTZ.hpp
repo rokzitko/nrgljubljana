@@ -60,7 +60,7 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_named_doublet(const DiagInfo<SC> &di
 #include "qstz/qstz-doubletp-1.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2, +1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 };
       Ip = Invar(q1 - 1, ss1 - 1, tz1 - 1);
@@ -72,7 +72,7 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_named_doublet(const DiagInfo<SC> &di
 #include "qstz/qstz-doubletm-1.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2, +1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 };
     }
@@ -86,7 +86,7 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_named_doublet(const DiagInfo<SC> &di
 #include "qstz/qstz-doubletp0.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2, 0));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 };
       Ip = Invar(q1 - 1, ss1 - 1, tz1);
@@ -98,7 +98,7 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_named_doublet(const DiagInfo<SC> &di
 #include "qstz/qstz-doubletm0.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2, 0));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 };
     }
@@ -112,7 +112,7 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_named_doublet(const DiagInfo<SC> &di
 #include "qstz/qstz-doubletp+1.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2, -1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 };
       Ip = Invar(q1 - 1, ss1 - 1, tz1 + 1);
@@ -124,7 +124,7 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_named_doublet(const DiagInfo<SC> &di
 #include "qstz/qstz-doubletm+1.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2, -1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 };
     }
@@ -243,7 +243,7 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, co
 #include "qstz/qstz-triplets.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3, 0));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 };
 
@@ -256,7 +256,7 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, co
 #include "qstz/qstz-tripletp.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3, 0));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 };
 
@@ -269,7 +269,7 @@ MatrixElements<SC> SymmetryQSTZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, co
 #include "qstz/qstz-tripletm.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 3, 0));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 };
   }

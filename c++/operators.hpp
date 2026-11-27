@@ -86,12 +86,13 @@ class MatrixElements : public std::map<Twoinvar, Matrix> {
     }
    // We trim the matrices containing the irreducible matrix elements of the operators to the sizes that are actually
    // required in the next iterations. This saves memory and leads to better cache usage in recalc_general()
-   // recalculations. Note: this is only needed for strategy=all; copying is avoided for strategy=kept.
+   // recalculations. Blocks already at the required size can be used directly.
    void trim(const DiagInfo<S> &diag) {
      for (auto &[II, mat] : *this) {
        const auto &[I1, I2] = II;
        const auto &[dim1, dim2] = diag.dims(I1, I2); // Target matrix dimensions
-       mat = trim_matrix(mat, dim1, dim2);
+       if (finite_size(mat) && (size1(mat) != dim1 || size2(mat) != dim2))
+         mat = trim_matrix(mat, dim1, dim2);
      }
    }
    std::ostream &insertor(std::ostream &os) const {

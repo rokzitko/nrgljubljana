@@ -51,6 +51,7 @@ class ChainMatsubara {
    Matsubara<S> m;
  public:
    explicit ChainMatsubara(const Params &P_, const gf_type gt) : P(P_), m(P_.mats, gt, P_.T){};
+   [[nodiscard]] auto frequency(const size_t n) const { return m.frequency(n); }
    void add(const size_t n, const t_weight w) { m.add(n, w); }
    template<scalar U> friend class GFMatsubara;
 };

@@ -263,7 +263,7 @@ MatrixElements<SC> SymmetryISOLR<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
 #include "isolr/isolr-2ch-doubletmp.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 2, +1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 };
 
@@ -276,7 +276,7 @@ MatrixElements<SC> SymmetryISOLR<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
 #include "isolr/isolr-2ch-doubletmm.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 2, +1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 };
 
@@ -289,7 +289,7 @@ MatrixElements<SC> SymmetryISOLR<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
 #include "isolr/isolr-2ch-doubletpp.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 2, +1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 };
 
@@ -302,7 +302,7 @@ MatrixElements<SC> SymmetryISOLR<SC>::recalc_doublet(const DiagInfo<SC> &diag, c
 #include "isolr/isolr-2ch-doubletpm.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 2, +1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 };
   }
@@ -328,7 +328,7 @@ MatrixElements<SC> SymmetryISOLR<SC>::recalc_triplet(const DiagInfo<SC> &diag, c
 #include "isolr/isolr-2ch-triplets.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 3, +1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 };
 
@@ -341,7 +341,7 @@ MatrixElements<SC> SymmetryISOLR<SC>::recalc_triplet(const DiagInfo<SC> &diag, c
 #include "isolr/isolr-2ch-tripletp.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 3, +1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 };
 
@@ -354,7 +354,7 @@ MatrixElements<SC> SymmetryISOLR<SC>::recalc_triplet(const DiagInfo<SC> &diag, c
 #include "isolr/isolr-2ch-tripletm.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 3, +1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 };
   }

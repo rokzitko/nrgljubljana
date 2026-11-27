@@ -52,7 +52,7 @@ MatrixElements<SC> SymmetrySPU1LR<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
 #include "spu1lr/spu1lr-1ch-doubletp.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(-1, 1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 } } break;
   case 2: { {
@@ -63,7 +63,7 @@ MatrixElements<SC> SymmetrySPU1LR<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
 #include "spu1lr/spu1lr-2ch-doubletp.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(-1, 1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 } } break;
   default: my_assert_not_reached();
@@ -79,7 +79,7 @@ MatrixElements<SC> SymmetrySPU1LR<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
 #include "spu1lr/spu1lr-1ch-doubletm.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(+1, 1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 } } break;
   case 2: { {
@@ -90,7 +90,7 @@ MatrixElements<SC> SymmetrySPU1LR<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
 #include "spu1lr/spu1lr-2ch-doubletm.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(+1, 1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 } } break;
   default: my_assert_not_reached();
@@ -248,7 +248,7 @@ MatrixElements<SC> SymmetrySPU1LR<SC>::recalc_triplet(const DiagInfo<SC> &diag, 
 #include "spu1lr/spu1lr-1ch-triplets.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 } } break;
   case 2: { {
@@ -259,7 +259,7 @@ MatrixElements<SC> SymmetrySPU1LR<SC>::recalc_triplet(const DiagInfo<SC> &diag, 
 #include "spu1lr/spu1lr-2ch-triplets.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 } } break;
   default: my_assert_not_reached();
@@ -275,7 +275,7 @@ MatrixElements<SC> SymmetrySPU1LR<SC>::recalc_triplet(const DiagInfo<SC> &diag, 
 #include "spu1lr/spu1lr-1ch-tripletp.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(-2, 1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 } } break;
   case 2: { {
@@ -286,7 +286,7 @@ MatrixElements<SC> SymmetrySPU1LR<SC>::recalc_triplet(const DiagInfo<SC> &diag, 
 #include "spu1lr/spu1lr-2ch-tripletp.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(-2, 1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 } } break;
   default: my_assert_not_reached();
@@ -302,7 +302,7 @@ MatrixElements<SC> SymmetrySPU1LR<SC>::recalc_triplet(const DiagInfo<SC> &diag, 
 #include "spu1lr/spu1lr-1ch-tripletm.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(+2, 1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 } } break;
   case 2: { {
@@ -313,7 +313,7 @@ MatrixElements<SC> SymmetrySPU1LR<SC>::recalc_triplet(const DiagInfo<SC> &diag, 
 #include "spu1lr/spu1lr-2ch-tripletm.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(+2, 1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 } } break;
   default: my_assert_not_reached();

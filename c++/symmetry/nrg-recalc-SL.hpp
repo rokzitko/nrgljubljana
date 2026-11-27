@@ -46,7 +46,7 @@ MatrixElements<SC> SymmetrySL<SC>::recalc_doublet(const DiagInfo<SC> &diag, cons
 #include "sl/sl-1ch-doublet.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 } } break;
   case 2: { {
@@ -57,7 +57,7 @@ MatrixElements<SC> SymmetrySL<SC>::recalc_doublet(const DiagInfo<SC> &diag, cons
 #include "sl/sl-2ch-doublet.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 } } break;
   case 3: { {
@@ -68,7 +68,7 @@ MatrixElements<SC> SymmetrySL<SC>::recalc_doublet(const DiagInfo<SC> &diag, cons
 #include "sl/sl-3ch-doublet.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 } } break;
   default: my_assert_not_reached();

@@ -51,7 +51,7 @@ MatrixElements<SC> SymmetryISO<SC>::recalc_doublet(const DiagInfo<SC> &diag, con
 #include "iso/iso-1ch-doubletmp.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 2));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 } } break;
   case 2: { {
@@ -62,7 +62,7 @@ MatrixElements<SC> SymmetryISO<SC>::recalc_doublet(const DiagInfo<SC> &diag, con
 #include "iso/iso-2ch-doubletmp.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 2));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 } } break;
   default: my_assert_not_reached();
@@ -78,7 +78,7 @@ MatrixElements<SC> SymmetryISO<SC>::recalc_doublet(const DiagInfo<SC> &diag, con
 #include "iso/iso-1ch-doubletmm.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 2));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 } } break;
   case 2: { {
@@ -89,7 +89,7 @@ MatrixElements<SC> SymmetryISO<SC>::recalc_doublet(const DiagInfo<SC> &diag, con
 #include "iso/iso-2ch-doubletmm.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 2));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 } } break;
   default: my_assert_not_reached();
@@ -105,7 +105,7 @@ MatrixElements<SC> SymmetryISO<SC>::recalc_doublet(const DiagInfo<SC> &diag, con
 #include "iso/iso-1ch-doubletpp.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 2));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 } } break;
   case 2: { {
@@ -116,7 +116,7 @@ MatrixElements<SC> SymmetryISO<SC>::recalc_doublet(const DiagInfo<SC> &diag, con
 #include "iso/iso-2ch-doubletpp.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 2));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 } } break;
   default: my_assert_not_reached();
@@ -132,7 +132,7 @@ MatrixElements<SC> SymmetryISO<SC>::recalc_doublet(const DiagInfo<SC> &diag, con
 #include "iso/iso-1ch-doubletpm.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 2));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 } } break;
   case 2: { {
@@ -143,7 +143,7 @@ MatrixElements<SC> SymmetryISO<SC>::recalc_doublet(const DiagInfo<SC> &diag, con
 #include "iso/iso-2ch-doubletpm.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 2));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 } } break;
   default: my_assert_not_reached();
@@ -448,7 +448,7 @@ MatrixElements<SC> SymmetryISO<SC>::recalc_triplet(const DiagInfo<SC> &diag, con
 #include "iso/iso-1ch-triplets.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 3));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 } } break;
   case 2: { {
@@ -459,7 +459,7 @@ MatrixElements<SC> SymmetryISO<SC>::recalc_triplet(const DiagInfo<SC> &diag, con
 #include "iso/iso-2ch-triplets.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 3));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 } } break;
   default: my_assert_not_reached();
@@ -475,7 +475,7 @@ MatrixElements<SC> SymmetryISO<SC>::recalc_triplet(const DiagInfo<SC> &diag, con
 #include "iso/iso-1ch-tripletp.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 3));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 } } break;
   case 2: { {
@@ -486,7 +486,7 @@ MatrixElements<SC> SymmetryISO<SC>::recalc_triplet(const DiagInfo<SC> &diag, con
 #include "iso/iso-2ch-tripletp.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 3));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 } } break;
   default: my_assert_not_reached();
@@ -502,7 +502,7 @@ MatrixElements<SC> SymmetryISO<SC>::recalc_triplet(const DiagInfo<SC> &diag, con
 #include "iso/iso-1ch-tripletm.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 3));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 } } break;
   case 2: { {
@@ -513,7 +513,7 @@ MatrixElements<SC> SymmetryISO<SC>::recalc_triplet(const DiagInfo<SC> &diag, con
 #include "iso/iso-2ch-tripletm.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 3));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 } } break;
   default: my_assert_not_reached();

@@ -13,11 +13,35 @@
 #include <traits.hpp>
 #include <numerics.hpp>
 #include <io.hpp>
+#include <matsubara.hpp>
 
 #include "compare.hpp"
 
 using namespace NRG;
 using namespace std::complex_literals;
+
+TEST(numerics, matsubara_transition_order) {
+  const auto weight = [](const size_t pair) {
+    if (pair == 255) return 1.0e16;
+    if (pair == 256) return -1.0e16;
+    return 1.0;
+  };
+  for (const size_t frequencies : {0, 1, 7}) {
+    for (const size_t pairs : {0, 5, 769}) {
+      std::vector<std::complex<double>> expected(frequencies, {1.0, -1.0});
+      auto actual = expected;
+      const auto contribution = [](const size_t frequency, const double value) {
+        return std::complex<double>(value, value / (frequency + 1));
+      };
+      for (size_t pair = 0; pair < pairs; ++pair)
+        for (size_t n = 0; n < frequencies; ++n)
+          expected[n] += contribution(n, weight(pair));
+      detail::accumulate_matsubara_transitions(frequencies, pairs, weight,
+          [&](const size_t n, const double value) { actual[n] += contribution(n, value); });
+      EXPECT_EQ(actual, expected) << "frequencies=" << frequencies << " pairs=" << pairs;
+    }
+  }
+}
 
 TEST(numerics, reim) {
   const auto [r, i] = reim(std::complex(1.0, 2.0));

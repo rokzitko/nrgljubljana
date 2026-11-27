@@ -85,26 +85,15 @@ class Algo_FTmats : public Algo<S> {
         const auto zero_freq_bosonic_weight = matrix_element * (-exp_beta_E1 / (Z * T));
         return std::make_tuple(energy, weight, zero_freq_bosonic_weight);
       };
-      const auto term = [T, this](const auto energy, const auto weight, const auto zero_freq_bosonic_weight, const auto n) -> t_weight {
-        if (gt == gf_type::fermionic || n>0 || std::abs(energy) > WEIGHT_TOL) // [[likely]]
-          return weight / (ww(n, gt, T)*1i - energy);
-        else // bosonic w=0 && E1=Ep case
-          return zero_freq_bosonic_weight;
-      };
-      const size_t cutoff = P.mats;
-      for (const auto r1: diagI1.kept()) {
-        for (const auto rp: diagIp.kept()) {
-          const auto factors = pair_factors(r1, rp);
-          const auto energy = std::get<0>(factors);
-          const auto weight = std::get<1>(factors);
-          const auto zero_freq_bosonic_weight = std::get<2>(factors);
-#if NRG_ENABLE_APP_OPENMP
-# pragma omp parallel for schedule(static)
-#endif
-          for (size_t n = 0; n < cutoff; n++)
-            cm->add(n, factor * term(energy, weight, zero_freq_bosonic_weight, n));
-        }
-      }
+      const auto kept_p = diagIp.kept().size();
+      detail::accumulate_matsubara_transitions(P.mats, diagI1.kept().size() * kept_p,
+        [&](const size_t pair) { return pair_factors(pair / kept_p, pair % kept_p); },
+        [&](const size_t n, const auto &transition) {
+          const auto &[energy, weight, zero_freq_bosonic_weight] = transition;
+          const t_weight term = gt == gf_type::fermionic || n > 0 || std::abs(energy) > WEIGHT_TOL
+                              ? weight / (cm->frequency(n) * 1i - energy) : t_weight(zero_freq_bosonic_weight);
+          cm->add(n, factor * term);
+        });
     }
     void end([[maybe_unused]] const Step &step) override {
       gf.merge(*cm.get());

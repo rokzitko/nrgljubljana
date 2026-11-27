@@ -11,7 +11,7 @@ define(`RECALC_TAB', {
 #include $1
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, $2);
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 })
 

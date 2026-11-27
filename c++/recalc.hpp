@@ -31,10 +31,7 @@ inline void split_in_blocks_Eigen(Eigen<S> &e, const SubspaceDimensions &sub, co
   my_assert(0 < nr && nr <= e.getdim());
   for (const auto block: range0(combs)) {
     Matrix U = e.vectors.submatrix_const({0, nr}, sub.part(block));
-    if (discard)
-      e.U.set(block, std::move(U)); // move allowed
-    else
-      e.U.set(block, U); // copying
+    e.U.set(block, std::move(U));
   }
   assert(e.U.is_unitary());
   if (discard)

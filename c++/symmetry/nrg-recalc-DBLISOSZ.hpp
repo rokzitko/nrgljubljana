@@ -52,7 +52,7 @@ MatrixElements<SC> SymmetryDBLISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag
 #include "dblisosz/dblisosz-2ch-doubletm0m.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 1, +1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 };
 
@@ -65,7 +65,7 @@ MatrixElements<SC> SymmetryDBLISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag
 #include "dblisosz/dblisosz-2ch-doubletm0p.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 1, -1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 };
 
@@ -78,7 +78,7 @@ MatrixElements<SC> SymmetryDBLISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag
 #include "dblisosz/dblisosz-2ch-doubletp0m.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 1, +1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 };
 
@@ -91,7 +91,7 @@ MatrixElements<SC> SymmetryDBLISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag
 #include "dblisosz/dblisosz-2ch-doubletp0p.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 1, -1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 };
 
@@ -104,7 +104,7 @@ MatrixElements<SC> SymmetryDBLISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag
 #include "dblisosz/dblisosz-2ch-doublet0mm.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2, +1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 };
 
@@ -117,7 +117,7 @@ MatrixElements<SC> SymmetryDBLISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag
 #include "dblisosz/dblisosz-2ch-doublet0mp.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2, -1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 };
 
@@ -130,7 +130,7 @@ MatrixElements<SC> SymmetryDBLISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag
 #include "dblisosz/dblisosz-2ch-doublet0pm.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2, +1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 };
 
@@ -143,7 +143,7 @@ MatrixElements<SC> SymmetryDBLISOSZ<SC>::recalc_doublet(const DiagInfo<SC> &diag
 #include "dblisosz/dblisosz-2ch-doublet0pp.dat"
     };
     auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2, -1));
-    if (cn) cnew[II] = *cn;
+    if (cn) cnew[II] = std::move(*cn);
   }
 };
   }
