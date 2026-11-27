@@ -1,6 +1,7 @@
 #include <cmath>
 #include <cstddef>
 #include <vector>
+#include "qsztz_transfer.hpp"
 
 namespace NRG {
 
@@ -58,6 +59,8 @@ class SymmetryQSZTZ : public Symmetry<SC> {
   }
   DECL;
   HAS_DOUBLET;
+  MatrixElements<SC> recalc_named_qsztz_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct,
+                                                const MatrixElements<SC> &cold, qsztz_transfer::Mask mask) const override;
   HAS_TRIPLET;
 };
 
