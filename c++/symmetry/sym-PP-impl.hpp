@@ -34,6 +34,7 @@ class SymmetryPP : public Symmetry<SC> {
     return z2_equality(I1.get("Pa"), I2.get("Pa"), I3.get("Pa")) && z2_equality(I1.get("Pb"), I2.get("Pb"), I3.get("Pb"));
   }
   DECL;
+  bool uses_pairing() const override { return true; }
   HAS_GLOBAL;
 };
 
@@ -48,7 +49,7 @@ class SymmetryPP : public Symmetry<SC> {
 #define OFFDIAG_AN_UP(i, j, ch, factor) offdiag_function(step, i, j, ch, 3, t_matel(factor) * coef.xi(step.N(), ch), h, qq, In, opch)
 
 #undef ISOSPINX
-#define ISOSPINX(i, j, ch, factor) this->diag_offdiag_function(step, i, j, t_matel(factor) * 2.0 * coef.delta(step.N() + 1, ch), h, qq)
+#define ISOSPINX(i, j, ch, factor) this->diag_offdiag_function(step, i, j, t_matel(factor) * 2.0 * conj_me(coef.delta(step.N() + 1, ch)), h, qq)
 
 #undef DIAG
 #define DIAG(i, ch, number) this->diag_function(step, i, number, coef.zeta(step.N() + 1, ch), h, qq)
@@ -79,13 +80,13 @@ void SymmetryPP<SC>::make_matrix_nonpolarized(Matrix &h, const Step &step, const
 #define OFFDIAG_AN_UP(i, j, ch, factor) offdiag_function(step, i, j, ch, 3, t_matel(factor) * coef.xiUP(step.N(), ch), h, qq, In, opch)
 
 #undef ISOSPINX
-#define ISOSPINX(i, j, ch, factor) this->diag_offdiag_function(step, i, j, t_matel(factor) * 2.0 * coef.delta(step.N() + 1, ch), h, qq)
+#define ISOSPINX(i, j, ch, factor) this->diag_offdiag_function(step, i, j, t_matel(factor) * 2.0 * conj_me(coef.delta(step.N() + 1, ch)), h, qq)
 
 #undef DIAG_UP
-#define DIAG_UP(i, j, ch, number) this->diag_function(step, i, number, coef.zetaUP(step.N() + 1, ch), h, qq)
+#define DIAG_UP(i, j, ch, number) this->diag_function_half(step, i, number, coef.zetaUP(step.N() + 1, ch), h, qq)
 
 #undef DIAG_DOWN
-#define DIAG_DOWN(i, j, ch, number) this->diag_function(step, i, number, coef.zetaDOWN(step.N() + 1, ch), h, qq)
+#define DIAG_DOWN(i, j, ch, number) this->diag_function_half(step, i, number, coef.zetaDOWN(step.N() + 1, ch), h, qq)
 
 template<typename SC>
 void SymmetryPP<SC>::make_matrix_polarized(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) const {

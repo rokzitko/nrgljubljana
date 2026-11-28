@@ -72,6 +72,7 @@ endif()
 
 if(SYM_ALL)
   add_subdirectory(c++sym_all)
+  add_subdirectory(c++sym_conventions)
   add_subdirectory(complex)
 endif()
 

@@ -21,6 +21,10 @@ These tests are built as individual binaries and run through CTest.
 The `test/c++/`, `test/c++sym_basic/`, `test/c++sym_more/`, `test/c++sym_all/`, and related directories exercise the full executable on prepared `param` and `data` inputs and compare outputs against reference results.
 
 This is where end-to-end behavior across many symmetry types is checked.
+The `test/c++sym_conventions/` cases solve the same physical problem with
+different symmetry types and compare against shared references, which fixes the
+conventions that must agree between symmetry types (see
+[Symmetry Framework](symmetry-framework.md#conventions-shared-by-all-symmetry-types)).
 The `chain-fixed-seed` cases select a runtime reconstruction backend while
 retaining the same committed seed; they do not test matched-backend seed
 generation. Separate `chain-preparation` cases regenerate `data` before running

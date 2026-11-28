@@ -34,6 +34,7 @@ class SymmetryNONE : public Symmetry<SC> {
   void make_matrix_nonpolarized(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) const;
   void calculate_TD(const Step &step, const DiagInfo<SC> &diag, Stats<SC> &stats, const double factor) const override {};
   DECL;
+  bool uses_pairing() const override { return true; }
   HAS_DOUBLET;
   HAS_GLOBAL;
 };
@@ -45,7 +46,7 @@ class SymmetryNONE : public Symmetry<SC> {
 #define OFFDIAG_CR_UP(i, j, ch, factor) offdiag_function(step, i, j, ch, 1, t_matel(factor) * coef.xi(step.N(), ch), h, qq, In, opch)
 
 #undef ISOSPINX
-#define ISOSPINX(i, j, ch, factor) this->diag_offdiag_function(step, i, j, t_matel(factor) * 2.0 * coef.delta(step.N() + 1, ch), h, qq)
+#define ISOSPINX(i, j, ch, factor) this->diag_offdiag_function(step, i, j, t_matel(factor) * 2.0 * conj_me(coef.delta(step.N() + 1, ch)), h, qq)
 
 #undef DIAG
 #define DIAG(i, ch, number) this->diag_function(step, i, number, coef.zeta(step.N() + 1, ch), h, qq)
@@ -76,13 +77,13 @@ void SymmetryNONE<SC>::make_matrix_nonpolarized(Matrix &h, const Step &step, con
 #define OFFDIAG_CR_UP(i, j, ch, factor) offdiag_function(step, i, j, ch, 1, t_matel(factor) * coef.xiUP(step.N(), ch), h, qq, In, opch)
 
 #undef ISOSPINX
-#define ISOSPINX(i, j, ch, factor) this->diag_offdiag_function(step, i, j, t_matel(factor) * 2.0 * coef.delta(step.N() + 1, ch), h, qq)
+#define ISOSPINX(i, j, ch, factor) this->diag_offdiag_function(step, i, j, t_matel(factor) * 2.0 * conj_me(coef.delta(step.N() + 1, ch)), h, qq)
 
 #undef DIAG_UP
-#define DIAG_UP(i, j, ch, number) this->diag_function(step, i, number, coef.zetaUP(step.N() + 1, ch), h, qq)
+#define DIAG_UP(i, j, ch, number) this->diag_function_half(step, i, number, coef.zetaUP(step.N() + 1, ch), h, qq)
 
 #undef DIAG_DOWN
-#define DIAG_DOWN(i, j, ch, number) this->diag_function(step, i, number, coef.zetaDOWN(step.N() + 1, ch), h, qq)
+#define DIAG_DOWN(i, j, ch, number) this->diag_function_half(step, i, number, coef.zetaDOWN(step.N() + 1, ch), h, qq)
 
 template<typename SC>
 void SymmetryNONE<SC>::make_matrix_polarized(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) const {

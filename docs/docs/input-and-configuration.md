@@ -103,7 +103,8 @@ That function:
 2. stores the selected `symtype` into `Params`
 3. derives channel and combination counts
 4. constructs the matching concrete symmetry backend
-5. loads backend-specific quantum number tables
+5. rejects `substeps=true` for symmetry types without interleaved diagonalization
+6. loads backend-specific quantum number tables
 
 This means the symmetry object is a structural dependency for almost everything that follows:
 
@@ -114,7 +115,7 @@ This means the symmetry object is a structural dependency for almost everything 
 
 ## Coefficients And Derived Lengths
 
-`Coef<S>` is populated while reading the `data` blocks. After that, `determine_Nmax_Nlen(...)` in `read-input.hpp` finalizes the effective number of iteration steps, taking `substeps` into account.
+`Coef<S>` is populated while reading the `data` blocks. After that, `validate_pairing_coefficients(...)` in `read-input.hpp` rejects nonzero pairing (`delta`) or anomalous-hopping (`kappa`) coefficients that the selected symmetry type does not use, and complex `delta` for `SPSU2T`; `determine_Nmax_Nlen(...)` then finalizes the effective number of iteration steps, taking `substeps` into account.
 
 This is an important boundary: before `data` is loaded, `Params` is not fully initialized for iteration; after `data` is loaded, the runtime has enough information to start the NRG loop.
 

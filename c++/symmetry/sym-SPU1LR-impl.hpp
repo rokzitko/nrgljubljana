@@ -63,13 +63,15 @@ class SymmetrySPU1LR : public SymFieldLR<SC> {
   }
 
   DECL;
+  bool uses_pairing() const override { return true; }
+  bool uses_anomalous_hopping() const override { return true; }
   HAS_DOUBLET;
   HAS_TRIPLET;
   HAS_GLOBAL;
 };
 
 #undef ISOSPINX
-#define ISOSPINX(i, j, ch, factor) this->diag_offdiag_function(step, i, j, t_matel(factor) * 2.0 * coef.delta(step.N() + 1, ch), h, qq)
+#define ISOSPINX(i, j, ch, factor) this->diag_offdiag_function(step, i, j, t_matel(factor) * 2.0 * conj_me(coef.delta(step.N() + 1, ch)), h, qq)
 
 #undef ANOMALOUS
 #define ANOMALOUS(i, j, ch, factor) offdiag_function(step, i, j, ch, 0, t_matel(factor) * coef.kappa(step.N(), ch), h, qq, In, opch)

@@ -1,0 +1,18 @@
+[param]
+symtype=SPU1
+model=CLEAN
+
+discretization=Z
+Lambda=2.0
+
+bcsgap=!0.1+0.1I
+
+Nmax=2
+keep=10000
+
+ops=n_f pair_f Ix_f Iy_f
+
+T=1e-3
+fdmexpv=true
+
+options=COMPLEX

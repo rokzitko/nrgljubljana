@@ -117,6 +117,8 @@ class SymmetrySPSU2 : public Symmetry<SC> {
   }
 
   DECL;
+  bool uses_pairing() const override { return true; }
+  bool uses_anomalous_hopping() const override { return true; }
   HAS_DOUBLET;
   HAS_TRIPLET;
   HAS_GLOBAL;

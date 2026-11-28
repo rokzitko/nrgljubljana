@@ -1,0 +1,19 @@
+[param]
+symtype=NONE
+model=ZERO
+
+discretization=Z
+Lambda=2.0
+
+bcsgap1=!0.1+0.1I
+bcsgap2=!0.2-0.05I
+
+Nmax=1
+keep=10000
+
+ops=n_f Ix_f Iy_f Ix_f1 Iy_f1
+
+T=1e-3
+fdmexpv=true
+
+options=COMPLEX

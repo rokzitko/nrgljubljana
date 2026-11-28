@@ -591,9 +591,11 @@ what they write to `td`/`tdfdm` and the `spec_*`/`corr_*` families.
 | `reim` | boolean | `false` | Include imaginary spectral weights in output files. |
 | `clip_tol_imag` | number | `1e-10` | Non-negative relative tolerance for clipping imaginary values in text output. |
 
-`substeps` requires the ordinary coefficient structure and is not compatible
-with every polarized, rung, or custom-chain configuration. Unsupported
-symmetry/backend combinations abort when interleaved recalculation is selected.
+`substeps` is implemented only for `QS`, `QSZ`, `SPSU2`, and `SPU1`; other
+symmetry types are rejected when the symmetry is initialized from `data`. It
+requires the ordinary coefficient structure and is not compatible with every
+polarized, rung, or custom-chain configuration; such combinations abort when
+interleaved recalculation is selected.
 
 **Broadening kernel.** The raw NRG output is a set of weighted delta peaks at
 discrete, `Lambda`-dependent energies. `alpha` and `omega0` parametrize the

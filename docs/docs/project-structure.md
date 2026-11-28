@@ -63,6 +63,7 @@ The test tree is organized by style rather than by component:
 - `test/unit/`: focused C++ unit tests for core data structures and utilities
 - `test/c++/`: main regression runs for the C++ executable
 - `test/c++sym_basic/`, `test/c++sym_more/`, `test/c++sym_all/`: regression suites across increasing symmetry coverage
+- `test/c++sym_conventions/`: cross-symmetry tests with shared references for the same physical problem
 - `test/tools/`: standalone tool tests
 - `test/nrgspawn/`: prepared template-instantiation workflow tests
 - `test/nrginit*`, `test/models*`, `test/templates/`: Mathematica-dependent end-to-end workflows

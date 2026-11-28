@@ -1,0 +1,27 @@
+[dmft]
+gamma=1+0.7 eps
+
+[param]
+tridiag_method=lanczos
+prec=50
+
+symtype=QS
+polarized=false
+model=SIAM
+
+U=0.5
+delta=0.1
+Gamma=0.2
+
+discretization=Yoshida
+z=1
+Lambda=3.0
+band=dmft
+
+Nmax=4
+keep=100000
+T=0.05
+
+ops=n_d n_d^2
+
+fdmexpv=true

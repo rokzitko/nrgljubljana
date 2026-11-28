@@ -85,6 +85,9 @@ class SymmetrySPSU2T : public Symmetry<SC> {
   }
 
   DECL;
+  bool uses_pairing() const override { return true; }
+  bool uses_anomalous_hopping() const override { return true; }
+  bool complex_pairing_supported() const override { return false; }
   HAS_DOUBLET;
   HAS_TRIPLET;
 
@@ -129,6 +132,9 @@ bool spsu2t_exception(const unsigned int i, const unsigned int j, const Invar &I
 #undef DIAG
 #define DIAG(i, number) this->diag_function(step, i, number, coef.zeta(step.N() + 1, 0), h, qq)
 
+// In the SPSU2T isospinx table the lower-indexed state of a pair does not always have fewer electrons (unlike in the
+// other superconducting symmetry types), so a single phase convention for complex delta cannot be applied to all
+// entries. Only real delta is supported (complex_pairing_supported()).
 #undef ISOSPINX
 #define ISOSPINX(i, j, factor) this->diag_offdiag_function(step, i, j, t_matel(factor) * 2.0 * coef.delta(step.N() + 1, 0), h, qq)
 

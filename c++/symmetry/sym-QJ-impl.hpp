@@ -41,6 +41,8 @@ class SymmetryQJ : public Symmetry<SC> {
   }
 
   void load() override {
+    my_assert(!P.substeps);
+    my_assert(P.channels == 3); // three p-orbitals (64 combinations)
 #include "qj/qj-In2.dat"
 #include "qj/qj-QN.dat"
   }

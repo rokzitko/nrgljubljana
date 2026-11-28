@@ -128,6 +128,20 @@ class Symmetry {
    // For some symmetry types, we may distinguish between spin-up and spin-down quantities (in particular spin-up and
    // spin-down spectral functions).
    virtual bool isfield() const { return false; }
+   // Superconducting symmetry types include the on-site pairing term (Wilson-chain coefficients delta) and possibly
+   // the anomalous hopping term (coefficients kappa) of the added site in the Hamiltonian. All other symmetry types
+   // ignore these coefficients, so nonzero values are rejected when the input is read (see read-input.hpp).
+   //
+   // Phase convention: the ISOSPINX tables hold the (real) matrix elements of the isospin x component between shell
+   // states i < j, and only the upper triangle of the Hamiltonian is filled. Since the state with the lower index has
+   // fewer electrons, the coefficient of these entries is conj(delta). This is consistent with the pairing term of the
+   // initial sites set up by nrginit and is the same for all superconducting symmetry types (test/c++sym_conventions)
+   // except SPSU2T, which supports only real delta (complex_pairing_supported() is false).
+   [[nodiscard]] virtual bool uses_pairing() const { return false; }
+   [[nodiscard]] virtual bool uses_anomalous_hopping() const { return false; }
+   [[nodiscard]] virtual bool complex_pairing_supported() const { return true; }
+   // Interleaved diagonalization (substeps=true) is implemented only for the symmetry types that declare HAS_SUBSTEPS.
+   [[nodiscard]] virtual bool supports_substeps() const { return false; }
    // Multiplicity of the states in the invariant subspace
    [[nodiscard]] virtual size_t mult(const Invar &) const { return 1; };
    auto multfnc() const { return [this](const Invar &I) { return this->mult(I); }; }
@@ -291,7 +305,8 @@ class Symmetry {
   Opch<SC> recalc_irreduc(const Step &step, const DiagInfo<SC> &diag) const override
 
 // Optional declaration
-#define HAS_SUBSTEPS OpchChannel<SC> recalc_irreduc_substeps(const Step &step, const DiagInfo<SC> &diag, int M) const override
+#define HAS_SUBSTEPS bool supports_substeps() const override { return true; } \
+                     OpchChannel<SC> recalc_irreduc_substeps(const Step &step, const DiagInfo<SC> &diag, int M) const override
 #define HAS_DOUBLET MatrixElements<SC> recalc_doublet(const DiagInfo<SC> &diag, \
                                                       const SubspaceStructure &substruct, \
                                                       const MatrixElements<SC> &cold) const override

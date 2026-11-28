@@ -13,6 +13,7 @@
 #include <memory>
 #include <ostream>
 #include <string>
+#include <string_view>
 #include <iostream>
 #include <stdexcept>
 #include <tuple>
@@ -74,6 +75,29 @@ void determine_Nmax_Nlen(const Coef<S> &coef, const size_t Nmax0, Params &P) { /
   P.Nlen = P.Nmax;
   if (!P.silent) std::cout << "\nlength_coef_table=" << length_coef_table << " Nmax0=" << Nmax0 << " Nmax=" << P.Nmax << "\n\n";
   my_assert(P.Nlen < MAX_NDX);
+}
+
+// The pairing (delta) and anomalous-hopping (kappa) coefficients of the 'Z' block enter the Hamiltonian only for
+// symmetry types that implement these terms (Symmetry::uses_pairing(), Symmetry::uses_anomalous_hopping()). Any
+// nonzero value would otherwise be ignored without notice. As for gap and globalh, only a literal zero is accepted.
+template<scalar S>
+void validate_pairing_coefficients(const Coef<S> &coef, const Symmetry<S> &Sym, const Params &P) {
+  const auto check = [&P](const set_of_coef_tables<S> &table, const std::string_view name, const bool used) {
+    if (used) return;
+    for (size_t ch = 0; ch < table.nr_tabs(); ++ch)
+      for (size_t n = 0; n <= table.max(ch); ++n)
+        if (std::abs(table(n, ch)) != 0.0)
+          throw std::invalid_argument(fmt::format("symtype={} does not support {} coefficients, but the data file has a nonzero "
+                                                  "value in coefficient set {} at index {}.", P.symtype.value(), name, ch, n));
+  };
+  check(coef.delta, "pairing (delta)", Sym.uses_pairing());
+  check(coef.kappa, "anomalous hopping (kappa)", Sym.uses_anomalous_hopping());
+  if (!Sym.complex_pairing_supported())
+    for (size_t ch = 0; ch < coef.delta.nr_tabs(); ++ch)
+      for (size_t n = 0; n <= coef.delta.max(ch); ++n)
+        if (std::imag(coef.delta(n, ch)) != 0.0)
+          throw std::invalid_argument(fmt::format("symtype={} supports only real pairing (delta) coefficients, but coefficient "
+                                                  "set {} has a complex value at index {}.", P.symtype.value(), ch, n));
 }
 
 template<scalar S>
@@ -187,6 +211,7 @@ private:
 
   void finalize_coefficients(Params &P, const DataHeader &header) {
     if (std::string(P.tri) == "cpp") Tridiag<S>(coef, header.Nmax, P);
+    validate_pairing_coefficients(coef, *Sym, P);
     validate_equal_bath_chains(coef, P);
     determine_Nmax_Nlen(coef, header.Nmax, P);
     P.validate_after_data_file();

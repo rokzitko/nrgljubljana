@@ -106,6 +106,10 @@ std::shared_ptr<Symmetry<S>> set_symmetry(Params &P, const std::string &sym_stri
   P.set_channels_and_combs(channels);
   std::cout << "\nSYMMETRY TYPE: " << sym_string << std::endl;
   auto Sym = get<S>(sym_string, P);
+  // With substeps, P.combs counts the states of a single channel; load() of a symmetry type without substeps support
+  // would fill In and QN for all channels.
+  if (P.substeps && !Sym->supports_substeps())
+    throw std::invalid_argument("substeps=true is not supported for symmetry type " + sym_string);
   Sym->load();
   Sym->erase_first();
   return Sym;

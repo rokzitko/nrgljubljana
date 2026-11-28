@@ -6,8 +6,10 @@
 #include <outfield.hpp>
 #include <symmetry_traits.hpp>
 
+#include <algorithm>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 using namespace NRG;
 
@@ -61,6 +63,49 @@ TEST(mk_sym, symmetry_traits) {
   EXPECT_EQ(find_symmetry_traits("XYZ"), nullptr);
   ASSERT_NE(find_symmetry_traits("QSZ"), nullptr);
   EXPECT_TRUE(find_symmetry_traits("QSZ")->field);
+}
+
+// load() fills In and QN, which have P.combs+1 entries. A channel count or a substeps setting that the coefficient
+// tables of a symmetry type do not cover must be rejected before any entry is written.
+#ifdef NRG_SYM_ALL
+TEST(mk_sym, QJ_requires_three_channels) {
+  Params P3;
+  EXPECT_NO_THROW(set_symmetry<double>(P3, "QJ", 3));
+  for (const auto channels : {1, 2}) {
+    Params P;
+    EXPECT_THROW(set_symmetry<double>(P, "QJ", channels), std::runtime_error) << channels;
+  }
+}
+#endif
+
+// With substeps=true, P.combs counts the states of a single channel. Only the symmetry types that implement
+// recalc_irreduc_substeps() (HAS_SUBSTEPS) are accepted.
+template <typename S> int check_substeps_support() {
+  const std::vector<std::string> with_substeps{"QS", "QSZ", "SPSU2", "SPU1"};
+  int checked = 0;
+  for (const auto &t : symmetry_traits) {
+    const std::string name(t.name);
+    {
+      Params P;
+      try {
+        static_cast<void>(get<S>(name, P));
+      } catch (const std::runtime_error &) { continue; } // not compiled in
+    }
+    const bool supported = std::find(with_substeps.begin(), with_substeps.end(), name) != with_substeps.end();
+    Params P;
+    P.substeps = true;
+    if (supported) {
+      EXPECT_NO_THROW(set_symmetry<S>(P, name, 2)) << name;
+    } else {
+      EXPECT_THROW(set_symmetry<S>(P, name, 2), std::invalid_argument) << name;
+    }
+    ++checked;
+  }
+  return checked;
+}
+
+TEST(mk_sym, substeps_support) {
+  EXPECT_GE(check_substeps_support<double>() + check_substeps_support<std::complex<double>>(), 4);
 }
 
 TEST(mk_sym, perchannel) {
