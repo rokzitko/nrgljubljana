@@ -68,40 +68,58 @@ class SymmetryU1 : public Symmetry<SC> {
     stats.td.set("<Q^2>", trQ2 / stats.Z);
   }
 
-  // Non-polarized, polarized (spin-dependent coefficients), and full 2x2 spin structure (pol2x2) of the chain.
+  // Non-polarized, polarized (spin-dependent coefficients), and full 2x2 spin structure (pol2x2) of the chain. With
+  // substeps (non-polarized only), the shell has one channel, which is channel M of the problem.
   void make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &, const InvarVec &In_, const Opch<SC> &opch, const Coef<SC> &coef) const override {
     using namespace AbelianShell;
-    const auto N = step.N();
     const bool spin_dependent = P.polarized || P.pol2x2;
-    for (std::size_t ch = 0; ch < shell->channels(); ++ch) {
+    if (P.substeps) my_assert(!spin_dependent && P.coeffactor == 1); // not implemented
+    const auto [N, M] = P.substeps ? step.NM() : std::pair{step.N(), std::size_t{0}};
+    for (std::size_t sch = 0; sch < shell->channels(); ++sch) {
+      const auto ch = P.substeps ? M : sch; // channel of the coefficients and of <||f||>
       const t_coef xi_up = spin_dependent ? coef.xiUP(N, ch) : coef.xi(N, ch);
       const t_coef xi_down = spin_dependent ? coef.xiDOWN(N, ch) : coef.xi(N, ch);
-      add_hopping<SC>(*this, step, offdiag[ch][0], ch, fnr_up, xi_up, h, qq, In_, opch);     // f^dag_up a_up
-      add_hopping<SC>(*this, step, offdiag[ch][1], ch, fnr_down, xi_down, h, qq, In_, opch); // f^dag_down a_down
+      add_hopping<SC>(*this, step, offdiag[sch][0], ch, fnr_up, xi_up, h, qq, In_, opch);     // f^dag_up a_up
+      add_hopping<SC>(*this, step, offdiag[sch][1], ch, fnr_down, xi_down, h, qq, In_, opch); // f^dag_down a_down
       if (P.pol2x2) {
-        add_hopping<SC>(*this, step, offdiag[ch][1], ch, fnr_up, coef.xiUPDO(N, ch), h, qq, In_, opch);   // f^dag_up a_down
-        add_hopping<SC>(*this, step, offdiag[ch][0], ch, fnr_down, coef.xiDOUP(N, ch), h, qq, In_, opch); // f^dag_down a_up
+        add_hopping<SC>(*this, step, offdiag[sch][1], ch, fnr_up, coef.xiUPDO(N, ch), h, qq, In_, opch);   // f^dag_up a_down
+        add_hopping<SC>(*this, step, offdiag[sch][0], ch, fnr_down, coef.xiDOUP(N, ch), h, qq, In_, opch); // f^dag_down a_up
       }
       if (!spin_dependent) {
-        add_number<SC>(*this, step, *shell, ch, std::nullopt, coef.zeta(N + 1, ch), h, qq);
+        add_number<SC>(*this, step, *shell, sch, std::nullopt, coef.zeta(N + 1, ch), h, qq);
       } else {
-        add_number<SC>(*this, step, *shell, ch, Spin::up, coef.zetaUP(N + 1, ch), h, qq);
-        add_number<SC>(*this, step, *shell, ch, Spin::down, coef.zetaDOWN(N + 1, ch), h, qq);
+        add_number<SC>(*this, step, *shell, sch, Spin::up, coef.zetaUP(N + 1, ch), h, qq);
+        add_number<SC>(*this, step, *shell, sch, Spin::down, coef.zetaDOWN(N + 1, ch), h, qq);
       }
       // a^dag_down a_up on the added site; the Hermitian conjugate is implied (upper triangle)
-      if (P.pol2x2) add_onsite<SC>(*this, step, spinflip[ch], coef.zetaDOUP(N + 1, ch), h, qq);
+      if (P.pol2x2) add_onsite<SC>(*this, step, spinflip[sch], coef.zetaDOUP(N + 1, ch), h, qq);
+    }
+  }
+
+  // <||f||> of channel 'sch' of the shell, stored as channel ch
+  void recalc_f_channel(const DiagInfo<SC> &diag, const std::size_t sch, const std::size_t ch, Opch<SC> &opch) const {
+    for (const auto &[Ip, eig] : diag) {
+      const Invar I1(Ip.get("Q") + 1);
+      for (const auto n : {fnr_up, fnr_down}) AbelianShell::recalc_f_block<SC>(*this, diag, I1, Ip, ftables[sch][n], opch[ch][n]);
     }
   }
 
   Opch<SC> recalc_irreduc(const Step &, const DiagInfo<SC> &diag) const override {
+    my_assert(!P.substeps);
     Opch<SC> opch(P);
-    for (const auto &[Ip, eig] : diag) {
-      const Invar I1(Ip.get("Q") + 1);
-      for (std::size_t ch = 0; ch < shell->channels(); ++ch)
-        for (const auto n : {fnr_up, fnr_down}) AbelianShell::recalc_f_block<SC>(*this, diag, I1, Ip, ftables[ch][n], opch[ch][n]);
-    }
+    for (std::size_t ch = 0; ch < shell->channels(); ++ch) recalc_f_channel(diag, ch, ch, opch);
     return opch;
   }
+
+  // The <||f||> of the other channels are recalculated as doublets (see recalc_irreducible()).
+  OpchChannel<SC> recalc_irreduc_substeps(const Step &, const DiagInfo<SC> &diag, int M) const override {
+    my_assert(P.substeps);
+    Opch<SC> opch(P);
+    recalc_f_channel(diag, 0, M, opch);
+    return opch[M];
+  }
+
+  bool supports_substeps() const override { return true; }
 
   MatrixElements<SC> recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const override {
     MatrixElements<SC> cnew;

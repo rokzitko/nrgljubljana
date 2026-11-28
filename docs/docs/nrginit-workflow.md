@@ -278,8 +278,8 @@ Full `tri=rkpw` also supports a narrow scalar flat-band path in symmetries
 chain, then adds prescribed constant pairing tables; it is not a general
 superconducting tridiagonalization algorithm. This path requires `band=flat`
 and an explicit finite real `bcsgap` (including `bcsgap=0`), or a complete
-channel-specific set of finite real values `bcsgap1`, `bcsgap2`, and, for three
-coefficient channels, `bcsgap3`.
+channel-specific set of finite real values `bcsgap1`, ..., `bcsgapK`, one for
+each of the K coefficient channels.
 
 Custom pairing hooks, other superconducting symmetries, non-flat bands, and
 matrix/Nambu/rung/`pol2x2` chains are outside this allowance. Deferred

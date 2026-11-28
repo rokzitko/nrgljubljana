@@ -36,5 +36,11 @@ conv_polarized_2ch_U1
 conv_polarized_symmetric_1ch_NONE
 conv_polarized_symmetric_1ch_P
 conv_polarized_symmetric_1ch_QSZ
+conv_substeps_2ch_NONE
+conv_substeps_2ch_P
+conv_substeps_2ch_QS
+conv_substeps_2ch_QSZ
+conv_substeps_2ch_SPU1
+conv_substeps_2ch_U1
 conv_unpolarized_1ch_P
 conv_unpolarized_1ch_QS

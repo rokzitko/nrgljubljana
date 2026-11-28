@@ -290,7 +290,7 @@ TEST(AbelianShell, U1) {
 TEST(AbelianShell, many_channels) {
   for (const auto kind : {Kind::NONE, Kind::P, Kind::U1, Kind::QSZ, Kind::SPU1}) {
     init(kind);
-    for (const std::size_t K : {3, 4}) {
+    for (const std::size_t K : {3, 4, 5}) {
       const Shell s(kind, K);
       ASSERT_EQ(s.size(), std::size_t(1) << (2 * K));
       // anticommutation {c_m, c^dag_m'} = delta_mm' in the combination basis

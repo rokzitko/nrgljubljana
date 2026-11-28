@@ -68,13 +68,13 @@ If[RKPW && isSC[],
      tables are added below. Runtime star handoff does not carry those tables. *)
   Module[{keys},
     keys = If[paramexists["bcsgap"], {"bcsgap"},
-      If[MemberQ[{2, 3}, COEFCHANNELS], Table["bcsgap" <> ToString[a], {a, COEFCHANNELS}], {}]];
+      If[COEFCHANNELS >= 2, Table["bcsgap" <> ToString[a], {a, COEFCHANNELS}], {}]];
     If[TRI != "rkpw" || BAND != "flat" ||
         !MemberQ[{"SPSU2", "SPU1", "SPU1LR", "P", "PP", "NONE"}, SYMTYPE] || keys == {} ||
         !And @@ (paramexists /@ keys) ||
         !And @@ (MatchQ[Quiet[N[paramnum[#]]], _Real] & /@ keys),
       MyError["rkpw superconducting-symmetry support requires full tri=rkpw, an audited scalar flat-band symmetry, ",
-        "and explicit finite constant bcsgap or channel-complete bcsgap1/2[/3]; cpp/none pairing-table handoff is unsupported."];
+        "and explicit finite constant bcsgap or channel-complete bcsgap1, bcsgap2, ...; cpp/none pairing-table handoff is unsupported."];
     ];
   ];
 ];
@@ -1090,18 +1090,10 @@ If[!gapdefined && paramexists["bcsgap"],
   sckappa[_][_] = 0;
 ];
 
-If[!gapdefined && paramexists["bcsgap1"] && paramexists["bcsgap2"] && !paramexists["bcsgap3"],
+(* Channel-specific pairing: a complete set bcsgap1, ..., bcsgapK for the K = COEFCHANNELS coefficient channels. *)
+If[!gapdefined && COEFCHANNELS >= 2 && And @@ Table[paramexists["bcsgap" <> ToString[a]], {a, COEFCHANNELS}],
   gapdefined = True;
-  scdelta[1][_] = paramnum["bcsgap1"];
-  scdelta[2][_] = paramnum["bcsgap2"];
-  sckappa[_][_] = 0;
-];
-
-If[!gapdefined && paramexists["bcsgap1"] && paramexists["bcsgap2"] && paramexists["bcsgap3"],
-  gapdefined = True;
-  scdelta[1][_] = paramnum["bcsgap1"];
-  scdelta[2][_] = paramnum["bcsgap2"];
-  scdelta[3][_] = paramnum["bcsgap3"];
+  Do[scdelta[a][_] = paramnum["bcsgap" <> ToString[a]], {a, COEFCHANNELS}];
   sckappa[_][_] = 0;
 ];
 

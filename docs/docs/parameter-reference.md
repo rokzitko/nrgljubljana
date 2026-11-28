@@ -134,12 +134,17 @@ The number of channels supported by the solver depends on the symmetry type:
 
 | Channels | Symmetry types |
 | --- | --- |
-| any | `NONE`, `P`, `U1`, `QSZ`, `SPU1` (coefficient tables generated at run time; `nrginit` provides up to four channels, and the cost grows as 4^K states per added site) |
+| any | `NONE`, `P`, `U1`, `QSZ`, `SPU1` (coefficient tables generated at run time; `nrginit` provides up to five channels; without `substeps`, each step adds 4^K states) |
 | 1–4 | `QS` |
 | 1–3 | `SPSU2`, `ISO`, `SL` |
 | 1–2 | `ISO2`, `ISOSZ`, `SPU1LR`, `SU2` |
 | 2 | `PP`, `DBLQSZ`, `DBLSU2`, `DBLISOSZ`, `ISOLR`, `ISO2LR`, `ISOSZLR`, `QSLR`, `QSZLR`, `SPSU2LR` |
 | 3 | `QST`, `QSTZ`, `QSZTZ`, `QJ`, `QSC3`, `SPSU2C3`, `SPSU2T`, `SL3` |
+
+Custom models select the number of channels with `def1ch[n]` ... `def5ch[n]`
+(`nrginit/hamiltonian.m`), where `n` is the number of impurity sites. Constant
+pairing can be set for all channels with `bcsgap`, or per coefficient channel with
+a complete set `bcsgap1`, ..., `bcsgapK`.
 
 The bundled `QSTZ` and `QSZTZ` basis adapters support three spinful channels
 with `Ninit=0`. Models must use the boundary labels `f[+1],f[0],f[-1]` and
@@ -250,7 +255,7 @@ effect. Mathematica's separate `prec` parameter uses decimal digits.
 In superconducting symmetries, RKPW is limited to full `tri=rkpw`, `band=flat`,
 and `SPSU2`, `SPU1`, `SPU1LR`, `P`, `PP`, or `NONE`, with an explicit finite
 real constant `bcsgap` (zero allowed), or a complete set of finite real
-`bcsgap1` and `bcsgap2` (plus `bcsgap3` for three coefficient channels).
+`bcsgap1`, ..., `bcsgapK` for the K coefficient channels.
 It reconstructs the normal scalar chain and adds the prescribed pairing tables.
 Custom pairing hooks and deferred `cpp`/`none`
 pairing handoff are unsupported. Matrix/Nambu/rung/`pol2x2` chains remain
@@ -276,7 +281,7 @@ Built-in `band` branches include `flat`, `cosine`, `dmft`, `nambu`, `manual`,
 `manual_V`, `asymode`, `adapt`, and `flat_with_bulk_field`. A value ending in
 `.m` loads custom Mathematica code. Non-flat branches can require additional
 files and parameters such as `hardgap`, `boundary`, `gap`, `shift0`, `bcsgap`,
-`bcsgap1`, `bcsgap2`, `bcsgap3`, `globalB`, `globalh`, or `bulkh`; consult the
+`bcsgap1`, `bcsgap2`, ..., `globalB`, `globalh`, or `bulkh`; consult the
 documentation supplied with that band implementation before using it.
 
 The `nambu` band branch is currently a placeholder. `asymode`, `adapt`, and
@@ -596,14 +601,16 @@ what they write to `td`/`tdfdm` and the `spec_*`/`corr_*` families.
 | `omega0` | number | `-1.0` | Low-frequency crossover; negative selects `omega0_ratio*T`, while zero is invalid when broadening is used. |
 | `omega0_ratio` | number | `1.0` | Multiplier used by the automatic `omega0`. |
 | `diagth` | integer | `1` | Threads for the application OpenMP loop over independent diagonalization tasks; ignored without application OpenMP and separate from BLAS threading. |
-| `substeps` | boolean | `false` | Enable interleaved diagonalization for supported `QS`, `QSZ`, `SPSU2`, or `SPU1` calculations. |
+| `substeps` | boolean | `false` | Enable interleaved diagonalization for supported `QS`, `QSZ`, `SPSU2`, `SPU1`, `P`, `NONE`, or `U1` calculations. |
 | `strategy` | string | `kept` | Recalculate `kept` states or `all` states; CFS/FDM can force `all`. |
 | `Ninit` | non-negative integer | `0` | Highest Wilson site included in the seed problem; must be below `Nmax` from `data`. |
 | `reim` | boolean | `false` | Include imaginary spectral weights in output files. |
 | `clip_tol_imag` | number | `1e-10` | Non-negative relative tolerance for clipping imaginary values in text output. |
 
-`substeps` is implemented only for `QS`, `QSZ`, `SPSU2`, and `SPU1`; other
-symmetry types are rejected when the symmetry is initialized from `data`. It
+`substeps` is implemented for `QS`, `QSZ`, `SPSU2`, `SPU1`, `P`, `NONE`, and `U1`
+(non-polarized chains); other symmetry types are rejected when the symmetry is
+initialized from `data`. With many channels, interleaved diagonalization adds the
+four states of one site at a time instead of 4^K states per step. It
 requires the ordinary coefficient structure and is not compatible with every
 polarized, rung, or custom-chain configuration; such combinations abort when
 interleaved recalculation is selected.

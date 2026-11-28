@@ -17,6 +17,7 @@ columns and has a per-case reference. The groups fix the conventions described i
 | `conv_3ch_*` | QS, QSZ, U1, SPU1, P | Three clean chains, particle-hole asymmetric bath | QS |
 | `conv_pairing_3ch_*` | SPSU2, SPU1 | Three clean SC chains, `bcsgap=0.1+0.1i` | SPSU2 |
 | `conv_doublet_1ch_*` | NONE, P | SIAM, spectral function of the doublet operator `A_d_1` | NONE |
+| `conv_substeps_2ch_*` | QS, QSZ, U1, SPU1, P, NONE | Two-channel SIAM, interleaved diagonalization (`substeps=true`), particle-hole asymmetric bath | QS |
 | `conv_globalop_1ch_*` | QSZ, U1 | SIAM with a local field (`siamB.m`), global operator `SZtot` (`modeloperators.m`) | QSZ |
 
 What the groups check:
@@ -24,6 +25,8 @@ What the groups check:
 - **Channel number.** The coefficient tables of NONE, P, U1, QSZ, and SPU1 are generated at run time for any number
   of channels (`c++/abelian_shell.hpp`); for three channels they are compared with QS and SPSU2, whose tables are
   still the Mathematica-generated ones. The NONE cases with three channels are omitted for their run time.
+- **Interleaved diagonalization.** With `substeps=true` one channel is added per step; the coefficient tables are
+  those of a one-channel shell, applied to the active channel.
 - **Fermion sign in operator recalculation.** A fermionic operator of the previous sites acquires the sign
   (-1)^n of the occupation n of the added site. The P doublet tables generated with Mathematica lacked this sign.
 - **Spin labels of the U1 hopping.** U1 stores f^dag_up in block 0 and f^dag_down in block 1 of `<||f||>`. Without

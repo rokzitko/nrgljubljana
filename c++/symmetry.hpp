@@ -139,7 +139,8 @@ class Symmetry {
    [[nodiscard]] virtual bool uses_pairing() const { return false; }
    [[nodiscard]] virtual bool uses_anomalous_hopping() const { return false; }
    [[nodiscard]] virtual bool complex_pairing_supported() const { return true; }
-   // Interleaved diagonalization (substeps=true) is implemented only for the symmetry types that declare HAS_SUBSTEPS.
+   // Interleaved diagonalization (substeps=true) is implemented only for the symmetry types that override this (directly
+   // or through HAS_SUBSTEPS) and recalc_irreduc_substeps().
    [[nodiscard]] virtual bool supports_substeps() const { return false; }
    // Multiplicity of the states in the invariant subspace
    [[nodiscard]] virtual size_t mult(const Invar &) const { return 1; };

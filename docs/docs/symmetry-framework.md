@@ -83,7 +83,7 @@ For site $n$ of channel $\alpha$ with spin $\sigma\in\{\uparrow,\downarrow\}$:
   accepted only by `SPSU2`, `SPU1`, `SPU1LR`, `SPSU2LR`, `SPSU2T`, `SPSU2C3`, `P`,
   `PP`, and `NONE`; nonzero anomalous-hopping (`kappa`) coefficients only by
   `SPSU2`, `SPU1`, `SPU1LR`, `SPSU2LR`, and `SPSU2T`. `substeps=true` is accepted
-  only by `QS`, `QSZ`, `SPSU2`, and `SPU1`.
+  only by `QS`, `QSZ`, `SPSU2`, `SPU1`, `P`, `NONE`, and `U1`.
 
 The regression cases in `test/c++sym_conventions/` solve the same problem with
 several symmetry types and compare all of them against one shared reference

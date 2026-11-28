@@ -264,6 +264,28 @@ def4ch[nrdots_:1] := Module[{},
   adddots[nrdots];
 ];
 
+(* Default settings for 5-channel models *)
+def5ch[nrdots_:1] := Module[{},
+  CHANNELS = 5;
+  NRDOTS = nrdots;
+  MyPrint["def5ch, NRDOTS=", NRDOTS];
+
+  InitPolarized[];
+
+  HC[];
+  HBAND[];
+
+  nnop[f[0]] = 0;
+  nnop[f[1]] = 0;
+  nnop[f[2]] = 0;
+  nnop[f[3]] = 0;
+  nnop[f[4]] = 0;
+
+  nnop[d[] ] = -1;
+
+  adddots[nrdots];
+];
+
 CHANNELS = -1; (* Bug trap *)
 NRDOTS = -1; (* Bug trap *)
 MAKESPINKET = Null; (* Operator(s?) that is converted to spin kets *)

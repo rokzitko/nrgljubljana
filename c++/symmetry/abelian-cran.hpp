@@ -64,39 +64,57 @@ class SymmetryCRAN : public Symmetry<SC> {
      }
    }
 
+   // With substeps, the shell has one channel, which is channel M of the problem.
    void make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &, const InvarVec &In_,
                     const Opch<SC> &opch, const Coef<SC> &coef) const override {
      using namespace AbelianShell;
-     const auto N = step.N();
-     for (std::size_t ch = 0; ch < shell->channels(); ++ch) {
+     if (P.substeps) my_assert(!P.polarized && P.coeffactor == 1); // not implemented
+     const auto [N, M] = P.substeps ? step.NM() : std::pair{step.N(), std::size_t{0}};
+     for (std::size_t sch = 0; sch < shell->channels(); ++sch) {
+       const auto ch = P.substeps ? M : sch; // channel of the coefficients and of <||f||>
        for (const auto s : both_spins) {
          const auto sp = static_cast<std::size_t>(s);
          const t_coef xi = !P.polarized ? coef.xi(N, ch) : (s == Spin::up ? coef.xiUP(N, ch) : coef.xiDOWN(N, ch));
-         add_hopping<SC>(*this, step, cr[ch][sp], ch, fnr(true, s), xi, h, qq, In_, opch);   // f^dag_N a_{N+1}
-         add_hopping<SC>(*this, step, an[ch][sp], ch, fnr(false, s), xi, h, qq, In_, opch);  // a^dag_{N+1} f_N
+         add_hopping<SC>(*this, step, cr[sch][sp], ch, fnr(true, s), xi, h, qq, In_, opch);   // f^dag_N a_{N+1}
+         add_hopping<SC>(*this, step, an[sch][sp], ch, fnr(false, s), xi, h, qq, In_, opch);  // a^dag_{N+1} f_N
        }
        if (!P.polarized) {
-         add_number<SC>(*this, step, *shell, ch, std::nullopt, coef.zeta(N + 1, ch), h, qq);
+         add_number<SC>(*this, step, *shell, sch, std::nullopt, coef.zeta(N + 1, ch), h, qq);
        } else {
-         add_number<SC>(*this, step, *shell, ch, Spin::up, coef.zetaUP(N + 1, ch), h, qq);
-         add_number<SC>(*this, step, *shell, ch, Spin::down, coef.zetaDOWN(N + 1, ch), h, qq);
+         add_number<SC>(*this, step, *shell, sch, Spin::up, coef.zetaUP(N + 1, ch), h, qq);
+         add_number<SC>(*this, step, *shell, sch, Spin::down, coef.zetaDOWN(N + 1, ch), h, qq);
        }
        // Pairing Delta f^dag_up f^dag_down + h.c. = 2 Re(Delta) I_x - 2 Im(Delta) I_y; conj(Delta), see Symmetry::uses_pairing().
-       add_onsite<SC>(*this, step, isospinx[ch], t_coef(2.0) * conj_me(coef.delta(N + 1, ch)), h, qq);
+       add_onsite<SC>(*this, step, isospinx[sch], t_coef(2.0) * conj_me(coef.delta(N + 1, ch)), h, qq);
+     }
+   }
+
+   // <||f||> of channel 'sch' of the shell, stored as channel ch
+   void recalc_f_channel(const DiagInfo<SC> &diag, const std::size_t sch, const std::size_t ch, Opch<SC> &opch) const {
+     for (const auto &[Ip, eig] : diag) {
+       auto I1 = Ip;
+       I1.combine(Iferm);
+       for (std::size_t n = 0; n < 4; ++n)
+         if (n < 2 || annihilators) AbelianShell::recalc_f_block<SC>(*this, diag, I1, Ip, ftables[sch][n], opch[ch][n]);
      }
    }
 
    Opch<SC> recalc_irreduc(const Step &, const DiagInfo<SC> &diag) const override {
+     my_assert(!P.substeps);
      Opch<SC> opch(P);
-     for (const auto &[Ip, eig] : diag) {
-       auto I1 = Ip;
-       I1.combine(Iferm);
-       for (std::size_t ch = 0; ch < shell->channels(); ++ch)
-         for (std::size_t n = 0; n < 4; ++n)
-           if (n < 2 || annihilators) AbelianShell::recalc_f_block<SC>(*this, diag, I1, Ip, ftables[ch][n], opch[ch][n]);
-     }
+     for (std::size_t ch = 0; ch < shell->channels(); ++ch) recalc_f_channel(diag, ch, ch, opch);
      return opch;
    }
+
+   // The <||f||> of the other channels are recalculated as doublets (see recalc_irreducible()).
+   OpchChannel<SC> recalc_irreduc_substeps(const Step &, const DiagInfo<SC> &diag, int M) const override {
+     my_assert(P.substeps);
+     Opch<SC> opch(P);
+     recalc_f_channel(diag, 0, M, opch);
+     return opch[M];
+   }
+
+   bool supports_substeps() const override { return true; }
 
    MatrixElements<SC> recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const override {
      MatrixElements<SC> cnew;
