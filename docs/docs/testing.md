@@ -182,11 +182,15 @@ ctest --test-dir build --output-on-failure -R '^(test_dmnrg_only|test_fdm_only|t
 
 ## CI Coverage
 
-The current CI exercises:
+The current CI (`.github/workflows/build.yml`) exercises:
 
 - Linux and macOS build matrices
-- sanitizer builds
+- sanitizer builds (ASan/UBSan, Debug): weekly and on manual dispatch only, because the full suite takes several hours
 - static analysis builds
 - documentation builds
+
+All jobs of `build.yml` also run weekly (Mondays 02:00 UTC), and the conda packaging
+workflow (`conda.yml`) weekly on Mondays 04:00 UTC, to detect changes in dependencies
+and runner images between pushes. Scheduled runs use the default branch.
 
 The CI setup is strict enough that it also catches test harness issues such as shared workdir races and platform-specific exception or filesystem behavior.
