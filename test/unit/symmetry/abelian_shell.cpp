@@ -159,15 +159,16 @@ void init(const Kind kind) {
   }
 }
 
+// Structured bindings are captured by name (sp = sp, op = op): Clang 15 cannot capture them implicitly.
 void check_P_NONE(const Kind kind, const std::string &sym, const std::size_t K) {
   init(kind);
   const Shell s(kind, K);
   const auto pre = prefix(sym, K);
   check_common_operators(s, pre);
   for (const auto &[name, sp] : {std::pair{"UP", Spin::up}, std::pair{"DO", Spin::down}}) {
-    expect_equal(read_table(pre + "offdiag-CR-" + name + ".dat"), per_channel(s, [&](auto ch) { return s.hop_cr(c(ch, sp), true); }), pre + "offdiag-CR");
+    expect_equal(read_table(pre + "offdiag-CR-" + name + ".dat"), per_channel(s, [&, sp = sp](auto ch) { return s.hop_cr(c(ch, sp), true); }), pre + "offdiag-CR");
     if (kind == Kind::P)
-      expect_equal(read_table(pre + "offdiag-AN-" + name + ".dat"), per_channel(s, [&](auto ch) { return s.hop_an(cdag(ch, sp), true); }), pre + "offdiag-AN");
+      expect_equal(read_table(pre + "offdiag-AN-" + name + ".dat"), per_channel(s, [&, sp = sp](auto ch) { return s.hop_an(cdag(ch, sp), true); }), pre + "offdiag-AN");
     for (std::size_t ch = 0; ch < K; ++ch) {
       expect_equal(read_table(pre + chname(ch) + "-CR-" + name + ".dat"), pairs(s.entries(cdag(ch, sp))), pre + "f CR");
       if (kind == Kind::P) expect_equal(read_table(pre + chname(ch) + "-AN-" + name + ".dat"), pairs(s.entries(c(ch, sp))), pre + "f AN");
@@ -176,7 +177,7 @@ void check_P_NONE(const Kind kind, const std::string &sym, const std::size_t K) 
   const std::vector<std::pair<std::string, Operator (*)(std::size_t)>> ops{
     {"Ixtot", isospinx}, {"Iytot", isospiny}, {"Iztot", isospinz}, {"Iptot", isospinplus}, {"Imtot", isospinminus},
     {"Qtot", charge}, {"spinx", spinx}, {"spiny", spiny}, {"spinz", spinz}};
-  for (const auto &[name, op] : ops) expect_equal(read_table(pre + name + ".dat"), per_channel(s, [&](auto ch) { return s.entries(op(ch)); }), pre + name);
+  for (const auto &[name, op] : ops) expect_equal(read_table(pre + name + ".dat"), per_channel(s, [&, op = op](auto ch) { return s.entries(op(ch)); }), pre + name);
   if (kind == Kind::NONE) expect_equal(read_table(pre + "doublet.dat"), pairs(s.recalc_rows(true)), pre + "doublet");
 }
 
@@ -219,7 +220,7 @@ TEST(AbelianShell, SPU1) {
     expect_equal(read_table(pre + "isospinx.dat"), per_channel(s, [&](auto ch) { return s.entries(isospinx(ch), true); }), pre + "isospinx");
     const std::vector<std::pair<std::string, Operator (*)(std::size_t)>> ops{
       {"Ixtot", isospinx}, {"Iztot", isospinz}, {"Iptot", isospinplus}, {"Imtot", isospinminus}, {"Qtot", charge}};
-    for (const auto &[name, op] : ops) expect_equal(read_table(pre + name + ".dat"), per_channel(s, [&](auto ch) { return s.entries(op(ch)); }), pre + name);
+    for (const auto &[name, op] : ops) expect_equal(read_table(pre + name + ".dat"), per_channel(s, [&, op = op](auto ch) { return s.entries(op(ch)); }), pre + name);
     if (K == 2) {
       const auto only = [&](std::size_t which, Operator op) { return per_channel(s, [&](auto ch) { return ch == which ? s.entries(op) : std::vector<Entry<cmpl>>{}; }); };
       expect_equal(read_table(pre + "q1.dat"), only(0, number(0)), pre + "q1");
@@ -279,7 +280,7 @@ TEST(AbelianShell, U1) {
     expect_equal(read_table(pre + "offdiag-DOUP.dat"), per_channel(s, [&](auto ch) { return s.hop_cr(c(ch, Spin::up)); }), pre + "offdiag-DOUP");
     expect_equal(read_table(pre + "diag-DOUP.dat"), per_channel(s, [&](auto ch) { return s.entries(product(cdag(ch, Spin::down), c(ch, Spin::up)), true); }), pre + "diag-DOUP");
     for (const auto &[name, op] : std::vector<std::pair<std::string, Operator (*)(std::size_t)>>{{"spinx", spinx}, {"spiny", spiny}, {"spinz", spinz}})
-      expect_equal(read_table(pre + name + ".dat"), per_channel(s, [&](auto ch) { return s.entries(op(ch)); }), pre + name);
+      expect_equal(read_table(pre + name + ".dat"), per_channel(s, [&, op = op](auto ch) { return s.entries(op(ch)); }), pre + name);
     for (std::size_t ch = 0; ch < K; ++ch) {
       expect_equal(read_table(pre + chname(ch) + "-UP.dat"), pairs(s.entries(cdag(ch, Spin::up))), pre + "f UP");
       expect_equal(read_table(pre + chname(ch) + "-DO.dat"), pairs(s.entries(cdag(ch, Spin::down))), pre + "f DO");
