@@ -1,130 +1,62 @@
 #include <cmath>
-#include <initializer_list>
+#include <vector>
 
 namespace NRG {
 
 using std::sqrt;
 
-// Edit nrg-recalc-QSZTZ.hpp.m4, not the generated header.
-
 // Quantum number dependant recalculation routines
 // Rok Zitko, rok.zitko@ijs.si, Mar 2016
 // This file pertains to (Q,Sz,Tz) subspaces
 
-// m4 macros for nrg-recalc-*.hpp.m4 files
-// Rok Zitko, rok.zitko@ijs.si, 2007-2020
-
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
-
 template<typename SC>
 MatrixElements<SC> SymmetryQSZTZ<SC>::recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
-  return recalc_named_qsztz_doublet(diag, substruct, cold, qsztz_transfer::all);
+  return recalc_doublet_masked(diag, substruct, cold, qsztz_transfer::all);
 }
 
 // The local state is a spectator: both components of bra - ket are conserved together.
 template<typename SC>
-MatrixElements<SC> SymmetryQSZTZ<SC>::recalc_named_qsztz_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct,
-                                                                 const MatrixElements<SC> &cold, qsztz_transfer::Mask mask) const {
+MatrixElements<SC> SymmetryQSZTZ<SC>::recalc_doublet_masked(const DiagInfo<SC> &diag, const SubspaceStructure &substruct,
+                                                                 const MatrixElements<SC> &cold, unsigned mask) const {
   MatrixElements<SC> cnew;
   if (mask == qsztz_transfer::none) return cnew;
   for(const auto &[I1, eig]: diag) {
     const auto q1 = I1.get("Q"), ssz1 = I1.get("SZ"), tz1 = I1.get("TZ");
     if (mask & qsztz_transfer::bit(-1, +1)) {
       const Invar Ip(q1 - 1, ssz1 - (-1), tz1 - (+1));
-      {
-  nrglog('f', "RECALC(fn=" << "qsztz/qsztz-doubletp-1.dat" << ", Iop=" << Invar(1, -1, +1) << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc<SC>> recalc_table = {
+      this->recalc_table(diag, substruct, cold, I1, Ip, Invar(1, -1, +1), cnew, [&] { return RecalcTable<SC>{
 #include "qsztz/qsztz-doubletp-1.dat"
-    };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, -1, +1));
-    if (cn) cnew[II] = std::move(*cn);
-  }
-};
+      }; });
     }
     if (mask & qsztz_transfer::bit(+1, +1)) {
       const Invar Ip(q1 - 1, ssz1 - (+1), tz1 - (+1));
-      {
-  nrglog('f', "RECALC(fn=" << "qsztz/qsztz-doubletm-1.dat" << ", Iop=" << Invar(1, +1, +1) << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc<SC>> recalc_table = {
+      this->recalc_table(diag, substruct, cold, I1, Ip, Invar(1, +1, +1), cnew, [&] { return RecalcTable<SC>{
 #include "qsztz/qsztz-doubletm-1.dat"
-    };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, +1, +1));
-    if (cn) cnew[II] = std::move(*cn);
-  }
-};
+      }; });
     }
     if (mask & qsztz_transfer::bit(-1, 0)) {
       const Invar Ip(q1 - 1, ssz1 - (-1), tz1 - (0));
-      {
-  nrglog('f', "RECALC(fn=" << "qsztz/qsztz-doubletp0.dat" << ", Iop=" << Invar(1, -1, 0) << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc<SC>> recalc_table = {
+      this->recalc_table(diag, substruct, cold, I1, Ip, Invar(1, -1, 0), cnew, [&] { return RecalcTable<SC>{
 #include "qsztz/qsztz-doubletp0.dat"
-    };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, -1, 0));
-    if (cn) cnew[II] = std::move(*cn);
-  }
-};
+      }; });
     }
     if (mask & qsztz_transfer::bit(+1, 0)) {
       const Invar Ip(q1 - 1, ssz1 - (+1), tz1 - (0));
-      {
-  nrglog('f', "RECALC(fn=" << "qsztz/qsztz-doubletm0.dat" << ", Iop=" << Invar(1, +1, 0) << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc<SC>> recalc_table = {
+      this->recalc_table(diag, substruct, cold, I1, Ip, Invar(1, +1, 0), cnew, [&] { return RecalcTable<SC>{
 #include "qsztz/qsztz-doubletm0.dat"
-    };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, +1, 0));
-    if (cn) cnew[II] = std::move(*cn);
-  }
-};
+      }; });
     }
     if (mask & qsztz_transfer::bit(-1, -1)) {
       const Invar Ip(q1 - 1, ssz1 - (-1), tz1 - (-1));
-      {
-  nrglog('f', "RECALC(fn=" << "qsztz/qsztz-doubletp+1.dat" << ", Iop=" << Invar(1, -1, -1) << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc<SC>> recalc_table = {
+      this->recalc_table(diag, substruct, cold, I1, Ip, Invar(1, -1, -1), cnew, [&] { return RecalcTable<SC>{
 #include "qsztz/qsztz-doubletp+1.dat"
-    };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, -1, -1));
-    if (cn) cnew[II] = std::move(*cn);
-  }
-};
+      }; });
     }
     if (mask & qsztz_transfer::bit(+1, -1)) {
       const Invar Ip(q1 - 1, ssz1 - (+1), tz1 - (-1));
-      {
-  nrglog('f', "RECALC(fn=" << "qsztz/qsztz-doubletm+1.dat" << ", Iop=" << Invar(1, +1, -1) << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc<SC>> recalc_table = {
+      this->recalc_table(diag, substruct, cold, I1, Ip, Invar(1, +1, -1), cnew, [&] { return RecalcTable<SC>{
 #include "qsztz/qsztz-doubletm+1.dat"
-    };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, +1, -1));
-    if (cn) cnew[II] = std::move(*cn);
-  }
-};
+      }; });
     }
   }
   return cnew;
@@ -144,76 +76,34 @@ Opch<SC> SymmetryQSZTZ<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> 
     Invar I1;
 
     I1 = Invar(qp + 1, sszp + 1, tzp + 1);
-    {
-  nrglog('f', "RECALC_F(fn=" << "qsztz/qsztz-spinup+1.dat" << ", ch=" << 0 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    this->recalc_f_table(diag, I1, Ip, opch[0][0], [&] { return RecalcFTable<SC>{
 #include "qsztz/qsztz-spinup+1.dat"
-    };
-    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
+    }; });
 
     I1 = Invar(qp + 1, sszp + 1, tzp);
-    {
-  nrglog('f', "RECALC_F(fn=" << "qsztz/qsztz-spinup0.dat" << ", ch=" << 0 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    this->recalc_f_table(diag, I1, Ip, opch[0][0], [&] { return RecalcFTable<SC>{
 #include "qsztz/qsztz-spinup0.dat"
-    };
-    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
+    }; });
 
     I1 = Invar(qp + 1, sszp + 1, tzp - 1);
-    {
-  nrglog('f', "RECALC_F(fn=" << "qsztz/qsztz-spinup-1.dat" << ", ch=" << 0 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    this->recalc_f_table(diag, I1, Ip, opch[0][0], [&] { return RecalcFTable<SC>{
 #include "qsztz/qsztz-spinup-1.dat"
-    };
-    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
+    }; });
 
     I1 = Invar(qp + 1, sszp - 1, tzp + 1);
-    {
-  nrglog('f', "RECALC_F(fn=" << "qsztz/qsztz-spindo+1.dat" << ", ch=" << 0 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    this->recalc_f_table(diag, I1, Ip, opch[0][0], [&] { return RecalcFTable<SC>{
 #include "qsztz/qsztz-spindo+1.dat"
-    };
-    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
+    }; });
 
     I1 = Invar(qp + 1, sszp - 1, tzp);
-    {
-  nrglog('f', "RECALC_F(fn=" << "qsztz/qsztz-spindo0.dat" << ", ch=" << 0 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    this->recalc_f_table(diag, I1, Ip, opch[0][0], [&] { return RecalcFTable<SC>{
 #include "qsztz/qsztz-spindo0.dat"
-    };
-    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
+    }; });
 
     I1 = Invar(qp + 1, sszp - 1, tzp - 1);
-    {
-  nrglog('f', "RECALC_F(fn=" << "qsztz/qsztz-spindo-1.dat" << ", ch=" << 0 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    this->recalc_f_table(diag, I1, Ip, opch[0][0], [&] { return RecalcFTable<SC>{
 #include "qsztz/qsztz-spindo-1.dat"
-    };
-    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
+    }; });
   }
   return opch;
 }
@@ -228,43 +118,19 @@ MatrixElements<SC> SymmetryQSZTZ<SC>::recalc_triplet(const DiagInfo<SC> &diag, c
     Invar Ip;
 
     Ip = Invar(q1, ssz1, tz1);
-    {
-  nrglog('f', "RECALC(fn=" << "qsztz/qsztz-triplets.dat" << ", Iop=" << Invar(0, 0, 0) << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc<SC>> recalc_table = {
+    this->recalc_table(diag, substruct, cold, I1, Ip, Invar(0, 0, 0), cnew, [&] { return RecalcTable<SC>{
 #include "qsztz/qsztz-triplets.dat"
-    };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 0, 0));
-    if (cn) cnew[II] = std::move(*cn);
-  }
-};
+    }; });
 
     Ip = Invar(q1, ssz1 + 2, tz1);
-    {
-  nrglog('f', "RECALC(fn=" << "qsztz/qsztz-tripletp.dat" << ", Iop=" << Invar(0, -2, 0) << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc<SC>> recalc_table = {
+    this->recalc_table(diag, substruct, cold, I1, Ip, Invar(0, -2, 0), cnew, [&] { return RecalcTable<SC>{
 #include "qsztz/qsztz-tripletp.dat"
-    };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, -2, 0));
-    if (cn) cnew[II] = std::move(*cn);
-  }
-};
+    }; });
 
     Ip = Invar(q1, ssz1 - 2, tz1);
-    {
-  nrglog('f', "RECALC(fn=" << "qsztz/qsztz-tripletm.dat" << ", Iop=" << Invar(0, +2, 0) << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc<SC>> recalc_table = {
+    this->recalc_table(diag, substruct, cold, I1, Ip, Invar(0, +2, 0), cnew, [&] { return RecalcTable<SC>{
 #include "qsztz/qsztz-tripletm.dat"
-    };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, +2, 0));
-    if (cn) cnew[II] = std::move(*cn);
-  }
-};
+    }; });
   }
   return cnew;
 }

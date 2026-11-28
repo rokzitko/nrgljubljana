@@ -69,7 +69,7 @@ Defined in `c++/symmetry.hpp`.
 - recalculate operators
 - provide multiplicity and spectral prefactors
 
-Concrete symmetry implementations are selected through `mk_sym.hpp` and compiled from the `sym-*.cc` sources.
+Concrete symmetry implementations are listed in `symmetries.def` and selected through `mk_sym.hpp`.
 
 Typical ownership:
 

@@ -1,34 +1,14 @@
 #include <cmath>
-#include <initializer_list>
+#include <vector>
 #include <string>
 
 namespace NRG {
 
 using std::sqrt;
 
-// *** WARNING!!! Modify nrg-recalc-SPU1LR.hpp.m4, not nrg-recalc-SPU1LR.hpp, then run recalc-macros.update !!!
-
 // Quantum number dependant recalculation routines
 // Rok Zitko, rok.zitko@ijs.si, May 2010
 // This file pertains to (SZ,P) subspaces
-
-// m4 macros for nrg-recalc-*.hpp.m4 files
-// Rok Zitko, rok.zitko@ijs.si, 2007-2020
-
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
 
 template<typename SC>
 MatrixElements<SC> SymmetrySPU1LR<SC>::recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
@@ -40,57 +20,33 @@ MatrixElements<SC> SymmetrySPU1LR<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
 
     Ip = Invar(ssz1 + 1, p1);
     switch (P.channels) {
-  case 1: { {
-  nrglog('f', "RECALC(fn=" << "spu1lr/spu1lr-1ch-doubletp.dat" << ", Iop=" << Invar(-1, 1) << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc<SC>> recalc_table = {
+      case 1:
+        this->recalc_table(diag, substruct, cold, I1, Ip, Invar(-1, 1), cnew, [&] { return RecalcTable<SC>{
 #include "spu1lr/spu1lr-1ch-doubletp.dat"
-    };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(-1, 1));
-    if (cn) cnew[II] = std::move(*cn);
-  }
-} } break;
-  case 2: { {
-  nrglog('f', "RECALC(fn=" << "spu1lr/spu1lr-2ch-doubletp.dat" << ", Iop=" << Invar(-1, 1) << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc<SC>> recalc_table = {
+        }; });
+        break;
+      case 2:
+        this->recalc_table(diag, substruct, cold, I1, Ip, Invar(-1, 1), cnew, [&] { return RecalcTable<SC>{
 #include "spu1lr/spu1lr-2ch-doubletp.dat"
-    };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(-1, 1));
-    if (cn) cnew[II] = std::move(*cn);
-  }
-} } break;
-  default: my_assert_not_reached();
-  };
+        }; });
+        break;
+      default: my_assert_not_reached();
+    }
 
     Ip = Invar(ssz1-1, p1);
     switch (P.channels) {
-  case 1: { {
-  nrglog('f', "RECALC(fn=" << "spu1lr/spu1lr-1ch-doubletm.dat" << ", Iop=" << Invar(+1, 1) << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc<SC>> recalc_table = {
+      case 1:
+        this->recalc_table(diag, substruct, cold, I1, Ip, Invar(+1, 1), cnew, [&] { return RecalcTable<SC>{
 #include "spu1lr/spu1lr-1ch-doubletm.dat"
-    };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(+1, 1));
-    if (cn) cnew[II] = std::move(*cn);
-  }
-} } break;
-  case 2: { {
-  nrglog('f', "RECALC(fn=" << "spu1lr/spu1lr-2ch-doubletm.dat" << ", Iop=" << Invar(+1, 1) << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc<SC>> recalc_table = {
+        }; });
+        break;
+      case 2:
+        this->recalc_table(diag, substruct, cold, I1, Ip, Invar(+1, 1), cnew, [&] { return RecalcTable<SC>{
 #include "spu1lr/spu1lr-2ch-doubletm.dat"
-    };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(+1, 1));
-    if (cn) cnew[II] = std::move(*cn);
-  }
-} } break;
-  default: my_assert_not_reached();
-  };
+        }; });
+        break;
+      default: my_assert_not_reached();
+    }
   }
   return cnew;
 }
@@ -107,120 +63,58 @@ Opch<SC> SymmetrySPU1LR<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC>
 
     I1 = Invar(sszp + 1, pp);
     switch (P.channels) {
-  case 1: { {
-  nrglog('f', "RECALC_F(fn=" << "spu1lr/spu1lr-1ch-spinupa.dat" << ", ch=" << 0 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+      case 1:
+        this->recalc_f_table(diag, I1, Ip, opch[0][0], [&] { return RecalcFTable<SC>{
 #include "spu1lr/spu1lr-1ch-spinupa.dat"
-    };
-    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-} } break;
-  case 2: { {
-  nrglog('f', "RECALC_F(fn=" << "spu1lr/spu1lr-2ch-spinupa.dat" << ", ch=" << 0 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+        }; });
+        break;
+      case 2:
+        this->recalc_f_table(diag, I1, Ip, opch[0][0], [&] { return RecalcFTable<SC>{
 #include "spu1lr/spu1lr-2ch-spinupa.dat"
-    };
-    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
-	          {
-  nrglog('f', "RECALC_F(fn=" << "spu1lr/spu1lr-2ch-spinupb.dat" << ", ch=" << 1 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+        }; });
+        this->recalc_f_table(diag, I1, Ip, opch[1][0], [&] { return RecalcFTable<SC>{
 #include "spu1lr/spu1lr-2ch-spinupb.dat"
-    };
-    opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-} } break;
-  default: my_assert_not_reached();
-  };
+        }; });
+        break;
+      default: my_assert_not_reached();
+    }
 
     I1 = Invar(sszp-1, pp);
     switch (P.channels) {
-  case 1: { {
-  nrglog('f', "RECALC_F(fn=" << "spu1lr/spu1lr-1ch-spindowna.dat" << ", ch=" << 0 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+      case 1:
+        this->recalc_f_table(diag, I1, Ip, opch[0][0], [&] { return RecalcFTable<SC>{
 #include "spu1lr/spu1lr-1ch-spindowna.dat"
-    };
-    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-} } break;
-  case 2: { {
-  nrglog('f', "RECALC_F(fn=" << "spu1lr/spu1lr-2ch-spindowna.dat" << ", ch=" << 0 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+        }; });
+        break;
+      case 2:
+        this->recalc_f_table(diag, I1, Ip, opch[0][0], [&] { return RecalcFTable<SC>{
 #include "spu1lr/spu1lr-2ch-spindowna.dat"
-    };
-    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
-            {
-  nrglog('f', "RECALC_F(fn=" << "spu1lr/spu1lr-2ch-spindownb.dat" << ", ch=" << 1 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+        }; });
+        this->recalc_f_table(diag, I1, Ip, opch[1][0], [&] { return RecalcFTable<SC>{
 #include "spu1lr/spu1lr-2ch-spindownb.dat"
-    };
-    opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-} } break;
-  default: my_assert_not_reached();
-  };
+        }; });
+        break;
+      default: my_assert_not_reached();
+    }
 
    // CASE II: OPPOSITE PARITY
 
     if (P.channels == 2) {
       I1 = Invar(sszp + 1, -pp);
-      {
-  nrglog('f', "RECALC_F(fn=" << "spu1lr/spu1lr-2ch-spinupdiffa.dat" << ", ch=" << 0 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+      this->recalc_f_table(diag, I1, Ip, opch[0][0], [&] { return RecalcFTable<SC>{
 #include "spu1lr/spu1lr-2ch-spinupdiffa.dat"
-    };
-    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
-      {
-  nrglog('f', "RECALC_F(fn=" << "spu1lr/spu1lr-2ch-spinupdiffb.dat" << ", ch=" << 1 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+      }; });
+      this->recalc_f_table(diag, I1, Ip, opch[1][0], [&] { return RecalcFTable<SC>{
 #include "spu1lr/spu1lr-2ch-spinupdiffb.dat"
-    };
-    opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
+      }; });
 
       I1 = Invar(sszp - 1, -pp);
-      {
-  nrglog('f', "RECALC_F(fn=" << "spu1lr/spu1lr-2ch-spindowndiffa.dat" << ", ch=" << 0 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+      this->recalc_f_table(diag, I1, Ip, opch[0][0], [&] { return RecalcFTable<SC>{
 #include "spu1lr/spu1lr-2ch-spindowndiffa.dat"
-    };
-    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
-      {
-  nrglog('f', "RECALC_F(fn=" << "spu1lr/spu1lr-2ch-spindowndiffb.dat" << ", ch=" << 1 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+      }; });
+      this->recalc_f_table(diag, I1, Ip, opch[1][0], [&] { return RecalcFTable<SC>{
 #include "spu1lr/spu1lr-2ch-spindowndiffb.dat"
-    };
-    opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
+      }; });
     }
   }
   return opch;
@@ -236,106 +130,55 @@ MatrixElements<SC> SymmetrySPU1LR<SC>::recalc_triplet(const DiagInfo<SC> &diag, 
 
     Ip = Invar(ssz1, p1);
     switch (P.channels) {
-  case 1: { {
-  nrglog('f', "RECALC(fn=" << "spu1lr/spu1lr-1ch-triplets.dat" << ", Iop=" << Invar(0, 1) << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc<SC>> recalc_table = {
+      case 1:
+        this->recalc_table(diag, substruct, cold, I1, Ip, Invar(0, 1), cnew, [&] { return RecalcTable<SC>{
 #include "spu1lr/spu1lr-1ch-triplets.dat"
-    };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 1));
-    if (cn) cnew[II] = std::move(*cn);
-  }
-} } break;
-  case 2: { {
-  nrglog('f', "RECALC(fn=" << "spu1lr/spu1lr-2ch-triplets.dat" << ", Iop=" << Invar(0, 1) << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc<SC>> recalc_table = {
+        }; });
+        break;
+      case 2:
+        this->recalc_table(diag, substruct, cold, I1, Ip, Invar(0, 1), cnew, [&] { return RecalcTable<SC>{
 #include "spu1lr/spu1lr-2ch-triplets.dat"
-    };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(0, 1));
-    if (cn) cnew[II] = std::move(*cn);
-  }
-} } break;
-  default: my_assert_not_reached();
-  };
+        }; });
+        break;
+      default: my_assert_not_reached();
+    }
 
     Ip = Invar(ssz1+2, p1);
     switch (P.channels) {
-  case 1: { {
-  nrglog('f', "RECALC(fn=" << "spu1lr/spu1lr-1ch-tripletp.dat" << ", Iop=" << Invar(-2, 1) << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc<SC>> recalc_table = {
+      case 1:
+        this->recalc_table(diag, substruct, cold, I1, Ip, Invar(-2, 1), cnew, [&] { return RecalcTable<SC>{
 #include "spu1lr/spu1lr-1ch-tripletp.dat"
-    };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(-2, 1));
-    if (cn) cnew[II] = std::move(*cn);
-  }
-} } break;
-  case 2: { {
-  nrglog('f', "RECALC(fn=" << "spu1lr/spu1lr-2ch-tripletp.dat" << ", Iop=" << Invar(-2, 1) << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc<SC>> recalc_table = {
+        }; });
+        break;
+      case 2:
+        this->recalc_table(diag, substruct, cold, I1, Ip, Invar(-2, 1), cnew, [&] { return RecalcTable<SC>{
 #include "spu1lr/spu1lr-2ch-tripletp.dat"
-    };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(-2, 1));
-    if (cn) cnew[II] = std::move(*cn);
-  }
-} } break;
-  default: my_assert_not_reached();
-  };
+        }; });
+        break;
+      default: my_assert_not_reached();
+    }
 
     Ip = Invar(ssz1-2, p1);
     switch (P.channels) {
-  case 1: { {
-  nrglog('f', "RECALC(fn=" << "spu1lr/spu1lr-1ch-tripletm.dat" << ", Iop=" << Invar(+2, 1) << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc<SC>> recalc_table = {
+      case 1:
+        this->recalc_table(diag, substruct, cold, I1, Ip, Invar(+2, 1), cnew, [&] { return RecalcTable<SC>{
 #include "spu1lr/spu1lr-1ch-tripletm.dat"
-    };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(+2, 1));
-    if (cn) cnew[II] = std::move(*cn);
-  }
-} } break;
-  case 2: { {
-  nrglog('f', "RECALC(fn=" << "spu1lr/spu1lr-2ch-tripletm.dat" << ", Iop=" << Invar(+2, 1) << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc<SC>> recalc_table = {
+        }; });
+        break;
+      case 2:
+        this->recalc_table(diag, substruct, cold, I1, Ip, Invar(+2, 1), cnew, [&] { return RecalcTable<SC>{
 #include "spu1lr/spu1lr-2ch-tripletm.dat"
-    };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(+2, 1));
-    if (cn) cnew[II] = std::move(*cn);
-  }
-} } break;
-  default: my_assert_not_reached();
-  };
+        }; });
+        break;
+      default: my_assert_not_reached();
+    }
   }
   return cnew;
 }
 
-#undef CHARGE
-#define CHARGE(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value)
-
-#undef ISOSPINZ
-#define ISOSPINZ(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value)
-
 // NOTE: the transverse components of the isospin depend on the site
 // index! This is taken into account by appropriately multiplying 'value'
 // by (-1)^N.
-
-#undef ISOSPINX
-#define ISOSPINX(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value *psgn(step.getnn() + 1))
-
-#undef ISOSPINP
-#define ISOSPINP(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value *psgn(step.getnn() + 1))
-
-#undef ISOSPINM
-#define ISOSPINM(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value *psgn(step.getnn() + 1))
 
 template<typename SC>
 void SymmetrySPU1LR<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, const std::string name, MatrixElements<SC> &cnew) const {
@@ -343,6 +186,7 @@ void SymmetrySPU1LR<SC>::recalc_global(const Step &step, const DiagInfo<SC> &dia
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
+      const GlobalTerms<SC> terms(*this, diag, I1, cn, psgn(step.getnn() + 1));
       switch (P.channels) {
         case 1:
 #include "spu1lr/spu1lr-1ch-Qtot.dat"
@@ -360,6 +204,7 @@ void SymmetrySPU1LR<SC>::recalc_global(const Step &step, const DiagInfo<SC> &dia
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
+      const GlobalTerms<SC> terms(*this, diag, I1, cn, psgn(step.getnn() + 1));
       switch (P.channels) {
         case 1:
 #include "spu1lr/spu1lr-1ch-Iztot.dat"
@@ -377,6 +222,7 @@ void SymmetrySPU1LR<SC>::recalc_global(const Step &step, const DiagInfo<SC> &dia
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
+      const GlobalTerms<SC> terms(*this, diag, I1, cn, psgn(step.getnn() + 1));
       switch (P.channels) {
         case 1:
 #include "spu1lr/spu1lr-1ch-Ixtot.dat"
@@ -394,6 +240,7 @@ void SymmetrySPU1LR<SC>::recalc_global(const Step &step, const DiagInfo<SC> &dia
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
+      const GlobalTerms<SC> terms(*this, diag, I1, cn, psgn(step.getnn() + 1));
       switch (P.channels) {
         case 1:
 #include "spu1lr/spu1lr-1ch-Iptot.dat"
@@ -411,6 +258,7 @@ void SymmetrySPU1LR<SC>::recalc_global(const Step &step, const DiagInfo<SC> &dia
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
+      const GlobalTerms<SC> terms(*this, diag, I1, cn, psgn(step.getnn() + 1));
       switch (P.channels) {
         case 1:
 #include "spu1lr/spu1lr-1ch-Imtot.dat"

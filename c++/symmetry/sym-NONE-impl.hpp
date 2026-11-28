@@ -17,7 +17,6 @@ class SymmetryNONE : public SymmetryCRAN<SC> {
      });
    }
 
-  void calculate_TD(const Step &, const DiagInfo<SC> &, Stats<SC> &, const double) const override {};
 };
 
 }

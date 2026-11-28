@@ -3,6 +3,8 @@
 #include <cstdlib>
 #include <vector>
 
+#include "table_terms.hpp"
+
 namespace NRG {
 
 using std::sqrt;
@@ -14,7 +16,7 @@ class SymmetryISOLRcommon : public SymLR<SC> {
    using Symmetry<SC>::In;
    using Symmetry<SC>::QN;
  public:
-   SymmetryISOLRcommon(const Params &P) : SymLR<SC>(P, std::vector{"<Sz^2>", "<Q^2>"}, Invar(1,1,1)) {
+   SymmetryISOLRcommon(const Params &P) : SymLR<SC>(P, {td::su2_z_square("<Sz^2>", "SS"), td::su2_z_square("<Q^2>", "II", 4)}, Invar(1,1,1)) {
      initInvar({
         {"II", additive},     // isospin
         {"SS", additive},     // spin
@@ -38,27 +40,7 @@ class SymmetryISOLRcommon : public SymLR<SC> {
        && z2_equality(I1.get("P"), I2.get("P"), I3.get("P"));
   }
   double specdens_factor(const Invar &Ip, const Invar &I1) const override {
-    const int ssp = Ip.get("SS");
-    const int ss1 = I1.get("SS");
-    my_assert(std::abs(ss1 - ssp) == 1);
-    const int iip = Ip.get("II");
-    const int ii1 = I1.get("II");
-    my_assert(std::abs(ii1 - iip) == 1);
-    const double spinfactor = (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
-    const double isofactor  = (ii1 == iip + 1 ? ISO(iip) + 1.0 : ISO(iip));
-    return spinfactor * isofactor;
-  }
-  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, Stats<SC> &stats, const double factor) const override {
-    bucket trSZ, trIZ; // Tr[S_z^2], Tr[I_z^2]
-    for (const auto &[I, eig]: diag) {
-      const int ii    = I.get("II");
-      const int ss    = I.get("SS");
-      const double sumZ = this->calculate_Z(I, eig, factor);
-      trSZ += sumZ * (ss * ss - 1) / 12.; // isospin multiplicity contained in sumZ
-      trIZ += sumZ * (ii * ii - 1) / 12.; // spin multiplicity contained in sumZ
-    }
-    stats.td.set("<Sz^2>", trSZ / stats.Z);
-    stats.td.set("<Q^2>",  (4 * trIZ) / stats.Z);
+    return su2_doublet_factor(Ip.get("SS"), I1.get("SS")) * su2_doublet_factor(Ip.get("II"), I1.get("II"));
   }
 };
 
@@ -108,12 +90,10 @@ class SymmetryISO2LR : public SymmetryISOLRcommon<SC> {
   HAS_TRIPLET;
 };
 
-// *** Helper macros for make_matrix() members in matrix.cc
-#undef OFFIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * coef.xi(step.N(), ch), h, qq, In, opch)
 
 template<typename SC>
 void SymmetryISOLR<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) const {
+  const ShellTerms<SC> terms(*this, P, step, h, qq, In, opch, coef);
   int ss = I.get("SS");
   int ii = I.get("II");
 #include "isolr/isolr-2ch-offdiag.dat"
@@ -121,6 +101,7 @@ void SymmetryISOLR<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceD
 
 template<typename SC>
 void SymmetryISO2LR<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) const {
+  const ShellTerms<SC> terms(*this, P, step, h, qq, In, opch, coef);
   int ss = I.get("SS");
   int ii = I.get("II");
 #include "iso2lr/iso2lr-2ch-offdiag.dat"

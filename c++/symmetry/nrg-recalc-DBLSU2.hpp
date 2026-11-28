@@ -1,6 +1,6 @@
 #include <cmath>
 #include <complex>
-#include <initializer_list>
+#include <vector>
 #include <string>
 #include <type_traits>
 
@@ -8,29 +8,9 @@ namespace NRG {
 
 using std::sqrt;
 
-// *** WARNING!!! Modify nrg-recalc-DBLSU2.hpp.m4, not nrg-recalc-DBLSU2.hpp, then run recalc-macros.update !!!
-
 // Quantum number dependant recalculation routines
 // Rok Zitko, rok.zitko@ijs.si, Dec 2009
 // This file pertains to (I1,I2) subspaces
-
-// m4 macros for nrg-recalc-*.hpp.m4 files
-// Rok Zitko, rok.zitko@ijs.si, 2007-2020
-
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
 
 template<typename SC>
 MatrixElements<SC> SymmetryDBLSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const {
@@ -41,56 +21,24 @@ MatrixElements<SC> SymmetryDBLSU2<SC>::recalc_doublet(const DiagInfo<SC> &diag, 
     Invar Ip;
 
     Ip = Invar(ii11 - 1, ii21);
-    {
-  nrglog('f', "RECALC(fn=" << "dblsu2/dblsu2-2ch-doubletm0.dat" << ", Iop=" << Invar(2, 1) << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc<SC>> recalc_table = {
+    this->recalc_table(diag, substruct, cold, I1, Ip, Invar(2, 1), cnew, [&] { return RecalcTable<SC>{
 #include "dblsu2/dblsu2-2ch-doubletm0.dat"
-    };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 1));
-    if (cn) cnew[II] = std::move(*cn);
-  }
-};
+    }; });
 
     Ip = Invar(ii11 + 1, ii21);
-    {
-  nrglog('f', "RECALC(fn=" << "dblsu2/dblsu2-2ch-doubletp0.dat" << ", Iop=" << Invar(2, 1) << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc<SC>> recalc_table = {
+    this->recalc_table(diag, substruct, cold, I1, Ip, Invar(2, 1), cnew, [&] { return RecalcTable<SC>{
 #include "dblsu2/dblsu2-2ch-doubletp0.dat"
-    };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(2, 1));
-    if (cn) cnew[II] = std::move(*cn);
-  }
-};
+    }; });
 
     Ip = Invar(ii11, ii21 - 1);
-    {
-  nrglog('f', "RECALC(fn=" << "dblsu2/dblsu2-2ch-doublet0m.dat" << ", Iop=" << Invar(1, 2) << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc<SC>> recalc_table = {
+    this->recalc_table(diag, substruct, cold, I1, Ip, Invar(1, 2), cnew, [&] { return RecalcTable<SC>{
 #include "dblsu2/dblsu2-2ch-doublet0m.dat"
-    };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2));
-    if (cn) cnew[II] = std::move(*cn);
-  }
-};
+    }; });
 
     Ip = Invar(ii11, ii21 + 1);
-    {
-  nrglog('f', "RECALC(fn=" << "dblsu2/dblsu2-2ch-doublet0p.dat" << ", Iop=" << Invar(1, 2) << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc<SC>> recalc_table = {
+    this->recalc_table(diag, substruct, cold, I1, Ip, Invar(1, 2), cnew, [&] { return RecalcTable<SC>{
 #include "dblsu2/dblsu2-2ch-doublet0p.dat"
-    };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1, 2));
-    if (cn) cnew[II] = std::move(*cn);
-  }
-};
+    }; });
   }
   return cnew;
 }
@@ -114,103 +62,40 @@ Opch<SC> SymmetryDBLSU2<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC>
     // type 2: [f^dag_DO, f_UP]
 
     I1 = Invar(ii1p + 1, ii2p);
-    {
-  nrglog('f', "RECALC_F(fn=" << "dblsu2/dblsu2-2ch-type1-isoup-a.dat" << ", ch=" << 0 << ", n=" << 0 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    this->recalc_f_table(diag, I1, Ip, opch[0][0], [&] { return RecalcFTable<SC>{
 #include "dblsu2/dblsu2-2ch-type1-isoup-a.dat"
-    };
-    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
-    {
-  nrglog('f', "RECALC_F(fn=" << "dblsu2/dblsu2-2ch-type2-isoup-a.dat" << ", ch=" << 0 << ", n=" << 1 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    }; });
+    this->recalc_f_table(diag, I1, Ip, opch[0][1], [&] { return RecalcFTable<SC>{
 #include "dblsu2/dblsu2-2ch-type2-isoup-a.dat"
-    };
-    opch[0][1][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
+    }; });
 
     I1 = Invar(ii1p, ii2p + 1);
-    {
-  nrglog('f', "RECALC_F(fn=" << "dblsu2/dblsu2-2ch-type1-isoup-b.dat" << ", ch=" << 1 << ", n=" << 0 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    this->recalc_f_table(diag, I1, Ip, opch[1][0], [&] { return RecalcFTable<SC>{
 #include "dblsu2/dblsu2-2ch-type1-isoup-b.dat"
-    };
-    opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
-    {
-  nrglog('f', "RECALC_F(fn=" << "dblsu2/dblsu2-2ch-type2-isoup-b.dat" << ", ch=" << 1 << ", n=" << 1 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    }; });
+    this->recalc_f_table(diag, I1, Ip, opch[1][1], [&] { return RecalcFTable<SC>{
 #include "dblsu2/dblsu2-2ch-type2-isoup-b.dat"
-    };
-    opch[1][1][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
+    }; });
 
     I1 = Invar(ii1p - 1, ii2p);
-    {
-  nrglog('f', "RECALC_F(fn=" << "dblsu2/dblsu2-2ch-type1-isodown-a.dat" << ", ch=" << 0 << ", n=" << 0 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    this->recalc_f_table(diag, I1, Ip, opch[0][0], [&] { return RecalcFTable<SC>{
 #include "dblsu2/dblsu2-2ch-type1-isodown-a.dat"
-    };
-    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
-    {
-  nrglog('f', "RECALC_F(fn=" << "dblsu2/dblsu2-2ch-type2-isodown-a.dat" << ", ch=" << 0 << ", n=" << 1 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    }; });
+    this->recalc_f_table(diag, I1, Ip, opch[0][1], [&] { return RecalcFTable<SC>{
 #include "dblsu2/dblsu2-2ch-type2-isodown-a.dat"
-    };
-    opch[0][1][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
+    }; });
 
     I1 = Invar(ii1p, ii2p - 1);
-    {
-  nrglog('f', "RECALC_F(fn=" << "dblsu2/dblsu2-2ch-type1-isodown-b.dat" << ", ch=" << 1 << ", n=" << 0 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    this->recalc_f_table(diag, I1, Ip, opch[1][0], [&] { return RecalcFTable<SC>{
 #include "dblsu2/dblsu2-2ch-type1-isodown-b.dat"
-    };
-    opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
-    {
-  nrglog('f', "RECALC_F(fn=" << "dblsu2/dblsu2-2ch-type2-isodown-b.dat" << ", ch=" << 1 << ", n=" << 1 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    }; });
+    this->recalc_f_table(diag, I1, Ip, opch[1][1], [&] { return RecalcFTable<SC>{
 #include "dblsu2/dblsu2-2ch-type2-isodown-b.dat"
-    };
-    opch[1][1][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
+    }; });
   }
   return opch;
 }
 
-#undef SPINX
-#define SPINX(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value)
-#undef SPINZ
-#define SPINZ(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value)
-
-#undef SPINY
-#define SPINY(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value)
 #undef Complex
 #define Complex(x, y) cmpl(x, y)
 
@@ -220,6 +105,7 @@ void SymmetryDBLSU2<SC>::recalc_global(const Step &step, const DiagInfo<SC> &dia
    for(const auto &[I1, eig]: diag) {
       const Twoinvar II{I1, I1};
       Matrix &cn = cnew[II];
+      const GlobalTerms<SC> terms(*this, diag, I1, cn, psgn(step.getnn() + 1));
       switch (P.channels) {
         case 2:
 #include "dblsu2/dblsu2-2ch-spinz.dat"
@@ -235,6 +121,7 @@ void SymmetryDBLSU2<SC>::recalc_global(const Step &step, const DiagInfo<SC> &dia
    for(const auto &[I1, eig]: diag) {
       const Twoinvar II{I1, I1};
       Matrix &cn = cnew[II];
+      const GlobalTerms<SC> terms(*this, diag, I1, cn, psgn(step.getnn() + 1));
       switch (P.channels) {
         case 2:
 #include "dblsu2/dblsu2-2ch-spiny.dat"
@@ -250,6 +137,7 @@ void SymmetryDBLSU2<SC>::recalc_global(const Step &step, const DiagInfo<SC> &dia
    for(const auto &[I1, eig]: diag) {
       const Twoinvar II{I1, I1};
       Matrix &cn = cnew[II];
+      const GlobalTerms<SC> terms(*this, diag, I1, cn, psgn(step.getnn() + 1));
       switch (P.channels) {
         case 2:
 #include "dblsu2/dblsu2-2ch-spinx.dat"

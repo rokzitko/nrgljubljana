@@ -16,8 +16,6 @@ class SymmetryP : public SymmetryCRAN<SC> {
      });
    }
 
-  void calculate_TD(const Step &, const DiagInfo<SC> &, Stats<SC> &, const double) const override {};
-
   bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override { return z2_equality(I1.get("P"), I2.get("P"), I3.get("P")); }
 };
 

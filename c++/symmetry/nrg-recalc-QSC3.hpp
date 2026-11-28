@@ -1,32 +1,12 @@
 #include <complex>
-#include <initializer_list>
+#include <vector>
 #include <type_traits>
 
 namespace NRG {
 
-// *** WARNING!!! Modify nrg-recalc-QSC3.hpp.m4, not nrg-recalc-QSC3.hpp, then run recalc-macros.update !!!
-
 // Quantum number dependent recalculation routines
 // Rok Zitko, rok.zitko@ijs.si, Oct 2015
 // This file pertains to (Q,S,P) subspaces, P modulo 3
-
-// m4 macros for nrg-recalc-*.hpp.m4 files
-// Rok Zitko, rok.zitko@ijs.si, 2007-2020
-
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
 
 #define xRECALC_F_TAB(a, b, c) 0;
 
@@ -52,196 +32,70 @@ Opch<SC> SymmetryQSC3<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &
 #define sqrt(x) csqrt(x)
 
     I1 = Invar(qp + 1, ssp + 1, (p + 0) % 3);
-    {
-  nrglog('f', "RECALC_F(fn=" << "qsc3/qsc3-spinup0-a.dat" << ", ch=" << 0 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    this->recalc_f_table(diag, I1, Ip, opch[0][0], [&] { return RecalcFTable<SC>{
 #include "qsc3/qsc3-spinup0-a.dat"
-    };
-    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
-    {
-  nrglog('f', "RECALC_F(fn=" << "qsc3/qsc3-spinup0-b.dat" << ", ch=" << 1 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    }; });
+    this->recalc_f_table(diag, I1, Ip, opch[1][0], [&] { return RecalcFTable<SC>{
 #include "qsc3/qsc3-spinup0-b.dat"
-    };
-    opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
-    {
-  nrglog('f', "RECALC_F(fn=" << "qsc3/qsc3-spinup0-c.dat" << ", ch=" << 2 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    }; });
+    this->recalc_f_table(diag, I1, Ip, opch[2][0], [&] { return RecalcFTable<SC>{
 #include "qsc3/qsc3-spinup0-c.dat"
-    };
-    opch[2][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
+    }; });
 
     I1 = Invar(qp + 1, ssp - 1, (p + 0) % 3);
-    {
-  nrglog('f', "RECALC_F(fn=" << "qsc3/qsc3-spindown0-a.dat" << ", ch=" << 0 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    this->recalc_f_table(diag, I1, Ip, opch[0][0], [&] { return RecalcFTable<SC>{
 #include "qsc3/qsc3-spindown0-a.dat"
-    };
-    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
-    {
-  nrglog('f', "RECALC_F(fn=" << "qsc3/qsc3-spindown0-b.dat" << ", ch=" << 1 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    }; });
+    this->recalc_f_table(diag, I1, Ip, opch[1][0], [&] { return RecalcFTable<SC>{
 #include "qsc3/qsc3-spindown0-b.dat"
-    };
-    opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
-    {
-  nrglog('f', "RECALC_F(fn=" << "qsc3/qsc3-spindown0-c.dat" << ", ch=" << 2 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    }; });
+    this->recalc_f_table(diag, I1, Ip, opch[2][0], [&] { return RecalcFTable<SC>{
 #include "qsc3/qsc3-spindown0-c.dat"
-    };
-    opch[2][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
+    }; });
 
     I1 = Invar(qp + 1, ssp + 1, (p + 1) % 3);
-    {
-  nrglog('f', "RECALC_F(fn=" << "qsc3/qsc3-spinup1-a.dat" << ", ch=" << 0 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    this->recalc_f_table(diag, I1, Ip, opch[0][0], [&] { return RecalcFTable<SC>{
 #include "qsc3/qsc3-spinup1-a.dat"
-    };
-    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
-    {
-  nrglog('f', "RECALC_F(fn=" << "qsc3/qsc3-spinup1-b.dat" << ", ch=" << 1 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    }; });
+    this->recalc_f_table(diag, I1, Ip, opch[1][0], [&] { return RecalcFTable<SC>{
 #include "qsc3/qsc3-spinup1-b.dat"
-    };
-    opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
-    {
-  nrglog('f', "RECALC_F(fn=" << "qsc3/qsc3-spinup1-c.dat" << ", ch=" << 2 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    }; });
+    this->recalc_f_table(diag, I1, Ip, opch[2][0], [&] { return RecalcFTable<SC>{
 #include "qsc3/qsc3-spinup1-c.dat"
-    };
-    opch[2][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
+    }; });
 
     I1 = Invar(qp + 1, ssp - 1, (p + 1) % 3);
-    {
-  nrglog('f', "RECALC_F(fn=" << "qsc3/qsc3-spindown1-a.dat" << ", ch=" << 0 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    this->recalc_f_table(diag, I1, Ip, opch[0][0], [&] { return RecalcFTable<SC>{
 #include "qsc3/qsc3-spindown1-a.dat"
-    };
-    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
-    {
-  nrglog('f', "RECALC_F(fn=" << "qsc3/qsc3-spindown1-b.dat" << ", ch=" << 1 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    }; });
+    this->recalc_f_table(diag, I1, Ip, opch[1][0], [&] { return RecalcFTable<SC>{
 #include "qsc3/qsc3-spindown1-b.dat"
-    };
-    opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
-    {
-  nrglog('f', "RECALC_F(fn=" << "qsc3/qsc3-spindown1-c.dat" << ", ch=" << 2 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    }; });
+    this->recalc_f_table(diag, I1, Ip, opch[2][0], [&] { return RecalcFTable<SC>{
 #include "qsc3/qsc3-spindown1-c.dat"
-    };
-    opch[2][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
+    }; });
 
     I1 = Invar(qp + 1, ssp + 1, (p + 2) % 3);
-    {
-  nrglog('f', "RECALC_F(fn=" << "qsc3/qsc3-spinup2-a.dat" << ", ch=" << 0 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    this->recalc_f_table(diag, I1, Ip, opch[0][0], [&] { return RecalcFTable<SC>{
 #include "qsc3/qsc3-spinup2-a.dat"
-    };
-    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
-    {
-  nrglog('f', "RECALC_F(fn=" << "qsc3/qsc3-spinup2-b.dat" << ", ch=" << 1 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    }; });
+    this->recalc_f_table(diag, I1, Ip, opch[1][0], [&] { return RecalcFTable<SC>{
 #include "qsc3/qsc3-spinup2-b.dat"
-    };
-    opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
-    {
-  nrglog('f', "RECALC_F(fn=" << "qsc3/qsc3-spinup2-c.dat" << ", ch=" << 2 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    }; });
+    this->recalc_f_table(diag, I1, Ip, opch[2][0], [&] { return RecalcFTable<SC>{
 #include "qsc3/qsc3-spinup2-c.dat"
-    };
-    opch[2][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
+    }; });
 
     I1 = Invar(qp + 1, ssp - 1, (p + 2) % 3);
-    {
-  nrglog('f', "RECALC_F(fn=" << "qsc3/qsc3-spindown2-a.dat" << ", ch=" << 0 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    this->recalc_f_table(diag, I1, Ip, opch[0][0], [&] { return RecalcFTable<SC>{
 #include "qsc3/qsc3-spindown2-a.dat"
-    };
-    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
-    {
-  nrglog('f', "RECALC_F(fn=" << "qsc3/qsc3-spindown2-b.dat" << ", ch=" << 1 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    }; });
+    this->recalc_f_table(diag, I1, Ip, opch[1][0], [&] { return RecalcFTable<SC>{
 #include "qsc3/qsc3-spindown2-b.dat"
-    };
-    opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
-    {
-  nrglog('f', "RECALC_F(fn=" << "qsc3/qsc3-spindown2-c.dat" << ", ch=" << 2 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+    }; });
+    this->recalc_f_table(diag, I1, Ip, opch[2][0], [&] { return RecalcFTable<SC>{
 #include "qsc3/qsc3-spindown2-c.dat"
-    };
-    opch[2][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
+    }; });
 #undef Power
 #undef sqrt
   }

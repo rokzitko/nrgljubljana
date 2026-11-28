@@ -3,6 +3,7 @@
 #include <bit>
 #include <complex>
 #include <limits>
+#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -43,30 +44,32 @@ TEST(QstzTransfer, SparseInputAndStructuralFallbacks) {
   std::istringstream data("2\n1 2 0  0 1 -1  2.5\n1 2 0  0 1 0  0\n");
   CustomOp<double> named;
   named["Aep"] = MatrixElements<double>(data, diag);
-  const auto mask = [&](const char *mode) {
-    const auto masks = qstz_transfer::seed_masks(named, P, mode);
-    EXPECT_EQ(qstz_transfer::effective_mask(masks, "unknown"), 7u);
-    return qstz_transfer::effective_mask(masks, "Aep");
+  // Mask of Aep (7: all transfers, no restriction)
+  const auto mask = [&](const bool enabled) {
+    P.doublet_transfer_mask = enabled;
+    const auto masks = doublet_transfer::seed_masks<double>(named, P, [](const auto &name, const auto &seed) -> std::optional<unsigned> {
+      return qstz_transfer::infer(name, seed);
+    });
+    EXPECT_FALSE(masks.contains("unknown"));
+    const auto it = masks.find("Aep");
+    return it == masks.end() ? 7u : it->second;
   };
-  EXPECT_EQ(mask(nullptr), 7u);
-  EXPECT_EQ(mask("0"), 7u);
-  EXPECT_THROW(mask(""), std::invalid_argument);
-  EXPECT_THROW(mask("yes"), std::invalid_argument);
-  EXPECT_EQ(mask("1"), 4u);
+  EXPECT_EQ(mask(false), 7u);
+  EXPECT_EQ(mask(true), 4u);
   P.h5ops = true;
-  EXPECT_EQ(mask("1"), 7u);
+  EXPECT_EQ(mask(true), 7u);
   P.h5ops = false;
   P.checksumrules = true;
-  EXPECT_EQ(mask("1"), 7u);
+  EXPECT_EQ(mask(true), 7u);
   P.checksumrules = false;
   for (const char *log : {"f", "r", "R"}) {
     P.logstr = std::string(log);
-    EXPECT_EQ(mask("1"), 7u) << log;
+    EXPECT_EQ(mask(true), 7u) << log;
   }
   P.logstr = "";
   for (auto *request : {&P.specgt, &P.speci1t, &P.speci2t}) {
     *request = "Aep-Aep";
-    EXPECT_EQ(mask("1"), 7u);
+    EXPECT_EQ(mask(true), 7u);
     *request = "";
   }
   const auto &seed = named.at("Aep");
@@ -116,7 +119,10 @@ TEST(QstzTransfer, NamedRecalcBothSpinSigns) {
     auto &probe = ops.opd["Probe"];
     probe[{sym->ancestor(bra, 0), sym->ancestor(Invar(0, 3, -1), 0)}] = Matrix_traits<double>::Constant(1, 1, 9.0);
     ops.opd["unused"] = op;
-    ops.doublet_masks = qstz_transfer::seed_masks(ops.opd, P, mode);
+    P.doublet_transfer_mask = mode && std::string_view(mode) == "1";
+    ops.doublet_masks = doublet_transfer::seed_masks<double>(ops.opd, P, [&](const auto &name, const auto &seed) {
+      return sym->doublet_transfer_mask(name, seed);
+    });
     Oprecalc<double> recalc(RUNTYPE::NRG, ops, sym, mt, P);
     ASSERT_EQ(recalc.sl.size(), 1u);
     const auto &initial = recalc.sl.front().op1; // spectrum before the first recalc (calc0)

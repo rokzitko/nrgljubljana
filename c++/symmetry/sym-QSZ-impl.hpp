@@ -43,9 +43,8 @@ class SymmetryQSZ : public SymField<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   template<typename T>
-   SymmetryQSZ(const Params &P, const T td_fields) : SymField<SC>(P, td_fields, Invar(0,0), Invar(1,2)) {}
-   SymmetryQSZ(const Params &P) : SymmetryQSZ(P, std::vector{"<Sz^2>", "<Sz>", "<Q>", "<Q^2>"}) {
+   SymmetryQSZ(const Params &P, std::vector<TDTrace> td_traces) : SymField<SC>(P, std::move(td_traces), Invar(0,0), Invar(1,2)) {}
+   SymmetryQSZ(const Params &P) : SymmetryQSZ(P, std::vector<TDTrace>{td::sz_square("<Sz^2>"), td::sz("<Sz>"), td::mean("<Q>", "Q"), td::square("<Q^2>", "Q")}) {
      initInvar({
        {"Q", additive},  // charge
        {"SSZ", additive} // spin projection
@@ -87,23 +86,6 @@ class SymmetryQSZ : public SymField<SC> {
        for (std::size_t ch = 0; ch < 2; ++ch) offdiag_mix.push_back(shell->hop_cr(c(1 - ch, Spin::up) + c(1 - ch, Spin::down)));
        runghop = shell->entries(hop(0, 1));
      }
-   }
-
-   void calculate_TD(const Step &step, const DiagInfo<SC> &diag, Stats<SC> &stats, const double factor) const override {
-     bucket trSZ, trSZ2, trQ, trQ2; // Tr[S_z], Tr[(S_z)^2], etc.
-     for (const auto &[I, eig]: diag) {
-       const int ssz  = I.get("SSZ");
-       const int q    = I.get("Q");
-       const double sumZ = this->calculate_Z(I, eig, factor);
-       trSZ += sumZ * SZ(ssz);
-       trSZ2 += sumZ * pow(SZ(ssz),2);
-       trQ += sumZ * q;
-       trQ2 += sumZ * pow(q,2);
-     }
-     stats.td.set("<Sz^2>", trSZ2 / stats.Z);
-     stats.td.set("<Sz>",   trSZ  / stats.Z);
-     stats.td.set("<Q>",    trQ   / stats.Z);
-     stats.td.set("<Q^2>",  trQ2  / stats.Z);
    }
 
    // "Non-polarized" means that the coefficients xi do not depend on spin; a global magnetic field is supported
@@ -193,7 +175,6 @@ class SymmetryQSZ : public SymField<SC> {
      my_assert_not_reached();
    }
 
-   bool supports_substeps() const override { return true; }
 
    void show_coefficients(const Step &step, const Coef<SC> &coef) const override {
      Symmetry<SC>::show_coefficients(step, coef);

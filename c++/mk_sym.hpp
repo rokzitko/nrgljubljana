@@ -10,93 +10,51 @@
 #include <stdexcept>
 #include <type_traits>
 
+#include <fmt/format.h>
+
 #include "params.hpp"
 #include "symmetry.hpp"
 #include "outfield.hpp"
 
-#include "sym-QS.hpp"
-#include "sym-QSZ.hpp"
-
-#ifdef NRG_SYM_MORE
-#include "sym-ISO.hpp"
-#include "sym-ISOSZ.hpp"
-#include "sym-SPSU2.hpp"
-#include "sym-SPU1.hpp"
-#endif
-
-#ifdef NRG_SYM_ALL
-#include "sym-DBLQSZ.hpp"
-#include "sym-DBLSU2.hpp"
-#include "sym-DBLISOSZ.hpp"
-#include "sym-ISOLR.hpp"
-#include "sym-ISOSZLR.hpp"
-#include "sym-NONE.hpp"
-#include "sym-P.hpp"
-#include "sym-PP.hpp"
-#include "sym-SL.hpp"
-#include "sym-SL3.hpp"
-#include "sym-SPSU2LR.hpp"
-#include "sym-SPSU2T.hpp"
-#include "sym-SPU1LR.hpp"
-#include "sym-SU2.hpp"
-#include "sym-QSLR.hpp"
-#include "sym-QST.hpp"
-#include "sym-QSTZ.hpp"
-#include "sym-QSZTZ.hpp"
-#include "sym-QSZLR.hpp"
-#include "sym-QJ.hpp"
-#include "sym-U1.hpp"
-#include "sym-SPSU2C3.hpp"
-#include "sym-QSC3.hpp"
-#include "sym-QSZ4.hpp"
-#include "sym-SPZ4.hpp"
-#endif
+#include "symmetry_traits.hpp"
 
 namespace NRG {
 
+// Factory functions, defined in the sources generated from sym-instance.cc.in. Only the types of the build sets that
+// are compiled in are defined, and complex-only types only for complex S.
+#define NRG_SYMMETRY(name, ...) template <scalar S> std::unique_ptr<Symmetry<S>> mk_##name(const Params &P);
+#include "symmetries.def"
+#undef NRG_SYMMETRY
+
 template<scalar S>
-auto get(const std::string &sym_string, const Params &P)
+std::unique_ptr<Symmetry<S>> get(const std::string &sym_string, const Params &P)
 {
-  if (sym_string == "QS") return mk_QS<S>(P);
-  if (sym_string == "QSZ") return mk_QSZ<S>(P);
-#ifdef NRG_SYM_MORE
-  if (sym_string == "ISO") return mk_ISO<S>(P);
-  if (sym_string == "ISO2") return mk_ISO2<S>(P);
-  if (sym_string == "ISOSZ") return mk_ISOSZ<S>(P);
-  if (sym_string == "SPSU2") return mk_SPSU2<S>(P);
-  if (sym_string == "SPU1") return mk_SPU1<S>(P);
-#endif
-#ifdef NRG_SYM_ALL
-  if (sym_string == "DBLQSZ") return mk_DBLQSZ<S>(P);
-  if (sym_string == "DBLSU2") return mk_DBLSU2<S>(P);
-  if (sym_string == "DBLISOSZ") return mk_DBLISOSZ<S>(P);
-  if (sym_string == "ISOLR") return mk_ISOLR<S>(P);
-  if (sym_string == "ISO2LR") return mk_ISO2LR<S>(P);
-  if (sym_string == "ISOSZLR") return mk_ISOSZLR<S>(P);
-  if (sym_string == "NONE") return mk_NONE<S>(P);
-  if (sym_string == "P") return mk_P<S>(P);
-  if (sym_string == "PP") return mk_PP<S>(P);
-  if (sym_string == "SL") return mk_SL<S>(P);
-  if (sym_string == "SL3") return mk_SL3<S>(P);
-  if (sym_string == "SPSU2LR") return mk_SPSU2LR<S>(P);
-  if (sym_string == "SPSU2T") return mk_SPSU2T<S>(P);
-  if (sym_string == "SPU1LR") return mk_SPU1LR<S>(P);
-  if (sym_string == "SU2") return mk_SU2<S>(P);
-  if (sym_string == "QSLR") return mk_QSLR<S>(P);
-  if (sym_string == "QST") return mk_QST<S>(P);
-  if (sym_string == "QSTZ") return mk_QSTZ<S>(P);
-  if (sym_string == "QSZTZ") return mk_QSZTZ<S>(P);
-  if (sym_string == "QSZLR") return mk_QSZLR<S>(P);
-  if (sym_string == "QJ") return mk_QJ<S>(P);
-  if (sym_string == "U1") return mk_U1<S>(P);
-  if (sym_string == "QSZ4") return mk_QSZ4<S>(P);
-  if (sym_string == "SPZ4") return mk_SPZ4<S>(P);
-  if constexpr (std::is_same_v<S, std::complex<double>>) {
-    if (sym_string == "SPSU2C3") return mk_SPSU2C3<S>(P);
-    if (sym_string == "QSC3") return mk_QSC3<S>(P);
-  }
-#endif 
-  throw std::runtime_error("Unknown symmetry " + sym_string);
+#define NRG_SYMMETRY(name, impl, set, field, perchannel, spins, chmin, chmax, complex_only, ...)          \
+  if constexpr (symmetry_set_##set && (!(complex_only) || std::is_same_v<S, std::complex<double>>)) \
+    if (sym_string == #name) return mk_##name<S>(P);
+#include "symmetries.def"
+#undef NRG_SYMMETRY
+  const auto *traits = find_symmetry_traits(sym_string);
+  if (!traits) throw std::runtime_error("Unknown symmetry " + sym_string);
+  if (!traits->compiled) throw std::runtime_error("Symmetry type " + sym_string + " is not included in this build (SYM_MORE, SYM_ALL)");
+  throw std::runtime_error("Symmetry type " + sym_string + " requires complex data (options=COMPLEX)");
+}
+
+// Reject the combinations of a symmetry type with the number of channels and with the chain options that it does not
+// support, before load() fills In and QN (which have P.combs+1 entries).
+inline void check_symmetry_support(const Params &P, const std::string &sym_string, const size_t channels) {
+  const auto *traits = find_symmetry_traits(sym_string);
+  if (!traits) return; // get() throws
+  if (P.substeps && !traits->substeps)
+    throw std::invalid_argument("substeps=true is not supported for symmetry type " + sym_string);
+  if (!P.substeps && !traits->supports_channels(channels))
+    throw std::invalid_argument(fmt::format("Symmetry type {} supports {} channels, not {}.", sym_string,
+                                            traits->chmax == 0 ? fmt::format("{} or more", traits->chmin)
+                                            : traits->chmin == traits->chmax ? fmt::format("{}", traits->chmin)
+                                                                             : fmt::format("{} to {}", traits->chmin, traits->chmax),
+                                            channels));
+  if (P.polarized && !traits->polarized)
+    throw std::invalid_argument("polarized=true is not supported for symmetry type " + sym_string);
 }
 
 // Called immediately after parsing the information about the number of channels from the data file. This ensures
@@ -110,10 +68,7 @@ std::shared_ptr<Symmetry<S>> set_symmetry(Params &P, const std::string &sym_stri
   P.set_channels_and_combs(channels);
   std::cout << "\nSYMMETRY TYPE: " << sym_string << std::endl;
   auto Sym = get<S>(sym_string, P);
-  // With substeps, P.combs counts the states of a single channel; load() of a symmetry type without substeps support
-  // would fill In and QN for all channels.
-  if (P.substeps && !Sym->supports_substeps())
-    throw std::invalid_argument("substeps=true is not supported for symmetry type " + sym_string);
+  check_symmetry_support(P, sym_string, channels);
   Sym->load();
   Sym->erase_first();
   return Sym;

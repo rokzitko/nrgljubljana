@@ -42,8 +42,8 @@ ctest --test-dir build -R '^store$' --output-on-failure --no-tests=error
 
 ## Generated Sources
 
-- Edit `c++/symmetry/nrg-recalc-*.hpp.m4` and shared `recalc-macros.m4`, then run `sh recalc-macros.update` with working directory `c++/symmetry/`. Commit regenerated `.hpp` files with their sources; ordinary CMake builds do not regenerate them.
-- `NONE`, `P`, `U1`, `QSZ`, `SPU1`, `QSZ4`, and `SPZ4` have no m4 sources: their coefficient tables are generated at run time by `c++/abelian_shell.hpp` (shared code in `c++/symmetry/abelian-common.hpp` and `abelian-cran.hpp`). The Mathematica tables of the first five in `c++/symmetry/coefnew/` are only the reference for `test/unit/symmetry/abelian_shell.cpp`.
+- The symmetry types are registered in `c++/symmetries.def`, which generates the factories (`mk_sym.hpp`, `sym-instance.cc.in`) and `symmetry_traits.hpp`; reconfigure after editing it. The recalculation routines `c++/symmetry/nrg-recalc-*.hpp` are ordinary sources; the coefficient-table statements are defined once in `c++/table_terms.hpp`.
+- `NONE`, `P`, `U1`, `QSZ`, `SPU1`, `QSZ4`, and `SPZ4` use no compiled tables: their coefficient tables are generated at run time by `c++/abelian_shell.hpp` (shared code in `c++/symmetry/abelian-common.hpp` and `abelian-cran.hpp`). The Mathematica tables of the first five in `c++/symmetry/coefnew/` are only the reference for `test/unit/symmetry/abelian_shell.cpp`.
 - For the matrix tool, edit `tools/matrix/parser.yy` or `matrix.ll`, then run `bash update` with working directory `tools/matrix/` (requires Bison/Flex). CMake compiles the checked-in generated parser/scanner rather than regenerating them.
 - Numerical reference data under `test/reference/generated/` is generated with exactly `mpmath==1.3.0`; follow `test/reference/README.md`. `python3 test/reference/generate.py --check` checks committed bytes without rewriting. Normal CTest uses committed data and needs no generator environment.
 

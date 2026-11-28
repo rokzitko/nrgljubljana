@@ -99,10 +99,7 @@ class Oprecalc {
          m = recalc_or_clear(ops.do_g(name, P_, step), name, m, [this](const auto &... pr) { return Sym->recalc_singlet(pr...,  1); }, "g", step, diag, substruct);
        for (auto &[name, m] : a.opd) {
          m = recalc_or_clear(ops.count({"d", name}), name, m, [this, &a, &name = name](const auto &... pr) {
-           if (const auto mask = doublet_transfer::effective_mask(a.doublet_masks, name); mask != qstz_transfer::all)
-             return Sym->recalc_named_doublet(pr..., mask);
-           if (const auto mask = doublet_transfer::effective_mask(a.qsztz_doublet_masks, name); mask != qsztz_transfer::all)
-             return Sym->recalc_named_qsztz_doublet(pr..., mask);
+           if (const auto it = a.doublet_masks.find(name); it != a.doublet_masks.end()) return Sym->recalc_doublet_masked(pr..., it->second);
            return Sym->recalc_doublet(pr...);
          }, "d", step, diag, substruct);
        }

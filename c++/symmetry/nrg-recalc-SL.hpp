@@ -1,31 +1,11 @@
-#include <initializer_list>
+#include <vector>
 #include <string>
 
 namespace NRG {
 
-// *** WARNING!!! Modify nrg-recalc-SL.hpp.m4, not nrg-recalc-SL.hpp, then run recalc-macros.update !!!
-
 // Quantum number dependant recalculation routines
 // Rok Zitko, rok.zitko@ijs.si, June 2006, Nov 2007
 // This file pertains to the spinless-fermions code.
-
-// m4 macros for nrg-recalc-*.hpp.m4 files
-// Rok Zitko, rok.zitko@ijs.si, 2007-2020
-
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
 
 template<typename SC>
 MatrixElements<SC> SymmetrySL<SC>::recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold)const {
@@ -34,41 +14,23 @@ MatrixElements<SC> SymmetrySL<SC>::recalc_doublet(const DiagInfo<SC> &diag, cons
     int q1 = I1.get("Q");
     Invar Ip  = Invar(q1 - 1);
     switch (P.channels) {
-  case 1: { {
-  nrglog('f', "RECALC(fn=" << "sl/sl-1ch-doublet.dat" << ", Iop=" << Invar(1) << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc<SC>> recalc_table = {
+      case 1:
+        this->recalc_table(diag, substruct, cold, I1, Ip, Invar(1), cnew, [&] { return RecalcTable<SC>{
 #include "sl/sl-1ch-doublet.dat"
-    };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1));
-    if (cn) cnew[II] = std::move(*cn);
-  }
-} } break;
-  case 2: { {
-  nrglog('f', "RECALC(fn=" << "sl/sl-2ch-doublet.dat" << ", Iop=" << Invar(1) << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc<SC>> recalc_table = {
+        }; });
+        break;
+      case 2:
+        this->recalc_table(diag, substruct, cold, I1, Ip, Invar(1), cnew, [&] { return RecalcTable<SC>{
 #include "sl/sl-2ch-doublet.dat"
-    };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1));
-    if (cn) cnew[II] = std::move(*cn);
-  }
-} } break;
-  case 3: { {
-  nrglog('f', "RECALC(fn=" << "sl/sl-3ch-doublet.dat" << ", Iop=" << Invar(1) << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc<SC>> recalc_table = {
+        }; });
+        break;
+      case 3:
+        this->recalc_table(diag, substruct, cold, I1, Ip, Invar(1), cnew, [&] { return RecalcTable<SC>{
 #include "sl/sl-3ch-doublet.dat"
-    };
-    auto cn = this->recalc_general(diag, substruct, cold, I1, Ip, recalc_table, Invar(1));
-    if (cn) cnew[II] = std::move(*cn);
-  }
-} } break;
-  default: my_assert_not_reached();
-  };
+        }; });
+        break;
+      default: my_assert_not_reached();
+    }
   }
   return cnew;
 }
@@ -80,86 +42,35 @@ Opch<SC> SymmetrySL<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &di
     int qp = Ip.get("Q");
     Invar I1  = Invar(qp + 1);
     switch (P.channels) {
-  case 1: { {
-  nrglog('f', "RECALC_F(fn=" << "sl/sl-1ch-a.dat" << ", ch=" << 0 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+      case 1:
+        this->recalc_f_table(diag, I1, Ip, opch[0][0], [&] { return RecalcFTable<SC>{
 #include "sl/sl-1ch-a.dat"
-    };
-    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-} } break;
-  case 2: { {
-  nrglog('f', "RECALC_F(fn=" << "sl/sl-2ch-a.dat" << ", ch=" << 0 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+        }; });
+        break;
+      case 2:
+        this->recalc_f_table(diag, I1, Ip, opch[0][0], [&] { return RecalcFTable<SC>{
 #include "sl/sl-2ch-a.dat"
-    };
-    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-}; 
-          {
-  nrglog('f', "RECALC_F(fn=" << "sl/sl-2ch-b.dat" << ", ch=" << 1 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+        }; }); 
+        this->recalc_f_table(diag, I1, Ip, opch[1][0], [&] { return RecalcFTable<SC>{
 #include "sl/sl-2ch-b.dat"
-    };
-    opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-} } break;
-  case 3: { {
-  nrglog('f', "RECALC_F(fn=" << "sl/sl-3ch-a.dat" << ", ch=" << 0 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+        }; });
+        break;
+      case 3:
+        this->recalc_f_table(diag, I1, Ip, opch[0][0], [&] { return RecalcFTable<SC>{
 #include "sl/sl-3ch-a.dat"
-    };
-    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-}; 
-          {
-  nrglog('f', "RECALC_F(fn=" << "sl/sl-3ch-b.dat" << ", ch=" << 1 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+        }; }); 
+        this->recalc_f_table(diag, I1, Ip, opch[1][0], [&] { return RecalcFTable<SC>{
 #include "sl/sl-3ch-b.dat"
-    };
-    opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
-          {
-  nrglog('f', "RECALC_F(fn=" << "sl/sl-3ch-c.dat" << ", ch=" << 2 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+        }; });
+        this->recalc_f_table(diag, I1, Ip, opch[2][0], [&] { return RecalcFTable<SC>{
 #include "sl/sl-3ch-c.dat"
-    };
-    opch[2][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-}  } break;
-  default: my_assert_not_reached();
-  };
+        }; });
+        break;
+      default: my_assert_not_reached();
+    }
   }
   return opch;
 }
-
-#undef QDIFF
-#define QDIFF(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value)
-
-#undef QTOT
-#define QTOT(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value)
-
-#undef N1
-#define N1(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value)
-
-#undef N2
-#define N2(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value)
-
-#undef N3
-#define N3(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value)
 
 template<typename SC>
 void SymmetrySL<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, const std::string name, MatrixElements<SC> &cnew) const {
@@ -167,6 +78,7 @@ void SymmetrySL<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, c
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
+      const GlobalTerms<SC> terms(*this, diag, I1, cn, psgn(step.getnn() + 1));
       switch (P.channels) {
         case 2:
 #include "sl/sl-2ch-qdiff.dat"
@@ -181,6 +93,7 @@ void SymmetrySL<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, c
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
+      const GlobalTerms<SC> terms(*this, diag, I1, cn, psgn(step.getnn() + 1));
       switch (P.channels) {
         case 2:
 #include "sl/sl-2ch-qtot.dat"
@@ -195,6 +108,7 @@ void SymmetrySL<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, c
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
+      const GlobalTerms<SC> terms(*this, diag, I1, cn, psgn(step.getnn() + 1));
       switch (P.channels) {
         case 3:
 #include "sl/sl-3ch-N1.dat"
@@ -209,6 +123,7 @@ void SymmetrySL<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, c
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
+      const GlobalTerms<SC> terms(*this, diag, I1, cn, psgn(step.getnn() + 1));
       switch (P.channels) {
         case 3:
 #include "sl/sl-3ch-N2.dat"
@@ -223,6 +138,7 @@ void SymmetrySL<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, c
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
+      const GlobalTerms<SC> terms(*this, diag, I1, cn, psgn(step.getnn() + 1));
       switch (P.channels) {
         case 3:
 #include "sl/sl-3ch-N3.dat"

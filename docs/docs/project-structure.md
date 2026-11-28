@@ -37,7 +37,7 @@ If you are trying to orient yourself quickly, the most useful reading order is:
 5. `eigen.hpp`, `operators.hpp`, `store.hpp`, `subspaces.hpp`
 6. `symmetry.hpp` and `mk_sym.hpp`
 
-Concrete symmetry backends are compiled from many `sym-*.cc` files and corresponding headers.
+Concrete symmetry backends are listed in `symmetries.def`; their classes are in `c++/symmetry/sym-*-impl.hpp`, and CMake generates one factory source per type from `sym-instance.cc.in`.
 
 See also:
 

@@ -1,5 +1,7 @@
 This directory contains the coefficient tables for different symmetry types.
-These are compiled into the executable code.
+These are compiled into the executable code: the Hamiltonian and global-operator
+tables are statements interpreted through c++/table_terms.hpp, the recalculation
+tables are rows included in c++/symmetry/nrg-recalc-*.hpp.
 
 Exception: the tables of none, p, u1, qsz, and spu1 are no longer compiled. For these
 symmetry types the tables are generated at run time for any number of channels

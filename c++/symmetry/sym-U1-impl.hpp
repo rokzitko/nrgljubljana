@@ -31,7 +31,7 @@ class SymmetryU1 : public Symmetry<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryU1(const Params &P) : Symmetry<SC>(P, std::vector{"<Q>", "<Q^2>"}, Invar(0)) {
+   SymmetryU1(const Params &P) : Symmetry<SC>(P, {td::mean("<Q>", "Q"), td::square("<Q^2>", "Q")}, Invar(0)) {
      initInvar({
        {"Q", additive} // charge
      });
@@ -54,18 +54,6 @@ class SymmetryU1 : public Symmetry<SC> {
       ftables[ch][fnr_up] = f_table<SC>(*shell, cdag(ch, Spin::up));
       ftables[ch][fnr_down] = f_table<SC>(*shell, cdag(ch, Spin::down));
     }
-  }
-
-  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, Stats<SC> &stats, const double factor) const override {
-    bucket trQ, trQ2; // Tr[Q], Tr[Q^2]
-    for (const auto &[I, eig]: diag) {
-      const int q    = I.get("Q");
-      const double sumZ = this->calculate_Z(I, eig, factor);
-      trQ += sumZ * q;
-      trQ2 += sumZ * q * q;
-    }
-    stats.td.set("<Q>",   trQ / stats.Z);
-    stats.td.set("<Q^2>", trQ2 / stats.Z);
   }
 
   // Non-polarized, polarized (spin-dependent coefficients), and full 2x2 spin structure (pol2x2) of the chain. With
@@ -119,7 +107,6 @@ class SymmetryU1 : public Symmetry<SC> {
     return opch[M];
   }
 
-  bool supports_substeps() const override { return true; }
 
   MatrixElements<SC> recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const override {
     MatrixElements<SC> cnew;

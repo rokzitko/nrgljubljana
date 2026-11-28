@@ -4,6 +4,8 @@
 #include <cstdlib>
 #include <vector>
 
+#include "table_terms.hpp"
+
 namespace NRG {
 
 using std::sqrt;
@@ -18,7 +20,7 @@ class SymmetryQST : public Symmetry<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryQST(const Params &P) : Symmetry<SC>(P, std::vector{"<Sz^2>", "<Tz^2>", "<Q>", "<Q^2>"}, Invar(0,1,0), Invar(1,2,1)) {
+   SymmetryQST(const Params &P) : Symmetry<SC>(P, {td::su2_z_square("<Sz^2>", "SS"), TDTrace{"<Tz^2>", [](const Invar &I) { const auto t = I.get("T"); return t * (t + 1) / 3.; }}, td::mean("<Q>", "Q"), td::square("<Q^2>", "Q")}, Invar(0,1,0), Invar(1,2,1)) {
      initInvar({
         {"Q", additive},  // charge
         {"SS", additive}, // spin
@@ -51,61 +53,20 @@ class SymmetryQST : public Symmetry<SC> {
   double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) const override {
     check_diff(Ip, I1, "Q", 0);
     check_diff(Ip, I1, "T", 0);
-    const int ssp = Ip.get("SS");
-    const int ss1 = I1.get("SS");
-    my_assert((std::abs(ss1 - ssp) == 2 || ss1 == ssp));
-    return (2 * Ip.get("T") + 1) * switch3(ss1, ssp + 2, 1. + (ssp - 1) / 3., ssp, ssp / 3., ssp - 2, (-2. + ssp) / 3.);
+    return (2 * Ip.get("T") + 1) * su2_triplet_factor(Ip.get("SS"), I1.get("SS"));
   }
 
   double dynamic_orb_susceptibility_factor(const Invar &Ip, const Invar &I1) const override {
     check_diff(Ip, I1, "Q", 0);
     check_diff(Ip, I1, "SS", 0);
-    const int tp = Ip.get("T");
-    const int t1 = I1.get("T");
-    int ttp        = 2 * tp + 1;
-    int tt1        = 2 * t1 + 1;
-    my_assert((std::abs(tt1 - ttp) == 2 || tt1 == ttp));
-    return switch3(tt1, ttp + 2, 1. + (ttp - 1) / 3., ttp, ttp / 3., ttp - 2, (-2. + ttp) / 3.);
+    return su2_triplet_factor(2 * Ip.get("T") + 1, 2 * I1.get("T") + 1);
   }
 
   // Creation operator is a spin-doublet, angular-momentum-triplet !
   // See clebsch_gordan_qst.nb
   double specdens_factor(const Invar &Ip, const Invar &I1) const override {
     check_diff(Ip, I1, "Q", 1);
-    const int ssp = Ip.get("SS");
-    const int ss1 = I1.get("SS");
-    my_assert(std::abs(ss1 - ssp) == 1);
-    double spinfactor = (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
-    const int tp = Ip.get("T");
-    const int t1 = I1.get("T");
-    const int ttp    = 2 * tp + 1;
-    const int tt1    = 2 * t1 + 1;
-    my_assert(std::abs(ttp - tt1) == 2 || ttp == tt1);
-    double angmomfactor;
-    if (tt1 == 1 && ttp == 1) {
-      angmomfactor = 0; // special case, two singlets don't couple
-    } else {
-      angmomfactor = switch3(tt1, ttp + 2, 1. + (ttp - 1) / 3., ttp, ttp / 3., ttp - 2, (-2. + ttp) / 3.);
-    }
-    return spinfactor * angmomfactor;
-  }
-
-  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, Stats<SC> &stats, const double factor) const override {
-    bucket trSZ, trTZ, trQ, trQ2; // Tr[S_z^2], Tr[T_z^2], Tr[Q], Tr[Q^2]
-    for (const auto &[I, eig]: diag) {
-      const int q    = I.get("Q");
-      const int ss    = I.get("SS");
-      const int t   = I.get("T");
-      const double sumZ = this->calculate_Z(I, eig, factor);
-      trQ += sumZ * q;
-      trQ2 += sumZ * q * q;
-      trSZ += sumZ * (ss * ss - 1) / 12.; // [(2S+1)(2S+1)-1]/12=S(S+1)/3
-      trTZ += sumZ * t * (t + 1) / 3.;
-    }
-    stats.td.set("<Sz^2>", trSZ / stats.Z);
-    stats.td.set("<Tz^2>", trTZ / stats.Z);
-    stats.td.set("<Q>",    trQ / stats.Z);
-    stats.td.set("<Q^2>",  trQ2 / stats.Z);
+    return su2_doublet_factor(Ip.get("SS"), I1.get("SS")) * orbital_triplet_factor(2 * Ip.get("T") + 1, 2 * I1.get("T") + 1);
   }
 
   DECL;
@@ -131,20 +92,24 @@ inline bool qst_exception(const unsigned int i, const unsigned int j, const Inva
   return false;
 }
 
-#define offdiag_qst(i, j, ch, fnr, factor, h, qq, In, I, opch)                          \
-   if (qq.offdiag_contributes(i, j) && !qst_exception(i, j, I) && std::abs(factor) > 0.0)    \
-        this->offdiag_function_impl(step, i, j, ch, fnr, factor, h, qq, In, opch);
-
-// We take the coefficients of the first channel (indexed as 0), because all three set are exactly the same due to
-// orbital symmetry.
-#undef OFFDIAG
-#define OFFDIAG(i, j, factor0) offdiag_qst(i, j, 0, 0, t_matel(factor0) * coef.xi(step.N(), 0), h, qq, In, I, opch)
-
-#undef DIAG
-#define DIAG(i, number) this->diag_function(step, i, number, coef.zeta(step.N() + 1, 0), h, qq)
+// The table entries OFFDIAG(i, j, factor) skip the exceptional blocks and the blocks with zero factor. We take the
+// coefficients of the first channel (indexed as 0), because all three sets are exactly the same due to orbital
+// symmetry.
+template<typename SC>
+class QSTTerms : public ShellTerms<SC> {
+   const Invar &I;
+ public:
+   template<typename ... Args> QSTTerms(const Invar &I, Args && ... args) : ShellTerms<SC>(std::forward<Args>(args)...), I(I) {}
+   [[nodiscard]] bool contributes_offdiag(const size_t i, const size_t j) const { return this->contributes(i, j) && !qst_exception(i, j, I); }
+   void offdiag(const size_t i, const size_t j, const coef_traits<SC> factor) const {
+     const auto f = factor * this->coef.xi(this->N, 0);
+     if (std::abs(f) > 0.0) this->hop(i, j, 0, 0, f);
+   }
+};
 
 template<typename SC>
 void SymmetryQST<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) const {
+  const QSTTerms<SC> terms(I, *this, P, step, h, qq, In, opch, coef);
   int ss  = I.get("SS");
   int t = I.get("T");
   double T  = t; // crucially important to use floating point!

@@ -62,9 +62,9 @@ the first-run and `nrginit` workflow pages.
 Look at:
 
 - `c++/symmetry.hpp`
-- `c++/mk_sym.hpp`
-- `c++/sym-*.cc`
-- `c++/symmetry/`
+- `c++/symmetries.def` (registry of the symmetry types) and `c++/mk_sym.hpp`
+- `c++/symmetry/` (the classes, `sym-*-impl.hpp`, and their recalculation routines)
+- `c++/table_terms.hpp` (interpretation of the coefficient tables)
 
 ### Operator Recalculation Or Measurement Changes
 

@@ -47,9 +47,8 @@ class SymmetrySPU1 : public SymField<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   template<typename T>
-   SymmetrySPU1(const Params &P, const T td_fields) : SymField<SC>(P, td_fields, Invar(0)) {}
-   SymmetrySPU1(const Params &P) : SymmetrySPU1(P, std::vector{"<Sz^2>", "<Sz>"}) {
+   SymmetrySPU1(const Params &P, std::vector<TDTrace> td_traces) : SymField<SC>(P, std::move(td_traces), Invar(0)) {}
+   SymmetrySPU1(const Params &P) : SymmetrySPU1(P, std::vector<TDTrace>{td::sz_square("<Sz^2>"), td::sz("<Sz>")}) {
      initInvar({
         {"SSZ", additive} // spin projection
      });
@@ -86,18 +85,6 @@ class SymmetrySPU1 : public SymField<SC> {
       }
       isospinx[ch] = shell->entries(AbelianShell::isospinx(ch), true);
     }
-  }
-
-  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, Stats<SC> &stats, const double factor) const override {
-    bucket trSZ, trSZ2; // Tr[S_z], Tr[S_z^2]
-    for (const auto &[I, eig]: diag) {
-      const int ssz  = I.get("SSZ");
-      const double sumZ = this->calculate_Z(I, eig, factor);
-      trSZ += sumZ * SZ(ssz);
-      trSZ2 += sumZ * pow(SZ(ssz),2);
-    }
-    stats.td.set("<Sz^2>", trSZ2 / stats.Z);
-    stats.td.set("<Sz>",   trSZ / stats.Z);
   }
 
   // With substeps, the shell has one channel, which is channel M of the problem.
@@ -195,7 +182,6 @@ class SymmetrySPU1 : public SymField<SC> {
 
   bool uses_pairing() const override { return true; }
   bool uses_anomalous_hopping() const override { return true; }
-  bool supports_substeps() const override { return true; }
 };
 
 }

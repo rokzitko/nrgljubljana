@@ -22,7 +22,17 @@ A symmetry backend is responsible for:
 
 The runtime chooses a concrete symmetry implementation through `mk_sym.hpp`, based on the configured `symtype` and channel count.
 
-The actual implementations are compiled from the `sym-*.cc` sources in `c++/` and the associated recalculation helpers in `c++/symmetry/`.
+The symmetry types are listed in one registry, `c++/symmetries.def`. For each type it records the class
+(`c++/symmetry/sym-<name>-impl.hpp`), the build set (`SYM_MORE`, `SYM_ALL`), and the properties that are needed
+before a symmetry object is constructed: spin-resolved spectra (`isfield()`), the number of `<||f||>` blocks per
+channel in `data`, the spin states per orbital, the supported numbers of channels, complex-only implementations, and
+support for `substeps`, `polarized`, and pairing. The registry generates the factory functions and `get()` in
+`mk_sym.hpp`, the traits table in `symmetry_traits.hpp`, and (in `c++/CMakeLists.txt`) one factory source per type
+from `c++/sym-instance.cc.in`. `set_symmetry()` rejects a number of channels or a `substeps`/`polarized` setting that
+the type does not support before its tables are loaded. `test/unit/mk_sym` checks the registry against the classes.
+
+To add a symmetry type, write its class in `c++/symmetry/sym-<name>-impl.hpp`, add a line to `symmetries.def`, and
+reconfigure.
 
 ## Interaction With The Main Flow
 
@@ -49,8 +59,17 @@ two sources:
   `c++/symmetry/coefnew/{none,p,u1,qsz,spu1}`, entry by entry. `QSZ4` and `SPZ4` have no
   Mathematica tables; they are checked through the cross-symmetry tests below.
 - All other types use tables generated with Mathematica (`c++/symmetry/coefnew`,
-  driven by `nrgcoef.m`) for each supported number of channels, included through
-  the m4 sources `c++/symmetry/nrg-recalc-*.hpp.m4`.
+  driven by `nrgcoef.m`) for each supported number of channels. The Hamiltonian tables
+  (`*-offdiag.dat`, `*-diag.dat`, ...) and the tables of global operators are sequences
+  of statements such as `OFFDIAG(i, j, ch, factor);`, whose factors are expressions in the
+  quantum numbers of the subspace. Each statement is a macro defined once in
+  `c++/table_terms.hpp`; it calls a method of a context object (`ShellTerms` in
+  `make_matrix()`, `GlobalTerms` in `recalc_global()`) that selects the Wilson-chain
+  coefficients and, with `substeps`, the channel of the added site. The recalculation
+  tables (`*-doubletp.dat`, `*-spinupa.dat`, ...) are lists of rows included in the
+  recalculation routines `c++/symmetry/nrg-recalc-*.hpp` through
+  `Symmetry::recalc_table()` and `recalc_f_table()`; the rows are only evaluated if both
+  subspaces hold states, since their factors may be undefined otherwise.
 
 The conventions of the abelian tables are those of `nrgcoef.m`: modes are ordered by
 channel with spin up before spin down; a Fock state is the product of the creation

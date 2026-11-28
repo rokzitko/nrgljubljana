@@ -1,7 +1,11 @@
 #include <cmath>
 #include <cstddef>
+#include <optional>
+#include <string>
 #include <vector>
-#include "qsztz_transfer.hpp"
+#include "doublet_transfer.hpp"
+
+#include "table_terms.hpp"
 
 namespace NRG {
 
@@ -17,7 +21,7 @@ class SymmetryQSZTZ : public Symmetry<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryQSZTZ(const Params &P) : Symmetry<SC>(P, std::vector{"<Sz>", "<Sz^2>", "<Tz>", "<Tz^2>", "<Q>", "<Q^2>"}, Invar(0,0,0), Invar(1,2,1)) {
+   SymmetryQSZTZ(const Params &P) : Symmetry<SC>(P, {td::sz("<Sz>", "SZ"), td::sz_square("<Sz^2>", "SZ"), td::mean("<Tz>", "TZ"), td::square("<Tz^2>", "TZ"), td::mean("<Q>", "Q"), td::square("<Q^2>", "Q")}, Invar(0,0,0), Invar(1,2,1)) {
      initInvar({
         {"Q", additive},  // charge
         {"SZ", additive}, // spin
@@ -36,44 +40,23 @@ class SymmetryQSZTZ : public Symmetry<SC> {
 #include "qsztz/qsztz-In2.dat"
 #include "qsztz/qsztz-QN.dat"
   } // load
-  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, Stats<SC> &stats, const double factor) const override {
-    bucket trSZ, trSZ2, trTZ, trTZ2, trQ, trQ2;
-    for (const auto &[I, eig]: diag) {
-      const int q    = I.get("Q");
-      const int ssz   = I.get("SZ");
-      const int tz  = I.get("TZ");
-      const double sumZ = this->calculate_Z(I, eig, factor);
-      trQ += sumZ * q;
-      trQ2 += sumZ * q * q;
-      trSZ += sumZ * (ssz - 1) / 2.;
-      trSZ2 += sumZ * pow((ssz - 1) / 2., 2);
-      trTZ += sumZ * tz;
-      trTZ2 += sumZ * tz * tz;
-    }
-    stats.td.set("<Sz>",   trSZ / stats.Z);
-    stats.td.set("<Sz^2>", trSZ2 / stats.Z);
-    stats.td.set("<Tz>",   trTZ / stats.Z);
-    stats.td.set("<Tz^2>", trTZ2 / stats.Z);
-    stats.td.set("<Q>",    trQ / stats.Z);
-    stats.td.set("<Q^2>",  trQ2 / stats.Z);
-  }
   DECL;
   HAS_DOUBLET;
-  MatrixElements<SC> recalc_named_qsztz_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct,
-                                                const MatrixElements<SC> &cold, qsztz_transfer::Mask mask) const override;
+  MatrixElements<SC> recalc_doublet_masked(const DiagInfo<SC> &diag, const SubspaceStructure &substruct,
+                                                const MatrixElements<SC> &cold, unsigned mask) const override;
+  // The transfers of TZ and SZ (QSZTZ) present in the seed of a doublet, see doublet_transfer.hpp
+  std::optional<unsigned> doublet_transfer_mask(const std::string &name, const MatrixElements<SC> &seed) const override {
+    return qsztz_transfer::infer(name, seed);
+  }
   HAS_TRIPLET;
 };
 
 // We take the coefficients of the first channel (indexed as 0), because all three set are exactly the same due to
 // orbital symmetry. [Can be generalized for symmetry-broken cases if the need arises.]
-#undef OFFDIAG
-#define OFFDIAG(i, j, factor0) offdiag_function(step, i, j, 0, 0, t_matel(factor0) * coef.xi(step.N(), 0), h, qq, In, opch)
-
-#undef DIAG
-#define DIAG(i, number) this->diag_function(step, i, number, coef.zeta(step.N() + 1, 0), h, qq)
 
 template<typename SC>
 void SymmetryQSZTZ<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) const {
+  const ShellTerms<SC> terms(*this, P, step, h, qq, In, opch, coef);
   my_assert(!P.substeps);
   my_assert(P.channels == 3);
 #include "qsztz/qsztz-offdiag.dat"

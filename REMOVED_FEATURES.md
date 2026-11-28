@@ -3,6 +3,11 @@
 This document records removals of deprecated or obsolete features, newest first.
 Dates use `YYYY-MM-DD` and identify when the feature was removed.
 
+## 2026-11-28: Doublet Transfer-Mask Environment Variables
+
+- Removed the solver environment variables `NRG_QSTZ_TRANSFER_MASK` and `NRG_QSZTZ_TRANSFER_MASK`. The solver no longer reads them.
+- Set `doublet_transfer_mask=true` in the `[param]` block instead. It selects the same restriction for `QSTZ` and `QSZTZ` and is ignored by other symmetry types.
+
 ## 2026-11-26: Obsolete Numerical Helpers And Floquet Diagnostic Field
 
 - Removed the old trapezoidal integration headers for `adapt` and `nrgchain`. Both tools use `TabulatedDensity` for integration.

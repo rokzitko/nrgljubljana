@@ -481,6 +481,7 @@ why this project defaults to the more conservative `betabar=1.0`.
 | `spect` | string list | empty | Triplet response pairs. |
 | `specq` | string list | empty | Quadruplet spectral-function pairs. |
 | `specot` | string list | empty | Orbital-triplet response pairs. |
+| `doublet_transfer_mask` | boolean | `false` | Recalculate each doublet operator only for the quantum-number transfers present in its seed; supported by `QSTZ` and `QSZTZ`, ignored by other symmetry types. |
 | `specgt` | string list | empty | Operator pairs for temperature-dependent conductance. |
 | `speci1t` | string list | empty | Operator pairs for first transport moments. |
 | `speci2t` | string list | empty | Operator pairs for second transport moments. |
@@ -510,10 +511,10 @@ Spectrum lists contain whitespace-separated operator pairs. The usual token is
 `operator1-operator2`; polarized variants can add `-u` or `-d`. Every named
 operator must have been included in the generated `data` file.
 
-**Optional QSTZ doublet optimization.** Run `NRG_QSTZ_TRANSFER_MASK=1 nrg`
-to skip orbital transfers absent from a named doublet. This is a solver
-environment variable, not a `param` key. Unset or `0` uses the usual dense
-recalculation. Other symmetries ignore the variable.
+**Optional QSTZ doublet optimization.** With `doublet_transfer_mask=true`,
+`QSTZ` skips the orbital transfers absent from a named doublet. The default
+`false` uses the usual dense recalculation. Other symmetry types ignore the
+parameter.
 
 For each name, the solver reads the set of `TZ_bra - TZ_ket` values from
 exactly nonzero seed matrix elements. For example, an operator with transfers
@@ -522,15 +523,15 @@ allowed transfer, even if an individual seed block is zero. There is no
 amplitude cutoff. This does not change `data`, the initial `calc0` matrices,
 or the Wilson-chain operators; no `nrginit` rerun is needed.
 
-**Optional QSZTZ doublet optimization.** Run `NRG_QSZTZ_TRANSFER_MASK=1 nrg`
-to skip absent *joint* spin and orbital transfers of each named doublet. In
+**Optional QSZTZ doublet optimization.** With `doublet_transfer_mask=true`,
+`QSZTZ` skips absent *joint* spin and orbital transfers of each named doublet. In
 `QSZTZ`, spin projection is additive: the transfer labels are the pair of
 bra-minus-ket differences in `2*Sz` and `Tz`, not reduced-spin branches.
 For example, a sum of spin-up creation at `Tz=0` and spin-down creation at
 `Tz=+1` retains `(+1,0)` and `(-1,+1)`, not all four combinations of those
 spin and orbital labels. A name with all six pairs stays dense. As in `QSTZ`,
 support comes from exactly nonzero seed elements, not the operator name or
-individual zero blocks. Unset or `0` keeps the usual dense behavior. This
+individual zero blocks. The default `false` keeps the usual dense behavior. This
 switch does not affect triplets, Wilson-chain operators, or other symmetries.
 
 For both optimizations the solver keeps dense recalculation for `h5ops`, `checksumrules`, logging

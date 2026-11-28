@@ -1,0 +1,50 @@
+// Registry of the symmetry types: the single list from which the factory functions (mk_sym.hpp), the properties known
+// before a Symmetry object is constructed (symmetry_traits.hpp), and the factory sources (c++/CMakeLists.txt, from
+// sym-instance.cc.in) are generated. CMake parses this file: keep one entry per line, in the form shown.
+//
+// NRG_SYMMETRY(name, impl, set, field, perchannel, spins, chmin, chmax, complex_only, substeps, polarized, pairing)
+//   name          symmetry type (symtype), class Symmetry<name>
+//   impl          the class is defined in symmetry/sym-<impl>-impl.hpp
+//   set           build set: BASIC (always), MORE (SYM_MORE), ALL (SYM_ALL)
+//   field         Symmetry::isfield(): doublet spectra are computed per spin, named with -u/-d
+//   perchannel    number of f-matrices (Wilson-chain operator blocks) per channel in data
+//   spins         number of spin states per orbital (1 for the spinless SL types)
+//   chmin, chmax  supported numbers of channels without substeps; chmax 0: any number (runtime coefficient tables)
+//   complex_only  only implemented for complex data (options=COMPLEX)
+//   substeps      interleaved diagonalization (substeps=true), for any number of channels
+//   polarized     spin-polarized Wilson chains (polarized=true)
+//   pairing       on-site pairing (Wilson-chain coefficients delta), Symmetry::uses_pairing()
+
+NRG_SYMMETRY(QS,       QS,       BASIC, false, 1, 2, 1, 4, false, true,  false, false)
+NRG_SYMMETRY(QSZ,      QSZ,      BASIC, true,  1, 2, 1, 0, false, true,  true,  false)
+NRG_SYMMETRY(ISO,      ISO,      MORE,  false, 1, 2, 1, 3, false, false, false, false)
+NRG_SYMMETRY(ISO2,     ISO,      MORE,  false, 1, 2, 1, 2, false, false, false, false)
+NRG_SYMMETRY(ISOSZ,    ISOSZ,    MORE,  true,  1, 2, 1, 2, false, false, false, false)
+NRG_SYMMETRY(SPSU2,    SPSU2,    MORE,  false, 1, 2, 1, 3, false, true,  false, true)
+NRG_SYMMETRY(SPU1,     SPU1,     MORE,  true,  1, 2, 1, 0, false, true,  true,  true)
+NRG_SYMMETRY(DBLQSZ,   DBLQSZ,   ALL,   true,  1, 2, 2, 2, false, false, false, false)
+NRG_SYMMETRY(DBLSU2,   DBLSU2,   ALL,   false, 2, 2, 2, 2, false, false, false, false)
+NRG_SYMMETRY(DBLISOSZ, DBLISOSZ, ALL,   true,  1, 2, 2, 2, false, false, false, false)
+NRG_SYMMETRY(ISOLR,    ISOLR,    ALL,   false, 1, 2, 2, 2, false, false, false, false)
+NRG_SYMMETRY(ISO2LR,   ISOLR,    ALL,   false, 1, 2, 2, 2, false, false, false, false)
+NRG_SYMMETRY(ISOSZLR,  ISOSZLR,  ALL,   true,  1, 2, 2, 2, false, false, false, false)
+NRG_SYMMETRY(NONE,     NONE,     ALL,   false, 4, 2, 1, 0, false, true,  true,  true)
+NRG_SYMMETRY(P,        P,        ALL,   false, 4, 2, 1, 0, false, true,  true,  true)
+NRG_SYMMETRY(PP,       PP,       ALL,   false, 4, 2, 2, 2, false, false, true,  true)
+NRG_SYMMETRY(SL,       SL,       ALL,   false, 1, 1, 1, 3, false, false, false, false)
+NRG_SYMMETRY(SL3,      SL3,      ALL,   false, 1, 1, 3, 3, false, false, false, false)
+NRG_SYMMETRY(SPSU2LR,  SPSU2LR,  ALL,   false, 1, 2, 2, 2, false, false, false, true)
+NRG_SYMMETRY(SPSU2T,   SPSU2T,   ALL,   false, 1, 2, 3, 3, false, false, false, true)
+NRG_SYMMETRY(SPU1LR,   SPU1LR,   ALL,   true,  1, 2, 1, 2, false, false, false, true)
+NRG_SYMMETRY(SU2,      SU2,      ALL,   false, 2, 2, 1, 2, false, false, false, false)
+NRG_SYMMETRY(QSLR,     QSLR,     ALL,   false, 1, 2, 2, 2, false, false, false, false)
+NRG_SYMMETRY(QST,      QST,      ALL,   false, 1, 2, 3, 3, false, false, false, false)
+NRG_SYMMETRY(QSTZ,     QSTZ,     ALL,   false, 1, 2, 3, 3, false, false, false, false)
+NRG_SYMMETRY(QSZTZ,    QSZTZ,    ALL,   false, 1, 2, 3, 3, false, false, false, false)
+NRG_SYMMETRY(QSZLR,    QSZLR,    ALL,   true,  1, 2, 2, 2, false, false, false, false)
+NRG_SYMMETRY(QJ,       QJ,       ALL,   false, 1, 2, 3, 3, false, false, false, false)
+NRG_SYMMETRY(U1,       U1,       ALL,   false, 2, 2, 1, 0, false, true,  true,  false)
+NRG_SYMMETRY(SPSU2C3,  SPSU2C3,  ALL,   false, 1, 2, 3, 3, true,  false, false, true)
+NRG_SYMMETRY(QSC3,     QSC3,     ALL,   false, 1, 2, 3, 3, true,  false, false, false)
+NRG_SYMMETRY(QSZ4,     QSZ4,     ALL,   true,  1, 2, 1, 0, false, true,  true,  false)
+NRG_SYMMETRY(SPZ4,     SPZ4,     ALL,   true,  1, 2, 1, 0, false, true,  true,  true)

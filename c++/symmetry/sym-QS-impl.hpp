@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+#include "table_terms.hpp"
+
 namespace NRG {
 
 using std::sqrt;
@@ -22,7 +24,7 @@ class SymmetryQS : public Symmetry<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryQS(const Params &P) : Symmetry<SC>(P, std::vector{"<Sz^2>", "<Q>", "<Q^2>"}, Invar(0,1), Invar(1,2)) {
+   SymmetryQS(const Params &P) : Symmetry<SC>(P, {td::su2_z_square("<Sz^2>", "SS"), td::mean("<Q>", "Q"), td::square("<Q^2>", "Q")}, Invar(0,1), Invar(1,2)) {
      initInvar({
        {"Q", additive}, // charge
        {"SS", additive} // spin
@@ -67,33 +69,12 @@ class SymmetryQS : public Symmetry<SC> {
 
    double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) const override {
      check_diff(Ip, I1, "Q", 0);
-     const auto ssp = Ip.get("SS");
-     const auto ss1 = I1.get("SS");
-     my_assert((std::abs(ss1 - ssp) == 2 || ss1 == ssp));
-    return switch3(ss1, ssp + 2, 1. + (ssp - 1) / 3., ssp, ssp / 3., ssp - 2, (-2. + ssp) / 3.);
+     return su2_triplet_factor(Ip.get("SS"), I1.get("SS"));
    }
 
    double specdens_factor(const Invar &Ip, const Invar &I1) const override {
      check_diff(Ip, I1, "Q", 1);
-     const auto ssp = Ip.get("SS");
-     const auto ss1 = I1.get("SS");
-     my_assert(std::abs(ss1 - ssp) == 1);
-     return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
-   }
-
-   void calculate_TD(const Step &step, const DiagInfo<SC> &diag, Stats<SC> &stats, const double factor) const override {
-     auto trSZ = 0.0, trQ = 0.0, trQ2 = 0.0; // Tr[S_z^2], Tr[Q], Tr[Q^2]
-     for (const auto &[I, eig]: diag) {
-       const auto ss   = I.get("SS");
-       const auto q    = I.get("Q");
-       const auto sumZ = this->calculate_Z(I, eig, factor);
-       trQ  += sumZ * q;
-       trQ2 += sumZ * q * q;
-       trSZ += sumZ * (ss * ss - 1) / 12.;
-     }
-     stats.td.set("<Sz^2>", trSZ / stats.Z);
-     stats.td.set("<Q>",    trQ  / stats.Z);
-     stats.td.set("<Q^2>",  trQ2 / stats.Z);
+     return su2_doublet_factor(Ip.get("SS"), I1.get("SS"));
    }
 
    bool project_subspace(const Invar &I, const std::string &p) const override {
@@ -114,25 +95,15 @@ class SymmetryQS : public Symmetry<SC> {
    void show_coefficients(const Step &, const Coef<SC> &) const override;
 };
 
-// *** Helper macros for make_matrix() members in matrix.cc
-#undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * coef.xi(step.N(), ch), h, qq, In, opch)
 
 /* i - subspace index
    ch - channel (0 or 1)
    number - number of electrons added in channel 'ch' in subspace 'i' */
-#undef DIAG
-#define DIAG(i, ch, number) this->diag_function(step, i, number, coef.zeta(step.N() + 1, ch), h, qq)
-
-#undef OFFDIAG_MIX
-#define OFFDIAG_MIX(i, j, ch, factor) offdiag_function(step, i, j, ch, 0, t_matel(factor) * coef.xiR(step.N(), ch), h, qq, In, opch)
-
-#undef RUNGHOP
-#define RUNGHOP(i, j, factor) this->diag_offdiag_function(step, i, j, t_matel(factor) * coef.zetaR(step.N() + 1, 0), h, qq)
 
 template<typename SC>
 void SymmetryQS<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, 
                                      const Opch<SC> &opch, const Coef<SC> &coef) const {
+  const ShellTerms<SC> terms(*this, P, step, h, qq, In, opch, coef);
   auto ss = I.get("SS");
 
   if (!P.substeps) {
@@ -159,20 +130,11 @@ void SymmetryQS<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDime
         break;
       default: my_assert_not_reached();
     }
-  } else {
+  } else { // one site of channel M, see ShellTerms
     my_assert(P.coeffactor == 1);
-    const auto [N, M] = step.NM();
-
-#undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, M, 0, t_matel(factor0) * coef.xi(N, M), h, qq, In, opch)
-
-#undef DIAG
-#define DIAG(i, ch, number) this->diag_function(step, i, number, coef.zeta(N + 1, M), h, qq)
-
+    if (P.rungs) my_assert_not_reached();
 #include "qs/qs-1ch-offdiag.dat"
 #include "qs/qs-1ch-diag.dat"
-
-    if (P.rungs) my_assert_not_reached();
   }
 }
 

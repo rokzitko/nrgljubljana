@@ -5,6 +5,8 @@
 
 #include <boost/math/special_functions/factorials.hpp>
 
+#include "table_terms.hpp"
+
 namespace NRG {
 
 using std::abs;
@@ -21,7 +23,7 @@ class SymmetryQJ : public Symmetry<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryQJ(const Params &P) : Symmetry<SC>(P, std::vector{"<Jz^2>", "<Q>", "<Q^2>"}, Invar(0,1), Invar(1,4)) {
+   SymmetryQJ(const Params &P) : Symmetry<SC>(P, {td::su2_z_square("<Jz^2>", "JJ"), td::mean("<Q>", "Q"), td::square("<Q^2>", "Q")}, Invar(0,1), Invar(1,4)) {
      initInvar({
         {"Q", additive}, // charge
         {"JJ", additive} // total angular momentum
@@ -47,28 +49,10 @@ class SymmetryQJ : public Symmetry<SC> {
 #include "qj/qj-QN.dat"
   }
 
-  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, Stats<SC> &stats, const double factor) const override {
-    bucket trJZ2, trQ, trQ2; // Tr[J_z^2], Tr[Q], Tr[Q^2]
-    for (const auto &[I, eig]: diag) {
-      const int jj    = I.get("JJ");
-      const int q    = I.get("Q");
-      const double sumZ = this->calculate_Z(I, eig, factor);
-      trQ += sumZ * q;
-      trQ2 += sumZ * q * q;
-      trJZ2 += sumZ * (jj * jj - 1) / 12.;
-    }
-    stats.td.set("<Jz^2>", trJZ2 / stats.Z);
-    stats.td.set("<Q>",    trQ / stats.Z);
-    stats.td.set("<Q^2>",  trQ2 / stats.Z);
-  }
-
   // ClebschGordan[ket (p), op, bra (1)]
   double specdens_factor(const Invar &Ip, const Invar &I1) const override {
     check_diff(Ip, I1, "Q", 1);
-    const int jjp = Ip.get("JJ");
-    const int jj1 = I1.get("JJ");
-    my_assert(std::abs(jj1 - jjp) == 1);
-    return (jj1 == jjp + 1 ? S(jjp) + 1.0 : S(jjp));
+    return su2_doublet_factor(Ip.get("JJ"), I1.get("JJ"));
   }
 
   // See cg_factors_doublet_triplet_quadruplet.nb
@@ -94,16 +78,6 @@ class SymmetryQJ : public Symmetry<SC> {
     return 0;
   }
 
-   void offdiag_function_QJ(const Step &step, const unsigned int i, const unsigned int j, const unsigned int ch, const unsigned int fnr, const t_matel factor, Matrix &h, const SubspaceDimensions &qq,
-                            const InvarVec &In, const Opch<SC> &opch) const
-   {
-     const Invar Iop     = ch == 0 ? Invar(1, 2) : Invar(1, 4);
-     const Invar I1      = In[i];
-     const Invar I2      = In[j];
-     const bool triangle = triangle_inequality(I1, I2, Iop); // I1 = I2+Iop
-     if (triangle) { offdiag_function(step, i, j, ch, fnr, factor, h, qq, In, opch); }
-   }
-
   HAS_DOUBLET;
   HAS_QUADRUPLET;
   DECL;
@@ -111,13 +85,19 @@ class SymmetryQJ : public Symmetry<SC> {
 
 double Factorial(const double x) { return boost::math::factorial<double>(round(x)); }
 
-// *** Helper macros for make_matrix() members in matrix.cc
-// Jndx = 0 for doublet, Jndx = 1 for quadruplet
-#undef OFFDIAG
-#define OFFDIAG(i, j, Jndx, factor0) offdiag_function_QJ(step, i, j, Jndx, 0, t_matel(factor0) * coef.xi(step.N(), 0), h, qq, In, opch)
-
-#undef DIAG
-#define DIAG(i, number) this->diag_function(step, i, number, coef.zeta(step.N() + 1, 0), h, qq)
+// The table entries OFFDIAG(i, j, Jndx, factor) refer to the doublet (Jndx = 0) or quadruplet (Jndx = 1) <||f||>,
+// stored as channels 0 and 1. The hopping only contributes if the triangle inequality is satisfied for the ancestor
+// subspaces In[i-1], In[j-1] of the combinations i, j (1-based), whose <||f||> block is used.
+template<typename SC>
+class QJTerms : public ShellTerms<SC> {
+   const SymmetryQJ<SC> &qj;
+ public:
+   template<typename ... Args> QJTerms(const SymmetryQJ<SC> &qj, Args && ... args) : ShellTerms<SC>(qj, std::forward<Args>(args)...), qj(qj) {}
+   void offdiag(const size_t i, const size_t j, const size_t jndx, const coef_traits<SC> factor) const {
+     const Invar Iop = jndx == 0 ? Invar(1, 2) : Invar(1, 4);
+     if (qj.triangle_inequality(this->In[i-1], this->In[j-1], Iop)) this->hop(i, j, jndx, 0, factor * this->coef.xi(this->N, 0)); // I1 = I2+Iop
+   }
+};
 
 inline double J(int JJ) {
   return (JJ - 1.0) / 2.0; // JJ=2J+1
@@ -125,6 +105,7 @@ inline double J(int JJ) {
 
 template<typename SC>
 void SymmetryQJ<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) const {
+  const QJTerms<SC> terms(*this, P, step, h, qq, In, opch, coef);
   int jj = I.get("JJ");
 #include "qj/qj-offdiag.dat"
 #include "qj/qj-diag.dat"

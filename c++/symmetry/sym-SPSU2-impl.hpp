@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+#include "table_terms.hpp"
+
 namespace NRG {
 
 using std::sqrt;
@@ -22,7 +24,7 @@ class SymmetrySPSU2 : public Symmetry<SC> {
   public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetrySPSU2(const Params &P) : Symmetry<SC>(P, std::vector{"<Sz^2>"}, Invar(1)) {
+   SymmetrySPSU2(const Params &P) : Symmetry<SC>(P, {td::su2_z_square("<Sz^2>", "SS")}, Invar(1)) {
      initInvar({
         {"SS", additive} // spin
      });
@@ -64,27 +66,11 @@ class SymmetrySPSU2 : public Symmetry<SC> {
   }
 
   double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) const override {
-    const int ssp = Ip.get("SS");
-    const int ss1 = I1.get("SS");
-    my_assert(std::abs(ss1 - ssp) == 2 || ss1 == ssp);
-    return switch3(ss1, ssp + 2, 1. + (ssp - 1) / 3., ssp, ssp / 3., ssp - 2, (-2. + ssp) / 3.);
+    return su2_triplet_factor(Ip.get("SS"), I1.get("SS"));
   }
 
   double specdens_factor(const Invar &Ip, const Invar &I1) const override {
-    const int ssp = Ip.get("SS");
-    const int ss1 = I1.get("SS");
-    my_assert(std::abs(ss1 - ssp) == 1);
-    return (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
-  }
-
-  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, Stats<SC> &stats, const double factor) const override {
-    bucket trSZ; // Tr[S_z^2]
-    for (const auto &[I, eig]: diag) {
-      const int ss    = I.get("SS");
-      const double sumZ = this->calculate_Z(I, eig, factor);
-      trSZ += sumZ * (ss * ss - 1) / 12.;
-    }
-    stats.td.set("<Sz^2>", trSZ / stats.Z);
+    return su2_doublet_factor(Ip.get("SS"), I1.get("SS"));
   }
 
   bool project_subspace(const Invar &I, const std::string &p) const override {
@@ -130,22 +116,10 @@ class SymmetrySPSU2 : public Symmetry<SC> {
 
 template<typename SC>
 void SymmetrySPSU2<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) const {
+  const ShellTerms<SC> terms(*this, P, step, h, qq, In, opch, coef);
   int ss = I.get("SS");
 
   if (!P.substeps) {
-// conjugate the coefficient, to bring it in line with the standard convention for superconducting phases (only relevant for complex-valued parameters)
-#undef ISOSPINX
-#define ISOSPINX(i, j, ch, factor) this->diag_offdiag_function(step, i, j, t_matel(factor) * 2.0 * conj_me( coef.delta(step.N() + 1, ch) ), h, qq)
-
-#undef ANOMALOUS
-#define ANOMALOUS(i, j, ch, factor) offdiag_function(step, i, j, ch, 0, t_matel(factor) * coef.kappa(step.N(), ch), h, qq, In, opch)
-
-#undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, ch, 0, t_matel(factor0) * coef.xi(step.N(), ch), h, qq, In, opch)
-
-#undef DIAG
-#define DIAG(i, ch, number) this->diag_function(step, i, number, coef.zeta(step.N() + 1, ch), h, qq)
-
     switch (P.channels) {
       case 1:
 #include "spsu2/spsu2-1ch-offdiag.dat"
@@ -170,22 +144,8 @@ void SymmetrySPSU2<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceD
 
       default: my_assert_not_reached();
     }
-  } else {
+  } else { // one site of channel M, see ShellTerms
     my_assert(P.coeffactor == 1);
-    const auto [Ntrue, M] = step.NM();
-
-#undef ISOSPINX
-#define ISOSPINX(i, j, ch, factor) this->diag_offdiag_function(step, i, j, t_matel(factor) * 2.0 * conj_me( coef.delta(Ntrue + 1, M) ), h, qq)
-
-#undef ANOMALOUS
-#define ANOMALOUS(i, j, ch, factor) offdiag_function(step, i, j, M, 0, t_matel(factor) * coef.kappa(Ntrue, M), h, qq, In, opch)
-
-#undef OFFDIAG
-#define OFFDIAG(i, j, ch, factor0) offdiag_function(step, i, j, M, 0, t_matel(factor0) * coef.xi(Ntrue, M), h, qq, In, opch)
-
-#undef DIAG
-#define DIAG(i, ch, number) this->diag_function(step, i, number, coef.zeta(Ntrue + 1, M), h, qq)
-
 #include "spsu2/spsu2-1ch-offdiag.dat"
 #include "spsu2/spsu2-1ch-anomalous.dat"
 #include "spsu2/spsu2-1ch-diag.dat"

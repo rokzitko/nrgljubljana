@@ -263,6 +263,10 @@ class Params {
   param<std::string> specq{"specq", "Spectral functions (quadruplet ops) to compute", "", all};        // S
   param<std::string> specot{"specot", "Spectral functions (orbital triplet ops) to compute", "", all}; // S
 
+  // Recalculate each doublet operator only for the transfers of quantum numbers that are present in its seed (QSTZ:
+  // orbital transfer; QSZTZ: joint spin and orbital transfer). Other symmetry types ignore it. See doublet_transfer.hpp.
+  param<bool> doublet_transfer_mask{"doublet_transfer_mask", "Restrict doublet recalculation to the transfers in their seeds", "false", all}; // N
+
   // Calculation of the temperature-dependent conductance G(T) &
   // first and second moment of A(w)(-df/dw), which are related to
   // the thermopower and the heat conductance.
@@ -618,7 +622,8 @@ class Params {
     coefchannels = coeffactor * channels;
     perchannel = NRG::perchannel(symtype.value());
     my_assert(perchannel >= 1);
-    spin                     = symtype == "SL" || symtype == "SL3" ? 1 : 2;
+    const auto *traits       = find_symmetry_traits(symtype.value());
+    spin                     = traits ? traits->spins : 2;
     const auto statespersite = intpow(2, spin);
     combs                    = !substeps ? intpow(statespersite, channels) : statespersite;
     if (logletter('!'))
@@ -802,7 +807,9 @@ class Params {
         // Initializer-only corrections are not encoded in the exported star.
         // Inspect the raw settings too, so old data cannot silently lose them.
         static const std::regex literal_zero(R"([+-]?(0+(\.0*)?|\.0+)([eE][+-]?[0-9]+)?)");
-        const bool globalh_active = polarized && (symtype == "SPU1" || symtype == "SPZ4" || symtype == "P" || symtype == "PP" || symtype == "NONE");
+        // nrginit applies globalh to the polarized chains of the superconducting symmetry types
+        const auto *traits = find_symmetry_traits(symtype.value());
+        const bool globalh_active = polarized && traits && traits->polarized && traits->pairing;
         for (const auto &key : {"gap"s, "globalh"s}) {
           if (key == "globalh" && !globalh_active) continue;
           if (const auto it = parsed_params.find(key); it != parsed_params.end() && !std::regex_match(it->second, literal_zero))

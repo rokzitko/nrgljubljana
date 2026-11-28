@@ -7,6 +7,7 @@
 #include <cmath>
 #include <complex>
 #include <cstddef>
+#include <functional>
 #include <string>
 #include <vector>
 #include <iostream>
@@ -26,6 +27,7 @@
 #include "subspaces.hpp"
 #include "stats.hpp"
 #include "coef.hpp"
+#include "debug.hpp"
 
 namespace NRG {
 
@@ -43,6 +45,61 @@ inline auto su2_triangle_inequality(const int ss1, const int ss2, const int ss3)
 inline auto u1_equality(const int q1, const int q2, const int q3) { return q1 == q2 + q3; }     // Equality for U(1) symmetry
 inline auto z2_equality(const int p1, const int p2, const int p3) { return p1 == p2 * p3; }
 inline auto c3_equality(const int p1, const int p2, const int p3) { return p1 == (p2+p3) % 3; } // C_3 quantum number: Equality modulo 3
+
+// Factors due to the SU(2) multiplet structure in the traces over the invariant subspaces. Arguments are the
+// multiplicities (2j+1) of the subspaces Ip and I1. See spectral_density_clebschgordan.nb and DMNRG_clebschgordan.nb.
+// Doublet operator (spectral functions), j1 = jp +- 1/2:
+inline double su2_doublet_factor(const int mp, const int m1) {
+  my_assert(std::abs(m1 - mp) == 1);
+  return m1 == mp + 1 ? S(mp) + 1.0 : S(mp);
+}
+// Triplet operator (spin susceptibilities), j1 = jp, jp +- 1:
+inline double su2_triplet_factor(const int mp, const int m1) {
+  my_assert(std::abs(m1 - mp) == 2 || m1 == mp);
+  return switch3(m1, mp + 2, 1. + (mp - 1) / 3., mp, mp / 3., mp - 2, (-2. + mp) / 3.);
+}
+// Orbital-triplet operator (orbital angular momentum T, multiplicities 2T+1): as su2_triplet_factor(), except that two
+// orbital singlets do not couple.
+inline double orbital_triplet_factor(const int mp, const int m1) { return m1 == 1 && mp == 1 ? 0.0 : su2_triplet_factor(mp, m1); }
+
+// Doublet operator with respect to one of two SU(2) labels qn1, qn2 (multiplicities); the other label is a spectator
+// and contributes its multiplicity.
+inline double two_su2_doublet_factor(const Invar &Ip, const Invar &I1, const std::string &qn1, const std::string &qn2) {
+  const int m1p = Ip.get(qn1), m11 = I1.get(qn1), m2p = Ip.get(qn2), m21 = I1.get(qn2);
+  if (std::abs(m11 - m1p) == 1) {
+    my_assert(m2p == m21 && m2p >= 1);
+    return su2_doublet_factor(m1p, m11) * m2p;
+  }
+  my_assert(m1p == m11 && m1p >= 1);
+  return su2_doublet_factor(m2p, m21) * m1p;
+}
+
+// A thermodynamic quantity computed by Symmetry::calculate_TD() as a thermal average over the invariant subspaces:
+// the column 'name' of the file td, and the value of the quantity in a subspace, averaged over the states of an SU(2)
+// multiplet. With variance=true, the column holds <x^2> - <x>^2 instead of <x>.
+struct TDTrace {
+  std::string name;
+  std::function<double(const Invar &)> value;
+  bool variance = false;
+};
+
+namespace td {
+// Abelian quantum number qn: its mean value <qn>, the mean of its square <qn^2>, and its variance
+inline TDTrace mean(std::string name, std::string qn) { return {std::move(name), [qn](const Invar &I) { return double(I.get(qn)); }}; }
+inline TDTrace square(std::string name, std::string qn) {
+  return {std::move(name), [qn](const Invar &I) { const auto q = I.get(qn); return double(q * q); }};
+}
+inline TDTrace variance(std::string name, std::string qn) { return {std::move(name), [qn](const Invar &I) { return double(I.get(qn)); }, true}; }
+// Spin projection, stored as 2S_z+1 (label SSZ): <S_z> and <S_z^2>
+inline TDTrace sz(std::string name, std::string qn = "SSZ") { return {std::move(name), [qn](const Invar &I) { return SZ(I.get(qn)); }}; }
+inline TDTrace sz_square(std::string name, std::string qn = "SSZ") {
+  return {std::move(name), [qn](const Invar &I) { const auto sz = SZ(I.get(qn)); return sz * sz; }};
+}
+// SU(2) multiplet with multiplicity m = 2J+1 (label qn): <J_z^2> = J(J+1)/3 = (m^2-1)/12, times 'scale'
+inline TDTrace su2_z_square(std::string name, std::string qn, const double scale = 1.0) {
+  return {std::move(name), [qn, scale](const Invar &I) { const auto m = I.get(qn); return scale * (m * m - 1) / 12.; }};
+}
+} // namespace td
 
 template<scalar S>
 struct Recalc_f {
@@ -62,11 +119,14 @@ struct Recalc {
   coef_traits<S> factor{}; // additional multiplicative factor
 };
 
+template<scalar S> using RecalcTable = std::vector<Recalc<S>>;
+template<scalar S> using RecalcFTable = std::vector<Recalc_f<S>>;
+
 template<scalar S>
 class Symmetry {
  protected:
    const Params &P;
-   const std::vector<std::string> td_fields;
+   const std::vector<TDTrace> td_traces; // thermodynamic quantities in td, see calculate_TD()
    // In and QN contain information about how the invariant subspaces at consecutive iteration steps are combined. In
    // is the array of quantum number DIFFERENCES used in the construction of the basis. QN is the array of the
    // conserved quantum numbers corresponding to the states being added. For example, in case of SU(2) symmetry, In
@@ -82,9 +142,8 @@ class Symmetry {
      In.erase(In.begin());
      QN.erase(QN.begin());
    }
-   template<typename T>
-   Symmetry(const Params &P_, const T td_fields_, const Invar & InvarSinglet_ = {}, const Invar & Invar_f_ = {}) :
-     P(P_), td_fields(td_fields_.begin(), td_fields_.end()), In(P_.combs+1), QN(P_.combs+1), InvarSinglet(InvarSinglet_), Invar_f(Invar_f_) {}
+   Symmetry(const Params &P_, std::vector<TDTrace> td_traces_, const Invar & InvarSinglet_ = {}, const Invar & Invar_f_ = {}) :
+     P(P_), td_traces(std::move(td_traces_)), In(P_.combs+1), QN(P_.combs+1), InvarSinglet(InvarSinglet_), Invar_f(Invar_f_) {}
    Symmetry(const Symmetry &) = delete;
    Symmetry(Symmetry &&) = delete;
    Symmetry &operator=(const Symmetry &) = delete;
@@ -118,7 +177,11 @@ class Symmetry {
      }
      return input;
    }
-   auto get_td_fields() const { return td_fields; }
+   auto get_td_fields() const {
+     std::vector<std::string> names;
+     for (const auto &t : td_traces) names.push_back(t.name);
+     return names;
+   }
    // For some symmetry types with two-channels we distinguish between even and odd parity with respect to the
    // channel-interchange operation.
    virtual bool islr() const { return false; }
@@ -139,9 +202,6 @@ class Symmetry {
    [[nodiscard]] virtual bool uses_pairing() const { return false; }
    [[nodiscard]] virtual bool uses_anomalous_hopping() const { return false; }
    [[nodiscard]] virtual bool complex_pairing_supported() const { return true; }
-   // Interleaved diagonalization (substeps=true) is implemented only for the symmetry types that override this (directly
-   // or through HAS_SUBSTEPS) and recalc_irreduc_substeps().
-   [[nodiscard]] virtual bool supports_substeps() const { return false; }
    // Multiplicity of the states in the invariant subspace
    [[nodiscard]] virtual size_t mult(const Invar &) const { return 1; };
    auto multfnc() const { return [this](const Invar &I) { return this->mult(I); }; }
@@ -201,19 +261,35 @@ class Symmetry {
    [[nodiscard]] virtual double specdens_factor([[maybe_unused]] const Invar &Ip, [[maybe_unused]] const Invar &I1) const { return 1.0; }
    [[nodiscard]] virtual double specdensquad_factor([[maybe_unused]]  const Invar &Ip, [[maybe_unused]]  const Invar &I1) const { return 1.0; }
 
-   virtual void calculate_TD(const Step &step, const DiagInfo<S> &diag, Stats<S> &stats, const double factor) const = 0;
+   // Thermal averages of the quantities listed in td_traces. 'factor' rescales the energies in the Boltzmann weights.
+   virtual void calculate_TD([[maybe_unused]] const Step &step, const DiagInfo<S> &diag, Stats<S> &stats, const double factor) const {
+     std::vector<bucket> tr(td_traces.size()), tr2(td_traces.size()); // Tr[x], Tr[x^2]
+     for (const auto &[I, eig] : diag) {
+       const double sumZ = calculate_Z(I, eig, factor);
+       for (size_t k = 0; k < td_traces.size(); k++) {
+         const auto x = td_traces[k].value(I);
+         tr[k] += sumZ * x;
+         if (td_traces[k].variance) tr2[k] += sumZ * x * x;
+       }
+     }
+     for (size_t k = 0; k < td_traces.size(); k++) {
+       const double mean = tr[k] / stats.Z;
+       stats.td.set(td_traces[k].name, td_traces[k].variance ? tr2[k] / stats.Z - mean * mean : mean);
+     }
+   }
 
    virtual Opch<S> recalc_irreduc([[maybe_unused]] const Step &step, [[maybe_unused]] const DiagInfo<S> &diag) const { my_assert_not_reached(); }
    virtual OpchChannel<S> recalc_irreduc_substeps([[maybe_unused]] const Step &step, [[maybe_unused]] const DiagInfo<S> &diag,
                                                        [[maybe_unused]] int M) const { my_assert_not_reached(); }
    virtual MatrixElements<S> recalc_doublet([[maybe_unused]] const DiagInfo<S> &diag, [[maybe_unused]] const SubspaceStructure &substruct,
                                                  [[maybe_unused]] const MatrixElements<S> &cold) const { my_assert_not_reached(); }
-   virtual MatrixElements<S> recalc_named_doublet(const DiagInfo<S> &diag, const SubspaceStructure &substruct,
-                                                  const MatrixElements<S> &cold, qstz_transfer::Mask /*mask*/) const {
-     return recalc_doublet(diag, substruct, cold);
-   }
-   virtual MatrixElements<S> recalc_named_qsztz_doublet(const DiagInfo<S> &diag, const SubspaceStructure &substruct,
-                                                        const MatrixElements<S> &cold, qsztz_transfer::Mask /*mask*/) const {
+   // Optional restriction of the doublet recalculation to the transfers of quantum numbers present in the seed of an
+   // operator (parameter doublet_transfer_mask, see doublet_transfer.hpp): the mask of a seed (nullopt if the symmetry
+   // type does not support the restriction), and the recalculation restricted to the transfers in a mask.
+   [[nodiscard]] virtual std::optional<unsigned> doublet_transfer_mask([[maybe_unused]] const std::string &name,
+                                                                       [[maybe_unused]] const MatrixElements<S> &seed) const { return std::nullopt; }
+   virtual MatrixElements<S> recalc_doublet_masked(const DiagInfo<S> &diag, const SubspaceStructure &substruct,
+                                                   const MatrixElements<S> &cold, [[maybe_unused]] unsigned mask) const {
      return recalc_doublet(diag, substruct, cold);
    }
    virtual MatrixElements<S> recalc_triplet([[maybe_unused]] const DiagInfo<S> &diag, [[maybe_unused]] const SubspaceStructure &substruct,
@@ -282,6 +358,23 @@ class Symmetry {
    template<typename T>
       auto recalc_f(const DiagInfo<S> &diag, const Invar &I1, const Invar &Ip, const T &table) const;
 
+   // One recalculation table of coefnew (rows {i1, ip, IN1, INp, factor}, see Recalc) for the matrix element
+   // <I1||O||Ip> of an operator with quantum numbers Iop, stored in cnew. 'table' returns the rows; it is only called
+   // if both subspaces have stored states, since the factors may be undefined otherwise.
+   template<typename F>
+   void recalc_table(const DiagInfo<S> &diag, const SubspaceStructure &substruct, const MatrixElements<S> &cold, const Invar &I1,
+                     const Invar &Ip, const Invar &Iop, MatrixElements<S> &cnew, F &&table) const {
+     nrglog('f', "RECALC(I1=" << I1 << ", Ip=" << Ip << ", Iop=" << Iop << ")");
+     if (!have_stored_subspaces(diag, I1, Ip)) return;
+     if (auto cn = recalc_general(diag, substruct, cold, I1, Ip, table(), Iop)) cnew[Twoinvar(I1, Ip)] = std::move(*cn);
+   }
+   // Ditto for the irreducible matrix elements <I1||f||Ip> (rows {i1, ip, factor}, see Recalc_f), stored in f
+   template<typename F>
+   void recalc_f_table(const DiagInfo<S> &diag, const Invar &I1, const Invar &Ip, MatrixElements<S> &f, F &&table) const {
+     nrglog('f', "RECALC_F(I1=" << I1 << ", Ip=" << Ip << ")");
+     if (have_stored_coupled_subspaces(diag, I1, Ip)) f[Twoinvar(I1, Ip)] = recalc_f(diag, I1, Ip, table());
+   }
+
    template<typename T>
      std::optional<Matrix_traits<S>> recalc_general(const DiagInfo<S> &diag, const SubspaceStructure &substruct, const MatrixElements<S> &cold,
                          const Invar &I1, const Invar &Ip, const T &table, const Invar &Iop) const;
@@ -305,8 +398,7 @@ class Symmetry {
   Opch<SC> recalc_irreduc(const Step &step, const DiagInfo<SC> &diag) const override
 
 // Optional declaration
-#define HAS_SUBSTEPS bool supports_substeps() const override { return true; } \
-                     OpchChannel<SC> recalc_irreduc_substeps(const Step &step, const DiagInfo<SC> &diag, int M) const override
+#define HAS_SUBSTEPS OpchChannel<SC> recalc_irreduc_substeps(const Step &step, const DiagInfo<SC> &diag, int M) const override
 #define HAS_DOUBLET MatrixElements<SC> recalc_doublet(const DiagInfo<SC> &diag, \
                                                       const SubspaceStructure &substruct, \
                                                       const MatrixElements<SC> &cold) const override
@@ -322,33 +414,38 @@ class Symmetry {
 #define HAS_GLOBAL void recalc_global(const Step &step, const DiagInfo<SC> &diag, \
                                       std::string name, MatrixElements<SC> &cnew) const override
 
+// The spin projection of a doublet operator is the difference of the labels SSZ (2S_z+1) of the two subspaces.
+inline bool sz_check_spin(const Invar &I1, const Invar &Ip, const int SPIN) { return I1.get("SSZ") - Ip.get("SSZ") == SPIN; }
+
 template<scalar S>
 class SymField : public Symmetry<S> {
  public:
-   template<typename ... Args> explicit SymField(Args && ... args) : Symmetry<S>(std::forward<Args>(args)...) {}
+   using Symmetry<S>::Symmetry;
    bool isfield() const final override { return true; }
+   bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) const override { return sz_check_spin(I1, Ip, SPIN); }
 };
 
 template<scalar S>
 class SymLR : public Symmetry<S> {
  public:
-   template<typename ... Args> explicit SymLR(Args && ... args) : Symmetry<S>(std::forward<Args>(args)...) {}
+   using Symmetry<S>::Symmetry;
    bool islr() const final override { return true; }
 };
 
 template<scalar S>
 class SymC3 : public Symmetry<S> {
  public:
-   template<typename ... Args> explicit SymC3(Args && ... args) : Symmetry<S>(std::forward<Args>(args)...) {}
+   using Symmetry<S>::Symmetry;
    bool isc3() const final override { return true; }
 };
 
 template<scalar S>
 class SymFieldLR : public Symmetry<S> {
   public:
-   template<typename ... Args> explicit SymFieldLR(Args && ... args) : Symmetry<S>(std::forward<Args>(args)...) {}
+   using Symmetry<S>::Symmetry;
    bool isfield() const final override { return true; }
    bool islr() const final override { return true; }
+   bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) const override { return sz_check_spin(I1, Ip, SPIN); }
 };
 
 // Helper functions

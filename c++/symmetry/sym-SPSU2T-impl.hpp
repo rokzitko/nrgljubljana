@@ -3,6 +3,8 @@
 #include <cstdlib>
 #include <vector>
 
+#include "table_terms.hpp"
+
 namespace NRG {
 
 using std::sqrt;
@@ -17,7 +19,7 @@ class SymmetrySPSU2T : public Symmetry<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetrySPSU2T(const Params &P) : Symmetry<SC>(P, std::vector{"<Sz^2>", "<Tz^2>"}, Invar(1,0), Invar(2,1)) {
+   SymmetrySPSU2T(const Params &P) : Symmetry<SC>(P, {td::su2_z_square("<Sz^2>", "SS"), TDTrace{"<Tz^2>", [](const Invar &I) { const auto t = I.get("T"); return t * (t + 1) / 3.; }}}, Invar(1,0), Invar(2,1)) {
        initInvar({
          {"SS", additive}, // spin
          {"T", additive}   // angular momentum
@@ -48,40 +50,12 @@ class SymmetrySPSU2T : public Symmetry<SC> {
   // QS spin trace times the multiplicity of the spectator orbital multiplet.
   double dynamicsusceptibility_factor(const Invar &Ip, const Invar &I1) const override {
     check_diff(Ip, I1, "T", 0);
-    const int ssp = Ip.get("SS");
-    const int ss1 = I1.get("SS");
-    my_assert((std::abs(ss1 - ssp) == 2 || ss1 == ssp));
-    return (2 * Ip.get("T") + 1) * switch3(ss1, ssp + 2, 1. + (ssp - 1) / 3., ssp, ssp / 3., ssp - 2, (-2. + ssp) / 3.);
+    return (2 * Ip.get("T") + 1) * su2_triplet_factor(Ip.get("SS"), I1.get("SS"));
   }
 
   // Creation operator is a spin-doublet, angular-momentum-triplet !
   double specdens_factor(const Invar &Ip, const Invar &I1) const override {
-    const int ssp = Ip.get("SS");
-    const int ss1 = I1.get("SS");
-    my_assert(std::abs(ss1 - ssp) == 1);
-    double spinfactor = (ss1 == ssp + 1 ? S(ssp) + 1.0 : S(ssp));
-    const int tp = Ip.get("T");
-    const int t1 = I1.get("T");
-    const int ttp    = 2 * tp + 1;
-    const int tt1    = 2 * t1 + 1;
-    my_assert(std::abs(ttp - tt1) == 2 || ttp == tt1);
-    const double angmomfactor = tt1 == 1 && ttp == 1
-                                  ? 0.0
-                                  : switch3(tt1, ttp + 2, 1. + (ttp - 1) / 3., ttp, ttp / 3., ttp - 2, (-2. + ttp) / 3.);
-    return spinfactor * angmomfactor;
-  }
-
-  void calculate_TD(const Step &step, const DiagInfo<SC> &diag, Stats<SC> &stats, const double factor) const override {
-    bucket trSZ2, trTZ2; // Tr[S_z^2], Tr[T_z^2]
-    for (const auto &[I, eig]: diag) {
-      const int ss    = I.get("SS");
-      const int t   = I.get("T");
-      const double sumZ = this->calculate_Z(I, eig, factor);
-      trSZ2 += sumZ * (ss * ss - 1) / 12.; // [(2S+1)(2S+1)-1]/12=S(S+1)/3
-      trTZ2 += sumZ * t * (t + 1) / 3.;
-    }
-    stats.td.set("<Sz^2>", trSZ2 / stats.Z);
-    stats.td.set("<Tz^2>", trTZ2 / stats.Z);
+    return su2_doublet_factor(Ip.get("SS"), I1.get("SS")) * orbital_triplet_factor(2 * Ip.get("T") + 1, 2 * I1.get("T") + 1);
   }
 
   DECL;
@@ -110,39 +84,23 @@ inline bool spsu2t_exception(const unsigned int i, const unsigned int j, const I
   return false;
 }
 
-#define offdiag_spsu2t(i, j, ch, fnr, factor0, h, qq, In, I, opch)                                                                                   \
-  {                                                                                                                                                  \
-    const bool contributes = qq.offdiag_contributes(i, j);                                                                                           \
-    if (contributes) {                                                                                                                               \
-      t_matel factor;                                                                                                                                \
-      if (spsu2t_exception(i, j, I)) {                                                                                                               \
-        factor = 0;                                                                                                                                  \
-      } else {                                                                                                                                       \
-        factor = factor0;                                                                                                                            \
-      }                                                                                                                                              \
-      this->offdiag_function_impl(step, i, j, ch, fnr, factor, h, qq, In, opch);                                                                           \
-    }                                                                                                                                                \
-  };
-
-// We take the coefficients of the first channel (indexed as 0), because all three set are exactly the same due to
-// orbital symmetry.
-#undef OFFDIAG
-#define OFFDIAG(i, j, factor0) offdiag_spsu2t(i, j, 0, 0, t_matel(factor0) * coef.xi(step.N(), 0), h, qq, In, I, opch)
-
-#undef DIAG
-#define DIAG(i, number) this->diag_function(step, i, number, coef.zeta(step.N() + 1, 0), h, qq)
-
+// The table entries OFFDIAG(i, j, factor) skip the exceptional blocks. We take the coefficients of the first channel
+// (indexed as 0), because all three sets are exactly the same due to orbital symmetry.
+//
 // In the SPSU2T isospinx table the lower-indexed state of a pair does not always have fewer electrons (unlike in the
 // other superconducting symmetry types), so a single phase convention for complex delta cannot be applied to all
-// entries. Only real delta is supported (complex_pairing_supported()).
-#undef ISOSPINX
-#define ISOSPINX(i, j, factor) this->diag_offdiag_function(step, i, j, t_matel(factor) * 2.0 * coef.delta(step.N() + 1, 0), h, qq)
-
-#undef ANOMALOUS
-#define ANOMALOUS(i, j, factor) offdiag_function(step, i, j, 0, 0, t_matel(factor) * coef.kappa(step.N(), 0), h, qq, In, opch)
+// entries. Only real delta is supported (complex_pairing_supported()), and delta is not conjugated.
+template<typename SC>
+class SPSU2TTerms : public ShellTerms<SC> {
+   const Invar &I;
+ public:
+   template<typename ... Args> SPSU2TTerms(const Invar &I, Args && ... args) : ShellTerms<SC>(std::forward<Args>(args)..., false), I(I) {}
+   [[nodiscard]] bool contributes_offdiag(const size_t i, const size_t j) const { return this->contributes(i, j) && !spsu2t_exception(i, j, I); }
+};
 
 template<typename SC>
 void SymmetrySPSU2T<SC>::make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &I, const InvarVec &In, const Opch<SC> &opch, const Coef<SC> &coef) const {
+  const SPSU2TTerms<SC> terms(I, *this, P, step, h, qq, In, opch, coef);
   int ss  = I.get("SS");
   int t = I.get("T");
   double T  = t; // crucially important to use floating point!

@@ -20,10 +20,8 @@ namespace NRG {
 
 // +++ Construct an offdiagonal part of the Hamiltonian. +++
 
-// We test if the block (i,j) exists at all. If not, factor is not evaluated. This prevents divisions by zero.
-#define offdiag_function(step, i, j, ch, fnr, factor, h, qq, In, opch) \
-  { if (qq.offdiag_contributes(i, j)) this->offdiag_function_impl(step, i, j, ch, fnr, factor, h, qq, In, opch); }
-
+// The coefficient tables call this through ShellTerms (table_terms.hpp), which first checks that the block (i,j)
+// exists, so that the factor is not evaluated otherwise.
 // i,j - indexes of the out-of-diagonal matrix block that we are constructing
 // ch,fnr - channel and extra index to locate the correct block of the <||f||> matrix (irreducible matrix elements)
 // h - matrix being built

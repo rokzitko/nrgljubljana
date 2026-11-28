@@ -41,7 +41,7 @@ class SymmetryCRAN : public Symmetry<SC> {
 
  public:
    SymmetryCRAN(const Params &P_, const AbelianShell::Kind kind_, const Invar &Isinglet_, const Invar &Iferm_, const bool annihilators_)
-     : Symmetry<SC>(P_, std::vector<std::string>{}, Isinglet_), kind(kind_), Iferm(Iferm_), annihilators(annihilators_) {}
+     : Symmetry<SC>(P_, {}, Isinglet_), kind(kind_), Iferm(Iferm_), annihilators(annihilators_) {}
 
    void load() override {
      using namespace AbelianShell;
@@ -113,7 +113,6 @@ class SymmetryCRAN : public Symmetry<SC> {
      return opch[M];
    }
 
-   bool supports_substeps() const override { return true; }
 
    MatrixElements<SC> recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const override {
      MatrixElements<SC> cnew;

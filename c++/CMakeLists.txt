@@ -1,17 +1,26 @@
-# https://cmake.cmake.narkive.com/huyio5CB/using-m4-as-a-additional-preprocessor-for-c-c
-# find_program(M4_EXECUTABLE m4 DOC "The M4 macro processor")
-# file(GLOB m4_files "nrg-recalc-*.m4")
-# add_custom_command(OUTPUT .. COMMAND m4 ARGS )
-
-set(sources nrg-lib.cc sym-QS.cc sym-QSZ.cc)
-if(SYM_MORE)
-  list(APPEND sources sym-ISO.cc sym-ISOSZ.cc sym-SPSU2.cc sym-SPU1.cc)
-endif()
-if(SYM_ALL)
-  list(APPEND sources sym-DBLQSZ.cc sym-DBLSU2.cc sym-DBLISOSZ.cc sym-ISOLR.cc sym-ISOSZLR.cc sym-NONE.cc sym-P.cc sym-PP.cc sym-SL.cc sym-SL3.cc sym-SPSU2LR.cc
-  sym-SPSU2T.cc sym-SPU1LR.cc sym-SU2.cc sym-QSLR.cc sym-QST.cc sym-QSTZ.cc sym-QSZTZ.cc sym-QSZLR.cc sym-QJ.cc
-  sym-U1.cc sym-SPSU2C3.cc sym-QSC3.cc sym-QSZ4.cc sym-SPZ4.cc)
-endif()
+# The symmetry types are listed in symmetries.def. Each one compiled in gets a factory source generated from
+# sym-instance.cc.in; SYM_MORE and SYM_ALL add the corresponding build sets to BASIC.
+set(sources nrg-lib.cc)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS symmetries.def sym-instance.cc.in)
+file(STRINGS symmetries.def symmetry_entries REGEX "^NRG_SYMMETRY\\(")
+foreach(entry ${symmetry_entries})
+  string(REGEX REPLACE "^NRG_SYMMETRY\\(([^)]*)\\).*$" "\\1" fields "${entry}")
+  string(REPLACE " " "" fields "${fields}")
+  string(REPLACE "," ";" fields "${fields}")
+  list(GET fields 0 NRG_SYM_NAME)
+  list(GET fields 1 NRG_SYM_IMPL)
+  list(GET fields 2 set)
+  list(GET fields 8 complex_only)
+  if(set STREQUAL "BASIC" OR (set STREQUAL "MORE" AND SYM_MORE) OR (set STREQUAL "ALL" AND SYM_ALL))
+    if(complex_only STREQUAL "true")
+      set(NRG_SYM_COMPLEX_ONLY 1)
+    else()
+      set(NRG_SYM_COMPLEX_ONLY 0)
+    endif()
+    configure_file(sym-instance.cc.in ${CMAKE_CURRENT_BINARY_DIR}/sym-${NRG_SYM_NAME}.cc @ONLY)
+    list(APPEND sources ${CMAKE_CURRENT_BINARY_DIR}/sym-${NRG_SYM_NAME}.cc)
+  endif()
+endforeach()
 
 add_library(nrgljubljana_c SHARED ${sources})
 

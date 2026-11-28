@@ -4,9 +4,11 @@
 #include <bit>
 #include <complex>
 #include <limits>
+#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include <core.hpp>
@@ -64,30 +66,32 @@ TEST(QsztzTransfer, SparseInputAndDenseFallbacks) {
   std::istringstream data("2\n1 3 -2  0 2 -1  0 0 0 0 0 2.5\n1 3 -2  0 4 -3  0 0 0 0 0 -0\n");
   Operators<double> ops;
   auto &op = ops.opd["mixed"] = MatrixElements<double>(data, diag);
-  const auto mask = [&](const char *flag) {
-    const auto masks = qsztz_transfer::seed_masks(ops.opd, P, flag);
-    EXPECT_EQ(qsztz_transfer::effective_mask(masks, "unknown"), all);
-    return qsztz_transfer::effective_mask(masks, "mixed");
+  // Mask of 'mixed' (all: no restriction)
+  const auto mask = [&](const bool enabled) {
+    P.doublet_transfer_mask = enabled;
+    const auto masks = doublet_transfer::seed_masks<double>(ops.opd, P, [](const auto &name, const auto &seed) -> std::optional<unsigned> {
+      return qsztz_transfer::infer(name, seed);
+    });
+    EXPECT_FALSE(masks.contains("unknown"));
+    const auto it = masks.find("mixed");
+    return it == masks.end() ? all : it->second;
   };
-  EXPECT_EQ(mask(nullptr), all);
-  EXPECT_EQ(mask("0"), all);
-  EXPECT_THROW(mask(""), std::invalid_argument);
-  EXPECT_THROW(mask("yes"), std::invalid_argument);
-  EXPECT_EQ(mask("1"), qsztz_transfer::bit(+1, -1));
+  EXPECT_EQ(mask(false), all);
+  EXPECT_EQ(mask(true), qsztz_transfer::bit(+1, -1));
   P.h5ops = true;
-  EXPECT_EQ(mask("1"), all);
+  EXPECT_EQ(mask(true), all);
   P.h5ops = false;
   P.checksumrules = true;
-  EXPECT_EQ(mask("1"), all);
+  EXPECT_EQ(mask(true), all);
   P.checksumrules = false;
   for (const char *log : {"f", "r", "R"}) {
     P.logstr = std::string(log);
-    EXPECT_EQ(mask("1"), all) << log;
+    EXPECT_EQ(mask(true), all) << log;
   }
   P.logstr = "";
   for (auto *request : {&P.specgt, &P.speci1t, &P.speci2t}) {
     *request = "mixed-mixed";
-    EXPECT_EQ(mask("1"), all);
+    EXPECT_EQ(mask(true), all);
     *request = "";
   }
   ASSERT_EQ(op.size(), 2u);
@@ -98,9 +102,8 @@ TEST(QsztzTransfer, SparseInputAndDenseFallbacks) {
   // Opt-in validates nonzero charge transfer even when a consumer requires dense blocks.
   op[{bra, Invar(1, 2, -1)}] = Matrix_traits<double>::Ones(2, 3);
   P.h5ops = true;
-  EXPECT_EQ(mask(nullptr), all);
-  EXPECT_EQ(mask("0"), all);
-  EXPECT_THROW(mask("1"), std::invalid_argument);
+  EXPECT_EQ(mask(false), all);
+  EXPECT_THROW(mask(true), std::invalid_argument);
 }
 
 #ifdef NRG_SYM_ALL
@@ -139,7 +142,10 @@ TEST(QsztzTransfer, NamedDispatchAllJointMasks) {
       if (b.bit() == branches.back().bit()) probe[key] = Matrix_traits<double>::Constant(1, 1, -3.0);
     }
     op[accidental_zero] = Matrix_traits<double>::Zero(1, 1);
-    ops.qsztz_doublet_masks = qsztz_transfer::seed_masks(ops.opd, P, flag);
+    P.doublet_transfer_mask = flag && std::string_view(flag) == "1";
+    ops.doublet_masks = doublet_transfer::seed_masks<double>(ops.opd, P, [&](const auto &name, const auto &seed) {
+      return sym->doublet_transfer_mask(name, seed);
+    });
     Oprecalc<double> recalc(RUNTYPE::NRG, ops, sym, mt, P);
     ASSERT_EQ(recalc.sl.size(), 1u);
     EXPECT_EQ(recalc.sl.front().op1.at(accidental_zero)(0, 0), 0.0);

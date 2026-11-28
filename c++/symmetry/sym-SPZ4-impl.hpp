@@ -14,14 +14,13 @@ namespace NRG {
 template<typename SC>
 class SymmetrySPZ4 : public SymmetrySPU1<SC> {
  public:
-   SymmetrySPZ4(const Params &P) : SymmetrySPU1<SC>(P, std::vector<std::string>{}) {
+   SymmetrySPZ4(const Params &P) : SymmetrySPU1<SC>(P, std::vector<TDTrace>{}) {
      this->kind = AbelianShell::Kind::SPZ4;
      this->modulus = 4;
      initInvar({
         {"SSZ", mod4} // 2S_z modulo 4
      });
    }
-   void calculate_TD(const Step &, const DiagInfo<SC> &, Stats<SC> &, const double) const override {}
 };
 
 }

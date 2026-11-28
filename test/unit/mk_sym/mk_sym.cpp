@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 using namespace NRG;
@@ -43,17 +44,21 @@ TEST(mk_sym, get_complex) {
   auto sym = get<std::complex<double>>("QS", P);
 }
 
-// symmetry_traits lists every symmetry type of get(), with its isfield(). Types not compiled in
-// (SYM_MORE/SYM_ALL off, or C3 types for real S) throw from get() and are skipped.
+// symmetry_traits (symmetries.def) lists every symmetry type of get(), with the properties of its class. Types not
+// compiled in (SYM_MORE/SYM_ALL off, or complex-only types for real S) throw from get() and are skipped.
 template <typename S> int check_symmetry_traits() {
   int checked = 0;
   for (const auto &t : symmetry_traits) {
     Params P;
     try {
       auto sym = get<S>(std::string(t.name), P);
+      EXPECT_TRUE(t.compiled) << t.name;
       EXPECT_EQ(sym->isfield(), t.field) << t.name;
+      EXPECT_EQ(sym->uses_pairing(), t.pairing) << t.name;
       ++checked;
-    } catch (const std::runtime_error &) {}
+    } catch (const std::runtime_error &) {
+      EXPECT_TRUE(!t.compiled || (t.complex_only && !std::is_same_v<S, std::complex<double>>)) << t.name;
+    }
   }
   return checked;
 }
@@ -73,15 +78,50 @@ TEST(mk_sym, QJ_requires_three_channels) {
   EXPECT_NO_THROW(set_symmetry<double>(P3, "QJ", 3));
   for (const auto channels : {1, 2}) {
     Params P;
-    EXPECT_THROW(set_symmetry<double>(P, "QJ", channels), std::runtime_error) << channels;
+    EXPECT_THROW(set_symmetry<double>(P, "QJ", channels), std::invalid_argument) << channels;
   }
 }
 #endif
+
+// Every symmetry type loads its coefficient tables for the supported numbers of channels (up to five for the types
+// with tables generated at run time) and rejects the others.
+template <typename S> int check_channel_support() {
+  int checked = 0;
+  for (const auto &t : symmetry_traits) {
+    const std::string name(t.name);
+    if (!t.compiled || (t.complex_only && !std::is_same_v<S, std::complex<double>>)) continue;
+    for (std::size_t channels = 1; channels <= 5; channels++) {
+      Params P;
+      if (t.supports_channels(channels)) {
+        EXPECT_NO_THROW(set_symmetry<S>(P, name, channels)) << name << " " << channels;
+      } else {
+        EXPECT_THROW(set_symmetry<S>(P, name, channels), std::invalid_argument) << name << " " << channels;
+      }
+    }
+    ++checked;
+  }
+  return checked;
+}
+
+TEST(mk_sym, channel_support) {
+  EXPECT_GE(check_channel_support<double>() + check_channel_support<std::complex<double>>(), 4);
+}
+
+TEST(mk_sym, polarized_support) {
+  Params P;
+  P.polarized = true;
+  EXPECT_NO_THROW(set_symmetry<double>(P, "QSZ", 1));
+  Params P2;
+  P2.polarized = true;
+  EXPECT_THROW(set_symmetry<double>(P2, "QS", 1), std::invalid_argument);
+}
 
 // With substeps=true, P.combs counts the states of a single channel. Only the symmetry types that implement
 // recalc_irreduc_substeps() are accepted.
 template <typename S> int check_substeps_support() {
   const std::vector<std::string> with_substeps{"QS", "QSZ", "SPSU2", "SPU1", "P", "NONE", "U1", "QSZ4", "SPZ4"};
+  for (const auto &t : symmetry_traits)
+    EXPECT_EQ(t.substeps, std::find(with_substeps.begin(), with_substeps.end(), std::string(t.name)) != with_substeps.end()) << t.name;
   int checked = 0;
   for (const auto &t : symmetry_traits) {
     const std::string name(t.name);

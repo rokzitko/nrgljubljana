@@ -11,7 +11,7 @@ namespace NRG {
 template<typename SC>
 class SymmetryQSZ4 : public SymmetryQSZ<SC> {
  public:
-   SymmetryQSZ4(const Params &P) : SymmetryQSZ<SC>(P, std::vector{"<Q>", "<Q^2>"}) {
+   SymmetryQSZ4(const Params &P) : SymmetryQSZ<SC>(P, std::vector<TDTrace>{td::mean("<Q>", "Q"), td::square("<Q^2>", "Q")}) {
      this->kind = AbelianShell::Kind::QSZ4;
      this->modulus = 4;
      initInvar({
@@ -20,17 +20,6 @@ class SymmetryQSZ4 : public SymmetryQSZ<SC> {
      });
    }
 
-   void calculate_TD(const Step &step, const DiagInfo<SC> &diag, Stats<SC> &stats, const double factor) const override {
-     bucket trQ, trQ2; // Tr[Q], Tr[Q^2]
-     for (const auto &[I, eig]: diag) {
-       const int q    = I.get("Q");
-       const double sumZ = this->calculate_Z(I, eig, factor);
-       trQ += sumZ * q;
-       trQ2 += sumZ * q * q;
-     }
-     stats.td.set("<Q>",   trQ / stats.Z);
-     stats.td.set("<Q^2>", trQ2 / stats.Z);
-   }
 };
 
 }

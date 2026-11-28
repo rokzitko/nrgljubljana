@@ -1,7 +1,8 @@
 #ifndef _symmetry_traits_hpp_
 #define _symmetry_traits_hpp_
 
-// Properties of the symmetry types that are known from the name alone, without constructing a Symmetry object.
+// Properties of the symmetry types that are known from the name alone, without constructing a Symmetry object. The
+// table is generated from symmetries.def; see there for the meaning of the fields.
 
 #include <algorithm>
 #include <array>
@@ -10,21 +11,41 @@
 
 namespace NRG {
 
+// Build sets of symmetry types (c++/CMakeLists.txt)
+inline constexpr bool symmetry_set_BASIC = true;
+#ifdef NRG_SYM_MORE
+inline constexpr bool symmetry_set_MORE = true;
+#else
+inline constexpr bool symmetry_set_MORE = false;
+#endif
+#ifdef NRG_SYM_ALL
+inline constexpr bool symmetry_set_ALL = true;
+#else
+inline constexpr bool symmetry_set_ALL = false;
+#endif
+
 struct SymmetryTraits {
   std::string_view name;
-  bool field; // Symmetry::isfield(): doublet spectra are computed per spin, named with -u/-d
+  bool compiled;   // included in this build
+  bool field;      // Symmetry::isfield(): doublet spectra are computed per spin, named with -u/-d
+  std::size_t perchannel; // number of f-matrices (Wilson-chain operator blocks) per channel in data
+  std::size_t spins;      // number of spin states per orbital
+  std::size_t chmin, chmax; // supported numbers of channels without substeps; chmax 0: any
+  bool complex_only;
+  bool substeps;
+  bool polarized;
+  bool pairing;
+  [[nodiscard]] constexpr bool supports_channels(const std::size_t channels) const {
+    return channels >= chmin && (chmax == 0 || channels <= chmax);
+  }
 };
 
-// Every symmetry type of mk_sym.hpp. test/unit/mk_sym checks this list against the Symmetry classes.
-inline constexpr std::array<SymmetryTraits, 33> symmetry_traits{{
-  {"QS", false},      {"QSZ", true},      {"ISO", false},     {"ISO2", false},    {"ISOSZ", true},
-  {"SPSU2", false},   {"SPU1", true},     {"DBLQSZ", true},   {"DBLSU2", false},  {"DBLISOSZ", true},
-  {"ISOLR", false},   {"ISO2LR", false},  {"ISOSZLR", true},  {"NONE", false},    {"P", false},
-  {"PP", false},      {"SL", false},      {"SL3", false},     {"SPSU2LR", false}, {"SPSU2T", false},
-  {"SPU1LR", true},   {"SU2", false},     {"QSLR", false},    {"QST", false},     {"QSTZ", false},
-  {"QSZTZ", false},   {"QSZLR", true},    {"QJ", false},      {"U1", false},      {"SPSU2C3", false},
-  {"QSC3", false},     {"QSZ4", true},     {"SPZ4", true},
-}};
+inline constexpr std::array symmetry_traits{
+#define NRG_SYMMETRY(name, impl, set, field, perchannel, spins, chmin, chmax, complex_only, substeps, polarized, pairing) \
+  SymmetryTraits{#name, symmetry_set_##set, field, perchannel, spins, chmin, chmax, complex_only, substeps, polarized, pairing},
+#include "symmetries.def"
+#undef NRG_SYMMETRY
+};
 
 // The traits of a symmetry type, or nullptr if the name is unknown
 inline const SymmetryTraits *find_symmetry_traits(const std::string_view name) {
@@ -32,11 +53,10 @@ inline const SymmetryTraits *find_symmetry_traits(const std::string_view name) {
   return it == symmetry_traits.end() ? nullptr : &*it;
 }
 
-// Number of f-matrices (Wilson-chain operator blocks) per channel in data
+// Number of f-matrices (Wilson-chain operator blocks) per channel in data (1 for an unknown name)
 inline std::size_t perchannel(const std::string_view symtype) {
-  if (symtype == "U1" || symtype == "SU2" || symtype == "DBLSU2") return 2; // spin-up and spin-down operators
-  if (symtype == "NONE" || symtype == "P" || symtype == "PP") return 4;     // CR/AN and spin UP/DO
-  return 1;
+  const auto *t = find_symmetry_traits(symtype);
+  return t ? t->perchannel : 1;
 }
 
 } // namespace NRG

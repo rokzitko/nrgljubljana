@@ -1,34 +1,14 @@
 #include <complex>
-#include <initializer_list>
+#include <vector>
 #include <string>
 #include <type_traits>
 
 namespace NRG {
 
-// *** WARNING!!! Modify nrg-recalc-PP.hpp.m4, not nrg-recalc-PP.hpp, then run recalc-macros.update !!!
-
 // Quantum number dependent recalculation routines
 // Rok Zitko, rok.zitko@ijs.si, Aug 2017
 // This file pertains to the case with only fermion number parities
 // (one per channel).
-
-// m4 macros for nrg-recalc-*.hpp.m4 files
-// Rok Zitko, rok.zitko@ijs.si, 2007-2020
-
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
 
 template<typename SC>
 Opch<SC> SymmetryPP<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &diag) const {
@@ -39,132 +19,43 @@ Opch<SC> SymmetryPP<SC>::recalc_irreduc(const Step &step, const DiagInfo<SC> &di
 
     {
       Invar I1 = Invar(-pa, pb);
-      {
-  nrglog('f', "RECALC_F(fn=" << "pp/pp-2ch-a-CR-DO.dat" << ", ch=" << 0 << ", n=" << 0 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+      this->recalc_f_table(diag, I1, Ip, opch[0][0], [&] { return RecalcFTable<SC>{
 #include "pp/pp-2ch-a-CR-DO.dat"
-    };
-    opch[0][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
-      {
-  nrglog('f', "RECALC_F(fn=" << "pp/pp-2ch-a-CR-UP.dat" << ", ch=" << 0 << ", n=" << 1 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+      }; });
+      this->recalc_f_table(diag, I1, Ip, opch[0][1], [&] { return RecalcFTable<SC>{
 #include "pp/pp-2ch-a-CR-UP.dat"
-    };
-    opch[0][1][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
-      {
-  nrglog('f', "RECALC_F(fn=" << "pp/pp-2ch-a-AN-DO.dat" << ", ch=" << 0 << ", n=" << 2 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+      }; });
+      this->recalc_f_table(diag, I1, Ip, opch[0][2], [&] { return RecalcFTable<SC>{
 #include "pp/pp-2ch-a-AN-DO.dat"
-    };
-    opch[0][2][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
-      {
-  nrglog('f', "RECALC_F(fn=" << "pp/pp-2ch-a-AN-UP.dat" << ", ch=" << 0 << ", n=" << 3 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+      }; });
+      this->recalc_f_table(diag, I1, Ip, opch[0][3], [&] { return RecalcFTable<SC>{
 #include "pp/pp-2ch-a-AN-UP.dat"
-    };
-    opch[0][3][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
+      }; });
     }
 
     {
       Invar I1 = Invar(pa, -pb);
-      {
-  nrglog('f', "RECALC_F(fn=" << "pp/pp-2ch-b-CR-DO.dat" << ", ch=" << 1 << ", n=" << 0 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+      this->recalc_f_table(diag, I1, Ip, opch[1][0], [&] { return RecalcFTable<SC>{
 #include "pp/pp-2ch-b-CR-DO.dat"
-    };
-    opch[1][0][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
-      {
-  nrglog('f', "RECALC_F(fn=" << "pp/pp-2ch-b-CR-UP.dat" << ", ch=" << 1 << ", n=" << 1 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+      }; });
+      this->recalc_f_table(diag, I1, Ip, opch[1][1], [&] { return RecalcFTable<SC>{
 #include "pp/pp-2ch-b-CR-UP.dat"
-    };
-    opch[1][1][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
-      {
-  nrglog('f', "RECALC_F(fn=" << "pp/pp-2ch-b-AN-DO.dat" << ", ch=" << 1 << ", n=" << 2 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+      }; });
+      this->recalc_f_table(diag, I1, Ip, opch[1][2], [&] { return RecalcFTable<SC>{
 #include "pp/pp-2ch-b-AN-DO.dat"
-    };
-    opch[1][2][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
-      {
-  nrglog('f', "RECALC_F(fn=" << "pp/pp-2ch-b-AN-UP.dat" << ", ch=" << 1 << ", n=" << 3 << ")");
-  auto II = Twoinvar(I1, Ip);
-  if (this->have_stored_coupled_subspaces(diag, I1, Ip)) {
-    std::initializer_list<Recalc_f<SC>> recalc_table = {
+      }; });
+      this->recalc_f_table(diag, I1, Ip, opch[1][3], [&] { return RecalcFTable<SC>{
 #include "pp/pp-2ch-b-AN-UP.dat"
-    };
-    opch[1][3][II] = this->recalc_f(diag, I1, Ip, recalc_table);
-  }
-};
+      }; });
     }
   }
   return opch;
 }
 
-#undef SPINX
-#define SPINX(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value)
-#undef SPINZ
-#define SPINZ(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value)
-
-// Isospin operator need an appropriate phase factor (bipartite sublattice index) 
-#define USEISOFACTOR
-
-#if defined(USEISOFACTOR)
-#define ISOFACTOR psgn(step.getnn() + 1)
-#else
-#define ISOFACTOR 1
-#endif
-
-#undef SPINY
-#define SPINY(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value)
-
-#undef ISOSPINY
-#define ISOSPINY(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value * std::complex<double>(ISOFACTOR))
+// The transverse isospin components need a phase factor (bipartite sublattice index), see GlobalTerms.
 
 #undef Complex
 #define Complex(x, y) cmpl(x, y)
-
-#undef CHARGE
-#define CHARGE(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value)
-
-#undef ISOSPINZ
-#define ISOSPINZ(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value)
-
-#undef ISOSPINX
-#define ISOSPINX(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value *ISOFACTOR)
-
-#undef ISOSPINP
-#define ISOSPINP(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value *ISOFACTOR)
-
-#undef ISOSPINM
-#define ISOSPINM(i1, ip, ch, value) this->recalc1_global(diag, I1, cn, i1, ip, value *ISOFACTOR)
 
 template<typename SC>
 void SymmetryPP<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, const std::string name, MatrixElements<SC> &cnew) const {
@@ -172,6 +63,7 @@ void SymmetryPP<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, c
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
+      const GlobalTerms<SC> terms(*this, diag, I1, cn, psgn(step.getnn() + 1));
       switch (P.channels) {
         case 2:
 #include "pp/pp-2ch-spinz.dat"
@@ -187,6 +79,7 @@ void SymmetryPP<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, c
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
+      const GlobalTerms<SC> terms(*this, diag, I1, cn, psgn(step.getnn() + 1));
       switch (P.channels) {
         case 2:
 #include "pp/pp-2ch-spiny.dat"
@@ -202,6 +95,7 @@ void SymmetryPP<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, c
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
+      const GlobalTerms<SC> terms(*this, diag, I1, cn, psgn(step.getnn() + 1));
       switch (P.channels) {
         case 2:
 #include "pp/pp-2ch-spinx.dat"
@@ -216,6 +110,7 @@ void SymmetryPP<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, c
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
+      const GlobalTerms<SC> terms(*this, diag, I1, cn, psgn(step.getnn() + 1));
       switch (P.channels) {
         case 2:
 #include "pp/pp-2ch-Qtot.dat"
@@ -230,6 +125,7 @@ void SymmetryPP<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, c
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
+      const GlobalTerms<SC> terms(*this, diag, I1, cn, psgn(step.getnn() + 1));
       switch (P.channels) {
         case 2:
 #include "pp/pp-2ch-Iztot.dat"
@@ -244,6 +140,7 @@ void SymmetryPP<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, c
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
+      const GlobalTerms<SC> terms(*this, diag, I1, cn, psgn(step.getnn() + 1));
       switch (P.channels) {
         case 2:
 #include "pp/pp-2ch-Ixtot.dat"
@@ -259,6 +156,7 @@ void SymmetryPP<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, c
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
+      const GlobalTerms<SC> terms(*this, diag, I1, cn, psgn(step.getnn() + 1));
       switch (P.channels) {
         case 2:
 #include "pp/pp-2ch-Iytot.dat"
@@ -274,6 +172,7 @@ void SymmetryPP<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, c
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
+      const GlobalTerms<SC> terms(*this, diag, I1, cn, psgn(step.getnn() + 1));
       switch (P.channels) {
         case 2:
 #include "pp/pp-2ch-Iptot.dat"
@@ -288,6 +187,7 @@ void SymmetryPP<SC>::recalc_global(const Step &step, const DiagInfo<SC> &diag, c
     for(const auto &[I1, eig]: diag) {
       const Twoinvar II = {I1, I1};
       Matrix &cn        = cnew[II];
+      const GlobalTerms<SC> terms(*this, diag, I1, cn, psgn(step.getnn() + 1));
       switch (P.channels) {
         case 2:
 #include "pp/pp-2ch-Imtot.dat"
