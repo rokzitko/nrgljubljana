@@ -69,11 +69,11 @@ class SymmetryU1 : public Symmetry<SC> {
   }
 
   // Non-polarized, polarized (spin-dependent coefficients), and full 2x2 spin structure (pol2x2) of the chain. With
-  // substeps (non-polarized only), the shell has one channel, which is channel M of the problem.
+  // substeps (not with pol2x2), the shell has one channel, which is channel M of the problem.
   void make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &, const InvarVec &In_, const Opch<SC> &opch, const Coef<SC> &coef) const override {
     using namespace AbelianShell;
     const bool spin_dependent = P.polarized || P.pol2x2;
-    if (P.substeps) my_assert(!spin_dependent && P.coeffactor == 1); // not implemented
+    if (P.substeps) my_assert(!P.pol2x2); // not implemented (polarized chains are supported)
     const auto [N, M] = P.substeps ? step.NM() : std::pair{step.N(), std::size_t{0}};
     for (std::size_t sch = 0; sch < shell->channels(); ++sch) {
       const auto ch = P.substeps ? M : sch; // channel of the coefficients and of <||f||>

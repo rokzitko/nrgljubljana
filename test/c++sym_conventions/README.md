@@ -18,6 +18,7 @@ columns and has a per-case reference. The groups fix the conventions described i
 | `conv_pairing_3ch_*` | SPSU2, SPU1 | Three clean SC chains, `bcsgap=0.1+0.1i` | SPSU2 |
 | `conv_doublet_1ch_*` | NONE, P | SIAM, spectral function of the doublet operator `A_d_1` | NONE |
 | `conv_substeps_2ch_*` | QS, QSZ, U1, SPU1, P, NONE | Two-channel SIAM, interleaved diagonalization (`substeps=true`), particle-hole asymmetric bath | QS |
+| `conv_polarized_substeps_2ch_*` | QSZ (`QSZref`: without substeps); QSZ, U1, SPU1, P, NONE (with substeps) | Two-channel SIAM with a different hybridization for each channel and spin, `polarized=true`, impurity field | QSZ without substeps |
 | `conv_globalop_1ch_*` | QSZ, U1 | SIAM with a local field (`siamB.m`), global operator `SZtot` (`modeloperators.m`) | QSZ |
 
 What the groups check:
@@ -26,7 +27,10 @@ What the groups check:
   of channels (`c++/abelian_shell.hpp`); for three channels they are compared with QS and SPSU2, whose tables are
   still the Mathematica-generated ones. The NONE cases with three channels are omitted for their run time.
 - **Interleaved diagonalization.** With `substeps=true` one channel is added per step; the coefficient tables are
-  those of a one-channel shell, applied to the active channel.
+  those of a one-channel shell, applied to the active channel. Without truncation, the last step of interleaved and
+  ordinary NRG diagonalizes the same Hamiltonian, so the FDM results agree exactly; `conv_polarized_substeps_2ch_*`
+  uses this to check spin-polarized chains with substeps against ordinary NRG. Only `customfdm` and `tdfdm` are
+  shared in this group, since `custom` and `td` have one row per (sub)step.
 - **Fermion sign in operator recalculation.** A fermionic operator of the previous sites acquires the sign
   (-1)^n of the occupation n of the added site. The P doublet tables generated with Mathematica lacked this sign.
 - **Spin labels of the U1 hopping.** U1 stores f^dag_up in block 0 and f^dag_down in block 1 of `<||f||>`. Without

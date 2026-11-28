@@ -607,13 +607,13 @@ what they write to `td`/`tdfdm` and the `spec_*`/`corr_*` families.
 | `reim` | boolean | `false` | Include imaginary spectral weights in output files. |
 | `clip_tol_imag` | number | `1e-10` | Non-negative relative tolerance for clipping imaginary values in text output. |
 
-`substeps` is implemented for `QS`, `QSZ`, `SPSU2`, `SPU1`, `P`, `NONE`, and `U1`
-(non-polarized chains); other symmetry types are rejected when the symmetry is
-initialized from `data`. With many channels, interleaved diagonalization adds the
-four states of one site at a time instead of 4^K states per step. It
-requires the ordinary coefficient structure and is not compatible with every
-polarized, rung, or custom-chain configuration; such combinations abort when
-interleaved recalculation is selected.
+`substeps` is implemented for `QS`, `QSZ`, `SPSU2`, `SPU1`, `P`, `NONE`, and `U1`,
+including spin-polarized chains (`polarized=true`) for the last five; other symmetry
+types are rejected when the symmetry is initialized from `data`. With many channels,
+interleaved diagonalization adds the four states of one site at a time instead of
+4^K states per step. It is not supported together with `rungs` or `pol2x2`, or with
+custom chain structures; such combinations abort when interleaved recalculation is
+selected.
 
 **Broadening kernel.** The raw NRG output is a set of weighted delta peaks at
 discrete, `Lambda`-dependent energies. `alpha` and `omega0` parametrize the

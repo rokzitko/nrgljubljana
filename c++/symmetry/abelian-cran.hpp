@@ -68,7 +68,6 @@ class SymmetryCRAN : public Symmetry<SC> {
    void make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &, const InvarVec &In_,
                     const Opch<SC> &opch, const Coef<SC> &coef) const override {
      using namespace AbelianShell;
-     if (P.substeps) my_assert(!P.polarized && P.coeffactor == 1); // not implemented
      const auto [N, M] = P.substeps ? step.NM() : std::pair{step.N(), std::size_t{0}};
      for (std::size_t sch = 0; sch < shell->channels(); ++sch) {
        const auto ch = P.substeps ? M : sch; // channel of the coefficients and of <||f||>

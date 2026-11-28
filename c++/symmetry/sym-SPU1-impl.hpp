@@ -85,7 +85,6 @@ class SymmetrySPU1 : public SymField<SC> {
   // With substeps, the shell has one channel, which is channel M of the problem.
   void make_matrix(Matrix &h, const Step &step, const SubspaceDimensions &qq, const Invar &, const InvarVec &In_, const Opch<SC> &opch, const Coef<SC> &coef) const override {
     using namespace AbelianShell;
-    if (P.polarized) my_assert(!P.substeps);
     const auto [N, M] = P.substeps ? step.NM() : std::pair{step.N(), std::size_t{0}};
     for (std::size_t sch = 0; sch < shell->channels(); ++sch) {
       const auto ch = P.substeps ? M : sch; // channel of the coefficients and of <||f||>
