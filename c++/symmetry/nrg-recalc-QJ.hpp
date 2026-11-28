@@ -6,15 +6,13 @@ namespace NRG {
 using std::abs;
 using std::sqrt;
 
-// *** WARNING!!! Modify nrg-recalc-QJ.cc.m4, not nrg-recalc-QJ.cc !!!
+// *** WARNING!!! Modify nrg-recalc-QJ.hpp.m4, not nrg-recalc-QJ.hpp, then run recalc-macros.update !!!
 
 // Quantum number dependant recalculation routines
 // Rok Zitko, rok.zitko@ijs.si, Mar 2016
 // This file pertains to (Q,J) subspaces
 
-namespace NRG {
-
-// m4 macros for nrg-recalc-*.cc files
+// m4 macros for nrg-recalc-*.hpp.m4 files
 // Rok Zitko, rok.zitko@ijs.si, 2007-2020
 
 
@@ -30,8 +28,6 @@ namespace NRG {
 
 
 
-
-}
 
 
 // Recalculate matrix elements of a doublet tensor operator

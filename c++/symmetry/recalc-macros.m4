@@ -1,6 +1,4 @@
-namespace NRG {
-
-// m4 macros for nrg-recalc-*.cc files
+// m4 macros for nrg-recalc-*.hpp.m4 files
 // Rok Zitko, rok.zitko@ijs.si, 2007-2020
 
 define(`RECALC_TAB', {
@@ -70,5 +68,3 @@ define(`ONE2345',
   case 5: { $5 } break;
   default: my_assert_not_reached();
 })
-
-}

@@ -3,15 +3,13 @@
 
 namespace NRG {
 
-// *** WARNING!!! Modify nrg-recalc-QSZ.cc.m4, not nrg-recalc-QSZ.cc !!!
+// *** WARNING!!! Modify nrg-recalc-QSZ.hpp.m4, not nrg-recalc-QSZ.hpp, then run recalc-macros.update !!!
 
 // Quantum number dependant recalculation routines
 // Rok Zitko, rok.zitko@ijs.si, 2006-2020
 // This file pertains to (Q,SZ) subspaces
 
-namespace NRG {
-
-// m4 macros for nrg-recalc-*.cc files
+// m4 macros for nrg-recalc-*.hpp.m4 files
 // Rok Zitko, rok.zitko@ijs.si, 2007-2020
 
 
@@ -27,8 +25,6 @@ namespace NRG {
 
 
 
-
-}
 
 
 // NOTE: p is ket (right side), 1 is bra (left side). OP is sandwiched in between. Thus Q[p] + Q[op] = Q[1].

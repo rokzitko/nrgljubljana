@@ -6,7 +6,7 @@ namespace NRG {
 using std::abs;
 using std::sqrt;
 
-// *** WARNING!!! Modify nrg-recalc-QJ.cc.m4, not nrg-recalc-QJ.cc !!!
+// *** WARNING!!! Modify nrg-recalc-QJ.hpp.m4, not nrg-recalc-QJ.hpp, then run recalc-macros.update !!!
 
 // Quantum number dependant recalculation routines
 // Rok Zitko, rok.zitko@ijs.si, Mar 2016

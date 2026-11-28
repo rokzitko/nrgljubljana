@@ -96,7 +96,7 @@ class SymmetrySPSU2T : public Symmetry<SC> {
   }
 };
 
-bool spsu2t_exception(const unsigned int i, const unsigned int j, const Invar &I) {
+inline bool spsu2t_exception(const unsigned int i, const unsigned int j, const Invar &I) {
   // In these cases the subspace exists, but taking the T=2 or T=1 limit shows that the coefficient is actually zero,
   // so there is no contribution. (Directly computed factor is nan.) This exception handling is added io order to
   // avoid false positives in error detection assertions.

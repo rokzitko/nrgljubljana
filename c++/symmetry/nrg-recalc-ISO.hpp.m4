@@ -5,7 +5,7 @@ namespace NRG {
 
 using std::sqrt;
 
-// *** WARNING!!! Modify nrg-recalc-ISO.cc.m4, not nrg-recalc-ISO.cc !!!
+// *** WARNING!!! Modify nrg-recalc-ISO.hpp.m4, not nrg-recalc-ISO.hpp, then run recalc-macros.update !!!
 
 // Quantum number dependant recalculation routines
 // Rok Zitko, rok.zitko@ijs.si, Feb 2006

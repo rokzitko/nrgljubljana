@@ -6,7 +6,7 @@ namespace NRG {
 
 using std::sqrt;
 
-// *** WARNING!!! Modify nrg-recalc-SPU1LR.cc.m4, not nrg-recalc-SPU1LR.cc !!!
+// *** WARNING!!! Modify nrg-recalc-SPU1LR.hpp.m4, not nrg-recalc-SPU1LR.hpp, then run recalc-macros.update !!!
 
 // Quantum number dependant recalculation routines
 // Rok Zitko, rok.zitko@ijs.si, May 2010

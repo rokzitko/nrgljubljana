@@ -24,6 +24,10 @@ is smaller. Blocks that do not fit are uploaded as needed. If device
 allocation fails, the solver retries without caching and then, if necessary,
 with the original per-product CUDA path. This does not change `mult=blas`.
 
+With `mult=blas`, the rows of a recalculation table that share the ket block
+are summed before the final product, so each output block needs one product
+per distinct ket block rather than one per table row.
+
 ## BLAS/LAPACK ABI
 
 Threading and integer width are separate choices. The default

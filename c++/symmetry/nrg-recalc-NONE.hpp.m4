@@ -5,7 +5,7 @@
 
 namespace NRG {
 
-// *** WARNING!!! Modify nrg-recalc-NONE.cc.m4, not nrg-recalc-NONE.cc !!!
+// *** WARNING!!! Modify nrg-recalc-NONE.hpp.m4, not nrg-recalc-NONE.hpp, then run recalc-macros.update !!!
 
 // Quantum number dependent recalculation routines
 // Rok Zitko, rok.zitko@ijs.si, June 2006, April 2010

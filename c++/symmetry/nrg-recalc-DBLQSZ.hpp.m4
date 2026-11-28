@@ -3,7 +3,7 @@
 
 namespace NRG {
 
-// *** WARNING!!! Modify nrg-recalc-DBLQSZ.cc.m4, not nrg-recalc-DBLQSZ.cc !!!
+// *** WARNING!!! Modify nrg-recalc-DBLQSZ.hpp.m4, not nrg-recalc-DBLQSZ.hpp, then run recalc-macros.update !!!
 
 // Quantum number dependant recalculation routines
 // Rok Zitko, rok.zitko@ijs.si, Mar 2022

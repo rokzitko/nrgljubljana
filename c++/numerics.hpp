@@ -262,40 +262,56 @@ auto trace_contract(const M &A, const M &B, const size_t range) // Tr[AB]
 
 namespace NRG {
 
+// Matrix-multiplication backend selected by the 'mult' parameter. Resolve it once with mult_backend() rather than
+// comparing strings for every product.
+enum class MultBackend { blas, cuda };
+
+[[nodiscard]] inline MultBackend mult_backend(const std::string &mult) {
+  if (mult == "blas") return MultBackend::blas;
+  if (mult == "cuda") {
+    validate_cuda_multiplication_request(mult);
+    return MultBackend::cuda;
+  }
+  throw std::invalid_argument(fmt::format("Unsupported mult backend: {}", mult));
+}
+
+template<scalar S, Eigen_matrix EM, typename t_coef = coef_traits<S>>
+void product(const MultBackend mult, EM &M, const t_coef factor, const EM &A, const EM &B) {
+  if (mult == MultBackend::cuda)
+    product_CUDA<S>(M, factor, A, B);
+  else
+    product_Eigen<S>(M, factor, A, B);
+}
+
+template<scalar S, Eigen_matrix EM, typename t_coef = coef_traits<S>>
+void transform(const MultBackend mult, EM &M, const t_coef factor, const EM &A, const EM &O, const EM &B) {
+  if (mult == MultBackend::cuda)
+    transform_CUDA<S>(M, factor, A, O, B);
+  else
+    transform_Eigen<S>(M, factor, A, O, B);
+}
+
+template<scalar S, Eigen_matrix EM, Eigen_matrix U_type, typename t_coef = coef_traits<S>>
+void rotate(const MultBackend mult, EM &M, const t_coef factor, const U_type &U, const EM &O) {
+  if (mult == MultBackend::cuda)
+    rotate_CUDA<S>(M, factor, U, O);
+  else
+    rotate<S>(M, factor, U, O);
+}
+
 template<scalar S, Eigen_matrix EM, typename t_coef = coef_traits<S>>
 void product(const std::string &mult, EM &M, const t_coef factor, const EM &A, const EM &B) {
-  if (mult == "blas") {
-    product_Eigen<S>(M, factor, A, B);
-  } else if (mult == "cuda") {
-    validate_cuda_multiplication_request(mult);
-    product_CUDA<S>(M, factor, A, B);
-  } else {
-    throw std::invalid_argument(fmt::format("Unsupported mult backend: {}", mult));
-  }
+  product<S>(mult_backend(mult), M, factor, A, B);
 }
 
 template<scalar S, Eigen_matrix EM, typename t_coef = coef_traits<S>>
 void transform(const std::string &mult, EM &M, const t_coef factor, const EM &A, const EM &O, const EM &B) {
-  if (mult == "blas") {
-    transform_Eigen<S>(M, factor, A, O, B);
-  } else if (mult == "cuda") {
-    validate_cuda_multiplication_request(mult);
-    transform_CUDA<S>(M, factor, A, O, B);
-  } else {
-    throw std::invalid_argument(fmt::format("Unsupported mult backend: {}", mult));
-  }
+  transform<S>(mult_backend(mult), M, factor, A, O, B);
 }
 
 template<scalar S, Eigen_matrix EM, Eigen_matrix U_type, typename t_coef = coef_traits<S>>
 void rotate(const std::string &mult, EM &M, const t_coef factor, const U_type &U, const EM &O) {
-  if (mult == "blas") {
-    rotate<S>(M, factor, U, O);
-  } else if (mult == "cuda") {
-    validate_cuda_multiplication_request(mult);
-    rotate_CUDA<S>(M, factor, U, O);
-  } else {
-    throw std::invalid_argument(fmt::format("Unsupported mult backend: {}", mult));
-  }
+  rotate<S>(mult_backend(mult), M, factor, U, O);
 }
 
 template<scalar S>

@@ -5,15 +5,13 @@
 
 namespace NRG {
 
-// *** WARNING!!! Modify nrg-recalc-P.cc.m4, not nrg-recalc-P.cc !!!
+// *** WARNING!!! Modify nrg-recalc-P.hpp.m4, not nrg-recalc-P.hpp, then run recalc-macros.update !!!
 
 // Quantum number dependent recalculation routines
 // Rok Zitko, rok.zitko@ijs.si, July 2017
 // This file pertains to the case with only fermion number parity.
 
-namespace NRG {
-
-// m4 macros for nrg-recalc-*.cc files
+// m4 macros for nrg-recalc-*.hpp.m4 files
 // Rok Zitko, rok.zitko@ijs.si, 2007-2020
 
 
@@ -29,8 +27,6 @@ namespace NRG {
 
 
 
-
-}
 
 
 template<typename SC>

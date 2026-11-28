@@ -4,15 +4,13 @@
 
 namespace NRG {
 
-// *** WARNING!!! Modify nrg-recalc-SPSU2C3.cc.m4, not nrg-recalc-SPSU2C3.cc !!!
+// *** WARNING!!! Modify nrg-recalc-SPSU2C3.hpp.m4, not nrg-recalc-SPSU2C3.hpp, then run recalc-macros.update !!!
 
 // Quantum number dependant recalculation routines
 // Rok Zitko, rok.zitko@ijs.si, Oct 2015
 // This file pertains to (S,P) subspaces
 
-namespace NRG {
-
-// m4 macros for nrg-recalc-*.cc files
+// m4 macros for nrg-recalc-*.hpp.m4 files
 // Rok Zitko, rok.zitko@ijs.si, 2007-2020
 
 
@@ -28,8 +26,6 @@ namespace NRG {
 
 
 
-
-}
 
 
 #define xRECALC_F_TAB(a, b, c) 0;

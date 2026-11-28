@@ -6,15 +6,13 @@ namespace NRG {
 
 using std::sqrt;
 
-// *** WARNING!!! Modify nrg-recalc-QS.cc.m4, not nrg-recalc-QS.cc !!!
+// *** WARNING!!! Modify nrg-recalc-QS.hpp.m4, not nrg-recalc-QS.hpp, then run recalc-macros.update !!!
 
 // Quantum number dependant recalculation routines
 // Rok Zitko, rok.zitko@ijs.si, Feb 2006
 // This file pertains to (Q,S) subspaces
 
-namespace NRG {
-
-// m4 macros for nrg-recalc-*.cc files
+// m4 macros for nrg-recalc-*.hpp.m4 files
 // Rok Zitko, rok.zitko@ijs.si, 2007-2020
 
 
@@ -30,8 +28,6 @@ namespace NRG {
 
 
 
-
-}
 
 
 template<typename SC>

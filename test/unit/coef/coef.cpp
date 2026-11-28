@@ -46,11 +46,6 @@ TEST(Coef, parse) { // NOLINT
   EXPECT_EQ(coef.xi(0,0), 42.);
 }
 
-TEST(Coef, truncated_matrix_table_header_throws) { // NOLINT
-  std::istringstream ss("1 2");
-  EXPECT_THROW(read_matrix_table<double>(ss), std::runtime_error);
-}
-
 namespace {
 
 template<typename S>

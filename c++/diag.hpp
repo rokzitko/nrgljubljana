@@ -266,6 +266,27 @@ auto copy_results(const V &eigenvalues, U* eigenvectors, const char jobz, const 
   return d;
 }
 
+// ?syev, ?syevd, ?heev, and ?heevd overwrite the input matrix with the eigenvectors, stored column by column (Fortran
+// order). For a row-major dim x dim matrix, row r then holds eigenvector r, which is the layout of RawEigen::vec, so
+// the storage is moved instead of copied. This avoids a dim x dim copy and lowers the peak memory of a
+// diagonalisation by one matrix. The matrix m is left empty.
+template<scalar S, vector V, matrix MM>
+auto move_results(const V &eigenvalues, MM &m, const char jobz, const size_t dim)
+{
+  if constexpr (std::is_same_v<MM, Matrix_traits<S>>) {
+    if (jobz == 'V') {
+      my_assert(is_row_ordered(m) && size1(m) == dim && size2(m) == dim);
+      RawEigen<S> d;
+      copy_val(eigenvalues, d.val, dim);
+      d.vec = std::move(m);
+      m.resize(0, 0);
+      my_assert(d.val.size() == nrvec(d.vec));
+      return d;
+    }
+  }
+  return copy_results<S>(eigenvalues, data(m), jobz, dim, dim);
+}
+
 // Perform diagonalisation: wrappers for LAPACK. jobz: 'N' for values only, 'V' for values and vectors
 template<real_matrix RM>
 auto diagonalise_dsyev(RM &m, const char jobz = 'V', const bool saveram = false, const bool log_workspace = false) {
@@ -290,7 +311,7 @@ auto diagonalise_dsyev(RM &m, const char jobz = 'V', const bool saveram = false,
   // Step 2: perform the diagonalisation
   LAPACK_dsyev(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), WORK.data(), &LWORK, &INFO);
   if (INFO != 0) throw std::runtime_error(fmt::format("dsyev failed. INFO={}", INFO));
-  return copy_results<double>(eigenvalues, ham, jobz, dim, dim);
+  return move_results<double>(eigenvalues, m, jobz, dim);
 }
 
 template<real_matrix RM>
@@ -322,7 +343,7 @@ auto diagonalise_dsyevd(RM &m, const char jobz = 'V', const bool saveram = false
   LAPACK_dsyevd(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), WORK.data(), &LWORK, IWORK.data(), &LIWORK, &INFO);
   if (INFO != 0)
     throw std::runtime_error(fmt::format("dsyevd failed. INFO={}. LAPACK may have overwritten the input matrix; not retrying fallback.", INFO));
-  return copy_results<double>(eigenvalues, ham, jobz, dim, dim);
+  return move_results<double>(eigenvalues, m, jobz, dim);
 }
 
 template<real_matrix RM>
@@ -412,7 +433,7 @@ auto diagonalise_zheev(CM &m, const char jobz = 'V', const bool saveram = false,
   // Step 2: perform the diagonalisation
   LAPACK_zheev(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), WORK.data(), &LWORK, RWORK.data(), &INFO);
   if (INFO != 0) throw std::runtime_error(fmt::format("dsyev failed. INFO={}", INFO));
-  return copy_results<std::complex<double>>(eigenvalues, ham, jobz, dim, dim);
+  return move_results<std::complex<double>>(eigenvalues, m, jobz, dim);
 }
 
 template<complex_matrix CM>
@@ -450,7 +471,7 @@ auto diagonalise_zheevd(CM &m, const char jobz = 'V', const bool saveram = false
   LAPACK_zheevd(&jobz, &UPLO, &NN, ham, &LDA, eigenvalues.data(), WORK.data(), &LWORK, RWORK.data(), &LRWORK, IWORK.data(), &LIWORK, &INFO);
   if (INFO != 0)
     throw std::runtime_error(fmt::format("zheevd failed. INFO={}. LAPACK may have overwritten the input matrix; not retrying fallback.", INFO));
-  return copy_results<std::complex<double>>(eigenvalues, ham, jobz, dim, dim);
+  return move_results<std::complex<double>>(eigenvalues, m, jobz, dim);
 }
 
 template<complex_matrix CM>
@@ -605,7 +626,8 @@ auto diagonalise_cuda_zheevd(CM &m, const char jobz = 'V', const bool log_worksp
 #endif
 
 // Wrapper for the diagonalization of the Hamiltonian matrix. The number of eigenpairs returned does NOT need to be
-// equal to the dimension of the matrix h. Matrix m is destroyed in the process, thus no const attribute!
+// equal to the dimension of the matrix h. Matrix m is consumed in the process (overwritten or moved into the
+// result), thus no const attribute!
 template<matrix M> auto diagonalise(M &m, const DiagParams &DP, const int myrank) {
   using S = typename M::value_type;
   const std::string rank_string = myrank >= 0 ? " [rank=" + std::to_string(myrank) + "]" : "";
@@ -614,6 +636,7 @@ template<matrix M> auto diagonalise(M &m, const DiagParams &DP, const int myrank
   const auto log_workspace = DP.logletter('#');
   Timing timer;
   my_assert(is_matrix_upper(m));
+  const auto mdim = size1(m);
   RawEigen<S> d;
   if constexpr (std::is_same_v<S, double>) {
     if (DP.diag == "dsyev"s) d = diagonalise_dsyev(m, 'V', DP.saveram, log_workspace);
@@ -655,10 +678,10 @@ template<matrix M> auto diagonalise(M &m, const DiagParams &DP, const int myrank
   }
   const auto nr_computed = d.getnrcomputed();
   my_assert(nr_computed > 0); // zero computed eigenvalues signals serious failure
-  my_assert(has_lesseq_rows(d.vec, m)); // sanity check
+  my_assert(nr_computed <= mdim && d.getdim() == mdim); // sanity check
   if (DP.logletter('e'))
     d.dump_eigenvalues();
-  nrglogdp('A', "LAPACK, dim=" << dim(m) << " M=" << nr_computed << rank_string);
+  nrglogdp('A', "LAPACK, dim=" << mdim << " M=" << nr_computed << rank_string);
   nrglogdp('t', "Elapsed: " << std::setprecision(3) << timer.total_in_seconds() << rank_string);
   return d;
 }

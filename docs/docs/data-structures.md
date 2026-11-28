@@ -46,6 +46,11 @@ Defined in `c++/invar.hpp`.
 
 `Twoinvar` is the paired index used for block-structured matrices such as operator matrix elements between two invariant subspaces.
 
+`Invar` stores up to `Invar::MAX_INVDIM` (4) quantum numbers inline, so copies do not allocate memory; the symmetry
+types use at most three. Ordering is lexicographic, and the serialized form (checkpoints, MPI messages) is that of a
+`std::vector<int>`. The names and combination rules of the quantum numbers are static metadata set by `initInvar()`
+when the symmetry object is constructed.
+
 Why it matters:
 
 - it is the common index space for block matrices

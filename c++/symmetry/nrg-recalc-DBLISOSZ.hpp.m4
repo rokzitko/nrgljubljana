@@ -6,7 +6,7 @@ namespace NRG {
 
 using std::sqrt;
 
-// *** WARNING!!! Modify nrg-recalc-DBLISOSZ.cc.m4, not nrg-recalc-DBLISOSZ.cc !!!
+// *** WARNING!!! Modify nrg-recalc-DBLISOSZ.hpp.m4, not nrg-recalc-DBLISOSZ.hpp, then run recalc-macros.update !!!
 
 // Quantum number dependant recalculation routines
 // Rok Zitko, rok.zitko@ijs.si, Mar 2010

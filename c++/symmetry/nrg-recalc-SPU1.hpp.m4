@@ -3,7 +3,7 @@
 
 namespace NRG {
 
-// *** WARNING!!! Modify nrg-recalc-SPSU2.cc.m4, not nrg-recalc-SPSU2.cc !!!
+// *** WARNING!!! Modify nrg-recalc-SPU1.hpp.m4, not nrg-recalc-SPU1.hpp, then run recalc-macros.update !!!
 
 // Quantum number dependant recalculation routines
 // Rok Zitko, rok.zitko@ijs.si, Dec 2008.

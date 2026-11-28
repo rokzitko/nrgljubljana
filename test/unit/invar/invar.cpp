@@ -2,7 +2,12 @@
 
 #include <initializer_list>
 #include <sstream>
+#include <stdexcept>
 #include <string>
+#include <vector>
+
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
 
 #include <invar.hpp>
 #include <mk_sym.hpp>
@@ -113,6 +118,48 @@ TEST(Invar, InvertParity) { // NOLINT
   EXPECT_EQ(inverted, Invar(1,2,-1));
   EXPECT_EQ(I, Invar(1,2,1));
   EXPECT_EQ(inverted.InvertParity(), I);
+}
+
+// Checkpoints and MPI messages store Invar in the format of a class with a single std::vector<int> member, which was
+// its original storage. The archive format must not depend on the in-memory storage of the quantum numbers.
+namespace {
+struct VectorInvar {
+  std::vector<int> data;
+  template <class Archive> void serialize(Archive &ar, [[maybe_unused]] const unsigned int version) { ar &data; }
+};
+} // namespace
+
+TEST(Invar, serialization_format) { // NOLINT
+  initInvar({{"Q", additive}, {"SS", additive}, {"P", multiplicative}});
+  const Invar I(-3, 4, -1);
+  const VectorInvar reference{{-3, 4, -1}};
+  std::ostringstream s1, s2;
+  {
+    boost::archive::binary_oarchive oa(s1);
+    oa << I;
+    boost::archive::binary_oarchive ob(s2);
+    ob << reference;
+  }
+  EXPECT_EQ(s1.str(), s2.str());
+  std::istringstream in(s2.str());
+  boost::archive::binary_iarchive ia(in);
+  Invar J;
+  ia >> J;
+  EXPECT_EQ(J, I);
+}
+
+TEST(Invar, comparison_is_lexicographic) { // NOLINT
+  initInvar({{"Q", additive}, {"SS", additive}});
+  EXPECT_LT(Invar(-1, 5), Invar(0, 1));
+  EXPECT_LT(Invar(0, 1), Invar(0, 2));
+  EXPECT_FALSE(Invar(0, 2) < Invar(0, 2));
+  EXPECT_LT(Invar(1), Invar(1, 0)); // a shorter prefix orders first, as for std::vector
+  EXPECT_NE(Invar(1), Invar(1, 0));
+}
+
+TEST(Invar, get_unknown_name_throws) { // NOLINT
+  initInvar({{"Q", additive}, {"SS", additive}});
+  EXPECT_THROW(static_cast<void>(Invar(0, 1).get("SSZ")), std::invalid_argument);
 }
 
 int main(int argc, char **argv) {

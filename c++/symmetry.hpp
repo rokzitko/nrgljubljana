@@ -90,14 +90,13 @@ class Symmetry {
    Symmetry &operator=(const Symmetry &) = delete;
    Symmetry &operator=(Symmetry &&) = delete;
    virtual ~Symmetry() {}
-   auto input_subspaces() const { return In; }
+   [[nodiscard]] const auto &input_subspaces() const { return In; }
    auto QN_subspace(const size_t i) const { my_assert(i < P.combs); return QN[i]; }
    auto ancestor(const Invar &I, const size_t i) const {
      my_assert(i < P.combs);
-     const auto input = input_subspaces();
      Invar anc = I;
-     anc.combine(input[i]);
-     return anc; // I.combine(input[i]) == input[i].combine(I)
+     anc.combine(In[i]);
+     return anc; // I.combine(In[i]) == In[i].combine(I)
    }
    [[nodiscard]] size_t nr_combs() const {
      my_assert(P.combs == In.size());

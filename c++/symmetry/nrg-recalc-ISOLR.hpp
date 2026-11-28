@@ -5,15 +5,13 @@ namespace NRG {
 
 using std::sqrt;
 
-// *** WARNING!!! Modify nrg-recalc-ISOLR.cc.m4, not nrg-recalc-ISOLR.cc !!!
+// *** WARNING!!! Modify nrg-recalc-ISOLR.hpp.m4, not nrg-recalc-ISOLR.hpp, then run recalc-macros.update !!!
 
 // Quantum number dependent recalculation routines
 // Rok Zitko, rok.zitko@ijs.si, Feb 2006, June 2006, Nov 2007
 // This file pertains to (I,S,P) subspaces
 
-namespace NRG {
-
-// m4 macros for nrg-recalc-*.cc files
+// m4 macros for nrg-recalc-*.hpp.m4 files
 // Rok Zitko, rok.zitko@ijs.si, 2007-2020
 
 
@@ -29,8 +27,6 @@ namespace NRG {
 
 
 
-
-}
 
 
 // (ISOLR): 8 calls of recalc_f() are necessary: different parities are also possible!

@@ -4,7 +4,6 @@ find . -name "*debug" -delete
 find . -name "*mma" -delete
 find . -name "*-def.dat" -delete
 find . -name "log" -delete
-find . -name ".svn" -delete
 find . -name "new.dat" -delete
 find . -name "newqn.dat" -delete
 find . -name "newd.dat" -delete

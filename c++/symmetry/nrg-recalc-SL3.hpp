@@ -3,15 +3,13 @@
 
 namespace NRG {
 
-// *** WARNING!!! Modify nrg-recalc-SL3.cc.m4, not nrg-recalc-SL3.cc !!!
+// *** WARNING!!! Modify nrg-recalc-SL3.hpp.m4, not nrg-recalc-SL3.hpp, then run recalc-macros.update !!!
 
 // Quantum number dependant recalculation routines
 // Rok Zitko, rok.zitko@ijs.si, June 2006, Nov 2007, Oct 2010
 // This file pertains to the spinless-fermions code.
 
-namespace NRG {
-
-// m4 macros for nrg-recalc-*.cc files
+// m4 macros for nrg-recalc-*.hpp.m4 files
 // Rok Zitko, rok.zitko@ijs.si, 2007-2020
 
 
@@ -27,8 +25,6 @@ namespace NRG {
 
 
 
-
-}
 
 
 template<typename SC>

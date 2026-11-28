@@ -5,15 +5,13 @@
 
 namespace NRG {
 
-// *** WARNING!!! Modify nrg-recalc-U1.cc.m4, not nrg-recalc-U1.cc !!!
+// *** WARNING!!! Modify nrg-recalc-U1.hpp.m4, not nrg-recalc-U1.hpp, then run recalc-macros.update !!!
 
 // Quantum number dependant recalculation routines
 // Rok Zitko, rok.zitko@ijs.si, June 2006, Oct 2012
 // This file pertains to (Q) subspaces
 
-namespace NRG {
-
-// m4 macros for nrg-recalc-*.cc files
+// m4 macros for nrg-recalc-*.hpp.m4 files
 // Rok Zitko, rok.zitko@ijs.si, 2007-2020
 
 
@@ -29,8 +27,6 @@ namespace NRG {
 
 
 
-
-}
 
 
 // Recalculate matrix elements of a doublet tensor operator

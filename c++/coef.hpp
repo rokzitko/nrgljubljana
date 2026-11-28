@@ -41,52 +41,6 @@ public:
   }
 };
 
-// Read matrices into a std::vector. First value to be read, 'nr', is either vector dimension or
-// the value of maximum index. This is followed by the matrix dimensions 'size1' and 'size2'.
-template <scalar S> auto read_matrix_table(std::istream &F, const bool nr_is_max_index = false) {
-  const auto nr = read_one<size_t>(F);
-  const auto len = nr_is_max_index ? nr+1 : nr;
-  if (len < 1) throw std::runtime_error("read_matrix_table(): expected at least one matrix.");
-  const auto size1 = read_one<size_t>(F);
-  const auto size2 = read_one<size_t>(F);
-  if (size1 != size2) throw std::runtime_error("read_matrix_table(): expected square matrices.");
-  using t_matrix = Matrix_traits<S>;
-  std::vector<t_matrix> vec(len);
-  for (auto j = 0; j < len; j++)
-    vec[j] = read_matrix<S>(F, size1, size2);
-  if (F.fail()) throw std::runtime_error("read_std_vector() error. Input file is corrupted.");
-  return vec;
-}
-
-#ifdef CHAIN_COEF
-// PROPOSED NEW DATA STRUCTURE
-// Table of Wilson chain coefficients in matrix form, one element per shell.
-// The meaning of the internal matrix dimensions depends on the symmetry type,
-// it can be channel/orbital, spin, Nambu particle/hole degree of freedom, etc.,
-// or a combination of several of those. The implementation of each symmetry type
-// should provide an appropriate view adapter for the Wilson chain matrices.
-template <scalar S, typename t_coef = coef_traits<S>, typename t_matrix = Matrix_traits<S>>
-class chain_coef {
-private:
-  using t_coef_matrix_v = std::vector<t_matrix>;
-  t_coef_matrix_v matrix_table;
-public:
-  using t_ndx = typename t_coef_matrix_v::size_type;
-  // Read values from a stream f.
-  void read(std::istream &f) {
-    matrix_table = read_matrix_table<t_coef>(f, true); // true means the number given is max index, thus len=#+1
-  }
-  [[nodiscard]] auto coef(const t_ndx n) const {
-    my_assert(n < matrix_table.size());
-    return matrix_table[n];
-  }
-  [[nodiscard]] auto size() const {
-    my_assert(matrix_table.size() > 0);
-    return matrix_table[0].size1();
-  }
-};
-#endif
-
 // One table of discretization coefficients for each channel
 template <scalar S, typename t_coef = coef_traits<S>>
 class set_of_coef_tables {
@@ -122,15 +76,6 @@ private:
 
 public:
   explicit Coef(const Params &P_) : P(P_) {}
-
-// NEW INTERFACE
-
-#ifdef CHAIN_COEF
-  chain_coef<S> eps; // f^dag_N f_N+1 terms
-  chain_coef<S> t;   // f^dag_N f_N terms
-#endif
-
-// OLD INTERFACE
 
   using t_ndx = typename set_of_coef_tables<S>::t_ndx;
   using t_ch  = typename set_of_coef_tables<S>::t_ch;

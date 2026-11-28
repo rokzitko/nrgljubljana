@@ -11,9 +11,7 @@ using std::sqrt;
 // Rok Zitko, rok.zitko@ijs.si, Feb 2016
 // This file pertains to (Q,S,Tz) subspaces
 
-namespace NRG {
-
-// m4 macros for nrg-recalc-*.cc files
+// m4 macros for nrg-recalc-*.hpp.m4 files
 // Rok Zitko, rok.zitko@ijs.si, 2007-2020
 
 
@@ -29,8 +27,6 @@ namespace NRG {
 
 
 
-
-}
 
 
 template<typename SC>
