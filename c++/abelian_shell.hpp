@@ -1,10 +1,12 @@
 // abelian_shell.hpp - Coefficient tables of abelian symmetry types, generated at run time for any number of channels.
 //
 // In an NRG step, the states of the added Wilson-chain site (one site per channel) are combined with the invariant
-// subspaces of the previous step. For the abelian symmetry types NONE, P, U1, QSZ, and SPU1 every combination is a
+// subspaces of the previous step. For the abelian symmetry types NONE, P, U1, QSZ, SPU1, QSZ4, and SPZ4 every
+// combination is a
 // single Fock state of the added site, so all coefficients are matrix elements of fermion operators between Fock
 // states. They used to be generated with Mathematica (c++/symmetry/coefnew, kept as test reference) separately for
-// each channel number; this file computes the same tables for any number of channels.
+// each channel number; this file computes the same tables for any number of channels. QSZ4 and SPZ4 (2S_z modulo 4)
+// have no Mathematica tables.
 //
 // Conventions (identical to those of the Mathematica tables, see test/unit/symmetry/abelian_shell.cpp):
 // - Modes: spin-1/2 fermions of channels 0..K-1; mode index m = 2*ch + spin with spin up (0) before spin down (1).
@@ -40,7 +42,7 @@ namespace NRG::AbelianShell {
 using cmpl = std::complex<double>;
 using State = std::uint32_t;
 
-enum class Kind { NONE, P, U1, QSZ, SPU1 };
+enum class Kind { NONE, P, U1, QSZ, SPU1, QSZ4, SPZ4 };
 
 [[nodiscard]] inline Kind kind_from_name(const std::string &symtype) {
   if (symtype == "NONE") return Kind::NONE;
@@ -48,6 +50,8 @@ enum class Kind { NONE, P, U1, QSZ, SPU1 };
   if (symtype == "U1") return Kind::U1;
   if (symtype == "QSZ") return Kind::QSZ;
   if (symtype == "SPU1") return Kind::SPU1;
+  if (symtype == "QSZ4") return Kind::QSZ4;
+  if (symtype == "SPZ4") return Kind::SPZ4;
   throw std::invalid_argument(fmt::format("No abelian shell tables for symmetry type {}.", symtype));
 }
 
@@ -162,6 +166,8 @@ class Shell {
        case Kind::U1: by(Q); break;                               // qbasis
        case Kind::QSZ: by(QSz); break;                            // qszbasis
        case Kind::SPU1: by(QSz); by(twoSz); break;                // qszbasis, then Sz
+       case Kind::QSZ4: by(QSz); by([&](State s) { return std::pair{Q(s), mod4(twoSz(s))}; }); break;
+       case Kind::SPZ4: by(QSz); by([&](State s) { return mod4(twoSz(s)); }); break;
      }
      for (const auto s : states_) {
        switch (kind_) {
@@ -170,6 +176,8 @@ class Shell {
          case Kind::U1: qn_.emplace_back(Q(s)); in_.emplace_back(-Q(s)); break;
          case Kind::QSZ: qn_.emplace_back(Q(s), twoSz(s)); in_.emplace_back(-Q(s), -twoSz(s)); break;
          case Kind::SPU1: qn_.emplace_back(twoSz(s)); in_.emplace_back(-twoSz(s)); break;
+         case Kind::QSZ4: qn_.emplace_back(Q(s), mod4(twoSz(s))); in_.emplace_back(-Q(s), mod4(-twoSz(s))); break;
+         case Kind::SPZ4: qn_.emplace_back(mod4(twoSz(s))); in_.emplace_back(mod4(-twoSz(s))); break;
        }
      }
    }
@@ -216,6 +224,7 @@ class Shell {
  private:
    // Fermion parity label of the P symmetry type: +1 for an odd, -1 for an even charge Q = N - K measured from half
    // filling (nrgcoef convention 2(Mod[Q,2]-1/2)).
+   [[nodiscard]] static int mod4(const int x) { return ((x % 4) + 4) % 4; }
    [[nodiscard]] int parity(const State s) const { return (nr_electrons(s) - int(channels_)) % 2 != 0 ? 1 : -1; }
    Kind kind_;
    std::size_t channels_;

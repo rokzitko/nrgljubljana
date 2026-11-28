@@ -1,0 +1,22 @@
+[extra]
+B=0.03
+
+[param]
+symtype=QSZ4
+model=SIAM
+variant=MAGFIELD
+U=0.5
+delta=0.1
+Gamma=0.1
+
+
+discretization=Z
+Lambda=3.0
+Nmax=2
+keep=100000
+T=0.05
+
+ops=A_d n_d SZd
+specd=A_d-A_d-u A_d-A_d-d
+fdm=true
+fdmexpv=true

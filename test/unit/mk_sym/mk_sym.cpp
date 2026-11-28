@@ -81,7 +81,7 @@ TEST(mk_sym, QJ_requires_three_channels) {
 // With substeps=true, P.combs counts the states of a single channel. Only the symmetry types that implement
 // recalc_irreduc_substeps() are accepted.
 template <typename S> int check_substeps_support() {
-  const std::vector<std::string> with_substeps{"QS", "QSZ", "SPSU2", "SPU1", "P", "NONE", "U1"};
+  const std::vector<std::string> with_substeps{"QS", "QSZ", "SPSU2", "SPU1", "P", "NONE", "U1", "QSZ4", "SPZ4"};
   int checked = 0;
   for (const auto &t : symmetry_traits) {
     const std::string name(t.name);

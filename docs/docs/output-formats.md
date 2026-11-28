@@ -108,12 +108,14 @@ Symmetry fields are inserted immediately after `T` in this order:
 | `SL3` | `<Q1>`, `<Q1^2>`, `<sQ1^2>`, `<Q2>`, `<Q2^2>`, `<sQ2^2>`, `<Q3>`, `<Q3^2>`, `<sQ3^2>` |
 | `QS`, `QSLR`, `QSC3` | `<Sz^2>`, `<Q>`, `<Q^2>` |
 | `QSZ`, `QSZLR` | `<Sz^2>`, `<Sz>`, `<Q>`, `<Q^2>` |
+| `QSZ4` | `<Q>`, `<Q^2>` |
 | `QST`, `QSTZ` | `<Sz^2>`, `<Tz^2>`, `<Q>`, `<Q^2>` |
 | `QSZTZ` | `<Sz>`, `<Sz^2>`, `<Tz>`, `<Tz^2>`, `<Q>`, `<Q^2>` |
 | `QJ` | `<Jz^2>`, `<Q>`, `<Q^2>` |
 | `SPSU2`, `SPSU2LR`, `SPSU2C3` | `<Sz^2>` |
 | `SPSU2T` | `<Sz^2>`, `<Tz^2>` |
 | `SPU1`, `SPU1LR` | `<Sz^2>`, `<Sz>` |
+| `SPZ4` | none |
 | `ISO`, `ISO2`, `ISOLR`, `ISO2LR` | `<Sz^2>`, `<Q^2>` |
 | `ISOSZ`, `ISOSZLR` | `<Sz^2>`, `<Sz>`, `<Q^2>` |
 | `DBLSU2` | `<Q1^2>`, `<Q2^2>` |

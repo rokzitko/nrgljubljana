@@ -154,6 +154,8 @@ void init(const Kind kind) {
     case Kind::U1: initInvar({{"Q", additive}}); break;
     case Kind::QSZ: initInvar({{"Q", additive}, {"SSZ", additive}}); break;
     case Kind::SPU1: initInvar({{"SSZ", additive}}); break;
+    case Kind::QSZ4: initInvar({{"Q", additive}, {"SSZ", mod4}}); break;
+    case Kind::SPZ4: initInvar({{"SSZ", mod4}}); break;
   }
 }
 
@@ -288,7 +290,7 @@ TEST(AbelianShell, U1) {
 
 // Shells with more channels than the Mathematica tables: consistency checks.
 TEST(AbelianShell, many_channels) {
-  for (const auto kind : {Kind::NONE, Kind::P, Kind::U1, Kind::QSZ, Kind::SPU1}) {
+  for (const auto kind : {Kind::NONE, Kind::P, Kind::U1, Kind::QSZ, Kind::SPU1, Kind::QSZ4, Kind::SPZ4}) {
     init(kind);
     for (const std::size_t K : {3, 4, 5}) {
       const Shell s(kind, K);
@@ -306,8 +308,31 @@ TEST(AbelianShell, many_channels) {
       for (std::size_t i = 1; i <= s.size(); ++i) {
         auto x = s.qn(i);
         x.combine(s.in(i));
-        if (kind == Kind::P) EXPECT_EQ(x, Invar(1)); else EXPECT_EQ(x, s.kind() == Kind::QSZ ? Invar(0, 0) : Invar(0));
+        if (kind == Kind::P) EXPECT_EQ(x, Invar(1));
+        else EXPECT_EQ(x, kind == Kind::QSZ || kind == Kind::QSZ4 ? Invar(0, 0) : Invar(0));
       }
+    }
+  }
+}
+
+// QSZ4 and SPZ4 (no Mathematica tables): the labels are those of QSZ and SPU1 with 2S_z taken modulo 4, and the
+// fermion operators change the label by +1 (spin up) and +3 (spin down).
+TEST(AbelianShell, Z4_labels) {
+  for (const auto kind : {Kind::QSZ4, Kind::SPZ4}) {
+    init(kind);
+    for (const std::size_t K : {1, 2, 3}) {
+      const Shell s(kind, K);
+      const auto spin_index = kind == Kind::QSZ4 ? 1 : 0;
+      for (std::size_t i = 1; i <= s.size(); ++i) {
+        int twoSz = 0;
+        for (std::size_t ch = 0; ch < K; ++ch) twoSz += s.electrons(i, ch, Spin::up) - s.electrons(i, ch, Spin::down);
+        EXPECT_EQ(s.qn(i).getqn(spin_index), ((twoSz % 4) + 4) % 4);
+        if (kind == Kind::QSZ4) EXPECT_EQ(s.qn(i).getqn(0), s.electrons(i) - int(K));
+      }
+      for (std::size_t ch = 0; ch < K; ++ch)
+        for (const auto &[sp, d] : {std::pair{Spin::up, 1}, std::pair{Spin::down, 3}})
+          for (const auto &[i, j, v] : s.entries(cdag(ch, sp)))
+            EXPECT_EQ(((s.qn(i).getqn(spin_index) - s.qn(j).getqn(spin_index)) % 4 + 4) % 4, d);
     }
   }
 }

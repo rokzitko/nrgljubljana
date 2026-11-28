@@ -151,7 +151,7 @@ InitPolarized[] := Module[{},
 
   (* Changes in the case of spin-polarized conduction bands. *)
   If[POLARIZED,
-    If[!MemberQ[{"QSZ", "U1", "SPU1", "P", "PP", "NONE"}, SYMTYPE],
+    If[!MemberQ[{"QSZ", "U1", "SPU1", "P", "PP", "NONE", "QSZ4", "SPZ4"}, SYMTYPE],
       MyError["Spin polarized calculation not supported with chosen SYMTYPE."]
     ];
     COEFCHANNELS = 2 CHANNELS; (* Double the number of coefficient sets for channels. *)
@@ -312,7 +312,7 @@ lrextrarule = {};
 
 (* Some useful functions for Hamiltonian construction and error checking. *)
 checkQSZ[] := If[Nor[isQSZ[], isP[], isPP[], isNONE[], isDBLQSZ[], isDBLSU2[], isDBLISOSZ[], isSU2[], isU1[],
-                     isSPU1[], isSPU1LR[], isISOSZ[]],
+                     isSPU1[], isSPU1LR[], isISOSZ[], isQSZ4[], isSPZ4[]],
  MyError["SYMTYPE==QSZ (and similar) only"]
 ];
 

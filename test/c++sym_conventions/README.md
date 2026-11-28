@@ -7,23 +7,27 @@ columns and has a per-case reference. The groups fix the conventions described i
 
 | Group | Symmetry types | Problem | Reference values from |
 | --- | --- | --- | --- |
-| `conv_pairing_1ch_*` | SPSU2, SPU1, P, NONE | Clean SC chain, `bcsgap=0.1+0.1i` | SPSU2 |
-| `conv_pairing_2ch_*` | SPSU2, SPU1, P, NONE, PP | Two clean SC chains, `bcsgap1=0.1+0.1i`, `bcsgap2=0.2-0.05i` | SPSU2 |
+| `conv_pairing_1ch_*` | SPSU2, SPU1, SPZ4, P, NONE | Clean SC chain, `bcsgap=0.1+0.1i` | SPSU2 |
+| `conv_pairing_2ch_*` | SPSU2, SPU1, SPZ4, P, NONE, PP | Two clean SC chains, `bcsgap1=0.1+0.1i`, `bcsgap2=0.2-0.05i` | SPSU2 |
 | `conv_pairing_2ch_equal_*` | SPSU2, SPSU2LR, SPU1LR | Two clean SC chains, `bcsgap=0.1+0.1i` | SPSU2 |
 | `conv_pairing_kappa_*` | SPSU2, SPU1 | Complex hopping, complex pairing and anomalous hopping (hand-edited tables in `coefficients`) | `../c++sym_spsu2/spsu2_kappa+eps+t-complex1` |
-| `conv_polarized_1ch_*` | QSZ, U1, SPU1, P, NONE | SIAM, `polarized=true`, spin-dependent particle-hole asymmetric bath | QSZ |
-| `conv_polarized_2ch_*` | QSZ, U1, P, NONE, PP | Two clean chains, `polarized=true`, spin-dependent particle-hole asymmetric bath | QSZ |
+| `conv_polarized_1ch_*` | QSZ, U1, SPU1, QSZ4, SPZ4, P, NONE | SIAM, `polarized=true`, spin-dependent particle-hole asymmetric bath | QSZ |
+| `conv_polarized_2ch_*` | QSZ, U1, QSZ4, P, NONE, PP | Two clean chains, `polarized=true`, spin-dependent particle-hole asymmetric bath | QSZ |
 | `conv_unpolarized_1ch_*`, `conv_polarized_symmetric_1ch_*` | QS, P (unpolarized); QSZ, P, NONE (`polarized=true`) | SIAM, spin-independent particle-hole asymmetric bath | QS |
-| `conv_3ch_*` | QS, QSZ, U1, SPU1, P | Three clean chains, particle-hole asymmetric bath | QS |
-| `conv_pairing_3ch_*` | SPSU2, SPU1 | Three clean SC chains, `bcsgap=0.1+0.1i` | SPSU2 |
+| `conv_3ch_*` | QS, QSZ, U1, SPU1, QSZ4, SPZ4, P | Three clean chains, particle-hole asymmetric bath | QS |
+| `conv_pairing_3ch_*` | SPSU2, SPU1, SPZ4 | Three clean SC chains, `bcsgap=0.1+0.1i` | SPSU2 |
 | `conv_doublet_1ch_*` | NONE, P | SIAM, spectral function of the doublet operator `A_d_1` | NONE |
-| `conv_substeps_2ch_*` | QS, QSZ, U1, SPU1, P, NONE | Two-channel SIAM, interleaved diagonalization (`substeps=true`), particle-hole asymmetric bath | QS |
-| `conv_polarized_substeps_2ch_*` | QSZ (`QSZref`: without substeps); QSZ, U1, SPU1, P, NONE (with substeps) | Two-channel SIAM with a different hybridization for each channel and spin, `polarized=true`, impurity field | QSZ without substeps |
-| `conv_globalop_1ch_*` | QSZ, U1 | SIAM with a local field (`siamB.m`), global operator `SZtot` (`modeloperators.m`) | QSZ |
+| `conv_substeps_2ch_*` | QS, QSZ, U1, SPU1, QSZ4, SPZ4, P, NONE | Two-channel SIAM, interleaved diagonalization (`substeps=true`), particle-hole asymmetric bath | QS |
+| `conv_polarized_substeps_2ch_*` | QSZ (`QSZref`: without substeps); QSZ, U1, SPU1, QSZ4, SPZ4, P, NONE (with substeps) | Two-channel SIAM with a different hybridization for each channel and spin, `polarized=true`, impurity field | QSZ without substeps |
+| `conv_globalop_1ch_*` | QSZ, U1, QSZ4 | SIAM with a local field (`siamB.m`), global operator `SZtot` (`modeloperators.m`) | QSZ |
+| `conv_aniso_sc_1ch_*` | P, SPZ4 | Spin-1 Kondo impurity (`variant=ANISONEW`) with $D$, $E$, and $B$ in a SC bath; correlator of $S_x$ | P |
+| `conv_aniso_1ch_*` | U1, QSZ4 | As `conv_aniso_sc_1ch_*`, normal bath | U1 |
+| `conv_spinresolved_sc_1ch_*` | SPU1, SPZ4 | SIAM in a SC bath with an impurity field (`variant=MAGFIELD`); spin-resolved `A_d` spectral functions | SPU1 |
+| `conv_spinresolved_1ch_*` | QSZ, QSZ4 | As `conv_spinresolved_sc_1ch_*`, normal bath | QSZ |
 
 What the groups check:
 
-- **Channel number.** The coefficient tables of NONE, P, U1, QSZ, and SPU1 are generated at run time for any number
+- **Channel number.** The coefficient tables of NONE, P, U1, QSZ, SPU1, QSZ4, and SPZ4 are generated at run time for any number
   of channels (`c++/abelian_shell.hpp`); for three channels they are compared with QS and SPSU2, whose tables are
   still the Mathematica-generated ones. The NONE cases with three channels are omitted for their run time.
 - **Interleaved diagonalization.** With `substeps=true` one channel is added per step; the coefficient tables are
@@ -31,6 +35,12 @@ What the groups check:
   ordinary NRG diagonalizes the same Hamiltonian, so the FDM results agree exactly; `conv_polarized_substeps_2ch_*`
   uses this to check spin-polarized chains with substeps against ordinary NRG. Only `customfdm` and `tdfdm` are
   shared in this group, since `custom` and `td` have one row per (sub)step.
+- **Z<sub>4</sub> spin label.** `SPZ4` and `QSZ4` conserve $2S_z$ only modulo 4 (see
+  `docs/docs/symmetry-framework.md`). Without rhombic anisotropy they are compared with `SPU1` and `QSZ`, with it
+  (`conv_aniso_*`) with `P` and `U1`. There the operator $S_x$, which changes $2S_z$ by $\pm 2$, is of type `t`
+  (`spect`, output `spin_FDM_dens_SX-SX.dat`) instead of a singlet (`specs`, output `corr_FDM_dens_SX-SX.dat`); the
+  two files share the reference data. `custom` and `customfdm` contain $\langle S_x\rangle$ only for `P` and `U1`
+  and therefore have per-case references in these groups.
 - **Fermion sign in operator recalculation.** A fermionic operator of the previous sites acquires the sign
   (-1)^n of the occupation n of the added site. The P doublet tables generated with Mathematica lacked this sign.
 - **Spin labels of the U1 hopping.** U1 stores f^dag_up in block 0 and f^dag_down in block 1 of `<||f||>`. Without

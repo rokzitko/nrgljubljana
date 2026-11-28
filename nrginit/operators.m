@@ -398,6 +398,32 @@ Module[{t = {}},
 
   ];
 
+  (* Z_4 types (QSZ4, SPZ4): S_z, its powers, and the squares of the transverse spin components (S_+^2 changes 2S_z by
+     4) conserve 2S_z modulo 4 and are singlets. S_x, S_y, S_+, and S_- change 2S_z by +-2 and are operators of type
+     "t" that link the subspaces whose labels differ by 2 (mtZ4Op). *)
+  If[isZ4[],
+    t = Join[t, mtSingletOp["Pu", projectorUP @ d[] ] ];
+    t = Join[t, mtSingletOp["Pd", projectorDO @ d[] ] ];
+    t = Join[t, mtSingletOp["SZd",  spinz[d[]] ] ];
+    t = Join[t, mtSingletOp["SZ2d", pow[spinz[d[]],2] ] ];
+    t = Join[t, mtSingletOp["SX2d", pow[spinx[d[]],2] ] ];
+    t = Join[t, mtSingletOp["SY2d", pow[spiny[d[]],2] ] ];
+    t = Join[t, mtZ4Op["SXd", spinx[d[]] ] ];
+    t = Join[t, mtZ4Op["SYd", spiny[d[]] ] ];
+    t = Join[t, mtZ4Op["SPd", spinplus[d[]] ] ];
+    t = Join[t, mtZ4Op["SMd", spinminus[d[]] ] ];
+
+    (* For model=KONDO *)
+    t = Join[t, mtSingletOp["SZ",  spinketbraZ[SPIN] ] ];
+    t = Join[t, mtSingletOp["SZ2", pow[spinketbraZ[SPIN],2] ] ];
+    t = Join[t, mtSingletOp["SX2", pow[spinketbraX[SPIN],2] ] ];
+    t = Join[t, mtSingletOp["SY2", pow[spinketbraY[SPIN],2] ] ];
+    t = Join[t, mtZ4Op["SX", spinketbraX[SPIN] ] ];
+    t = Join[t, mtZ4Op["SY", spinketbraY[SPIN] ] ];
+    t = Join[t, mtZ4Op["SP", spinketbraP[SPIN] ] ];
+    t = Join[t, mtZ4Op["SM", spinketbraM[SPIN] ] ];
+  ];
+
  (** Correlations *)
 
   (* Spin on the impurity *)

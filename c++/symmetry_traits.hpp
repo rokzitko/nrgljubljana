@@ -16,14 +16,14 @@ struct SymmetryTraits {
 };
 
 // Every symmetry type of mk_sym.hpp. test/unit/mk_sym checks this list against the Symmetry classes.
-inline constexpr std::array<SymmetryTraits, 31> symmetry_traits{{
+inline constexpr std::array<SymmetryTraits, 33> symmetry_traits{{
   {"QS", false},      {"QSZ", true},      {"ISO", false},     {"ISO2", false},    {"ISOSZ", true},
   {"SPSU2", false},   {"SPU1", true},     {"DBLQSZ", true},   {"DBLSU2", false},  {"DBLISOSZ", true},
   {"ISOLR", false},   {"ISO2LR", false},  {"ISOSZLR", true},  {"NONE", false},    {"P", false},
   {"PP", false},      {"SL", false},      {"SL3", false},     {"SPSU2LR", false}, {"SPSU2T", false},
   {"SPU1LR", true},   {"SU2", false},     {"QSLR", false},    {"QST", false},     {"QSTZ", false},
   {"QSZTZ", false},   {"QSZLR", true},    {"QJ", false},      {"U1", false},      {"SPSU2C3", false},
-  {"QSC3", false},
+  {"QSC3", false},     {"QSZ4", true},     {"SPZ4", true},
 }};
 
 // The traits of a symmetry type, or nullptr if the name is unknown

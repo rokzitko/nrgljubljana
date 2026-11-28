@@ -14,13 +14,20 @@ using std::pow;
 // U(1) spin symmetry (conserved S_z) for problems with superconducting pairing. Any number of channels; the
 // coefficient tables are generated at run time (abelian_shell.hpp). One <||f||> block per channel holds both f^dag_up
 // (Delta SSZ = +1) and f^dag_down (Delta SSZ = -1).
+//
+// The class also implements SPZ4 (sym-SPZ4-impl.hpp), where only 2S_z modulo 4 is conserved: with modulus = 4 the spin
+// label SSZ is taken modulo 4, f^dag_up and f^dag_down change it by +1 and +3, and the spin-flip components of a
+// triplet (Delta SSZ = +2 and -2) coincide.
 template<typename SC>
 class SymmetrySPU1 : public SymField<SC> {
- private:
+ protected:
    using Symmetry<SC>::P;
    using Symmetry<SC>::In;
    using Symmetry<SC>::QN;
    using t_coef = coef_traits<SC>;
+
+   AbelianShell::Kind kind = AbelianShell::Kind::SPU1;
+   int modulus = 0; // 0: SSZ is additive (SPU1); 4: SSZ is taken modulo 4 (SPZ4)
 
    std::optional<AbelianShell::Shell> shell;
    // Hopping f^dag_N a_{N+1}: both spins, and each spin separately (polarized chains); anomalous hopping
@@ -30,28 +37,39 @@ class SymmetrySPU1 : public SymField<SC> {
    std::vector<std::vector<AbelianShell::Entry<AbelianShell::cmpl>>> isospinx; // upper triangle
    std::vector<std::array<std::vector<Recalc_f<SC>>, 2>> ftables;             // [ch][spin]: f^dag_sigma
 
+   // Spin label shifted by d
+   [[nodiscard]] Invar ssz(const int x) const { return Invar(modulus ? ((x % modulus) + modulus) % modulus : x); }
+   [[nodiscard]] int ssz_difference(const Invar &I1, const Invar &I2) const {
+     const int d = I1.get("SSZ") - I2.get("SSZ");
+     return modulus ? ((d % modulus) + modulus) % modulus : d;
+   }
+
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetrySPU1(const Params &P) : SymField<SC>(P, std::vector{"<Sz^2>", "<Sz>"}, Invar(0)) {
+   template<typename T>
+   SymmetrySPU1(const Params &P, const T td_fields) : SymField<SC>(P, td_fields, Invar(0)) {}
+   SymmetrySPU1(const Params &P) : SymmetrySPU1(P, std::vector{"<Sz^2>", "<Sz>"}) {
      initInvar({
         {"SSZ", additive} // spin projection
      });
    }
 
+  // The spin projection of the operator is defined by the difference in Sz of both the invariant subspaces.
   bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) const override {
-    // The spin projection of the operator is defined by the difference in Sz of both the invariant subspaces.
-    int ssz1  = I1.get("SSZ");
-    int sszp  = Ip.get("SSZ");
-    int sszop = ssz1 - sszp;
-    return sszop == SPIN;
+    const int sszop = ssz_difference(I1, Ip);
+    return modulus ? (sszop == 1 && SPIN == 1) || (sszop == 3 && SPIN == -1) : sszop == SPIN;
   }
 
-  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override { return u1_equality(I1.get("SSZ"), I2.get("SSZ"), I3.get("SSZ")); }
+  bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override {
+    auto I = I2;
+    I.combine(I3);
+    return I == I1;
+  }
 
   void load() override {
     using namespace AbelianShell;
-    shell.emplace(Kind::SPU1, shell_channels(P));
+    shell.emplace(kind, shell_channels(P));
     load_shell(*shell, In, QN, P);
     const auto K = shell->channels();
     offdiag.assign(K, {});
@@ -107,8 +125,8 @@ class SymmetrySPU1 : public SymField<SC> {
   void recalc_f_channel(const DiagInfo<SC> &diag, const std::size_t sch, const std::size_t ch, Opch<SC> &opch) const {
     for (const auto &[Ip, eig] : diag) {
       const int sszp = Ip.get("SSZ");
-      AbelianShell::recalc_f_block<SC>(*this, diag, Invar(sszp + 1), Ip, ftables[sch][0], opch[ch][0]); // f^dag_up
-      AbelianShell::recalc_f_block<SC>(*this, diag, Invar(sszp - 1), Ip, ftables[sch][1], opch[ch][0]); // f^dag_down
+      AbelianShell::recalc_f_block<SC>(*this, diag, ssz(sszp + 1), Ip, ftables[sch][0], opch[ch][0]); // f^dag_up
+      AbelianShell::recalc_f_block<SC>(*this, diag, ssz(sszp - 1), Ip, ftables[sch][1], opch[ch][0]); // f^dag_down
     }
   }
 
@@ -126,23 +144,25 @@ class SymmetrySPU1 : public SymField<SC> {
     return opch[M];
   }
 
+  // Doublets: fermionic operators changing SSZ by +1 or -1.
   MatrixElements<SC> recalc_doublet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const override {
     MatrixElements<SC> cnew;
     for (const auto &[I1, eig] : diag) {
       const int ssz1 = I1.get("SSZ");
-      AbelianShell::recalc_tensor<SC>(*this, *shell, diag, substruct, cold, I1, Invar(ssz1 + 1), Invar(-1), true, cnew);
-      AbelianShell::recalc_tensor<SC>(*this, *shell, diag, substruct, cold, I1, Invar(ssz1 - 1), Invar(+1), true, cnew);
+      AbelianShell::recalc_tensor<SC>(*this, *shell, diag, substruct, cold, I1, ssz(ssz1 + 1), ssz(-1), true, cnew);
+      AbelianShell::recalc_tensor<SC>(*this, *shell, diag, substruct, cold, I1, ssz(ssz1 - 1), ssz(+1), true, cnew);
     }
     return cnew;
   }
 
+  // Triplets: bosonic operators changing SSZ by 0, +2, or -2 (with modulus 4, +2 and -2 coincide).
   MatrixElements<SC> recalc_triplet(const DiagInfo<SC> &diag, const SubspaceStructure &substruct, const MatrixElements<SC> &cold) const override {
     MatrixElements<SC> cnew;
     for (const auto &[I1, eig] : diag) {
       const int ssz1 = I1.get("SSZ");
-      AbelianShell::recalc_tensor<SC>(*this, *shell, diag, substruct, cold, I1, Invar(ssz1), Invar(0), false, cnew);
-      AbelianShell::recalc_tensor<SC>(*this, *shell, diag, substruct, cold, I1, Invar(ssz1 + 2), Invar(-2), false, cnew);
-      AbelianShell::recalc_tensor<SC>(*this, *shell, diag, substruct, cold, I1, Invar(ssz1 - 2), Invar(+2), false, cnew);
+      AbelianShell::recalc_tensor<SC>(*this, *shell, diag, substruct, cold, I1, ssz(ssz1), ssz(0), false, cnew);
+      AbelianShell::recalc_tensor<SC>(*this, *shell, diag, substruct, cold, I1, ssz(ssz1 + 2), ssz(-2), false, cnew);
+      if (modulus != 4) AbelianShell::recalc_tensor<SC>(*this, *shell, diag, substruct, cold, I1, ssz(ssz1 - 2), ssz(+2), false, cnew);
     }
     return cnew;
   }

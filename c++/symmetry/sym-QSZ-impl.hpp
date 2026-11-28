@@ -14,13 +14,21 @@ using std::pow;
 
 // U(1) charge and U(1) spin symmetry (conserved Q and S_z). Any number of channels; the coefficient tables are
 // generated at run time (abelian_shell.hpp). One <||f||> block per channel holds both f^dag_up and f^dag_down.
+//
+// The class also implements QSZ4 (sym-QSZ4-impl.hpp), where only 2S_z modulo 4 is conserved: with modulus = 4 the
+// spin label SSZ is taken modulo 4 (see SymmetrySPU1 for the same construction).
 template<typename SC>
 class SymmetryQSZ : public SymField<SC> {
- private:
+ protected:
    using Symmetry<SC>::P;
    using Symmetry<SC>::In;
    using Symmetry<SC>::QN;
    using t_coef = coef_traits<SC>;
+
+   AbelianShell::Kind kind = AbelianShell::Kind::QSZ;
+   int modulus = 0; // 0: SSZ is additive (QSZ); 4: SSZ is taken modulo 4 (QSZ4)
+
+   [[nodiscard]] Invar qssz(const int q, const int x) const { return Invar(q, modulus ? ((x % modulus) + modulus) % modulus : x); }
 
    std::optional<AbelianShell::Shell> shell;
    // Hopping f^dag_N a_{N+1} for both spins and for each spin separately (polarized chains). All (i,j), see
@@ -35,28 +43,32 @@ class SymmetryQSZ : public SymField<SC> {
  public:
    using Matrix = typename traits<SC>::Matrix;
    using t_matel = typename traits<SC>::t_matel;
-   SymmetryQSZ(const Params &P) : SymField<SC>(P, std::vector{"<Sz^2>", "<Sz>", "<Q>", "<Q^2>"}, Invar(0,0), Invar(1,2)) {
+   template<typename T>
+   SymmetryQSZ(const Params &P, const T td_fields) : SymField<SC>(P, td_fields, Invar(0,0), Invar(1,2)) {}
+   SymmetryQSZ(const Params &P) : SymmetryQSZ(P, std::vector{"<Sz^2>", "<Sz>", "<Q>", "<Q^2>"}) {
      initInvar({
        {"Q", additive},  // charge
        {"SSZ", additive} // spin projection
      });
    }
 
+   // The spin projection of the operator is defined by the difference in Sz of both the invariant subspaces.
    bool check_SPIN(const Invar &I1, const Invar &Ip, const int &SPIN) const override {
-     // The spin projection of the operator is defined by the difference in Sz of both the invariant subspaces.
-     int ssz1  = I1.get("SSZ");
-     int sszp  = Ip.get("SSZ");
-     int sszop = ssz1 - sszp;
-     return sszop == SPIN;
+     int sszop = I1.get("SSZ") - Ip.get("SSZ");
+     if (!modulus) return sszop == SPIN;
+     sszop = ((sszop % modulus) + modulus) % modulus;
+     return (sszop == 1 && SPIN == 1) || (sszop == 3 && SPIN == -1);
    }
 
    bool triangle_inequality(const Invar &I1, const Invar &I2, const Invar &I3) const override {
-     return u1_equality(I1.get("Q"), I2.get("Q"), I3.get("Q")) && u1_equality(I1.get("SSZ"), I2.get("SSZ"), I3.get("SSZ"));
+     auto I = I2;
+     I.combine(I3);
+     return I == I1;
    }
 
    void load() override {
      using namespace AbelianShell;
-     shell.emplace(Kind::QSZ, shell_channels(P));
+     shell.emplace(kind, shell_channels(P));
      load_shell(*shell, In, QN, P);
      const auto K = shell->channels();
      offdiag.assign(K, {});
@@ -126,8 +138,8 @@ class SymmetryQSZ : public SymField<SC> {
        // NOTE: q,ssz only couples to q+1,ssz+-1 in general, even for several channels.
        const int qp   = Ip.get("Q");
        const int sszp = Ip.get("SSZ");
-       AbelianShell::recalc_f_block<SC>(*this, diag, Invar(qp + 1, sszp + 1), Ip, ftables[sch][0], opch[ch][0]); // f^dag_up
-       AbelianShell::recalc_f_block<SC>(*this, diag, Invar(qp + 1, sszp - 1), Ip, ftables[sch][1], opch[ch][0]); // f^dag_down
+       AbelianShell::recalc_f_block<SC>(*this, diag, qssz(qp + 1, sszp + 1), Ip, ftables[sch][0], opch[ch][0]); // f^dag_up
+       AbelianShell::recalc_f_block<SC>(*this, diag, qssz(qp + 1, sszp - 1), Ip, ftables[sch][1], opch[ch][0]); // f^dag_down
      }
    }
 
@@ -151,8 +163,8 @@ class SymmetryQSZ : public SymField<SC> {
      for (const auto &[I1, eig] : diag) {
        const int q1   = I1.get("Q");
        const int ssz1 = I1.get("SSZ");
-       AbelianShell::recalc_tensor<SC>(*this, *shell, diag, substruct, cold, I1, Invar(q1 - 1, ssz1 + 1), Invar(1, -1), true, cnew);
-       AbelianShell::recalc_tensor<SC>(*this, *shell, diag, substruct, cold, I1, Invar(q1 - 1, ssz1 - 1), Invar(1, +1), true, cnew);
+       AbelianShell::recalc_tensor<SC>(*this, *shell, diag, substruct, cold, I1, qssz(q1 - 1, ssz1 + 1), qssz(1, -1), true, cnew);
+       AbelianShell::recalc_tensor<SC>(*this, *shell, diag, substruct, cold, I1, qssz(q1 - 1, ssz1 - 1), qssz(1, +1), true, cnew);
      }
      return cnew;
    }
@@ -162,9 +174,10 @@ class SymmetryQSZ : public SymField<SC> {
      for (const auto &[I1, eig] : diag) {
        const int q1   = I1.get("Q");
        const int ssz1 = I1.get("SSZ");
-       AbelianShell::recalc_tensor<SC>(*this, *shell, diag, substruct, cold, I1, Invar(q1, ssz1), Invar(0, 0), false, cnew);
-       AbelianShell::recalc_tensor<SC>(*this, *shell, diag, substruct, cold, I1, Invar(q1, ssz1 + 2), Invar(0, -2), false, cnew);
-       AbelianShell::recalc_tensor<SC>(*this, *shell, diag, substruct, cold, I1, Invar(q1, ssz1 - 2), Invar(0, +2), false, cnew);
+       AbelianShell::recalc_tensor<SC>(*this, *shell, diag, substruct, cold, I1, qssz(q1, ssz1), qssz(0, 0), false, cnew);
+       AbelianShell::recalc_tensor<SC>(*this, *shell, diag, substruct, cold, I1, qssz(q1, ssz1 + 2), qssz(0, -2), false, cnew);
+       // with modulus 4, Delta SSZ = +2 and -2 coincide
+       if (modulus != 4) AbelianShell::recalc_tensor<SC>(*this, *shell, diag, substruct, cold, I1, qssz(q1, ssz1 - 2), qssz(0, +2), false, cnew);
      }
      return cnew;
    }

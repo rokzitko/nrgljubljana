@@ -1,0 +1,12 @@
+[param]
+symtype=SPZ4
+model=ZERO3CH
+discretization=Z
+Lambda=2.0
+bcsgap=!0.1+0.1I
+Nmax=1
+keep=100000
+T=1e-3
+ops=n_f Ix_f Iy_f
+fdmexpv=true
+options=COMPLEX

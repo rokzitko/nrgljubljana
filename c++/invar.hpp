@@ -40,17 +40,19 @@ inline double SZ(const int SSZ)  { return (SSZ - 1.0) / 2.0; }
 
 using InvType = std::vector<int>;
 
+// Combination rules of the quantum numbers. A type n >= 2 is addition modulo n, with values 0..n-1 (Z_n symmetry).
 constexpr int multiplicative = 0;
 constexpr int additive       = 1;
-constexpr int mod3           = 3;
+constexpr int mod3           = 3; // Z_3, e.g. C_3 rotations of three channels
+constexpr int mod4           = 4; // Z_4, e.g. 2S_z modulo 4 for rhombic spin anisotropy
 
-inline auto typestr(const int t) {
-  switch (t) {
-    case multiplicative: return "multiplicative";
-    case additive:       return "additive";
-    case mod3:           return "mod3";
-    default: my_assert_not_reached();
-  }
+[[nodiscard]] constexpr bool is_modulo(const int t) { return t >= 2; }
+
+inline std::string typestr(const int t) {
+  if (t == multiplicative) return "multiplicative";
+  if (t == additive) return "additive";
+  if (is_modulo(t)) return "mod" + std::to_string(t);
+  my_assert_not_reached();
 }
 
 // Quantum numbers of an invariant subspace. At most MAX_INVDIM numbers are stored inline (the symmetry types use up to
@@ -133,12 +135,11 @@ class Invar {
          my_assert(data[i] == 1 || data[i] == -1);
          data[i] *= invar2.getqn(i); // Multiplicative
          break;
-       case mod3:
-         my_assert(0 <= data[i] && data[i] <= 2);
-         data[i] += invar2.getqn(i); // Modulo 3 additive
-         data[i] = data[i] % 3;
-         break;
-       default: my_assert_not_reached();
+       default: {
+         const auto n = qntype[i];
+         my_assert(is_modulo(n) && 0 <= data[i] && data[i] < n);
+         data[i] = ((data[i] + invar2.getqn(i)) % n + n) % n; // addition modulo n
+       }
        }
      }
    }
@@ -155,12 +156,11 @@ class Invar {
          my_assert(data[i] == 1 || data[i] == -1);
          // do nothing since multiplication and division are equivalent! In principle, data[i] = 1/data[i].
          break;
-       case mod3:
-         my_assert(0 <= data[i] && data[i] <= 2);
-         // Flip sign and take modulo 3 value.
-         data[i] = (3 - data[i]) % 3;
-         my_assert(0 <= data[i] && data[i] <= 2);
-         break;
+       default: {
+         const auto n = qntype[i];
+         my_assert(is_modulo(n) && 0 <= data[i] && data[i] < n);
+         data[i] = (n - data[i]) % n; // flip sign modulo n
+       }
        }
    }
    [[nodiscard]] auto get(const std::string_view which) const {
@@ -171,10 +171,8 @@ class Invar {
      const auto type = qntype[index];
      const auto f    = getqn(index);
      // Sanity check
-     switch (type) {
-     case multiplicative: my_assert(f == 1 || f == -1); break;
-     case mod3: my_assert(0 <= f && f <= 2); break;
-     }
+     if (type == multiplicative) my_assert(f == 1 || f == -1);
+     if (is_modulo(type)) my_assert(0 <= f && f < type);
      return f;
    }
    void InvertMyParity() {
@@ -205,7 +203,7 @@ inline void initInvar(std::initializer_list<InvarStructure> l) {
   Invar::names.clear();
   auto i = 0;
   for (const auto & [n, t]: l) {
-    my_assert(t == additive || t == multiplicative || t == mod3);
+    my_assert(t == additive || t == multiplicative || is_modulo(t));
     Invar::names[n] = i++;
     Invar::qntype.push_back(t);
     std::cout << fmt::format("{} {} {}\n", i, n, typestr(t));

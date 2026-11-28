@@ -1,0 +1,23 @@
+[extra]
+spin=1
+Jkondo=0.2
+anD=0.05
+anE=0.02
+B=0.01
+
+[param]
+symtype=SPZ4
+model=KONDO
+variant=ANISONEW
+bcsgap=0.1
+
+discretization=Z
+Lambda=3.0
+Nmax=2
+keep=100000
+T=0.05
+
+ops=SZ SZ2 SX2 SY2 SX
+spect=SX-SX
+fdm=true
+fdmexpv=true

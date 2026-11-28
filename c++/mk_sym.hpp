@@ -48,6 +48,8 @@
 #include "sym-U1.hpp"
 #include "sym-SPSU2C3.hpp"
 #include "sym-QSC3.hpp"
+#include "sym-QSZ4.hpp"
+#include "sym-SPZ4.hpp"
 #endif
 
 namespace NRG {
@@ -87,6 +89,8 @@ auto get(const std::string &sym_string, const Params &P)
   if (sym_string == "QSZLR") return mk_QSZLR<S>(P);
   if (sym_string == "QJ") return mk_QJ<S>(P);
   if (sym_string == "U1") return mk_U1<S>(P);
+  if (sym_string == "QSZ4") return mk_QSZ4<S>(P);
+  if (sym_string == "SPZ4") return mk_SPZ4<S>(P);
   if constexpr (std::is_same_v<S, std::complex<double>>) {
     if (sym_string == "SPSU2C3") return mk_SPSU2C3<S>(P);
     if (sym_string == "QSC3") return mk_QSC3<S>(P);

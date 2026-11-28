@@ -220,7 +220,7 @@ the runtime-method setting would otherwise be unused.
 
 Deferred `tri=cpp` does not transfer all-site onsite corrections added after
 reconstruction. Both backends reject nonzero `gap`, and reject active
-`globalh` (`polarized=true` with `SPU1`, `P`, `PP`, or `NONE`). Omit an
+`globalh` (`polarized=true` with `SPU1`, `SPZ4`, `P`, `PP`, or `NONE`). Omit an
 inactive correction or write a literal numeric zero; expressions such as
 `!1-1` are not part of this portable handoff. The runtime checks these settings
 too, so an old `data` file cannot silently bypass the restriction. Use full
@@ -274,7 +274,7 @@ chains are not.
 ### Constant pairing in superconducting symmetries
 
 Full `tri=rkpw` also supports a narrow scalar flat-band path in symmetries
-`SPSU2`, `SPU1`, `SPU1LR`, `P`, `PP`, and `NONE`. It reconstructs the normal
+`SPSU2`, `SPU1`, `SPU1LR`, `SPZ4`, `P`, `PP`, and `NONE`. It reconstructs the normal
 chain, then adds prescribed constant pairing tables; it is not a general
 superconducting tridiagonalization algorithm. This path requires `band=flat`
 and an explicit finite real `bcsgap` (including `bcsgap=0`), or a complete

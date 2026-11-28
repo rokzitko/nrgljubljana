@@ -802,7 +802,7 @@ class Params {
         // Initializer-only corrections are not encoded in the exported star.
         // Inspect the raw settings too, so old data cannot silently lose them.
         static const std::regex literal_zero(R"([+-]?(0+(\.0*)?|\.0+)([eE][+-]?[0-9]+)?)");
-        const bool globalh_active = polarized && (symtype == "SPU1" || symtype == "P" || symtype == "PP" || symtype == "NONE");
+        const bool globalh_active = polarized && (symtype == "SPU1" || symtype == "SPZ4" || symtype == "P" || symtype == "PP" || symtype == "NONE");
         for (const auto &key : {"gap"s, "globalh"s}) {
           if (key == "globalh" && !globalh_active) continue;
           if (const auto it = parsed_params.find(key); it != parsed_params.end() && !std::regex_match(it->second, literal_zero))

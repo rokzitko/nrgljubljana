@@ -872,6 +872,13 @@ coupledQ["DBLISOSZ", {{ii11_, ii21_, ssz1_, j1___}, {ii12_, ii22_, ssz2_, j2___}
 coupledQ["QSZ" | "QSZLR", {{q1_, ssz1_, i1___}, {q2_, ssz2_, i2___}}] :=
   If[q1 == q2+1 && Abs[ssz1-ssz2] == 1, True, False, MyError["oops"]];
 
+(* Z_4 types: the spin label is 2S_z+1 modulo 4. Fermion operators change it by 1 or 3, the spin-flip components of
+   spin operators by 2 (S_+ and S_- link the same subspaces). *)
+coupledQ["SPZ4", {{ssz1_, i1___}, {ssz2_, i2___}}] := MemberQ[{1, 3}, Mod[ssz1-ssz2, 4]];
+spincoupledQ["SPZ4", {{ssz1_, i1___}, {ssz2_, i2___}}] := Mod[ssz1-ssz2, 4] == 2 && SameQ[{i1}, {i2}];
+coupledQ["QSZ4", {{q1_, ssz1_, i1___}, {q2_, ssz2_, i2___}}] := q1 == q2+1 && MemberQ[{1, 3}, Mod[ssz1-ssz2, 4]];
+spincoupledQ["QSZ4", {{q1_, ssz1_, i1___}, {q2_, ssz2_, i2___}}] := q1 == q2 && Mod[ssz1-ssz2, 4] == 2 && SameQ[{i1}, {i2}];
+
 coupledQ["P", {{p1_}, {p2_}}] := (p1 != p2); (* Opposite parity *)
 
 coupledQ["PP", {{pa1_, pb1_}, {pa2_, pb2_}}] := ((pa1 != pa2) && (pb1 == pb2)) || ((pa1 == pa2) && (pb1 != pb2));
@@ -990,7 +997,8 @@ getIsospinQN["ISO" | "ISOLR" | "ISO2" | "ISO2LR" | "ISOSZ" | "ISOSZLR" |
 getSpinQN["DBLQSZ", inv_] := inv[[3]];
 getSpinQN["QS" | "QSLR" | "QSC3" | "QSZ" | "QSZLR" | "ISO" | "ISOLR" |
           "ISO2" | "ISO2LR" | "ISOSZ" | "ISOSZLR" | "QST" | "QSTZ" | "QSZTZ", inv_] := inv[[2]];
-getSpinQN["SPSU2" | "SPSU2LR" | "SPSU2T" | "SPU1" | "SPU1LR" | "SPSU2C3", inv_] := inv[[1]];
+getSpinQN["SPSU2" | "SPSU2LR" | "SPSU2T" | "SPU1" | "SPU1LR" | "SPSU2C3" | "SPZ4", inv_] := inv[[1]];
+getSpinQN["QSZ4", inv_] := inv[[2]];
 
 getOrbitalQN["QST" | "QSTZ" | "QSZTZ", inv_] := inv[[3]];
 getOrbitalQN["SPSU2T", inv_] := inv[[2]];
@@ -1008,6 +1016,21 @@ Module[
   op1 = op[CR, ud]; (* IMPORTANT: the operator is a creation operator
     with the spin determined by the invariant subspaces linked by it. *)
   optransform[op1, inv1, inv2]
+];
+
+(* Z_4 types: the label difference 1 (mod 4) selects the spin-up creation operator, 3 the spin-down one. *)
+ireducMatrixSpeedy[symtype:("QSZ4" | "SPZ4"), op_, {inv1_, inv2_}, ___] :=
+Module[{d, op1},
+  d = Mod[getSpinQN[symtype, inv1] - getSpinQN[symtype, inv2], 4];
+  op1 = Switch[d, 1, op[CR, UP], 3, op[CR, DO], _, MyError["ireducMatrixSpeedy: not a fermion operator for " <> symtype]];
+  optransform[op1, inv1, inv2]
+];
+
+(* Z_4 types: explicit operator op (e.g. S_x of the impurity) between the subspaces whose spin labels differ by 2
+   (mod 4). Used for the operators of type "t" (mtZ4Op). *)
+z4DeltaTwoTable[held_] := Module[{op = ReleaseHold[held]},
+  opdata = ({#, optransform[op, First[#], Last[#]]} &) /@ spincoupledpairs;
+  Join[{{Length[spincoupledpairs]}}, Flatten[(Prepend[Last[#], Flatten[First[#]]] &) /@ opdata, 1]]
 ];
 
 ireducMatrixSpeedy[symtype:("QS" | "QSLR" | "QSC3" | "SPSU2" | "SPSU2LR" | "SPSU2C3"),
@@ -1714,6 +1737,7 @@ mtGlobalOp[opname_String, opinput_] :=        mtOp[opname, opinput, "g",  single
 mtDoubletOp[opname_String, opinput_] :=       mtOp[opname, opinput, "d",  ireducTable];
 mtDoubletOp[opname_String, opinput_, opt_] := mtOp[opname, opinput, "d",  ireducTable[#1,opt]& ];
 mtTripletOp[opname_String, opinput_] :=       mtOp[opname, opinput, "t",  ireducsigmaTable];
+mtZ4Op[opname_String, opinput_] :=            mtOp[opname, opinput, "t",  z4DeltaTwoTable];
 mtQSZTZLadderOps[plus_String, minus_String, raising_] := Module[{},
   If[SYMTYPE =!= "QSZTZ", MyError["mtQSZTZLadderOps requires QSZTZ symmetry."]];
   If[plus === minus, MyError["mtQSZTZLadderOps requires distinct raising and lowering names."]];

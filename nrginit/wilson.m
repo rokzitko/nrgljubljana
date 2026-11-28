@@ -33,7 +33,7 @@ If[TRI == "cpp",
   (* The star handoff cannot encode corrections applied to every chain site.
      Require literal zero without floating conversion, also in the C++ reader. *)
   Module[{keys = {"gap"}},
-    If[POLARIZED && MemberQ[{"SPU1", "P", "PP", "NONE"}, SYMTYPE], AppendTo[keys, "globalh"]];
+    If[POLARIZED && MemberQ[{"SPU1", "SPZ4", "P", "PP", "NONE"}, SYMTYPE], AppendTo[keys, "globalh"]];
     Do[
       If[paramexists[key] && !StringMatchQ[stripws[data["param"][key]],
           RegularExpression["[+-]?(0+(\\.0*)?|\\.0+)([eE][+-]?[0-9]+)?"]],
@@ -70,7 +70,7 @@ If[RKPW && isSC[],
     keys = If[paramexists["bcsgap"], {"bcsgap"},
       If[COEFCHANNELS >= 2, Table["bcsgap" <> ToString[a], {a, COEFCHANNELS}], {}]];
     If[TRI != "rkpw" || BAND != "flat" ||
-        !MemberQ[{"SPSU2", "SPU1", "SPU1LR", "P", "PP", "NONE"}, SYMTYPE] || keys == {} ||
+        !MemberQ[{"SPSU2", "SPU1", "SPU1LR", "SPZ4", "P", "PP", "NONE"}, SYMTYPE] || keys == {} ||
         !And @@ (paramexists /@ keys) ||
         !And @@ (MatchQ[Quiet[N[paramnum[#]]], _Real] & /@ keys),
       MyError["rkpw superconducting-symmetry support requires full tri=rkpw, an audited scalar flat-band symmetry, ",
@@ -985,7 +985,7 @@ If[DZ,
 
   If[BAND == "flat_with_bulk_field",
     MyAssert[POLARIZED == True];
-    MyAssert[SYMTYPE == "SPU1" || SYMTYPE == "QSZ"];
+    MyAssert[MemberQ[{"SPU1", "QSZ", "SPZ4", "QSZ4"}, SYMTYPE]];
 
     (* Suffix denotes the h=0 values. *)
     eps0[a_, 0] = 1;
@@ -1047,7 +1047,7 @@ If[TRI == "manual_nambu",
 ];
 
 If[TRI == "manual_nambu_new",
-  If[SYMTYPE == "SPSU2" || SYMTYPE == "SPU1",
+  If[SYMTYPE == "SPSU2" || SYMTYPE == "SPU1" || SYMTYPE == "SPZ4",
     loadtablescdelta[]; (* loaded from scdelta.dat *)
     loadtablesckappa[]; (* loaded from sckappa.dat *)
   ];
@@ -1099,7 +1099,7 @@ If[!gapdefined && COEFCHANNELS >= 2 && And @@ Table[paramexists["bcsgap" <> ToSt
 
 (* *** Bulk magnetic field support. *** *)
 
-If[POLARIZED && isQSZ[] && paramexists["globalB"],
+If[POLARIZED && (isQSZ[] || isQSZ4[]) && paramexists["globalB"],
   For[i = 1, i <= CHANNELS, i++,
     zeta[i][0] = zeta[i][0] + (1/2) paramnum["globalB"];
     zeta[i+CHANNELS][0] = zeta[i+CHANNELS][0] - (1/2) paramnum["globalB"];
@@ -1114,7 +1114,7 @@ If[POLARIZED && isU1[] && paramexists["globalB"],
 ];
 
 (* Compare with globalB! This one modifies all coefficients. *)
-If[POLARIZED && (isSPU1[] || isP[] || isPP[] || isNONE[]) && paramexists["globalh"],
+If[POLARIZED && (isSPU1[] || isSPZ4[] || isP[] || isPP[] || isNONE[]) && paramexists["globalh"],
   For[i = 1, i <= CHANNELS, i++,
     For[m = 0, m <= mMAX, m++,
       zeta[i][m] = zeta[i][m] + (1/2) paramnum["globalh"];

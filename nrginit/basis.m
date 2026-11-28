@@ -45,7 +45,7 @@ If[GENERATEBASIS == True,
   (*** STEP 1: create basis operators ***)
 
   needqslist = {"QS", "QSLR", "ISO", "ISO2", "ISOLR", "ISO2LR"};
-  needqszlist = {"QSZ", "QSZLR", "ISOSZ", "ISOSZLR"};
+  needqszlist = {"QSZ", "QSZLR", "ISOSZ", "ISOSZLR", "QSZ4"};
   needqlist = {"SU2", "U1", "SL"};
 
   If[MemberQ[needqslist, SYMTYPE],
@@ -95,7 +95,7 @@ If[GENERATEBASIS == True,
     bz = sbasis[basisops];
   ];
 
-  If[isSPU1[] || isSPU1LR[],
+  If[isSPU1[] || isSPU1LR[] || isSPZ4[],
     bz = szbasis[basisops];
   ];
 
@@ -260,7 +260,7 @@ If[GENERATEBASIS == True,
     degnr[{ii1_, ii2_, _}] = ii1 ii2;
   ];
 
-  If[isQSZ[],
+  If[isQSZ[] || isQSZ4[],
     (* Transform to (Q,2Sz+1) naming convention as used in the QSZ program. *)
     bz = Map[ {{#[[1,1]], 2*#[[1,2]]+1}, #[[2]]}&, bz];
     bvc = bzop2bzvc[bz, vak];
@@ -278,7 +278,7 @@ If[GENERATEBASIS == True,
     degnr[{ss_Integer, i___}] := ss;
   ];
 
-  If[isSPU1[] || isSPU1LR[],
+  If[isSPU1[] || isSPU1LR[] || isSPZ4[],
     bz = Map[ {{2*#[[1,1]]+1}, #[[2]]}&, bz];
     bvc = bzop2bzvc[bz, vak];
     degnr[{___}] := 1;
@@ -423,7 +423,7 @@ If[GENERATEBASIS == True,
       ]
     ];
 
-    If[isQSZ[] || isISOSZ[] || isQSZTZ[],
+    If[isQSZ[] || isISOSZ[] || isQSZTZ[] || isQSZ4[],
       bvc = QSZaddspinketNRG[bvc, MAKESPINKET];
       bz = bzvc2bzop[bvc];
     ];
@@ -435,7 +435,7 @@ If[GENERATEBASIS == True,
       ]
     ];
 
-    If[isSPU1[] || isSPU1LR[],
+    If[isSPU1[] || isSPU1LR[] || isSPZ4[],
       bvc = SPU1addspinketNRG[bvc, MAKESPINKET];
       bz = bzvc2bzop[bvc];
     ];
@@ -590,6 +590,15 @@ If[GENERATEBASIS == True,
       bz = Map[{First[#] + {NROPS}, Last[#]}&, bz]; (* Shift *)
     ];
     bvc = bzop2bzvc[bz, vak];
+  ];
+
+  (*** Step 8b: Z_4 symmetry types. The basis has been constructed as for QSZ and SPU1, with the spin label 2S_z+1
+       (including impurity spin kets); reduce it modulo 4 and merge subspaces with equal labels. ***)
+  If[isZ4[],
+    z4index = If[isQSZ4[], 2, 1]; (* position of the spin label: {Q, 2S_z+1} or {2S_z+1} *)
+    bvc = mergebasis @ Map[{ReplacePart[First[#], z4index -> Mod[First[#][[z4index]], 4]], Last[#]}&, bvc];
+    bz = bzvc2bzop[bvc];
+    MyVPrint[2, "Z4 baza bvc=", bvc];
   ];
 
   (*** Step 9: Hook for possible changes of the basis states. ***)

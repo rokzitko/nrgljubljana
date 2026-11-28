@@ -125,6 +125,7 @@ Recognized built-in symmetry names are:
 QS QST QSTZ QSZTZ QJ ISO ISO2 QSZ ISOLR ISO2LR QSLR QSC3
 QSZLR DBLQSZ DBLSU2 DBLISOSZ SU2 U1 SPSU2 SPU1 SPU1LR
 SPSU2LR SPSU2C3 SPSU2T SL SL3 P PP NONE ISOSZ ISOSZLR
+QSZ4 SPZ4
 ```
 
 Builds made without the extended symmetry sets support only a subset. Complex
@@ -134,7 +135,7 @@ The number of channels supported by the solver depends on the symmetry type:
 
 | Channels | Symmetry types |
 | --- | --- |
-| any | `NONE`, `P`, `U1`, `QSZ`, `SPU1` (coefficient tables generated at run time; `nrginit` provides up to five channels; without `substeps`, each step adds 4^K states) |
+| any | `NONE`, `P`, `U1`, `QSZ`, `SPU1`, `QSZ4`, `SPZ4` (coefficient tables generated at run time; `nrginit` provides up to five channels; without `substeps`, each step adds 4^K states) |
 | 1–4 | `QS` |
 | 1–3 | `SPSU2`, `ISO`, `SL` |
 | 1–2 | `ISO2`, `ISOSZ`, `SPU1LR`, `SU2` |
@@ -176,7 +177,7 @@ shapes or alter any coefficients.
 | `hardgap` | boolean | `false` | Enable the gap-edge mesh; a nonzero boundary is supported only for `band=asymode`, `adapt=false` in the scalar initializer. |
 | `boundary` | number | `0` | Normalized gap edge `b`, finite and in `[0,1)` when `hardgap=true`; physical gap magnitude is `bandrescale*b`. Inactive when `hardgap=false`. |
 | `discretization` | string | `Z` | `Y`, `C`, or `Z`; only the first uppercase character is used. |
-| `polarized` | boolean | `false` | Generate spin-dependent coefficients; supported by `QSZ`, `U1`, `SPU1`, `P`, `PP`, and `NONE`. |
+| `polarized` | boolean | `false` | Generate spin-dependent coefficients; supported by `QSZ`, `U1`, `SPU1`, `QSZ4`, `SPZ4`, `P`, `PP`, and `NONE`. |
 | `pol2x2` | boolean | `false` | Generate a full spin-space `2x2` Wilson chain; supported with `U1`. |
 | `rungs` | boolean | `false` | Include channel-mixing terms for supported two-channel `QS` and `QSZ` calculations. |
 | `Ninit` | non-negative integer | `0` | Highest Wilson orbital included in the initial Hamiltonian. |
@@ -228,7 +229,7 @@ tridiag_method=rkpw
 Deferred `tri=cpp` reconstruction cannot carry onsite corrections added after
 the star-to-chain transformation. For either C++ backend, `gap` must be
 absent or a literal numeric zero. The same rule applies to `globalh` when
-`polarized=true` and `symtype` is `SPU1`, `P`, `PP`, or `NONE`. Both the
+`polarized=true` and `symtype` is `SPU1`, `SPZ4`, `P`, `PP`, or `NONE`. Both the
 initializer and runtime reject unsupported settings, including when running
 an existing `data` file. Write zero as a portable literal such as `0`, `-0.0`,
 or `0e-20`; Mathematica expressions such as `!1-1` are not evaluated by this
@@ -253,7 +254,7 @@ runtime uses `size_t`. RKPW does not use GMP; increasing `preccpp` has no
 effect. Mathematica's separate `prec` parameter uses decimal digits.
 
 In superconducting symmetries, RKPW is limited to full `tri=rkpw`, `band=flat`,
-and `SPSU2`, `SPU1`, `SPU1LR`, `P`, `PP`, or `NONE`, with an explicit finite
+and `SPSU2`, `SPU1`, `SPU1LR`, `SPZ4`, `P`, `PP`, or `NONE`, with an explicit finite
 real constant `bcsgap` (zero allowed), or a complete set of finite real
 `bcsgap1`, ..., `bcsgapK` for the K coefficient channels.
 It reconstructs the normal scalar chain and adds the prescribed pairing tables.
@@ -286,7 +287,7 @@ documentation supplied with that band implementation before using it.
 
 The `nambu` band branch is currently a placeholder. `asymode`, `adapt`, and
 `flat_with_bulk_field` require `discretization=Z`; the bulk-field branch also
-requires `polarized=true` and `SPU1` or `QSZ`. `band=dmft` requires a `[dmft]`
+requires `polarized=true` and `SPU1`, `QSZ`, `SPZ4`, or `QSZ4`. `band=dmft` requires a `[dmft]`
 block containing either `gamma=<value>` or `run=<path>` and can additionally
 use `[dmft] discchecksum=<value>`. Normal DMFT chains require
 `discretization=Y` or `C`.
@@ -601,14 +602,14 @@ what they write to `td`/`tdfdm` and the `spec_*`/`corr_*` families.
 | `omega0` | number | `-1.0` | Low-frequency crossover; negative selects `omega0_ratio*T`, while zero is invalid when broadening is used. |
 | `omega0_ratio` | number | `1.0` | Multiplier used by the automatic `omega0`. |
 | `diagth` | integer | `1` | Threads for the application OpenMP loop over independent diagonalization tasks; ignored without application OpenMP and separate from BLAS threading. |
-| `substeps` | boolean | `false` | Enable interleaved diagonalization for supported `QS`, `QSZ`, `SPSU2`, `SPU1`, `P`, `NONE`, or `U1` calculations. |
+| `substeps` | boolean | `false` | Enable interleaved diagonalization for supported `QS`, `QSZ`, `SPSU2`, `SPU1`, `QSZ4`, `SPZ4`, `P`, `NONE`, or `U1` calculations. |
 | `strategy` | string | `kept` | Recalculate `kept` states or `all` states; CFS/FDM can force `all`. |
 | `Ninit` | non-negative integer | `0` | Highest Wilson site included in the seed problem; must be below `Nmax` from `data`. |
 | `reim` | boolean | `false` | Include imaginary spectral weights in output files. |
 | `clip_tol_imag` | number | `1e-10` | Non-negative relative tolerance for clipping imaginary values in text output. |
 
-`substeps` is implemented for `QS`, `QSZ`, `SPSU2`, `SPU1`, `P`, `NONE`, and `U1`,
-including spin-polarized chains (`polarized=true`) for the last five; other symmetry
+`substeps` is implemented for `QS`, `QSZ`, `SPSU2`, `SPU1`, `QSZ4`, `SPZ4`, `P`, `NONE`, and `U1`,
+including spin-polarized chains (`polarized=true`) for all but `QS` and `SPSU2`; other symmetry
 types are rejected when the symmetry is initialized from `data`. With many channels,
 interleaved diagonalization adds the four states of one site at a time instead of
 4^K states per step. It is not supported together with `rungs` or `pol2x2`, or with

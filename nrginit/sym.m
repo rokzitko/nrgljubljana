@@ -8,6 +8,7 @@ If[!ValueQ[SYMTYPE],  SYMTYPE = "QS"];
  "QJ", ==>                 U(1)_charge x SU(2)_total_momentum [three orbitals]
  "ISO" and "ISO2", ==>     SU(2)_isospin x SU(2)_spin
  "QSZ", ==>                U(1)_charge x U(1)_spin
+ "QSZ4", ==>               U(1)_charge x Z_4 (2S_z modulo 4)
  "DBLQSZ", ==>             U(1)_charge1 x U(1)_charge2 x U(1)_spin
  "ISOSZ", ==>              SU(2)_isospin x U(1)_spin
  "ISOSZLR", ==>            SU(2)_isospin x U(1)_spin x Z_2
@@ -21,6 +22,7 @@ If[!ValueQ[SYMTYPE],  SYMTYPE = "QS"];
  "U1", ==>                 U(1)_charge
  "SPSU2", ==>              SU(2)_spin
  "SPU1", ==>               U(1)_spin
+ "SPZ4", ==>               Z_4 (2S_z modulo 4)
  "SPU1LR", ==>             U(1)_spin x Z_2
  "SPSU2LR", ==>            SU(2)_spin x Z_2
  "SPSU2C3", ==>            SU(2)_spin x Z_3 [3 channels]
@@ -43,7 +45,7 @@ knownsymtypes =
 {"QS", "QST", "QSTZ", "QSZTZ", "QJ", "ISO", "ISO2", "QSZ", "ISOLR", "ISO2LR", "QSLR", "QSC3",
 "QSZLR", "DBLQSZ", "DBLSU2", "DBLISOSZ",
 "SU2", "U1", "SPSU2", "SPU1", "SPU1LR", "SPSU2LR", "SPSU2C3", "SPSU2T",
-"SL", "SL3", "P", "PP", "NONE", "ISOSZ", "ISOSZLR"};
+"SL", "SL3", "P", "PP", "NONE", "ISOSZ", "ISOSZLR", "QSZ4", "SPZ4"};
 If[!(MemberQ[knownsymtypes, SYMTYPE]),
   MyError["Unknown SYMTYPE."];
 ];
@@ -58,7 +60,7 @@ qstypes = {"QS", "QSLR"};
 qsztypes = {"QSZ", "QSZLR"};
 isotypes = {"ISO", "ISO2", "ISOLR", "ISO2LR"};
 isosztypes = { "ISOSZ", "ISOSZLR" };
-sctypes = {"SPSU2", "SPU1", "SPU1LR", "SPSU2LR", "SPSU2T", "P", "PP", "NONE", "SPSU2C3"};
+sctypes = {"SPSU2", "SPU1", "SPU1LR", "SPSU2LR", "SPSU2T", "P", "PP", "NONE", "SPSU2C3", "SPZ4"};
 orbtypes = {"QST", "SPSU2T", "QSTZ", "QSZTZ"}; (* quantum number T *)
 isQS[] := MemberQ[qstypes, SYMTYPE];
 isQSZ[] := MemberQ[qsztypes, SYMTYPE];
@@ -75,6 +77,10 @@ isU1[] := (SYMTYPE === "U1");
 isSPSU2[] := (SYMTYPE === "SPSU2");
 isSPU1[] := (SYMTYPE === "SPU1");
 isSPU1LR[] := (SYMTYPE === "SPU1LR");
+(* Z_4 types: the basis is constructed as for QSZ and SPU1, then the spin label 2S_z+1 is reduced modulo 4. *)
+isQSZ4[] := (SYMTYPE === "QSZ4");
+isSPZ4[] := (SYMTYPE === "SPZ4");
+isZ4[] := isQSZ4[] || isSPZ4[];
 isSPSU2LR[] := (SYMTYPE === "SPSU2LR");
 isSL[] := (SYMTYPE === "SL");
 isSL3[] := (SYMTYPE === "SL3");

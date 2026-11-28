@@ -157,6 +157,22 @@ TEST(Invar, comparison_is_lexicographic) { // NOLINT
   EXPECT_NE(Invar(1), Invar(1, 0));
 }
 
+TEST(Invar, modulo_types) { // NOLINT
+  initInvar({{"Q", additive}, {"SSZ", mod4}});
+  Invar I(1, 3);
+  I.combine(Invar(-1, 2));
+  EXPECT_EQ(I, Invar(0, 1)); // 3 + 2 = 1 (mod 4)
+  I.combine(Invar(0, -3));   // differences may be given as negative numbers
+  EXPECT_EQ(I, Invar(0, 2));
+  I.inverse();
+  EXPECT_EQ(I, Invar(0, 2)); // -2 = 2 (mod 4)
+  Invar J(5, 1);
+  J.inverse();
+  EXPECT_EQ(J, Invar(-5, 3));
+  EXPECT_EQ(typestr(mod4), "mod4");
+  EXPECT_EQ(typestr(mod3), "mod3");
+}
+
 TEST(Invar, get_unknown_name_throws) { // NOLINT
   initInvar({{"Q", additive}, {"SS", additive}});
   EXPECT_THROW(static_cast<void>(Invar(0, 1).get("SSZ")), std::invalid_argument);

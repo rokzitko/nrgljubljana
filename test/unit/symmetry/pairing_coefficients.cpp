@@ -20,8 +20,8 @@ using namespace NRG;
 
 namespace {
 
-const std::set<std::string> pairing_types{"SPSU2", "SPU1", "SPU1LR", "SPSU2LR", "SPSU2T", "SPSU2C3", "P", "PP", "NONE"};
-const std::set<std::string> anomalous_types{"SPSU2", "SPU1", "SPU1LR", "SPSU2LR", "SPSU2T"};
+const std::set<std::string> pairing_types{"SPSU2", "SPU1", "SPU1LR", "SPSU2LR", "SPSU2T", "SPSU2C3", "P", "PP", "NONE", "SPZ4"};
+const std::set<std::string> anomalous_types{"SPSU2", "SPU1", "SPU1LR", "SPSU2LR", "SPSU2T", "SPZ4"};
 
 // One coefficient set (one channel) with values for indexes 0 and 1, in the data-file format: max index, values.
 template <typename S> void read_table(set_of_coef_tables<S> &table, const std::string &values) {
