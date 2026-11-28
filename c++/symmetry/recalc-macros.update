@@ -13,15 +13,11 @@ m4 nrg-recalc-ISOSZ.hpp.m4 >nrg-recalc-ISOSZ.hpp
 
 m4 nrg-recalc-ISOSZLR.hpp.m4 >nrg-recalc-ISOSZLR.hpp
 
-m4 nrg-recalc-NONE.hpp.m4 >nrg-recalc-NONE.hpp
-
 m4 nrg-recalc-QS.hpp.m4 >nrg-recalc-QS.hpp
 
 m4 nrg-recalc-QSLR.hpp.m4 >nrg-recalc-QSLR.hpp
 
 m4 nrg-recalc-QSC3.hpp.m4 >nrg-recalc-QSC3.hpp
-
-m4 nrg-recalc-QSZ.hpp.m4 >nrg-recalc-QSZ.hpp
 
 m4 nrg-recalc-QSZLR.hpp.m4 >nrg-recalc-QSZLR.hpp
 
@@ -30,8 +26,6 @@ m4 nrg-recalc-SL.hpp.m4 >nrg-recalc-SL.hpp
 m4 nrg-recalc-SL3.hpp.m4 >nrg-recalc-SL3.hpp
 
 m4 nrg-recalc-SPSU2.hpp.m4 >nrg-recalc-SPSU2.hpp
-
-m4 nrg-recalc-SPU1.hpp.m4 >nrg-recalc-SPU1.hpp
 
 m4 nrg-recalc-SPU1LR.hpp.m4 >nrg-recalc-SPU1LR.hpp
 
@@ -42,8 +36,6 @@ m4 nrg-recalc-DBLSU2.hpp.m4 >nrg-recalc-DBLSU2.hpp
 m4 nrg-recalc-DBLISOSZ.hpp.m4 >nrg-recalc-DBLISOSZ.hpp
 
 m4 nrg-recalc-DBLQSZ.hpp.m4 >nrg-recalc-DBLQSZ.hpp
-
-m4 nrg-recalc-U1.hpp.m4 >nrg-recalc-U1.hpp
 
 m4 nrg-recalc-SPSU2LR.hpp.m4 >nrg-recalc-SPSU2LR.hpp
 
@@ -56,8 +48,6 @@ m4 nrg-recalc-QSTZ.hpp.m4 >nrg-recalc-QSTZ.hpp
 m4 nrg-recalc-QSZTZ.hpp.m4 >nrg-recalc-QSZTZ.hpp
 
 m4 nrg-recalc-QJ.hpp.m4 >nrg-recalc-QJ.hpp
-
-m4 nrg-recalc-P.hpp.m4 >nrg-recalc-P.hpp
 
 m4 nrg-recalc-PP.hpp.m4 >nrg-recalc-PP.hpp
 

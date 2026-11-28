@@ -1,3 +1,12 @@
+conv_3ch_P
+conv_3ch_QS
+conv_3ch_QSZ
+conv_3ch_SPU1
+conv_3ch_U1
+conv_doublet_1ch_NONE
+conv_doublet_1ch_P
+conv_globalop_1ch_QSZ
+conv_globalop_1ch_U1
 conv_pairing_1ch_NONE
 conv_pairing_1ch_P
 conv_pairing_1ch_SPSU2
@@ -10,6 +19,8 @@ conv_pairing_2ch_SPU1
 conv_pairing_2ch_equal_SPSU2
 conv_pairing_2ch_equal_SPSU2LR
 conv_pairing_2ch_equal_SPU1LR
+conv_pairing_3ch_SPSU2
+conv_pairing_3ch_SPU1
 conv_pairing_kappa_SPSU2
 conv_pairing_kappa_SPU1
 conv_polarized_1ch_NONE

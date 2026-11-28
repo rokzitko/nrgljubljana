@@ -130,6 +130,17 @@ SPSU2LR SPSU2C3 SPSU2T SL SL3 P PP NONE ISOSZ ISOSZLR
 Builds made without the extended symmetry sets support only a subset. Complex
 `data` is required by the complex-only implementations.
 
+The number of channels supported by the solver depends on the symmetry type:
+
+| Channels | Symmetry types |
+| --- | --- |
+| any | `NONE`, `P`, `U1`, `QSZ`, `SPU1` (coefficient tables generated at run time; `nrginit` provides up to four channels, and the cost grows as 4^K states per added site) |
+| 1–4 | `QS` |
+| 1–3 | `SPSU2`, `ISO`, `SL` |
+| 1–2 | `ISO2`, `ISOSZ`, `SPU1LR`, `SU2` |
+| 2 | `PP`, `DBLQSZ`, `DBLSU2`, `DBLISOSZ`, `ISOLR`, `ISO2LR`, `ISOSZLR`, `QSLR`, `QSZLR`, `SPSU2LR` |
+| 3 | `QST`, `QSTZ`, `QSZTZ`, `QJ`, `QSC3`, `SPSU2C3`, `SPSU2T`, `SL3` |
+
 The bundled `QSTZ` and `QSZTZ` basis adapters support three spinful channels
 with `Ninit=0`. Models must use the boundary labels `f[+1],f[0],f[-1]` and
 declare `qstzImpurityCharges` for [QSTZ](nrginit-workflow.md#qstz-basis) or

@@ -1,0 +1,18 @@
+[dmft]
+gamma=1+0.5 eps
+
+[param]
+tridiag_method=lanczos
+prec=50
+symtype=U1
+model=ZERO3CH
+discretization=Yoshida
+z=1
+Lambda=3.0
+band=dmft
+
+Nmax=1
+keep=100000
+T=0.1
+ops=n_f
+fdmexpv=true

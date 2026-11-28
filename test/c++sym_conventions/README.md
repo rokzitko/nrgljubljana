@@ -14,8 +14,22 @@ columns and has a per-case reference. The groups fix the conventions described i
 | `conv_polarized_1ch_*` | QSZ, U1, SPU1, P, NONE | SIAM, `polarized=true`, spin-dependent particle-hole asymmetric bath | QSZ |
 | `conv_polarized_2ch_*` | QSZ, U1, P, NONE, PP | Two clean chains, `polarized=true`, spin-dependent particle-hole asymmetric bath | QSZ |
 | `conv_unpolarized_1ch_*`, `conv_polarized_symmetric_1ch_*` | QS, P (unpolarized); QSZ, P, NONE (`polarized=true`) | SIAM, spin-independent particle-hole asymmetric bath | QS |
+| `conv_3ch_*` | QS, QSZ, U1, SPU1, P | Three clean chains, particle-hole asymmetric bath | QS |
+| `conv_pairing_3ch_*` | SPSU2, SPU1 | Three clean SC chains, `bcsgap=0.1+0.1i` | SPSU2 |
+| `conv_doublet_1ch_*` | NONE, P | SIAM, spectral function of the doublet operator `A_d_1` | NONE |
+| `conv_globalop_1ch_*` | QSZ, U1 | SIAM with a local field (`siamB.m`), global operator `SZtot` (`modeloperators.m`) | QSZ |
 
 What the groups check:
+
+- **Channel number.** The coefficient tables of NONE, P, U1, QSZ, and SPU1 are generated at run time for any number
+  of channels (`c++/abelian_shell.hpp`); for three channels they are compared with QS and SPSU2, whose tables are
+  still the Mathematica-generated ones. The NONE cases with three channels are omitted for their run time.
+- **Fermion sign in operator recalculation.** A fermionic operator of the previous sites acquires the sign
+  (-1)^n of the occupation n of the added site. The P doublet tables generated with Mathematica lacked this sign.
+- **Spin labels of the U1 hopping.** U1 stores f^dag_up in block 0 and f^dag_down in block 1 of `<||f||>`. Without
+  spin polarization the previous code paired these blocks with the opposite spin of the added site, which is a
+  spin relabeling of the bath sites: impurity quantities were unaffected, but the bath part of global operators such
+  as `SZtot` was wrong.
 
 - **Pairing phase.** The pairing term of the sites added in the C++ iteration must have the same phase convention as
   the pairing term of the initial sites set up by `nrginit`. With a uniform complex gap, the expectation values of the
@@ -38,8 +52,9 @@ ctest --test-dir build -L '^conventions$' --output-on-failure --no-tests=error
 
 ## Regenerating the input data
 
-The `data` files were generated with `nrginit` from each case's `param` (and `customoperators.m` for the two-channel
-pairing cases, which defines the isospin operators `Ix_f1`, `Iy_f1` of the second channel). For the
+The `data` files were generated with `nrginit` from each case's `param` and Mathematica files (`customoperators.m` for
+the two-channel pairing cases, which defines the isospin operators `Ix_f1`, `Iy_f1` of the second channel; the model
+`siamB.m` and `modeloperators.m` for the global-operator cases). For the
 `conv_pairing_kappa_*` cases, the Wilson-chain blocks are then replaced by `coefficients`. To regenerate (requires
 Mathematica):
 

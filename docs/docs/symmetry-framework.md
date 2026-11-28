@@ -34,6 +34,31 @@ The symmetry backend is consulted throughout the iteration:
 4. Operator recalculation uses it to map old irreducible matrix elements to the new basis.
 5. Thermodynamic and spectral prefactors depend on symmetry-specific multiplicity rules.
 
+## Coefficient Tables
+
+Each NRG step combines the states of the added Wilson-chain sites (one per channel)
+with the invariant subspaces of the previous step. The coefficients that define the
+new basis, the Hamiltonian blocks, and the recalculation of the operators come from
+two sources:
+
+- For the abelian types `NONE`, `P`, `U1`, `QSZ`, and `SPU1`, every combination is a
+  single Fock state of the added sites. `AbelianShell::Shell` in `c++/abelian_shell.hpp`
+  enumerates these states and computes all coefficients as fermion matrix elements,
+  for any number of channels. `test/unit/symmetry/abelian_shell.cpp` checks that the
+  result equals the Mathematica tables, which it reads from
+  `c++/symmetry/coefnew/{none,p,u1,qsz,spu1}`, entry by entry.
+- All other types use tables generated with Mathematica (`c++/symmetry/coefnew`,
+  driven by `nrgcoef.m`) for each supported number of channels, included through
+  the m4 sources `c++/symmetry/nrg-recalc-*.hpp.m4`.
+
+The conventions of the abelian tables are those of `nrgcoef.m`: modes are ordered by
+channel with spin up before spin down; a Fock state is the product of the creation
+operators of the occupied modes in increasing mode order; and in a combination
+`|i, r>` of an added-site state `|i>` with a state `|r>` of the previous sites, the
+added-site operators stand to the left. An operator `O` of the previous sites then
+has `<i, r|O|j, r'> = delta_ij (-1)^(n_i |O|) <r|O|r'>`, with `n_i` the number of
+electrons in `|i>` and `|O|` the fermion parity of `O`.
+
 ## Conventions Shared By All Symmetry Types
 
 The same Hamiltonian must give the same results for every symmetry type that can

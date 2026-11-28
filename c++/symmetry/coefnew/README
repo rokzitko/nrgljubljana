@@ -1,6 +1,11 @@
 This directory contains the coefficient tables for different symmetry types.
 These are compiled into the executable code.
 
+Exception: the tables of none, p, u1, qsz, and spu1 are no longer compiled. For these
+symmetry types the tables are generated at run time for any number of channels
+(c++/abelian_shell.hpp). They are kept as the reference for
+test/unit/symmetry/abelian_shell.cpp.
+
 This version has been cleaned up (somewhat) and tested to run correctly with 
 Mathematica 13.1 in May 2023.
 

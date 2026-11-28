@@ -1,0 +1,16 @@
+[extra]
+U=0.5
+delta=0.1
+Gamma=0.1
+B=0.05
+
+[param]
+symtype=QSZ
+model=siamB.m
+discretization=Z
+Lambda=3.0
+Nmax=5
+keep=100000
+T=0.02
+ops=SZtot SZd
+fdmexpv=true

@@ -4,7 +4,7 @@
 # Usage: generate [CASE...]        (default: all cases listed in simple_tests)
 #        NRGINIT=/path/to/nrginit generate ...
 #
-# Each case is initialized in a temporary directory from its 'param' (and 'customoperators.m', if present). For cases
+# Each case is initialized in a temporary directory from its 'param' and Mathematica files (*.m), if any. For cases
 # with a 'coefficients' file, the Wilson-chain blocks of the generated data (from the line 'z' to the end of the file)
 # are replaced by the contents of that file. The references in */ref are not touched: they are shared between the
 # symmetry types of one physical problem and define the conventions (see README.md).
@@ -26,7 +26,7 @@ for c in "${cases[@]}"; do
   [ -f "$src/param" ] || { echo "$c: no param file" >&2; exit 1; }
   tmp="$(mktemp -d)"
   cp "$src/param" "$tmp/"
-  [ -f "$src/customoperators.m" ] && cp "$src/customoperators.m" "$tmp/"
+  for m in "$src"/*.m; do [ -f "$m" ] && cp "$m" "$tmp/"; done # model and operator definitions
   if ! (cd "$tmp" && "$nrginit" > log 2>&1) || [ ! -s "$tmp/data" ]; then
     echo "$c: nrginit failed, see $tmp/log" >&2
     exit 1
